@@ -1,4 +1,10 @@
-// Kodla cizilen piksel sanat: orman arka planlari, us nesneleri, esya simgeleri.
+// Kodla cizilen piksel sanat: arka planlar, us nesneleri, esya simgeleri.
+//
+// Tarz (karakterlerle uyumlu olsun diye):
+// - Her sey 2x2 piksellik bloklarla (texel) cizilir, karakterlerin yuzu gibi.
+// - Duz renkler, malzeme basina en fazla 2-3 ton. Rastgele piksel "kumlanmasi" yok.
+// - On plandaki nesnelerin 1 piksellik siyah cizgisi var (karakter gibi).
+//   Arka plandaki agac ve calilarin cizgisi kendi renginin koyusudur, geride kalsinlar diye.
 // Her sey sabit bir tohumla (seed) cizilir, yani ayni kat hep ayni gorunur.
 import { GAME_W, GAME_H, GROUND_Y } from './data.js';
 
@@ -17,55 +23,48 @@ const mix = (a, b, t) => [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * 
 const mul = (c, f) => c.map((v) => Math.max(0, Math.min(255, Math.round(v * f))));
 const pack = (c, a = 255) => (((a & 255) << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
 const unpack = (n) => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, n >>> 24];
+const col = (c) => (c == null ? 0 : typeof c === 'number' ? c : typeof c === 'string' ? pack(hex(c)) : pack(c));
 
+export const INK = '#100c14'; // karakterlerin siyah cizgisine yakin
+
+// Tam cozunurluklu piksel tuvali
 class Pix {
   constructor(w, h) { this.w = w; this.h = h; this.d = new Uint32Array(w * h); }
   set(x, y, c) {
     x |= 0; y |= 0;
     if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
-    this.d[y * this.w + x] = typeof c === 'number' ? c : pack(c);
+    this.d[y * this.w + x] = col(c);
   }
   get(x, y) {
     if (x < 0 || y < 0 || x >= this.w || y >= this.h) return 0;
     return this.d[y * this.w + x];
   }
   rect(x, y, w, h, c) {
-    const v = typeof c === 'number' ? c : pack(c);
+    const v = col(c);
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, v);
-  }
-  // renk tonlarindan rastgele piksellerle dolgu
-  noise(x, y, w, h, tones, r, weights) {
-    const packed = tones.map((t) => pack(t));
-    for (let j = 0; j < h; j++) {
-      for (let i = 0; i < w; i++) {
-        let k = r();
-        let idx = 0;
-        if (weights) { while (idx < weights.length - 1 && k > weights[idx]) { k -= weights[idx]; idx++; } } else idx = Math.floor(k * packed.length);
-        this.set(x + i, y + j, packed[idx]);
-      }
-    }
   }
   map(rows, pal, ox = 0, oy = 0) {
     rows.forEach((row, y) => {
-      [...row].forEach((ch, x) => { if (ch !== '.' && pal[ch]) this.set(ox + x, oy + y, hex(pal[ch])); });
+      [...row].forEach((ch, x) => { if (ch !== '.' && pal[ch]) this.set(ox + x, oy + y, pal[ch]); });
     });
   }
-  // saydam kenarlara, komsu rengin koyusundan cerceve
-  outline(f = 0.3) {
+  // saydam kenarlara 1 piksel cizgi (renk ya da 'dark' = komsu rengin koyusu)
+  outline(c = INK) {
     const src = this.d.slice();
+    const fixed = c === 'dark' ? 0 : col(c);
     for (let y = 0; y < this.h; y++) {
       for (let x = 0; x < this.w; x++) {
         if (src[y * this.w + x] >>> 24) continue;
-        let best = null;
+        let best = 0;
         for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
           const nx = x + dx; const ny = y + dy;
           if (nx < 0 || ny < 0 || nx >= this.w || ny >= this.h) continue;
           const n = src[ny * this.w + nx];
-          if (!(n >>> 24) || (n >>> 24) < 200) continue;
-          const c = mul(unpack(n).slice(0, 3), f);
-          if (!best || c[0] + c[1] + c[2] < best[0] + best[1] + best[2]) best = c;
+          if ((n >>> 24) < 200) continue;
+          best = fixed || pack(mul(unpack(n).slice(0, 3), 0.45));
+          break;
         }
-        if (best) this.d[y * this.w + x] = pack(best);
+        if (best) this.d[y * this.w + x] = best;
       }
     }
     return this;
@@ -81,324 +80,432 @@ class Pix {
   }
 }
 
-// ------------------------------------------------------------------ orman
-function blockTree(p, r, x, groundY, h, cw, cols) {
-  const { bark, barkD, leaf, leafL, leafD } = cols;
-  const tw = 6 + Math.floor(r() * 3);
-  const trunkTop = groundY - h;
-  for (let y = trunkTop; y < groundY; y++) {
-    for (let i = 0; i < tw; i++) {
-      const c = i === 0 ? mul(bark, 1.15) : i >= tw - 2 ? barkD : ((y + i * 3) % 7 === 0 ? barkD : bark);
-      p.set(x + i, y, c);
-    }
+// Texel tuvali: her hucre ekranda 2x2 piksel olur
+class Tex {
+  constructor(w, h) { this.w = w; this.h = h; this.d = new Uint32Array(w * h); }
+  set(x, y, c) {
+    x = Math.floor(x); y = Math.floor(y);
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+    this.d[y * this.w + x] = col(c);
   }
-  const ch = Math.round(cw * 0.7);
-  const cx = x + tw / 2 - cw / 2;
-  const cy = trunkTop - ch + 8;
-  const blobs = [[cx, cy, cw, ch], [cx + cw * 0.18, cy - ch * 0.45, cw * 0.64, ch * 0.6]];
-  for (const [bx, by, bw, bh] of blobs) {
-    for (let j = 0; j < bh; j++) {
-      for (let i = 0; i < bw; i++) {
-        const edge = (i < 2 || i > bw - 3) && (j < 2 || j > bh - 3);
-        if (edge && r() < 0.7) continue;
-        let c = leaf;
-        const k = r();
-        if (j < bh * 0.3 || i < bw * 0.2) c = k < 0.55 ? leafL : leaf;
-        else if (j > bh * 0.7 || i > bw * 0.8) c = k < 0.6 ? leafD : leaf;
-        else c = k < 0.15 ? leafL : k > 0.85 ? leafD : leaf;
-        p.set(bx + i, by + j, c);
+  get(x, y) {
+    if (x < 0 || y < 0 || x >= this.w || y >= this.h) return 0;
+    return this.d[y * this.w + x];
+  }
+  rect(x, y, w, h, c) {
+    const v = col(c);
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, v);
+    return this;
+  }
+  // kose kesilmis dikdortgen (yumusak gorunum)
+  rrect(x, y, w, h, c, r = 1) {
+    const v = col(c);
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        const cx = Math.min(i, w - 1 - i); const cy = Math.min(j, h - 1 - j);
+        if (cx + cy < r) continue;
+        this.set(x + i, y + j, v);
       }
     }
+    return this;
+  }
+  ellipse(cx, cy, rx, ry, c) {
+    const v = col(c);
+    for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) {
+      for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+        const dx = (x + 0.5 - cx) / rx; const dy = (y + 0.5 - cy) / ry;
+        if (dx * dx + dy * dy <= 1) this.set(x, y, v);
+      }
+    }
+    return this;
+  }
+  map(rows, pal, ox = 0, oy = 0) {
+    rows.forEach((row, y) => {
+      [...row].forEach((ch, x) => { if (ch !== '.' && pal[ch]) this.set(ox + x, oy + y, pal[ch]); });
+    });
+    return this;
+  }
+  // sadece dolu hucreleri boya (golge/isik bantlari icin)
+  tint(fn) {
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        const v = this.d[y * this.w + x];
+        if (!(v >>> 24)) continue;
+        const c = fn(x, y, v);
+        if (c != null) this.d[y * this.w + x] = col(c);
+      }
+    }
+    return this;
   }
 }
 
-export function forestBackground(floor, variant = 0, base = false) {
-  const W = GAME_W; const H = GAME_H; const G = GROUND_Y;
-  const p = new Pix(W, H);
+// Katmanlari ust uste koyup cizgileriyle birlikte tam cozunurluge cevirir.
+// Her katman kendi cizgisini alir; ondeki katmanin cizgisi arkadakinin ustune duser
+// ve parcalar arasinda karakterdeki gibi ince ayirici cizgiler olusur.
+function compose(pw, ph, layers, pad = 1) {
+  const out = new Pix(pw, ph);
+  for (const L of layers) {
+    const t = L.t; const ox = pad + (L.x || 0) * 2; const oy = pad + (L.y || 0) * 2;
+    const lw = t.w * 2 + 2; const lh = t.h * 2 + 2;
+    const buf = new Uint32Array(lw * lh);
+    for (let y = 0; y < t.h; y++) {
+      for (let x = 0; x < t.w; x++) {
+        const v = t.d[y * t.w + x];
+        if (!(v >>> 24)) continue;
+        const i = (y * 2 + 1) * lw + x * 2 + 1;
+        buf[i] = v; buf[i + 1] = v; buf[i + lw] = v; buf[i + lw + 1] = v;
+      }
+    }
+    if (L.ol) {
+      const fixed = L.ol === 'dark' ? 0 : col(L.ol);
+      const src = buf.slice();
+      for (let y = 0; y < lh; y++) {
+        for (let x = 0; x < lw; x++) {
+          if (src[y * lw + x]) continue;
+          let n = 0;
+          if (x > 0 && src[y * lw + x - 1]) n = src[y * lw + x - 1];
+          else if (x < lw - 1 && src[y * lw + x + 1]) n = src[y * lw + x + 1];
+          else if (y > 0 && src[(y - 1) * lw + x]) n = src[(y - 1) * lw + x];
+          else if (y < lh - 1 && src[(y + 1) * lw + x]) n = src[(y + 1) * lw + x];
+          if (!n) continue;
+          buf[y * lw + x] = fixed || pack(mul(unpack(n).slice(0, 3), L.olF || 0.45));
+        }
+      }
+    }
+    for (let y = 0; y < lh; y++) {
+      for (let x = 0; x < lw; x++) {
+        const v = buf[y * lw + x];
+        if (v) out.set(ox + x - 1, oy + y - 1, v);
+      }
+    }
+  }
+  return out;
+}
+
+// tek katmanli nesne: Tex -> cizgili Pix
+const solo = (t, ol = INK) => compose(t.w * 2 + 2, t.h * 2 + 2, [{ t, ol }]);
+
+// ------------------------------------------------------------------ renk yardimcilari
+// t: 0 = gunduz, 1 = gece. Kat derinlestikce orman kararir.
+const dn = (t) => (day, night, k = 1) => mix(hex(day), hex(night), Math.min(1, t * k));
+
+// ------------------------------------------------------------------ orman
+function oak(t, x, groundY, h, cw, ch, c) {
+  // govde: 3 texel, sol acik sag koyu
+  const top = groundY - h;
+  for (let y = top; y < groundY; y++) {
+    t.set(x, y, c.barkL); t.set(x + 1, y, c.bark); t.set(x + 2, y, c.barkD);
+  }
+  // yaprak tacı: kosesi kesilmis kutu + ustte kucuk kutu (blok gibi ama yumusak)
+  const cx = x + 1.5 - cw / 2;
+  const cy = top - ch + 4;
+  t.rrect(Math.round(cx), cy, cw, ch, c.leaf, 2);
+  t.rrect(Math.round(cx + cw * 0.2), cy - 3, Math.round(cw * 0.6), 5, c.leaf, 2);
+  // isik sol ustten: ust sira acik, alt iki sira koyu
+  const x0 = Math.round(cx); const y0 = cy - 3; const x1 = x0 + cw; const y1 = cy + ch;
+  t.tint((tx, ty, v) => {
+    if (tx < x0 - 1 || tx > x1 || ty < y0 || ty >= y1) return null;
+    if (v === col(c.barkL) || v === col(c.bark) || v === col(c.barkD)) return null;
+    const above = t.get(tx, ty - 1);
+    if (!(above >>> 24)) return c.leafL;
+    if (ty >= y1 - 2) return c.leafD;
+    if (tx >= x1 - 2 && ty > cy + 1) return c.leafD;
+    return null;
+  });
+}
+
+export function forestBackground(floor, variant = 0, base = false, width = GAME_W) {
+  const PW = width; const PH = GAME_H;
+  const TW = PW / 2; const TH = PH / 2; const TG = GROUND_Y / 2;
   const r = rng(floor * 7919 + variant * 104729 + (base ? 77 : 0));
   const t = base ? 0 : Math.min(1, (floor - 1) / 9) * 0.85;
+  const C = dn(t);
+  const layers = [];
 
-  // gokyuzu (bantli + titresimli gecis)
-  const top = mix(hex('#6cbcef'), hex('#1c1838'), t);
-  const bot = mix(hex('#d6f2ff'), hex('#94506a'), t);
-  const bands = 9;
-  for (let y = 0; y < G; y++) {
-    const k = Math.min(1, y / (G - 30)) * bands;
-    const b = Math.floor(k);
-    const frac = k - b;
-    const c1 = pack(mix(top, bot, b / bands));
-    const c2 = pack(mix(top, bot, Math.min(1, (b + 1) / bands)));
-    for (let x = 0; x < W; x++) {
-      const use2 = (frac > 0.66 && (x + y) % 2 === 0) || (frac > 0.86);
-      p.set(x, y, use2 ? c2 : c1);
-    }
-  }
-  // gunes / ay
-  const sx = 40 + Math.floor(r() * 300);
+  // gokyuzu: birkac genis duz bant
+  const sky = new Tex(TW, TG);
+  const bands = [C('#94d2f0', '#1b1a36'), C('#a4daf3', '#251f44'), C('#b5e1f5', '#352851'), C('#c8e9f7', '#4e3159'), C('#d8effa', '#6b3d64')];
+  const edges = [0, 22, 38, 50, 60, TG];
+  for (let b = 0; b < 5; b++) sky.rect(0, edges[b], TW, edges[b + 1] - edges[b], bands[b]);
+  layers.push({ t: sky });
+
+  // gunes ya da ay + yildizlar
+  const deco = new Tex(TW, TG);
+  const sx = 20 + Math.floor(r() * (TW - 40));
   if (t < 0.45) {
-    p.rect(sx, 18, 14, 14, mix(hex('#fff2a0'), bot, t)); p.rect(sx + 2, 20, 10, 10, hex('#fff9d8'));
+    deco.ellipse(sx, 13, 5, 5, C('#fff4b8', '#f0c890'));
   } else {
-    p.rect(sx, 16, 12, 12, hex('#e8e4f0')); p.rect(sx + 2, 18, 3, 3, hex('#c8c4d8')); p.rect(sx + 7, 22, 2, 2, hex('#c8c4d8'));
-    for (let i = 0; i < 40; i++) p.set(r() * W, r() * 90, mix(hex('#ffffff'), top, r() * 0.5));
+    deco.ellipse(sx, 12, 4.5, 4.5, '#ece8f4');
+    deco.set(sx - 1, 11, '#d2cce2'); deco.set(sx + 1, 13, '#d2cce2'); deco.set(sx + 2, 12, '#d2cce2');
+    const star = mix(hex('#ffffff'), bands[0], 0.25);
+    for (let i = 0; i < 26; i++) deco.set(Math.floor(r() * TW), Math.floor(r() * 44), star);
   }
-  // bulutlar
-  const cloud = mix(hex('#ffffff'), top, 0.15 + t * 0.6);
-  const cloudD = mix(cloud, top, 0.25);
-  for (let i = 0; i < 4; i++) {
-    const cx = Math.floor(r() * W); const cy = 12 + Math.floor(r() * 50); const cw = 24 + Math.floor(r() * 30);
-    p.rect(cx, cy + 4, cw, 6, cloud); p.rect(cx + 6, cy, cw - 14, 5, cloud); p.rect(cx + 2, cy + 9, cw - 4, 2, cloudD);
+  // bulutlar: yumusak koseli duz bloklar
+  const cloud = C('#ffffff', '#4a4470', 0.9);
+  const cloudD = mix(cloud, bands[1], 0.3);
+  for (let i = 0; i < 3 + Math.floor(r() * 2); i++) {
+    const cx = Math.floor(r() * TW) - 6; const cy = 6 + Math.floor(r() * 26); const cw = 12 + Math.floor(r() * 10);
+    deco.rrect(cx, cy + 2, cw, 4, cloud, 1);
+    deco.rrect(cx + 3, cy, cw - 8, 3, cloud, 1);
+    deco.rect(cx + 1, cy + 5, cw - 2, 1, cloudD);
   }
-  // uzak tepeler
-  const hill = mix(hex('#93c6a6'), hex('#34345a'), t);
+  layers.push({ t: deco });
+
+  // uzak tepeler (duz, soluk)
+  const hills = new Tex(TW, TG);
+  const hill = C('#bfe2c8', '#3a3a62');
   const ph1 = r() * 6; const ph2 = r() * 6;
-  for (let x = 0; x < W; x++) {
-    const h = 34 + 12 * Math.sin(x * 0.018 + ph1) + 8 * Math.sin(x * 0.047 + ph2);
-    const yTop = Math.round((G - 30 - h) / 2) * 2;
-    for (let y = yTop; y < G; y++) p.set(x, y, y < yTop + 2 ? mul(hill, 1.08) : hill);
+  for (let x = 0; x < TW; x++) {
+    const h = 18 + 6 * Math.sin(x * 0.036 + ph1) + 3 * Math.sin(x * 0.09 + ph2);
+    for (let y = Math.round(TG - 12 - h); y < TG; y++) hills.set(x, y, hill);
   }
-  // uzak orman (yuvarlak tepeli agac kumeleri)
-  const far = mix(hex('#5c9f74'), hex('#262c4c'), t);
-  const farL = mix(far, hex('#bfe8b0'), 0.22 * (1 - t) + 0.05);
-  const farD = mix(far, hex('#10141e'), 0.18);
-  const prof = new Array(W).fill(G);
-  for (let x = -12; x < W + 12; x += 7 + Math.floor(r() * 9)) {
-    const rad = 7 + r() * 9;
-    const cy = G - 30 - r() * 26;
-    for (let i = -Math.ceil(rad); i <= Math.ceil(rad); i++) {
+  layers.push({ t: hills });
+
+  // uzak orman: yuvarlak agac tepeleri, tek duz renk (bosluksuz siluet)
+  const far = new Tex(TW, TG);
+  const farC = C('#92caa2', '#2c3254');
+  const prof = new Array(TW).fill(TG - 8);
+  for (let x = -6; x < TW + 6; x += 4 + Math.floor(r() * 5)) {
+    const rad = 3.5 + r() * 4;
+    const cy = TG - 12 - r() * 10;
+    for (let i = Math.floor(-rad); i <= Math.ceil(rad); i++) {
       const xx = x + i;
-      if (xx < 0 || xx >= W || Math.abs(i) > rad) continue;
-      const top = Math.round((cy - Math.sqrt(rad * rad - i * i)) / 2) * 2;
-      prof[xx] = Math.min(prof[xx], top);
+      if (xx < 0 || xx >= TW || Math.abs(i + 0.5) > rad) continue;
+      prof[xx] = Math.min(prof[xx], Math.round(cy - Math.sqrt(rad * rad - (i + 0.5) * (i + 0.5))));
     }
   }
-  for (let x = 0; x < W; x++) {
-    for (let y = prof[x]; y < G; y++) {
-      const edge = y < prof[x] + 2 || (x > 0 && prof[x - 1] > y) ;
-      let c = edge ? farL : far;
-      if (!edge && r() < 0.12) c = farD;
-      p.set(x, y, c);
-    }
-  }
-  // orta agaclar
+  for (let x = 0; x < TW; x++) far.rect(x, prof[x], 1, TG - prof[x], farC);
+  layers.push({ t: far });
+
+  // orta agaclar (koyu tonlu cizgi, geride kalsinlar)
   const cols = {
-    bark: mix(hex('#7a5232'), hex('#2f2622'), t), barkD: mix(hex('#553820'), hex('#1e1816'), t),
-    leaf: mix(hex('#3f8f3a'), hex('#1c3a2e'), t), leafL: mix(hex('#68b84a'), hex('#2c5638'), t), leafD: mix(hex('#2a662a'), hex('#132820'), t),
+    bark: C('#8f6446', '#3a2e2c'), barkL: C('#a8785a', '#463836'), barkD: C('#74503a', '#2c2424'),
+    leaf: C('#5aac4e', '#22443a'), leafL: C('#7cc65e', '#2f5a44'), leafD: C('#468e40', '#18342e'),
   };
   const nTrees = base ? 3 : 4 + Math.floor(r() * 3);
+  const spots = [];
   for (let i = 0; i < nTrees; i++) {
-    let x = Math.floor(r() * (W + 20)) - 20;
-    if (base && x > 60 && x < 300) x = x < 180 ? 10 + Math.floor(r() * 40) : 330 + Math.floor(r() * 40);
-    blockTree(p, r, x, G, 40 + Math.floor(r() * 30), 34 + Math.floor(r() * 14), cols);
+    let x = Math.floor(r() * (TW + 10)) - 10;
+    if (base && x > 30 && x < TW - 40) x = x < TW / 2 ? 2 + Math.floor(r() * 16) : TW - 36 + Math.floor(r() * 20);
+    spots.push(x);
   }
+  spots.sort((a, b) => a - b);
+  for (const x of spots) {
+    const tr = new Tex(TW, TG);
+    const cw = 14 + Math.floor(r() * 6);
+    oak(tr, x, TG, 18 + Math.floor(r() * 14), cw, 9 + Math.floor(r() * 4), cols);
+    layers.push({ t: tr, ol: 'dark' });
+  }
+
   // calilar
-  const bush = mix(hex('#4f9f3c'), hex('#1f3d2c'), t);
-  const bushL = mix(hex('#78c450'), hex('#2e5838'), t);
-  for (let x = 0; x < W;) {
-    const w = 10 + Math.floor(r() * 18); const h = 4 + Math.floor(r() * 8);
-    if (r() < 0.6) {
-      for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-        if ((i === 0 || i === w - 1) && j === 0) continue;
-        p.set(x + i, G - h + j, j < 2 && r() < 0.6 ? bushL : bush);
-      }
+  const bush = C('#62b450', '#244a38'); const bushL = C('#86cc62', '#2f5a44');
+  for (let x = Math.floor(r() * 10); x < TW;) {
+    const w = 5 + Math.floor(r() * 7); const h = 3 + Math.floor(r() * 3);
+    if (r() < 0.55) {
+      const b = new Tex(TW, TG);
+      b.rrect(x, TG - h, w, h + 1, bush, 1);
+      b.rect(x + 1, TG - h, w - 2, 1, bushL);
+      layers.push({ t: b, ol: 'dark' });
     }
-    x += w + Math.floor(r() * 20);
+    x += w + 4 + Math.floor(r() * 14);
   }
-  // zemin: cim + toprak bloklari
-  const grass = mix(hex('#5cb341'), hex('#2d5a34'), t);
-  const grassL = mix(hex('#8ad75c'), hex('#3c7640'), t);
-  const grassD = mix(hex('#3f8a2e'), hex('#1f4024'), t);
-  const dirt = mix(hex('#8b5a2b'), hex('#4a3224'), t * 0.8);
-  const dirtL = mix(hex('#a66d36'), hex('#5a3e2c'), t * 0.8);
-  const dirtD = mix(hex('#6b431f'), hex('#33221a'), t * 0.8);
-  for (let x = 0; x < W; x++) {
-    if (r() < 0.35) p.set(x, G - 1, grassL);
-    if (r() < 0.08) { p.set(x, G - 2, grass); p.set(x, G - 1, grass); }
+
+  // zemin: cim seridi + toprak
+  const gr = new Tex(TW, TH);
+  const grass = C('#78c457', '#2d5a36'); const grassL = C('#98d96c', '#3a6e42'); const grassD = C('#5ea548', '#234a2e');
+  const dirt = C('#a07150', '#4c3428', 0.8); const dirtD = C('#8b5f42', '#3e2a22', 0.8); const deep = C('#7a5238', '#33231d', 0.8);
+  gr.rect(0, TG, TW, TH - TG, dirt);
+  gr.rect(0, TG, TW, 2, grass);
+  gr.rect(0, TG, TW, 1, grassL);
+  for (let x = 0; x < TW; x++) {
+    const k = (x * 7 + variant * 3) % 11;
+    if (k < 4) gr.set(x, TG + 2, grass);
+    if (k === 1) gr.set(x, TG + 3, grassD);
+    if (r() < 0.12) gr.set(x, TG - 1, grassL); // cim tutamlari
   }
-  p.noise(0, G, W, 4, [grassL, grass, grassD], r, [0.3, 0.55, 0.15]);
-  for (let bx = 0; bx < W; bx += 8) {
-    for (let by = G + 4; by < H; by += 8) {
-      const f = 0.92 + r() * 0.14;
-      const deep = by > G + 18 ? 0.86 : 1;
-      p.noise(bx, by, 8, 8, [mul(dirtL, f * deep), mul(dirt, f * deep), mul(dirtD, f * deep)], r, [0.25, 0.55, 0.2]);
-    }
+  // derin toprak bandi (basamakli sinir)
+  for (let x = 0; x < TW; x++) {
+    const y = TG + 11 + ((Math.floor(x / 6) * 5 + variant) % 3);
+    gr.rect(x, y, 1, TH - y, deep);
   }
-  for (let x = 0; x < W; x++) {
-    if (r() < 0.5) p.set(x, G + 4, grassD);
-    if (r() < 0.2) p.set(x, G + 5, grassD);
-  }
-  // taslar
-  const stone = mix(hex('#9a9a9a'), hex('#4a4a56'), t);
-  for (let i = 0; i < 10; i++) {
-    const x = Math.floor(r() * W); const y = G + 8 + Math.floor(r() * 26); const w = 3 + Math.floor(r() * 4);
-    p.rect(x, y, w, 2, stone); p.rect(x + 1, y - 1, w - 2, 1, mul(stone, 1.2)); p.rect(x, y + 2, w, 1, mul(stone, 0.7));
-  }
-  // cicekler ve kucuk mantarlar
+  // seyrek toprak lekeleri
   for (let i = 0; i < 16; i++) {
-    const x = Math.floor(r() * W);
-    const kind = r();
-    if (kind < 0.4) { p.set(x, G - 1, grassD); p.set(x, G - 2, grassD); p.set(x, G - 3, hex(r() < 0.5 ? '#f05a5a' : '#ffd84a')); }
-    else if (kind < 0.55) { p.rect(x, G - 2, 1, 2, hex('#f4e8cc')); p.rect(x - 1, G - 4, 3, 2, mix(hex('#d8433b'), hex('#5a2030'), t)); }
-    else { p.set(x, G - 1, grassL); p.set(x + 1, G - 2, grassL); p.set(x + 2, G - 1, grassL); }
+    const x = Math.floor(r() * TW); const y = TG + 4 + Math.floor(r() * 14);
+    gr.rect(x, y, r() < 0.5 ? 2 : 1, 1, dirtD);
   }
-  return p.canvas();
+  layers.push({ t: gr, ol: 'dark', olF: 0.5 });
+  // cakil taslari (kendi cizgileriyle)
+  const st = new Tex(TW, TH);
+  const stone = C('#c2bab2', '#5a5864'); const stoneD = C('#a39a92', '#48464f');
+  for (let i = 0; i < 7; i++) {
+    const x = Math.floor(r() * (TW - 4)); const y = TG + 6 + Math.floor(r() * 12); const w = 2 + Math.floor(r() * 2);
+    st.rect(x, y, w, 1, stone); st.set(x + w - 1, y, stoneD);
+  }
+  layers.push({ t: st, ol: 'dark', olF: 0.55 });
+  // cicekler
+  const fl = new Tex(TW, TH);
+  for (let i = 0; i < 7; i++) {
+    const x = Math.floor(r() * TW);
+    fl.set(x, TG - 1, grassD);
+    fl.set(x, TG - 2, C(r() < 0.5 ? '#f27a7a' : '#ffd95a', '#7a4060'));
+  }
+  layers.push({ t: fl });
+
+  return compose(PW, PH, layers, 0).canvas();
 }
 
-// ------------------------------------------------------------------ nesneler
+// ------------------------------------------------------------------ us nesneleri
 export function cabin() {
-  const p = new Pix(104, 82);
-  const log = hex('#9a6a3a'); const logL = hex('#bf8a4e'); const logD = hex('#6e4422');
+  const W = 51; const H = 40;
+  const wall = new Tex(W, H);
+  const log = '#b8804e'; const logD = '#966438'; const post = '#cf9a62'; const postD = '#a87a48';
   for (let row = 0; row < 8; row++) {
-    const y = 34 + row * 6;
-    p.rect(8, y, 88, 6, log); p.rect(8, y, 88, 1, logL); p.rect(8, y + 5, 88, 1, logD);
-    for (let k = 0; k < 6; k++) p.set(12 + ((row * 23 + k * 17) % 80), y + 2 + (k % 2), logD);
-    for (const ex of [4, 94]) {
-      p.rect(ex, y, 6, 6, hex('#c89a5a')); p.rect(ex + 1, y + 1, 4, 4, hex('#a8763e')); p.rect(ex + 2, y + 2, 2, 2, hex('#8a5a2a'));
-    }
+    const y = 16 + row * 3;
+    wall.rect(4, y, 43, 2, log); wall.rect(4, y + 2, 43, 1, logD);
   }
-  // kapi
-  p.rect(60, 54, 18, 28, hex('#6a3e1e'));
-  for (let i = 0; i < 3; i++) p.rect(61 + i * 6, 55, 1, 27, hex('#4e2c14'));
-  p.rect(74, 68, 2, 2, hex('#ffd04d'));
-  // pencere
-  p.rect(20, 46, 20, 16, hex('#4e2c14'));
-  p.rect(22, 48, 16, 12, hex('#ffd36a'));
-  p.rect(22, 48, 7, 5, hex('#fff0b0'));
-  p.rect(29, 48, 2, 12, hex('#4e2c14')); p.rect(22, 53, 16, 2, hex('#4e2c14'));
-  // cati (basamakli)
-  const roof = hex('#b04a30'); const roofL = hex('#d0644a'); const roofD = hex('#7c2e1e');
+  wall.rect(2, 16, 3, 24, post); wall.rect(46, 16, 3, 24, post);
+  for (let y = 18; y < 40; y += 3) { wall.rect(2, y, 3, 1, postD); wall.rect(46, y, 3, 1, postD); }
+  const chim = new Tex(W, H);
+  chim.rect(36, 1, 5, 12, '#aaa6b2'); chim.rect(40, 1, 1, 12, '#8e8a98'); chim.rect(35, 1, 7, 2, '#bdb9c4');
+  const roof = new Tex(W, H);
+  const rf = '#cc5a40'; const rfD = '#a8452f';
   for (let s = 0; s < 8; s++) {
-    const y = 4 + s * 4; const w = 26 + s * 11; const x = 52 - w / 2;
-    p.rect(x, y, w, 4, roof); p.rect(x, y, w, 1, roofL); p.rect(x, y + 3, w, 1, roofD);
+    const y = 2 + s * 2; const w = 11 + s * 6; const x = Math.round(25.5 - w / 2);
+    roof.rect(x, y, w, 2, rf); roof.rect(x, y + 1, w, 1, rfD);
   }
-  // baca
-  p.rect(74, 2, 9, 18, hex('#8a8a92'));
-  for (let y = 2; y < 20; y += 4) p.rect(74 + ((y / 4) % 2) * 4, y, 4, 1, hex('#6a6a72'));
-  return p.outline(0.35).canvas();
+  const door = new Tex(W, H);
+  door.rect(30, 26, 9, 14, '#7e4e2e'); door.rect(34, 26, 1, 14, '#68401f'); door.rect(36, 33, 1, 1, '#ffd04d');
+  const win = new Tex(W, H);
+  win.rect(9, 23, 12, 9, '#7e4e2e'); win.rect(10, 24, 10, 7, '#ffe08a'); win.rect(10, 24, 4, 3, '#fff3c4');
+  win.rect(14, 24, 1, 7, '#7e4e2e'); win.rect(10, 27, 10, 1, '#7e4e2e');
+  return compose(W * 2 + 2, H * 2 + 2, [
+    { t: chim, ol: INK }, { t: wall, ol: INK }, { t: roof, ol: INK }, { t: door, ol: INK }, { t: win, ol: INK },
+  ]).canvas();
 }
 
+// ussun sagindaki zindan girisi (tas magara agzi)
 export function mineEntrance() {
-  const p = new Pix(80, 60);
-  const r = rng(42);
-  const st = [hex('#8e8e96'), hex('#76767e'), hex('#a4a4ac'), hex('#62626a')];
-  for (let y = 6; y < 60; y++) {
-    const half = Math.round(Math.sqrt(Math.max(0, 1 - Math.pow((60 - y) / 56, 2))) * 38);
-    for (let x = 40 - half; x < 40 + half; x++) {
-      const k = r();
-      p.set(x, y, k < 0.5 ? st[0] : k < 0.75 ? st[1] : k < 0.9 ? st[2] : st[3]);
-    }
+  const W = 39; const H = 29;
+  const rock = new Tex(W, H);
+  const st = '#a7a3b0'; const stL = '#bdb9c6'; const stD = '#8b8796';
+  rock.ellipse(19.5, 29, 19.5, 27, st);
+  rock.tint((x, y) => {
+    if (!(rock.get(x, y - 1) >>> 24) || !(rock.get(x - 1, y) >>> 24)) return stL;
+    if (!(rock.get(x + 1, y) >>> 24) || x > 32) return stD;
+    return null;
+  });
+  // birkac tas catlagi (duzenli, kumlanma yok)
+  for (const [x, y, w] of [[6, 14, 3], [9, 20, 2], [30, 12, 3], [29, 21, 2], [13, 7, 2], [24, 5, 3]]) rock.rect(x, y, w, 1, stD);
+  const moss = new Tex(W, H);
+  const ms = '#7cc25a'; const msL = '#9ad672';
+  for (let x = 0; x < W; x++) {
+    let top = -1;
+    for (let y = 0; y < H; y++) if (rock.get(x, y) >>> 24) { top = y; break; }
+    if (top < 0 || top > 16) continue;
+    const drip = (x * 5) % 7 < 2 ? 3 : 2;
+    moss.rect(x, top, 1, drip, ms);
+    moss.set(x, top, msL);
   }
-  // yosun
-  for (let x = 6; x < 74; x++) {
-    const half = Math.round(Math.sqrt(Math.max(0, 1 - Math.pow((x - 40) / 38, 2))) * 54);
-    const y = 60 - half;
-    for (let j = 0; j < 3 + (x % 3); j++) if (r() < 0.8) p.set(x, y + j, j === 0 ? hex('#86d65a') : hex('#5cb341'));
-  }
-  // karanlik giris
-  for (let y = 22; y < 60; y++) {
-    const half = y < 30 ? Math.round(Math.sqrt(1 - Math.pow((30 - y) / 9, 2)) * 13) : 13;
-    for (let x = 40 - half; x < 40 + half; x++) p.set(x, y, y > 44 && (x + y) % 6 < 2 ? hex('#1e1824') : hex('#0e0b14'));
-  }
-  // ahsap maden cercevesi
-  const wd = hex('#8a5a2b'); const wdL = hex('#b07a3e');
-  p.rect(24, 22, 4, 38, wd); p.rect(24, 22, 1, 38, wdL);
-  p.rect(52, 22, 4, 38, wd); p.rect(52, 22, 1, 38, wdL);
-  p.rect(20, 18, 40, 5, wd); p.rect(20, 18, 40, 1, wdL);
-  // fener
-  p.rect(57, 26, 4, 5, hex('#ffd04d')); p.rect(57, 25, 4, 1, hex('#3a3a3a'));
-  return p.outline(0.35).canvas();
+  const hole = new Tex(W, H);
+  hole.rrect(13, 11, 13, 18, '#17121f', 3);
+  hole.rect(14, 22, 11, 7, '#211a2b');
+  const frame = new Tex(W, H);
+  const wd = '#b07a44'; const wdD = '#8e5e32';
+  frame.rect(12, 11, 2, 18, wd); frame.rect(25, 11, 2, 18, wd); frame.rect(10, 9, 19, 2, wd); frame.rect(10, 10, 19, 1, wdD);
+  const lamp = new Tex(W, H);
+  lamp.rect(28, 13, 2, 3, '#ffd04d'); lamp.rect(28, 12, 2, 1, '#4a4652');
+  return compose(W * 2 + 2, H * 2 + 2, [
+    { t: rock, ol: INK }, { t: moss, ol: INK }, { t: hole }, { t: frame, ol: INK }, { t: lamp, ol: INK },
+  ]).canvas();
 }
 
 export function signpost() {
-  const p = new Pix(30, 34);
-  p.rect(13, 10, 4, 24, hex('#8a5a2b')); p.rect(13, 10, 1, 24, hex('#b07a3e'));
-  p.rect(2, 3, 24, 10, hex('#b07a3e')); p.rect(2, 3, 24, 1, hex('#d29a5a')); p.rect(2, 12, 24, 1, hex('#7a4a22'));
-  p.rect(26, 5, 2, 6, hex('#b07a3e')); p.rect(28, 7, 1, 2, hex('#b07a3e'));
-  p.rect(5, 6, 14, 1, hex('#5a3418')); p.rect(5, 9, 10, 1, hex('#5a3418'));
-  return p.outline(0.35).canvas();
+  const t = new Tex(14, 16);
+  const post = new Tex(14, 16);
+  post.rect(6, 5, 2, 11, '#a2703f'); post.rect(7, 5, 1, 11, '#875a30');
+  t.rect(0, 1, 11, 5, '#c99258'); t.rect(11, 2, 1, 3, '#c99258'); t.rect(12, 3, 1, 1, '#c99258');
+  t.rect(0, 5, 11, 1, '#a8743e');
+  t.rect(2, 2, 6, 1, '#7a4c2a'); t.rect(2, 4, 4, 1, '#7a4c2a');
+  return compose(30, 34, [{ t: post, ol: INK }, { t, ol: INK }]).canvas();
 }
 
 export function chest(open = false) {
-  const p = new Pix(20, 20);
-  const wood = hex('#a8702e'); const woodL = hex('#c88c44'); const woodD = hex('#74481c');
-  const band = hex('#5a3a1a'); const gold = hex('#ffd04d');
-  const by = 8;
-  p.rect(1, by, 18, 11, wood); p.rect(1, by, 18, 1, woodL); p.rect(1, by + 10, 18, 1, woodD);
-  p.rect(1, by + 4, 18, 1, woodD);
-  p.rect(1, by, 1, 11, band); p.rect(18, by, 1, 11, band);
+  const body = new Tex(9, 9);
+  const wood = '#c88f4c'; const woodD = '#a6713a'; const band = '#6e4626';
+  body.rect(0, 4, 9, 5, wood); body.rect(0, 8, 9, 1, woodD);
+  body.rect(0, 4, 1, 5, band); body.rect(8, 4, 1, 5, band);
+  const lid = new Tex(9, 9);
   if (!open) {
-    p.rect(1, 3, 18, 5, wood); p.rect(1, 3, 18, 1, woodL); p.rect(1, 3, 1, 5, band); p.rect(18, 3, 1, 5, band);
-    p.rect(8, 6, 4, 4, gold); p.rect(9, 8, 2, 1, band);
+    lid.rect(0, 1, 9, 3, '#d49b58'); lid.rect(0, 3, 9, 1, woodD); lid.rect(0, 1, 1, 3, band); lid.rect(8, 1, 1, 3, band);
   } else {
-    p.rect(2, by - 1, 16, 2, gold); p.rect(4, by - 2, 3, 1, hex('#fff3a0')); p.rect(12, by - 2, 2, 1, hex('#fff3a0'));
-    p.rect(1, 0, 18, 4, woodD); p.rect(1, 0, 18, 1, wood);
+    lid.rect(0, 0, 9, 2, woodD); lid.rect(0, 0, 9, 1, '#d49b58');
+    body.rect(1, 3, 7, 1, '#ffd04d'); body.rect(2, 3, 2, 1, '#fff2a8');
   }
-  return p.outline(0.3).canvas();
+  const lock = new Tex(9, 9);
+  if (!open) { lock.rect(4, 3, 1, 2, '#ffd04d'); }
+  return compose(20, 20, [{ t: body, ol: INK }, { t: lid, ol: INK }, { t: lock }]).canvas();
 }
 
 // 3 kareli kamp atesi (yan yana)
 export function campfire() {
   const fw = 26; const fh = 28;
-  const p = new Pix(fw * 3, fh);
+  const out = new Pix(fw * 3, fh);
   const flames = [
-    ['....y.......', '...yy...y...', '..yYy..yy...', '..yYYyyYy...', '.yYwYYYYYy..', '.yYwwYwYYy..', '.yYwwwwYYy..', '..yYwwwYy...', '...yyyyy....'],
-    ['......y.....', '..y...yy....', '..yy.yYy....', '..yYyyYYy...', '.yYYYwYYy...', '.yYwwwYYYy..', '.yYwwwwYYy..', '..yYwwYYy...', '...yyyyy....'],
-    ['...y........', '...yy..y....', '..yYy.yYy...', '.yYYyyYYy...', '.yYwYYwYYy..', '.yYwwwwYYy..', '..YwwwwwYy..', '..yYwwYYy...', '...yyyyy....'],
+    ['...o....', '..oo..o.', '.oyo.oo.', '.oyyooyo', 'oyywyyyo', 'oywwwyyo', '.oywwyo.', '..oooo..'],
+    ['.....o..', '.o..oo..', '.oo.oyo.', 'oyoooyyo', 'oyyywyyo', 'oywwwwyo', '.oywwyo.', '..oooo..'],
+    ['..o.....', '..oo.o..', '.oyooyo.', '.oyyyyyo', 'oyywwyyo', 'oywwwyyo', '.oyywyo.', '..oooo..'],
   ];
   for (let f = 0; f < 3; f++) {
-    const ox = f * fw;
-    // taslar
-    for (let i = 0; i < 6; i++) p.rect(ox + 2 + i * 4, 23 + (i % 2), 3, 3, hex(i % 2 ? '#8a8a92' : '#a2a2aa'));
-    // odunlar
-    for (let i = 0; i < 16; i++) { p.set(ox + 5 + i, 18 + Math.floor(i / 3), hex('#7a4a22')); p.set(ox + 5 + i, 19 + Math.floor(i / 3), hex('#5a3418')); }
-    for (let i = 0; i < 16; i++) { p.set(ox + 20 - i, 18 + Math.floor(i / 3), hex('#8a5a2b')); p.set(ox + 20 - i, 19 + Math.floor(i / 3), hex('#6a3e1e')); }
-    p.map(flames[f].map((r) => r.replace(/y/g, 'a')), { a: '#ff7a1e', Y: '#ffb02e', w: '#fff0a0' }, ox + 7, 9);
+    const stones = new Tex(12, 13);
+    for (let i = 0; i < 4; i++) stones.rrect(i * 3, 11, 3, 2, i % 2 ? '#9e9aa6' : '#b4b0bb', 1);
+    const logs = new Tex(12, 13);
+    for (let i = 0; i < 8; i++) { logs.set(2 + i, 8 + Math.floor(i / 3), '#9a6436'); }
+    for (let i = 0; i < 8; i++) { logs.set(9 - i, 8 + Math.floor(i / 3), '#7e4e2a'); }
+    const fl = new Tex(12, 13);
+    fl.map(flames[f], { o: '#ff8a2e', y: '#ffc23e', w: '#fff1a6' }, 2, 2);
+    const p = compose(fw, fh, [{ t: fl }, { t: logs, ol: INK }, { t: stones, ol: INK }]);
+    for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) { const v = p.get(x, y); if (v) out.set(f * fw + x, y, v); }
   }
-  return { canvas: p.canvas(), fw, fh };
+  return { canvas: out.canvas(), fw, fh };
 }
 
 export function spikes() {
-  const p = new Pix(46, 16);
-  p.rect(0, 12, 46, 4, hex('#6a6a72')); p.rect(0, 12, 46, 1, hex('#8a8a92'));
-  for (let i = 0; i < 7; i++) {
-    const x = 1 + i * 6;
-    for (let j = 0; j < 10; j++) {
-      const half = Math.floor(j / 3.4);
-      for (let k = -half; k <= half; k++) p.set(x + 2 + k, 2 + j, k < 0 ? hex('#d8dce4') : hex('#9aa0ac'));
-    }
-    p.set(x + 2, 1, hex('#ffffff'));
+  const base = new Tex(22, 7);
+  base.rect(0, 5, 22, 2, '#8e8a98'); base.rect(0, 5, 22, 1, '#a9a5b2');
+  const sp = new Tex(22, 7);
+  for (let i = 0; i < 6; i++) {
+    const x = 1 + i * 4 - (i > 2 ? 1 : 0);
+    sp.rect(x + 1, 0, 1, 1, '#eef0f4');
+    sp.rect(x + 1, 1, 1, 2, '#d8dce4'); sp.rect(x + 2, 2, 1, 1, '#aab0bc');
+    sp.rect(x, 3, 2, 2, '#d8dce4'); sp.rect(x + 2, 3, 1, 2, '#aab0bc');
   }
-  return p.outline(0.3).canvas();
+  return compose(46, 16, [{ t: sp, ol: INK }, { t: base, ol: INK }]).canvas();
 }
 
 // asagi inen tas merdiven (zemine oyulmus)
 export function stairsDown() {
-  const p = new Pix(56, 38);
-  const dark = hex('#0d0a12');
-  for (let y = 0; y < 38; y++) {
-    const inset = Math.max(0, 6 - y) * 0;
-    for (let x = 4 + inset; x < 52 - inset; x++) p.set(x, y, dark);
+  const p = new Tex(28, 19);
+  p.rect(1, 0, 26, 19, '#16121c');
+  for (let s = 0; s < 5; s++) {
+    const x = 2 + s * 4; const y = 1 + s * 3; const w = 24 - s * 4;
+    p.rect(x, y, w, 1, mix(hex('#bdb9c6'), hex('#16121c'), s * 0.15));
+    p.rect(x, y + 1, w, 2, mix(hex('#9894a4'), hex('#16121c'), s * 0.15));
   }
-  const stone = hex('#9a9aa2'); const stoneD = hex('#6a6a72'); const stoneL = hex('#bcbcc4');
-  for (let s = 0; s < 6; s++) {
-    const x = 6 + s * 7; const y = 2 + s * 6;
-    const fade = 1 - s * 0.13;
-    p.rect(x, y, 46 - s * 7, 2, mul(stoneL, fade)); p.rect(x, y + 2, 46 - s * 7, 4, mul(stone, fade)); p.rect(x, y + 5, 46 - s * 7, 1, mul(stoneD, fade));
-  }
-  for (let y = 0; y < 38; y++) { p.set(3, y, stoneD); p.set(2, y, stone); p.set(52, y, stoneD); p.set(53, y, stone); }
-  p.rect(0, 0, 56, 2, hex('#5cb341')); p.rect(0, 0, 56, 1, hex('#86d65a'));
-  return p.canvas();
+  p.rect(0, 0, 1, 19, '#8b8796'); p.rect(27, 0, 1, 19, '#8b8796');
+  const grass = new Tex(28, 19);
+  grass.rect(0, 0, 28, 1, '#78c457');
+  return compose(56, 38, [{ t: p }, { t: grass }], 0).canvas();
 }
 
 export function slash() {
-  const p = new Pix(28, 28);
-  for (let a = -1.1; a < 1.1; a += 0.02) {
-    for (let rr = 9; rr < 13; rr++) {
-      const thick = 1 - Math.abs(a) / 1.1;
-      if (rr - 9 > thick * 4) continue;
-      p.set(14 + Math.cos(a) * rr, 14 + Math.sin(a) * rr, rr > 11 ? hex('#ffffff') : hex('#cfe8ff'));
+  const t = new Tex(14, 14);
+  for (let a = -1.15; a <= 1.15; a += 0.04) {
+    const thick = 2.2 * (1 - Math.abs(a) / 1.2);
+    for (let rr = 6.5 - thick; rr <= 6.5; rr += 0.5) {
+      t.set(7 + Math.cos(a) * rr, 7 + Math.sin(a) * rr, rr > 5.6 ? '#ffffff' : '#cfe8ff');
     }
   }
-  return p.canvas();
+  return compose(28, 28, [{ t }], 0).canvas();
 }
 
 export function shadow() {
@@ -411,34 +518,35 @@ export function shadow() {
 }
 
 // ------------------------------------------------------------------ simgeler
+// 12x12 piksel, duz 2-3 ton ve siyah cizgi
 const ICONS = {
-  dal: [['............', '.........gG.', '........gGg.', '.......bb...', '......bBb...', '.....bBb....', '....bBb.....', '...bBb......', '..bBb.......', '.bBb........', '.bb.........', '............'],
-    { b: '#8a5a2b', B: '#b07a3e', g: '#4f9f38', G: '#7cd35a' }],
-  mantar: [['............', '....rrrr....', '..rrRwrrrr..', '.rrwRRRrwrr.', '.rRRRrRRRRr.', '.dddddddddd.', '....ssss....', '....sSss....', '....ssss....', '....sSss....', '...ssssss...', '............'],
-    { r: '#d8433b', R: '#f0665a', w: '#fff6e6', d: '#8a2423', s: '#f4e8cc', S: '#dccaa2' }],
-  diken: [['............', '..........w.', '.........wg.', '........wgg.', '.......wgg..', '......dgg...', '.....dgg....', '....dgg.....', '...dgg......', '..ddg.......', '..dd........', '............'],
-    { w: '#e8f5c8', g: '#9cc45a', d: '#5a7a2c' }],
-  yaprak: [['............', '......LLL...', '....LLvLLL..', '...LvLLLLLN.', '..LvLLLNLNN.', '..LvLLNNNNN.', '.LvLLNNNNND.', '.vLLNNNNDD..', '.vLNNNDDD...', 'vvNNDDD.....', 'v...........', '............'],
-    { L: '#6cc24a', v: '#c8f09a', N: '#4f9f38', D: '#3a7a2c' }],
-  yosun: [['............', '............', '....mMMm....', '..mMMmmMMm..', '.mMmmymmMmm.', '.MmmmmMmmyM.', 'mmMyMmmmMmmm', 'dmmmmMmmmmmd', 'ddmmdmmdmmdd', '.dddddddddd.', '............', '............'],
-    { m: '#5f9a3a', M: '#86c255', y: '#c9e05a', d: '#3e6a2a' }],
-  kalp: [['............', '..AA....AA..', '.AaaA..AaaA.', 'AaGaaAAaaaaA', 'AaGaaggaaaaA', 'AaaagGGgaabA', '.Aaaagga.bA.', '..AaaaaabA..', '...AaaabA...', '....AabA....', '.....AA.....', '............'],
-    { A: '#6b3a1a', a: '#a8642e', G: '#c8ffa0', g: '#62d862', b: '#7a4520' }],
-  iksir: [['............', '.....cc.....', '.....kk.....', '....gkkg....', '...g....g...', '..gRRRRRRg..', '..gRwRRRRg..', '..gRwRRRrg..', '..gRRRRrrg..', '...grrrrg...', '....gggg....', '............'],
-    { c: '#c49a6c', k: '#d8e8f0', g: '#9fc8dc', R: '#e8433b', r: '#b02a26', w: '#ffd0c8' }],
-  kilic_pas: [null, { W: '#c8a088', B: '#8a5a44', G: '#6a4a3a', h: '#5a3a22', P: '#8a6a4a' }],
-  kilic_tahta: [null, { W: '#e0b070', B: '#a8743a', G: '#7a4a22', h: '#6a3a1a', P: '#a8743a' }],
-  kilic_diken: [null, { W: '#d4f4a8', B: '#5a9a3a', G: '#9cc45a', h: '#4a3a22', P: '#7cd35a' }],
-  kask_yosun: [['............', '............', '...mmmmmm...', '..mMMMMMMm..', '.mMMyMMMMMm.', '.mMMMMMMMMm.', '.mmmmmmmmmm.', '.mm......mm.', '.mm......mm.', '.dd......dd.', '............', '............'],
-    { m: '#5f9a3a', M: '#86c255', y: '#c9e05a', d: '#3e6a2a' }],
-  gogus_yosun: [null, { m: '#5f9a3a', M: '#86c255', y: '#c9e05a', d: '#3e6a2a' }],
-  gogus_kabuk: [null, { m: '#7a4a22', M: '#a8702e', y: '#d29a5a', d: '#5a3418' }],
+  dal: [['............', '..........g.', '.........gg.', '........bb..', '.......bB...', '......bB....', '.....bB.....', '....bB......', '...bB.......', '..bB........', '.bB.........', '............'],
+    { b: '#b8804e', B: '#8e5e32', g: '#7cc25a' }],
+  mantar: [['............', '....rrrr....', '..rrwrrrrr..', '.rrwwrrrwrr.', '.rrrrrrrrrr.', '.dddddddddd.', '....ssss....', '....ssss....', '....ssss....', '....ssSs....', '...ssssss...', '............'],
+    { r: '#e8564a', w: '#fff3e2', d: '#b13c34', s: '#f2e4c4', S: '#d8c49c' }],
+  diken: [['............', '..........w.', '.........wg.', '........wgg.', '.......wgg..', '......ggg...', '.....ggd....', '....ggd.....', '...ggd......', '..gdd.......', '..dd........', '............'],
+    { w: '#eef8d4', g: '#a8cc66', d: '#7a9a44' }],
+  yaprak: [['............', '......LLL...', '....LLvLLL..', '...LvLLLLLD.', '..LvLLLLLDD.', '..LvLLLLDDD.', '.LvLLLLDDD..', '.vLLLLDDD...', '.vLLLDDD....', 'vvLDDD......', 'v...........', '............'],
+    { L: '#74c452', v: '#c8f0a0', D: '#55a040' }],
+  yosun: [['............', '............', '....mMMm....', '..mMMmmMMm..', '.mMmmmmmMmm.', '.MmmmmMmmmM.', 'mmMmMmmmMmmm', 'dmmmmmmmmmmd', 'dddddddddddd', '.dddddddddd.', '............', '............'],
+    { m: '#68a542', M: '#8acb5c', d: '#4c8434' }],
+  kalp: [['............', '..AA....AA..', '.AaaA..AaaA.', 'AaGaaAAaaaaA', 'AaGaaaaaaaaA', 'AaaagGGgaaaA', '.Aaaagga.aA.', '..AaaaaaaA..', '...AaaaaA...', '....AaaA....', '.....AA.....', '............'],
+    { A: '#7a4524', a: '#b0703a', G: '#d2ffaa', g: '#6ad86a' }],
+  iksir: [['............', '.....cc.....', '.....kk.....', '....gkkg....', '...g....g...', '..gRRRRRRg..', '..gRwRRRRg..', '..gRwRRRRg..', '..gRRRRRrg..', '...grrrrg...', '....gggg....', '............'],
+    { c: '#c99a6a', k: '#dcecf4', g: '#a8d0e2', R: '#ec4c42', r: '#bf3630', w: '#ffd4cc' }],
+  kilic_pas: [null, { W: '#c9a48c', B: '#9c6e56', G: '#6e4e3e', h: '#5e3e26', P: '#8e6e4e' }],
+  kilic_tahta: [null, { W: '#e4b678', B: '#b88046', G: '#7e4e2a', h: '#6e3e1e', P: '#b88046' }],
+  kilic_diken: [null, { W: '#daf6b0', B: '#68a842', G: '#a8cc66', h: '#4e3e26', P: '#86d462' }],
+  kask_yosun: [['............', '............', '...mmmmmm...', '..mMMMMMMm..', '.mMMMMMMMMm.', '.mMMMMMMMMm.', '.mmmmmmmmmm.', '.mm......mm.', '.mm......mm.', '.dd......dd.', '............', '............'],
+    { m: '#68a542', M: '#8acb5c', d: '#4c8434' }],
+  gogus_yosun: [null, { m: '#68a542', M: '#8acb5c', y: '#b8e07a', d: '#4c8434' }],
+  gogus_kabuk: [null, { m: '#86522a', M: '#b07a40', y: '#d4a060', d: '#68401f' }],
   bot_yosun: [['............', '............', '............', '..mm....mm..', '..mM....mM..', '..mM....mM..', '..mM....mM..', '..mMm...mMm.', '.mMMMm.mMMMm', '.ddddd.ddddd', '............', '............'],
-    { m: '#5f9a3a', M: '#86c255', d: '#3e6a2a' }],
-  tilsim_yaprak: [['............', '..s......s..', '...s....s...', '....s..s....', '.....ss.....', '.....oo.....', '....oLLo....', '...oLvLLo...', '...oLLvLo...', '....oLLo....', '.....oo.....', '............'],
-    { s: '#d8c890', o: '#c89a3a', L: '#6cc24a', v: '#c8f09a' }],
+    { m: '#68a542', M: '#8acb5c', d: '#4c8434' }],
+  tilsim_yaprak: [['............', '..s......s..', '...s....s...', '....s..s....', '.....ss.....', '.....oo.....', '....oLLo....', '...oLvLLo...', '...oLLLLo...', '....oLLo....', '.....oo.....', '............'],
+    { s: '#dccc96', o: '#d0a040', L: '#74c452', v: '#c8f0a0' }],
   para: [['............', '....oooo....', '...oYYYYo...', '..oYyYYYYo..', '..oYYBBYYo..', '..oYYBYBYo..', '..oYYBBYYo..', '..oYYBYBYo..', '...oYBBYo...', '....oooo....', '............', '............'],
-    { o: '#c8901a', Y: '#ffd04d', y: '#fff3a0', B: '#b07a1a' }],
+    { o: '#d29a22', Y: '#ffd04d', y: '#fff3a8', B: '#b8801e' }],
 };
 const SWORD = ['............', '...........W', '..........WB', '.........WB.', '........WB..', '.......WB...', '..G...WB....', '...G.WB.....', '....G.......', '...h.G......', '..h...G.....', '.P..........'];
 const CHESTPLATE = ['............', '.mmm....mmm.', '.mMMmmmmMMm.', '.mMMMMMMMMm.', '..mMMyMMMm..', '..mMMMMMMm..', '..mMMMMMMm..', '..mMMMMMMm..', '..mmmmmmmm..', '..dddddddd..', '............', '............'];
@@ -451,7 +559,7 @@ export function iconUrl(name) {
   if (!rows) rows = name.startsWith('kilic') ? SWORD : CHESTPLATE;
   const p = new Pix(14, 14);
   p.map(rows, def[1], 1, 1);
-  p.outline(0.3);
+  p.outline(INK);
   iconCache[name] = p.canvas().toDataURL();
   return iconCache[name];
 }

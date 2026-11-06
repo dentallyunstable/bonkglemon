@@ -4,14 +4,16 @@ Kullanim: python3 tools/gen_glemons.py assets/glemons [onizleme.png]
 
 Kurallar (Oyun Tasarim Belgesi, bolum 16):
 - 1 texel = 2x2 piksel (karakterlerin yuz izgarasi gibi)
-- her renk icin birkac ton, 1 piksel dis cizgi = komsu rengin cok koyusu
+- duz renkler, malzeme basina 2-3 ton, rastgele golgelendirme yok
+- 1 piksel siyaha yakin dis cizgi (karakterlerin cizgisi gibi)
 - Glemonlar sola bakar (oyuncu solda durur)
 Cikti: her Glemon icin <anim>.png ve <anim>_parlak.png yatay seritleri + glemons.json
 """
-import colorsys, json, os, random, sys
+import colorsys, json, os, sys
 from PIL import Image
 
 ANIMS = ['durma', 'yurume', 'saldiri', 'hasar']
+INK = (16, 12, 20, 255)  # karakterlerin siyah cizgisine yakin
 
 
 def hx(h):
@@ -31,59 +33,58 @@ def shiny(c, shift=0.38):
 # ---------------------------------------------------------------- texel haritalari
 SPECIES = {
     'kutukcuk': {
-        'pal': {'m': '#7cc04a', 'M': '#4f8f2e', 'T': '#f4e2b8', 't': '#e4c48e', 'q': '#c99e66',
-                'A': '#e0953f', 'a': '#c4742e', 'b': '#9c5626', 'B': '#7a3f1c', 'g': '#5c2c14',
-                'w': '#ffffff', 'k': '#1b1b1b', 'p': '#ec9478', 'o': '#4a2010', 'l': '#5c2c14'},
+        'pal': {'m': '#8ccc5e', 'M': '#62a844', 'T': '#f4e0b4', 't': '#dcbf88', 'q': '#d29550',
+                'A': '#e4a35c', 'a': '#cc8646', 'b': '#ad6a34', 'w': '#ffffff', 'k': '#100c14',
+                'p': '#f4a08c', 'o': '#5a2a14', 'l': '#7a4424'},
         'map': [
-            "...m.Mm...",
-            "..TTtTTq..",
-            ".TtqqtTTq.",
-            "qtTTTTttTq",
-            "BqttTTttqa",
-            "BbbaAAAaaa",
-            "BgbaAAgaaa",
-            "BgwkaAwkaa",
-            "BbkkaAkkaa",
-            "BbpaooAapa",
-            "BgbaAAgaga",
-            "BgbaAAgaga",
-            "BbbaAAgaaa",
-            "BbgaAAaaga",
-            ".BbbaaaaA.",
+            "....mM.m..",
+            "...mMmM...",
+            "..qTTTTq..",
+            ".qTTttTTq.",
+            "qTTtTTtTTq",
+            "qTTTttTTTq",
+            "AAaaaaaaab",
+            "AAabaaabab",
+            "Awkaaawkab",
+            "AkkaaakkAb",
+            "ApaaooaApb",
+            "AAaaaaaaab",
+            "AAabaaabab",
+            "AAabaaaaab",
+            ".Aaaaabaa.",
             ".ll....ll.",
         ],
         'fx': 'star',
     },
     'patlakmantar': {
-        'pal': {'C': '#f0665a', 'c': '#d8433b', 'd': '#b5332e', 'D': '#8a2423', 'w': '#fff6e6',
-                'W': '#e9d3b8', 's': '#f4e8cc', 'S': '#dccaa2', 'z': '#c2ab80', 'u': '#b89a78',
-                'k': '#1b1b1b', 'o': '#5a3a2a', 'p': '#f0a0a0', 'l': '#a8946c'},
+        'pal': {'C': '#ec5a4c', 'd': '#c4443a', 'w': '#fff4e4', 'u': '#caa888', 's': '#f4e8cc',
+                'S': '#dcc9a0', 'k': '#100c14', 'o': '#5a3a2a', 'p': '#f4a0a0', 'l': '#a8946c'},
         'map': [
-            "...cCCc...",
-            ".cCwWCCcc.",
-            "cCCWwcCwdc",
-            "cwccccdWdD",
-            "dWcdcddddD",
-            "DDuuuuuuDD",
-            "..ssssSz..",
-            "..wkswkSz.",
-            "..psooSpz.",
-            "..ssssSzz.",
+            "...CCCC...",
+            ".CCwwCCCC.",
+            "CCCwwCCwwC",
+            "CwwCCCCwwd",
+            "dddCCddddd",
+            "..uuuuuu..",
+            "..ssssSS..",
+            "..wkswkS..",
+            "..psooSp..",
+            "..ssssSS..",
             "..ll..ll..",
         ],
         'fx': 'spores',
     },
     'dikentavsan': {
-        'pal': {'H': '#a6d47a', 'g': '#7fb05a', 'G': '#5d8c42', 'e': '#e8a0a8', 't': '#d9c48a',
-                'T': '#9c8550', 'c': '#ece6c8', 'w': '#ffffff', 'k': '#1b1b1b', 'p': '#e88a9a',
-                'l': '#44692f'},
+        'pal': {'H': '#a8d880', 'g': '#80b45c', 'G': '#62944a', 'e': '#eca4ac', 't': '#e0cc92',
+                'T': '#b09a62', 'c': '#f0eacc', 'w': '#ffffff', 'k': '#100c14', 'p': '#ec8c9c',
+                'l': '#4c7434'},
         'map': [
             "..Hg.Hg.....",
             "..He.He.....",
             "..ge.ge..t.t",
             ".gHHggg.tTtT",
             "gHwkgggHgTgT",
-            "ggkkgggHgggg",
+            "ggkkggggggGg",
             "pggcggggggGc",
             ".gcccgggGGcc",
             "..ccgggGGGc.",
@@ -92,35 +93,33 @@ SPECIES = {
         'fx': 'thorn',
     },
     'yaprakbocek': {
-        'pal': {'a': '#2c3a1f', 'h': '#6a9440', 'j': '#476a2c', 'H': '#a6e07a', 'L': '#6cc24a',
-                'N': '#4f9f38', 'D': '#3a7a2c', 'v': '#c8f09a', 'k': '#1b1b1b', 'w': '#ffffff',
-                'o': '#1f2a14', 'l': '#2c3a1f'},
+        'pal': {'a': '#34442a', 'h': '#72a048', 'L': '#78c856', 'v': '#ccf2a4', 'D': '#58a442',
+                'k': '#100c14', 'w': '#ffffff', 'o': '#2a3a1c', 'l': '#34442a'},
         'map': [
             ".a..a.......",
-            "..a.a.HHLL..",
-            ".jhhhHHvLLN.",
-            "jwkhhHLLvLNN",
-            "jkkhjLvLLNND",
-            ".jojDNNNNDD.",
+            "..a.a.LLLL..",
+            ".hhhhLLvLLD.",
+            "hwkhhLvLLLDD",
+            "hkkhLvLLLDDD",
+            ".hoh.DDDDDD.",
             "..l.l.l.l...",
         ],
         'fx': 'leaf',
     },
     'yosunbaba': {
-        'pal': {'n': '#93cc5c', 'm': '#6fae45', 'M': '#4d8a30', 'h': '#c2c4ba', 's': '#9a9c94',
-                'S': '#76786f', 'D': '#5a5c55', 'b': '#f0f0e4', 'k': '#1b1b1b', 'w': '#ffffff',
-                'l': '#5a5c55'},
+        'pal': {'n': '#9cd466', 'm': '#72b44a', 'h': '#cdcfc6', 's': '#a6a89e', 'S': '#84867c',
+                'b': '#f4f4e8', 'k': '#100c14', 'w': '#ffffff', 'l': '#5e6058'},
         'map': [
             "...nmmn...",
-            "..nmMmmn..",
+            "..nmmmmn..",
             ".shhsssSS.",
-            "shbbsbbSSD",
-            "shkwskwsSD",
-            "ssssssssSD",
-            "snmnmmnmMD",
-            ".nmMmnmMM.",
-            "..mMnmMm..",
-            "...mMmM...",
+            "shbbsbbSSS",
+            "shkwskwsSS",
+            "ssssssssSS",
+            "snmnmmnmmS",
+            ".nmmmnmmm.",
+            "..mmnmmm..",
+            "...mmmm...",
             "..l....l..",
         ],
         'fx': 'heal',
@@ -130,26 +129,34 @@ SPECIES = {
 
 def boss_agacbasi():
     """Agacbasi: tepesi yaprak, govdesi kizgin yuzlu kutuk, dal kollu dev agac."""
-    rnd = random.Random(7)
     W, H = 26, 34
     grid = [['.'] * W for _ in range(H)]
-    leaf = ['L1', 'L2', 'L3', 'L4']
-    # yaprak tacı (elips)
+    # yaprak taci (elips): ust sira acik, alt ve sag koyu, duz bantlar
     cx, cy, rx, ry = 13, 8, 12.5, 8.5
     for y in range(H):
         for x in range(W):
-            d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-            if d <= 1 and rnd.random() > (0.18 if d > 0.82 else 0):
-                shade = 0.55 * (y / (cy + ry)) + 0.35 * (x / W) + rnd.uniform(-0.25, 0.25)
-                grid[y][x] = leaf[max(0, min(3, int((1 - shade) * 4)))]
+            d = ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2
+            if d <= 1:
+                grid[y][x] = 'L2'
+    for y in range(H):
+        for x in range(W):
+            if grid[y][x] != 'L2':
+                continue
+            if y == 0 or grid[y - 1][x] == '.' or (y < 6 and x < 9):
+                grid[y][x] = 'L1'
+            elif y >= 13 or (x >= 20 and y >= 7):
+                grid[y][x] = 'L3'
+    # birkac yaprak kumesi cizgisi (duzenli)
+    for x, y in [(6, 6), (7, 6), (15, 4), (16, 4), (19, 9), (20, 9), (4, 11), (5, 11), (11, 11), (12, 11)]:
+        grid[y][x] = 'L3'
     # govde
     for y in range(12, 31):
         for x in range(7, 19):
             if (y < 14 and (x < 8 or x > 17)):
                 continue
             t = 'B1' if x <= 8 else ('B3' if x >= 16 else 'B2')
-            if x in (10, 14) and rnd.random() < 0.55:
-                t = 'G'
+            if x in (10, 14) and (y // 2) % 2 == 0 and y > 20:
+                t = 'B3'
             grid[y][x] = t
     # dal kollar
     for i, (x, y) in enumerate([(6, 19), (5, 18), (4, 18), (3, 17), (2, 16), (2, 15), (1, 14)]):
@@ -181,10 +188,9 @@ def boss_agacbasi():
     legs = [(7, 31), (8, 31), (6, 32), (7, 32), (5, 33), (6, 33), (17, 31), (18, 31), (18, 32), (19, 32), (19, 33), (20, 33)]
     for x, y in legs:
         grid[y][x] = 'l'
-    pal = {'L1': '#8fd05a', 'L2': '#6cb844', 'L3': '#4f9a34', 'L4': '#3a7a28', 'B1': '#a8693a',
-           'B2': '#8a5430', 'B3': '#6a3c20', 'G': '#4e2a14', 'k': '#1b1b1b', 'Y': '#ffd34d',
-           'o': '#2e160a', 'w': '#f4ecd8', 'l': '#5c3218'}
-    # tek harfli haritaya cevir
+    pal = {'L1': '#90d462', 'L2': '#6cb84a', 'L3': '#4e963a', 'B1': '#b0743e',
+           'B2': '#94603a', 'B3': '#74482a', 'k': '#100c14', 'Y': '#ffd34d',
+           'o': '#2e160a', 'w': '#f4ecd8', 'l': '#64381c'}
     keymap = {k: chr(65 + i) for i, k in enumerate(pal)}
     keymap['l'] = 'l'
     rows = [''.join('.' if c == '.' else keymap[c] for c in r) for r in grid]
@@ -213,12 +219,9 @@ def texel_layer(rows, pal, only=None, skip=None, shiny_on=False):
 def outlined(px):
     out = dict(px)
     for (x, y), c in px.items():
-        dark = tuple(int(v * 0.28) for v in c[:3]) + (255,)
         for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if n not in px:
-                prev = out.get(n)
-                if prev is None or sum(dark[:3]) < sum(prev[:3]):
-                    out[n] = dark
+                out[n] = INK
     return out
 
 

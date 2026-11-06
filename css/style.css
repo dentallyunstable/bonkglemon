@@ -252,7 +252,10 @@ html, body {
 }
 .ebar .bar { height: calc(3.5 * var(--u)); margin-top: calc(0.8 * var(--u)); }
 .ebar .bar.atb { height: calc(2 * var(--u)); margin-top: calc(1 * var(--u)); }
-.ebar .nm { white-space: nowrap; }
+.ebar .nm {
+  white-space: nowrap; display: inline-block; color: #fff4c8;
+  background: rgba(14, 10, 20, 0.6); padding: 0 calc(2 * var(--u)); border-radius: calc(1.5 * var(--u));
+}
 .ebar.boss { width: calc(70 * var(--u)); font-size: calc(6 * var(--u)); }
 .target {
   position: absolute; transform: translate(-50%, -100%);
