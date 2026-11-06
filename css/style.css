@@ -104,7 +104,7 @@ html, body {
   display: flex; justify-content: space-between; align-items: flex-start; gap: calc(4 * var(--u));
 }
 .hud-card {
-  background: var(--panel);
+  background: var(--panel-solid);
   box-shadow: 0 0 0 calc(1 * var(--u)) var(--edge), inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.06);
   padding: calc(2 * var(--u)) calc(4 * var(--u)) calc(3 * var(--u));
   min-width: calc(86 * var(--u));
