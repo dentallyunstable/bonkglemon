@@ -59,6 +59,12 @@ const SFX = {
   win: () => [523, 659, 784].forEach((f, i) => tone(f, 0.12, { delay: i * 0.1, vol: 0.08 })),
   stairs: () => [400, 340, 280, 220].forEach((f, i) => tone(f, 0.08, { delay: i * 0.07, vol: 0.06, type: 'triangle' })),
   vanish: () => tone(200, 0.5, { slide: 900, vol: 0.06, type: 'sine' }),
+  mine: () => { noise(0.06, { freq: 2600, vol: 0.14, q: 2 }); tone(140, 0.05, { vol: 0.06, type: 'triangle' }); },
+  break: () => { noise(0.16, { freq: 700, vol: 0.2 }); tone(110, 0.12, { slide: -50, vol: 0.08, type: 'triangle' }); },
+  gather: () => { noise(0.1, { freq: 3000, vol: 0.08, q: 0.7 }); tone(660, 0.08, { delay: 0.06, vol: 0.06, type: 'sine' }); },
+  craft: () => { noise(0.05, { freq: 1800, vol: 0.12 }); noise(0.05, { freq: 1800, vol: 0.12, delay: 0.12 }); tone(784, 0.12, { delay: 0.22, vol: 0.07 }); },
+  smelt: () => { noise(0.3, { freq: 400, vol: 0.08, q: 0.5 }); tone(523, 0.1, { delay: 0.2, vol: 0.06, type: 'sine' }); },
+  boom: () => { noise(0.6, { freq: 220, vol: 0.3, q: 0.4 }); tone(70, 0.5, { slide: -30, vol: 0.14, type: 'sawtooth' }); },
 };
 
 export function sfx(name) {

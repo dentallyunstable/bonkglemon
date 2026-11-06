@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.1';
+export const VERSION = '0.2';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -17,7 +17,7 @@ export const CHARACTERS = [
 // Oyuncunun kullandigi karakter animasyonlari (yan gorunum)
 export const CHAR_ANIMS = ['idle', 'walk', 'run', 'stab', 'punch', 'hurt', 'death', 'drinkpotion',
   'eat', 'cheer', 'joy', 'levelup', 'sit', 'vanish', 'ninjadash', 'jump', 'sneakwalk', 'surprise',
-  'spin', 'totem', 'wave'];
+  'spin', 'totem', 'wave', 'mine', 'placeblock'];
 
 export const RARITY = {
   siradan: { name: 'Sıradan', color: '#c4c4bc' },
@@ -31,9 +31,9 @@ export const SKILLS = [
   { key: 'savunma', name: 'Savunma', desc: 'Hasar alınca ve kaçınınca artar. DEF.' },
   { key: 'can', name: 'Can', desc: 'Her savaşta artar. Her seviye +10 can.' },
   { key: 'okculuk', name: 'Okçuluk', soon: '0.5' },
-  { key: 'madencilik', name: 'Madencilik', soon: '0.2' },
-  { key: 'toplama', name: 'Toplama', soon: '0.2' },
-  { key: 'uretim', name: 'Üretim', soon: '0.2' },
+  { key: 'madencilik', name: 'Madencilik', desc: 'Maden Ocağı\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
+  { key: 'toplama', name: 'Toplama', desc: 'Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
+  { key: 'uretim', name: 'Üretim', desc: 'Evindeki Masa, Fırın ve Kazan\'da üretince artar. Yeni tarifler açar.' },
   { key: 'insa', name: 'İnşa', soon: '0.3' },
   { key: 'sans', name: 'Şans', soon: '0.5' },
   { key: 'bag', name: 'Glemon Bağı', soon: '0.4' },
@@ -94,18 +94,54 @@ export const SHINY_CHANCE = 1 / 500;
 export const floorMult = (floor) => 1 + 0.22 * (floor - 1);
 
 // ---------------------------------------------------------------- Esyalar
-// kind: malzeme | tuketim | silah | kask | gogus | bot | tilsim
+// kind: malzeme | tuketim | silah | kask | gogus | bot | tilsim | kazma
 export const ITEMS = {
-  dal: { name: 'Dal parçası', kind: 'malzeme', rarity: 'siradan', icon: 'dal', desc: 'Kütükçükten düşer. Tahta eşyalar için (0.2).' },
-  mantar: { name: 'Mantar şapkası', kind: 'malzeme', rarity: 'siradan', icon: 'mantar', desc: 'Çorba ve yem malzemesi (0.2).' },
+  // ---- dusen malzemeler
+  dal: { name: 'Dal parçası', kind: 'malzeme', rarity: 'siradan', icon: 'dal', desc: 'Kütükçükten düşer, zindanda da toplanır. Tahta eşyaların ana malzemesi.' },
+  mantar: { name: 'Mantar şapkası', kind: 'malzeme', rarity: 'siradan', icon: 'mantar', desc: 'Patlakmantardan düşer. Çorba ve Bonk Bombası malzemesi.' },
   diken: { name: 'Diken', kind: 'malzeme', rarity: 'siradan', icon: 'diken', desc: 'Dikentavşandan düşer.' },
   yaprak_kanadi: { name: 'Yaprak kanadı', kind: 'malzeme', rarity: 'nadir', icon: 'yaprak', desc: 'Yaprakböcekten düşer. Hafif ve sağlam.' },
   antik_yosun: { name: 'Antik yosun', kind: 'malzeme', rarity: 'epik', icon: 'yosun', desc: 'Yosunbabanın sakalından. Can Tılsımı malzemesi.' },
   agac_kalbi: { name: 'Ağaç Kalbi', kind: 'malzeme', rarity: 'nadir', icon: 'kalp', bound: true, desc: 'Ağaçbaşının çekirdeği. Takas edilemez.' },
+  // ---- maden
+  tas: { name: 'Taş parçası', kind: 'malzeme', rarity: 'siradan', icon: 'tas', desc: 'Maden Ocağında kazılır. Taş eşyalar ve Taş Tuğla.' },
+  kum: { name: 'Kum', kind: 'malzeme', rarity: 'siradan', icon: 'kum', desc: 'Ocağın üst katlarında. Fırında şişe ve cam olur.' },
+  komur: { name: 'Kömür', kind: 'malzeme', rarity: 'siradan', icon: 'komur', desc: 'Fırın yakıtı ve Bonk Bombası malzemesi.' },
+  demir_cevheri: { name: 'Demir cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'demir_cevheri', desc: 'Ocağın derinlerinde (Derinlik 2+). Fırında külçe olur.' },
+  demir_kulcesi: { name: 'Demir külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'kulce', desc: 'Fırında eritilir. Demir eşyaların ana malzemesi.' },
+  // ---- toplama
+  sifali_ot: { name: 'Şifalı ot', kind: 'malzeme', rarity: 'siradan', icon: 'ot', desc: 'Zindanda toplanır. İksir ve çorba malzemesi.' },
+  bogurtlen: { name: 'Böğürtlen', kind: 'malzeme', rarity: 'siradan', icon: 'bogurtlen', desc: 'Zindanda toplanır. Glemon yemi malzemesi (0.4).' },
+  bal: { name: 'Bal', kind: 'malzeme', rarity: 'nadir', icon: 'bal', desc: 'Toplarken nadiren bulunur. Özel Glemon yemi malzemesi (0.4).' },
+  // ---- uretilenler
+  bos_sise: { name: 'Boş şişe', kind: 'malzeme', rarity: 'siradan', icon: 'sise', desc: 'Fırında kumdan yapılır. İksir şişesi.' },
+  tahta_kalas: { name: 'Tahta Kalas', kind: 'malzeme', rarity: 'siradan', icon: 'kalas', desc: 'İnşa bloğu. 0.3 sürümünde üssüne koyabileceksin.' },
+  tas_tugla: { name: 'Taş Tuğla', kind: 'malzeme', rarity: 'siradan', icon: 'tugla', desc: 'İnşa bloğu. 0.3 sürümünde üssüne koyabileceksin.' },
+  cam: { name: 'Cam', kind: 'malzeme', rarity: 'siradan', icon: 'cam', desc: 'İnşa bloğu (pencere). 0.3 sürümünde.' },
+  // ---- tuketilebilir
   iksir_k: { name: 'Küçük Can İksiri', kind: 'tuketim', rarity: 'siradan', icon: 'iksir', heal: 0.25, anim: 'drinkpotion', desc: 'Canının %25\'ini doldurur.' },
+  mantar_corbasi: { name: 'Mantar Çorbası', kind: 'tuketim', rarity: 'siradan', icon: 'corba', heal: 0.3, anim: 'eat', desc: 'Canının %30\'unu doldurur.' },
+  bonk_bombasi: { name: 'Bonk Bombası', kind: 'tuketim', rarity: 'nadir', icon: 'bomba', bomb: true, desc: 'Savaşta bütün Glemonlara vurur, madende 3×3 bloğu tek seferde kırar.' },
+  // ---- silahlar
   pasli_kilic: { name: 'Paslı Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_pas', power: 4, desc: 'Herkesin ilk kılıcı.' },
-  tahta_kilic: { name: 'Tahta Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_tahta', power: 6, desc: 'Kütükçükten düşer.' },
+  tahta_kilic: { name: 'Tahta Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_tahta', power: 6, desc: 'Kütükçükten düşer ya da Üretim Masasında yapılır.' },
   diken_kilici: { name: 'Diken Kılıcı', kind: 'silah', rarity: 'nadir', icon: 'kilic_diken', power: 9, req: ['saldiri', 5], desc: 'Dikentavşandan çok nadir düşer.' },
+  tas_kilic: { name: 'Taş Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_tas', power: 10, req: ['saldiri', 10], desc: 'Üretim Masasında yapılır.' },
+  demir_kilic: { name: 'Demir Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_demir', power: 15, req: ['saldiri', 20], desc: 'Üretim Masasında yapılır.' },
+  // ---- kazmalar
+  tahta_kazma: { name: 'Tahta Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_tahta', pick: 1, desc: 'Herkesin ilk kazması.' },
+  tas_kazma: { name: 'Taş Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_tas', pick: 2, req: ['madencilik', 10], desc: 'İki kat hızlı kazar.' },
+  demir_kazma: { name: 'Demir Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_demir', pick: 4, req: ['madencilik', 20], desc: 'Dört kat hızlı kazar.' },
+  // ---- zirhlar
+  tahta_kask: { name: 'Tahta Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_tahta', def: 2, set: 'tahta', desc: 'Üretim Masasında yapılır.' },
+  tahta_gogus: { name: 'Tahta Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_tahta', def: 3, set: 'tahta', desc: 'Üretim Masasında yapılır.' },
+  tahta_bot: { name: 'Tahta Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_tahta', def: 1, set: 'tahta', desc: 'Üretim Masasında yapılır.' },
+  tas_kask: { name: 'Taş Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_tas', def: 3, set: 'tas', req: ['savunma', 10], desc: 'Üretim Masasında yapılır.' },
+  tas_gogus: { name: 'Taş Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_tas', def: 6, set: 'tas', req: ['savunma', 10], desc: 'Üretim Masasında yapılır.' },
+  tas_bot: { name: 'Taş Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_tas', def: 3, set: 'tas', req: ['savunma', 10], desc: 'Üretim Masasında yapılır.' },
+  demir_kask: { name: 'Demir Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_demir', def: 5, set: 'demir', req: ['savunma', 20], desc: 'Üretim Masasında yapılır.' },
+  demir_gogus: { name: 'Demir Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_demir', def: 10, set: 'demir', req: ['savunma', 20], desc: 'Üretim Masasında yapılır.' },
+  demir_bot: { name: 'Demir Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_demir', def: 5, set: 'demir', req: ['savunma', 20], desc: 'Üretim Masasında yapılır.' },
   yosun_kask: { name: 'Yosun Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_yosun', def: 2, set: 'yosun', desc: 'Yosunbabadan düşer, sandıklarda da çıkabilir.' },
   yosun_gogus: { name: 'Yosun Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_yosun', def: 4, set: 'yosun', desc: 'Yosunbabadan düşer, sandıklarda da çıkabilir.' },
   yosun_bot: { name: 'Yosun Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_yosun', def: 2, spd: 5, set: 'yosun', desc: 'Sandıklarda bulunur.' },
@@ -113,10 +149,15 @@ export const ITEMS = {
   yaprak_tilsimi: { name: 'Yaprak Tılsımı', kind: 'tilsim', rarity: 'nadir', icon: 'tilsim_yaprak', spd: 15, desc: 'Hız +15.' },
 };
 
-export const SETS = { yosun: { pieces: 3, hp: 15, name: 'Yosun seti' } };
+export const SETS = {
+  yosun: { pieces: 3, hp: 15, name: 'Yosun seti', bonus: '+15 can' },
+  tahta: { pieces: 3, name: 'Tahta seti', bonus: 'bonus yok' },
+  tas: { pieces: 3, hp: 5, name: 'Taş seti', bonus: '+5 can' },
+  demir: { pieces: 3, defPct: 0.1, name: 'Demir seti', bonus: 'Savunma +%10' },
+};
 
 export const SLOTS = [
-  ['silah', 'Silah'], ['kask', 'Kask'], ['gogus', 'Göğüslük'], ['bot', 'Bot'], ['tilsim', 'Tılsım'],
+  ['silah', 'Silah'], ['kask', 'Kask'], ['gogus', 'Göğüslük'], ['bot', 'Bot'], ['tilsim', 'Tılsım'], ['kazma', 'Kazma'],
 ];
 
 export const BAG_SIZE = 20;
@@ -124,10 +165,12 @@ export const STACK = 99;
 
 // Sandik odasi esya havuzu
 export const CHEST_GEAR = [['tahta_kilic', 3], ['yosun_kask', 3], ['yosun_bot', 3], ['yosun_gogus', 2], ['diken_kilici', 0.5]];
-export const CHEST_MATS = ['dal', 'mantar', 'diken'];
+export const CHEST_MATS = ['dal', 'mantar', 'diken', 'sifali_ot', 'komur'];
 
-// Kat odalari (0.1): madencilik ve gizli oda 0.2'de gelecek
-export const ROOM_WEIGHTS = [['savas', 55], ['sandik', 14], ['tuzak', 12], ['uyuyan', 10], ['kamp', 9]];
+// Kat odalari
+export const ROOM_WEIGHTS = [['savas', 52], ['sandik', 13], ['tuzak', 11], ['uyuyan', 10], ['kamp', 8], ['maden', 8]];
+// savastan sonra odada toplanacak bir sey cikma ihtimali
+export const GATHER_CHANCE = 0.4;
 
 export const ZONES = [
   { key: 'orman', name: 'Yabani Orman', floors: [1, 10], open: true },
@@ -136,4 +179,72 @@ export const ZONES = [
   { key: 'buz', name: 'Donmuş Zirve', floors: [31, 40], soon: '0.8' },
   { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], soon: '0.8' },
   { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], soon: '0.8' },
+];
+
+// ---------------------------------------------------------------- Madencilik (0.2)
+// sertlik / kazma gucu = kac vurusta kirilir. XP tasarim belgesindekinin 5 katidir
+// (bizim seviye egrimiz daha dik oldugu icin).
+export const ORES = {
+  toprak: { name: 'Toprak', hard: 1, xp: 3, req: 1, drop: null },
+  kum: { name: 'Kum', hard: 1, xp: 6, req: 1, drop: 'kum' },
+  tas: { name: 'Taş', hard: 2, xp: 10, req: 1, drop: 'tas' },
+  komur: { name: 'Kömür', hard: 3, xp: 25, req: 1, drop: 'komur' },
+  demir: { name: 'Demir', hard: 6, xp: 75, req: 15, drop: 'demir_cevheri' },
+  define: { name: 'Define sandığı', hard: 3, xp: 30, req: 1, drop: null },
+};
+export const MINE_COLS = 8;
+export const MINE_ROWS = 6;
+export const DEFINE_CHANCE = 0.006;
+
+// derinlige gore duvarin icerigi
+export function oreWeights(depth) {
+  if (depth <= 1) return [['toprak', 22], ['tas', 50], ['kum', 13], ['komur', 15]];
+  if (depth === 2) return [['toprak', 6], ['tas', 56], ['kum', 12], ['komur', 20], ['demir', 6]];
+  return [['tas', 54], ['kum', 7], ['komur', 23], ['demir', Math.min(22, 10 + (depth - 3) * 3)]];
+}
+export const mineXpMult = (depth) => Math.min(1.5, 1 + 0.05 * (depth - 1));
+export const mineHardBonus = (depth) => Math.floor((depth - 1) / 4);
+
+// ---------------------------------------------------------------- Toplama (0.2)
+export const GATHER = {
+  sifali_ot: { name: 'Şifalı ot', node: 'herb', xp: 20, w: 40 },
+  bogurtlen: { name: 'Böğürtlen', node: 'berry', xp: 20, w: 35 },
+  dal: { name: 'Dal', node: 'branch', xp: 15, w: 25 },
+};
+export const BAL_CHANCE = 0.06;
+
+// ---------------------------------------------------------------- Uretim (0.2)
+// station: masa = Uretim Masasi (aninda), firin = Firin (her biri 5 sn), kazan = Simya Kazani (aninda)
+// Tarif, ilk malzemesini bir kez bulunca tarif defterinde acilir.
+export const FURNACE_MS = 5000;
+export const FURNACE_MAX = 20;
+export const STATIONS = {
+  masa: { name: 'Üretim Masası', desc: 'Silah, kazma, zırh ve inşa blokları.' },
+  firin: { name: 'Fırın', desc: 'Eritme ve pişirme. Her biri 5 saniye sürer, sen yokken de çalışır.' },
+  kazan: { name: 'Simya Kazanı', desc: 'İksirler ve bombalar.' },
+};
+const gearSet = (tier, main, lvl, xpEach) => [
+  { out: `${tier}_kilic`, mats: { [main]: 3, dal: 1 } },
+  { out: `${tier}_kazma`, mats: { [main]: 3, dal: 2 } },
+  { out: `${tier}_kask`, mats: { [main]: 5 } },
+  { out: `${tier}_gogus`, mats: { [main]: 8 } },
+  { out: `${tier}_bot`, mats: { [main]: 4 } },
+].map((r) => ({ ...r, station: 'masa', lvl, xp: xpEach * r.mats[main] }));
+
+export const RECIPES = [
+  { out: 'tahta_kalas', mats: { dal: 2 }, station: 'masa', lvl: 1, xp: 15 },
+  { out: 'tahta_kilic', mats: { dal: 5 }, station: 'masa', lvl: 1, xp: 50 },
+  { out: 'tahta_kazma', mats: { dal: 5 }, station: 'masa', lvl: 1, xp: 50 },
+  { out: 'tahta_kask', mats: { dal: 5 }, station: 'masa', lvl: 2, xp: 50 },
+  { out: 'tahta_gogus', mats: { dal: 8 }, station: 'masa', lvl: 2, xp: 80 },
+  { out: 'tahta_bot', mats: { dal: 4 }, station: 'masa', lvl: 2, xp: 40 },
+  { out: 'tas_tugla', mats: { tas: 2 }, station: 'masa', lvl: 3, xp: 20 },
+  ...gearSet('tas', 'tas', 5, 15),
+  ...gearSet('demir', 'demir_kulcesi', 12, 45),
+  { out: 'demir_kulcesi', mats: { demir_cevheri: 2, komur: 1 }, station: 'firin', lvl: 1, xp: 35 },
+  { out: 'bos_sise', mats: { kum: 2 }, station: 'firin', lvl: 1, xp: 12 },
+  { out: 'cam', mats: { kum: 1 }, station: 'firin', lvl: 4, xp: 8 },
+  { out: 'mantar_corbasi', mats: { mantar: 2, sifali_ot: 1 }, station: 'firin', lvl: 3, xp: 40 },
+  { out: 'iksir_k', mats: { sifali_ot: 2, bos_sise: 1 }, station: 'kazan', lvl: 5, xp: 55 },
+  { out: 'bonk_bombasi', mats: { komur: 3, mantar: 2 }, station: 'kazan', lvl: 10, xp: 90 },
 ];

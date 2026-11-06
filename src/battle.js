@@ -1,6 +1,6 @@
 // Savas: ATB (bekleme cubugu) sistemi, manuel / otomatik mod,
 // zamanlama cubugu, kacinma, durumlar (Zehir, Sersem), odul ve dusurmeler.
-import { GLEMONS, GROUND_Y, RARITY, floorMult } from './data.js';
+import { GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult } from './data.js';
 import { S } from './state.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt } from './ui.js';
 import { sfx } from './audio.js';
@@ -18,6 +18,8 @@ export function calcDamage(atk, mult, def) {
   const d = atk * mult * (100 / (100 + def)) * (0.9 + Math.random() * 0.2);
   return Math.max(1, Math.round(d));
 }
+
+const BATTLE_ITEMS = ['iksir_k', 'mantar_corbasi', 'bonk_bombasi'];
 
 function slotX(n, i, boss) {
   if (boss) return [292, 206, 356][i] ?? 206;
@@ -208,7 +210,7 @@ export class Battle {
     S.save.settings.auto = !S.save.settings.auto;
     S.persist();
     this.renderAuto();
-    if (S.save.settings.auto && (this.phase === 'menu' || this.phase === 'target')) {
+    if (S.save.settings.auto && (this.phase === 'menu' || this.phase === 'target' || this.phase === 'items')) {
       const r = this.targetResolve;
       this.targetResolve = null;
       this.removeMarkers();
@@ -288,14 +290,72 @@ export class Battle {
     const sb = button(spinLbl, () => this.spin(false), 'purple');
     sb.disabled = !this.canSpin();
     this.acts.appendChild(sb);
+    const usable = BATTLE_ITEMS.filter((id) => S.countItem(id) > 0);
     const pots = S.countItem('iksir_k');
-    const pb = button(`İksir (${pots})`, () => this.drink(false), 'red');
-    pb.disabled = pots === 0 || S.hp >= S.maxHp();
+    const pb = button(usable.length > 1 || (usable.length === 1 && usable[0] !== 'iksir_k') ? 'Eşya' : `İksir (${pots})`, () => this.itemMenu(), 'red');
+    pb.disabled = usable.length === 0;
     this.acts.appendChild(pb);
     this.acts.appendChild(button('Savun', () => this.defend(), 'blue'));
     const fb = button('Kaç', () => this.flee(), 'small');
     fb.disabled = !!this.opts.boss || this.enemies.some((e) => e.golden);
     this.acts.appendChild(fb);
+  }
+
+  // savasta kullanilabilen esyalar
+  itemMenu() {
+    const usable = BATTLE_ITEMS.filter((id) => S.countItem(id) > 0);
+    if (usable.length === 1 && usable[0] === 'iksir_k') { this.useItem('iksir_k', false); return; }
+    this.phase = 'items';
+    this.acts.innerHTML = '';
+    this.acts.appendChild(el('div', 'hint', 'Ne kullanacaksın?'));
+    for (const id of usable) {
+      const it = ITEMS[id];
+      const b = button(`${it.name} (${S.countItem(id)})`, () => this.useItem(id, false), it.bomb ? 'purple' : 'red');
+      if (it.heal && S.hp >= S.maxHp()) b.disabled = true;
+      this.acts.appendChild(b);
+    }
+    this.acts.appendChild(button('Geri', () => this.showMenu(), 'small'));
+  }
+
+  async useItem(id, auto) {
+    if (ITEMS[id].bomb) return this.bomb(auto);
+    return this.drink(auto, id);
+  }
+
+  async bomb(auto) {
+    this.phase = null;
+    this.setHint('');
+    if (S.removeItem('bonk_bombasi', 1) < 1) { this.showMenu(); return; }
+    if (auto) this.autoActs++; else this.manualActs++;
+    const p = this.w.player;
+    p.setFlipX(false);
+    await playAnim(p, 'c_punch', 1.4);
+    const alive = this.alive();
+    const cx = alive.reduce((t, e) => t + e.sprite.x, 0) / alive.length;
+    const boom = this.scene.add.sprite(cx, GROUND_Y - 18, 'boom').setDepth(13).setScale(1.4);
+    boom.play('boom');
+    boom.once('animationcomplete', () => boom.destroy());
+    sfx('boom');
+    this.scene.cameras.main.shake(300, 0.016);
+    await wait(this.scene, 120);
+    for (const e of alive) {
+      const dmg = Math.round((10 + 6 * this.floor) * (0.9 + Math.random() * 0.2));
+      this.hitRaw(e, dmg);
+    }
+    S.changed();
+    await wait(this.scene, 300);
+    p.play('c_idle');
+    this.endPlayerTurn();
+  }
+
+  // savunmayi gecen sabit hasar (bomba)
+  hitRaw(e, dmg) {
+    if (!e.alive) return;
+    e.hp = Math.max(0, e.hp - dmg);
+    floatText(e.sprite.x, this.topY(e) + 4, String(dmg), 'crit');
+    this.renderEnemy(e);
+    if (e.hp <= 0) { this.killEnemy(e); return; }
+    playAnim(e.sprite, e.k('hasar'), 1).then(() => { if (e.alive && e.sprite.active) e.sprite.play(e.k('durma')); });
   }
 
   async onAttack() {
@@ -339,7 +399,10 @@ export class Battle {
   async autoAct() {
     this.phase = null;
     this.setHint('Otomatik savaş…');
-    if (S.hp < S.maxHp() * 0.35 && S.countItem('iksir_k') > 0) return this.drink(true);
+    if (S.hp < S.maxHp() * 0.35) {
+      const heal = ['iksir_k', 'mantar_corbasi'].find((id) => S.countItem(id) > 0);
+      if (heal) return this.drink(true, heal);
+    }
     const alive = this.alive();
     if (alive.length >= 2 && this.canSpin()) return this.spin(true);
     const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
@@ -405,14 +468,16 @@ export class Battle {
     this.endPlayerTurn();
   }
 
-  async drink(auto) {
+  async drink(auto, id = 'iksir_k') {
     this.phase = null;
     this.setHint('');
-    if (S.removeItem('iksir_k', 1) < 1) { this.showMenu(); return; }
+    if (S.removeItem(id, 1) < 1) { this.showMenu(); return; }
     if (auto) this.autoActs++; else this.manualActs++;
+    const it = ITEMS[id];
     const p = this.w.player;
-    await playAnim(p, 'c_drinkpotion', 3.2);
-    const heal = Math.round(S.maxHp() * 0.25);
+    if (it.anim === 'eat') await playAnim(p, 'c_eat', 1.8);
+    else await playAnim(p, 'c_drinkpotion', 3.2);
+    const heal = Math.round(S.maxHp() * it.heal);
     S.hp = Math.min(S.maxHp(), S.hp + heal);
     sfx('heal');
     floatText(p.x, p.y - 44, `+${heal}`, 'heal');

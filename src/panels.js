@@ -1,11 +1,12 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION } from './data.js';
+import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
 import { forgetLogin } from './login.js';
+import { iconUrl } from './art.js';
 
-const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım' };
+const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma' };
 
 function slotEl(s, label) {
   const d = UI.el('div', 'slot');
@@ -25,8 +26,9 @@ function statLines(it) {
   if (it.def) out.push(`Savunma +${it.def}`);
   if (it.hp) out.push(`Can +${it.hp}`);
   if (it.spd) out.push(`Hız +${it.spd}`);
+  if (it.pick) out.push(`Kazma gücü ${it.pick}`);
   if (it.heal) out.push(`Canın %${Math.round(it.heal * 100)}'ini doldurur`);
-  if (it.set) out.push(`${SETS[it.set].name}: ${SETS[it.set].pieces} parça = +${SETS[it.set].hp} can`);
+  if (it.set) out.push(`${SETS[it.set].name}: ${SETS[it.set].pieces} parça = ${SETS[it.set].bonus}`);
   return out;
 }
 
@@ -89,8 +91,8 @@ export function openBag(w) {
       const right = UI.el('div');
       right.style.flex = '1';
       const st = UI.el('div', 'stats-box');
-      const setHp = S.setBonusHp();
-      st.innerHTML = `<b>Can</b> ${S.hp}/${S.maxHp()} &nbsp; <b>Saldırı</b> ${S.atk()} &nbsp; <b>Savunma</b> ${S.def()}<br><b>Hız</b> ${S.spd()} &nbsp; <b>Kritik</b> %${Math.round(S.crit() * 100)}${setHp ? ` &nbsp; <b>Set</b> +${setHp} can` : ''}`;
+      const sets = S.activeSets().filter((x) => x.hp || x.defPct).map((x) => x.bonus).join(', ');
+      st.innerHTML = `<b>Can</b> ${S.hp}/${S.maxHp()} &nbsp; <b>Saldırı</b> ${S.atk()} &nbsp; <b>Savunma</b> ${S.def()}<br><b>Hız</b> ${S.spd()} &nbsp; <b>Kritik</b> %${Math.round(S.crit() * 100)} &nbsp; <b>Kazma</b> ${S.pick()}${sets ? `<br><b>Set</b> ${sets}` : ''}`;
       right.appendChild(st);
 
       let id = null;
@@ -117,7 +119,7 @@ export function openBag(w) {
           b.disabled = inBattle || !S.canEquip(id);
           btns.push(b);
         }
-        if (it.kind === 'tuketim') {
+        if (it.kind === 'tuketim' && it.heal) {
           const b = UI.button('Kullan', () => {
             S.removeItem(id, 1);
             const heal = Math.round(S.maxHp() * it.heal);
@@ -299,7 +301,7 @@ export function openMap(w) {
   if (w.mode !== 'base') return;
   UI.openPanel('Harita', (body) => {
     const deepest = S.save.stats.deepest || 0;
-    for (const z of ZONES) {
+    for (const z of ZONES.filter((x) => x.open)) {
       const row = UI.el('div', 'zone' + (z.open ? '' : ' locked'));
       const left = UI.el('div');
       left.appendChild(UI.el('div', 'zn', z.name));
@@ -317,6 +319,222 @@ export function openMap(w) {
       row.appendChild(btns);
       body.appendChild(row);
     }
+    const soon = ZONES.filter((x) => !x.open).map((x) => `${x.name} (${x.soon})`).join(', ');
+    const mine = UI.el('div', 'zone');
+    const ml = UI.el('div');
+    ml.appendChild(UI.el('div', 'zn', 'Orman Maden Ocağı'));
+    ml.appendChild(UI.el('div', 'zf', `Sakin bir kazı yeri · Kaldığın derinlik: ${S.save.mine.depth} · En derin: ${S.save.stats.deepestMine || 1}`));
+    mine.appendChild(ml);
+    const mb = UI.el('div', 'zb');
+    mb.appendChild(UI.button('Kaza git', () => w.enterMine(S.save.mine.depth), 'blue small'));
+    if (S.save.mine.depth > 1) mb.appendChild(UI.button('Derinlik 1', () => w.enterMine(1), 'small'));
+    mine.appendChild(mb);
+    body.appendChild(mine);
+    body.appendChild(UI.el('p', 'muted', `Yakında: ${soon}.`));
     body.appendChild(UI.el('p', 'muted', 'Her 5 katta bir kısayol açılır. Kat 5\'te ara patron, Kat 10\'da Ağaçbaşı seni bekliyor.'));
   });
+}
+
+// ------------------------------------------------------------ uretim istasyonlari (0.2)
+// Firin: bir is (tarif + adet), her biri FURNACE_MS surer, oyun kapaliyken de ilerler.
+export function furnaceState() {
+  const f = S.save.furnace;
+  if (!f || !f.rid || f.n <= 0) return { working: false, ready: 0, left: 0, out: null };
+  const r = RECIPES[f.rid];
+  const done = Math.min(f.n, Math.floor((Date.now() - f.t0) / FURNACE_MS));
+  return { working: done < f.n, ready: done, left: f.n - done, out: r.out, recipe: r, next: f.t0 + (done + 1) * FURNACE_MS };
+}
+
+function collectFurnace(w) {
+  const fs = furnaceState();
+  if (!fs.ready) return 0;
+  const f = S.save.furnace;
+  let got = 0;
+  for (let i = 0; i < fs.ready; i++) {
+    if (!S.fits(fs.out)) break;
+    S.addItem(fs.out, 1);
+    got++;
+  }
+  if (got) {
+    f.n -= got;
+    f.t0 += got * FURNACE_MS;
+    if (f.n <= 0) { f.rid = null; f.n = 0; }
+    S.save.stats.crafted += got;
+    sfx('smelt');
+    const xp = fs.recipe.xp * got;
+    UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[fs.out].icon)}">Fırından ${UI.itemName(fs.out)} ×${got} aldın. +${xp} Üretim XP`);
+    const ups = S.addXp({ uretim: xp });
+    S.changed();
+    for (const u of ups) w.levelUp(u);
+  }
+  if (got < fs.ready) UI.feed('Çanta dolu! Fırındakilerin hepsini alamadın.');
+  return got;
+}
+
+const recipeId = (r) => RECIPES.indexOf(r);
+const furnaceIdle = (f) => f.rid === null || f.rid === undefined || f.n <= 0;
+const unlocked = (r) => !!S.save.seen[Object.keys(r.mats)[0]];
+const canMake = (r, n = 1) => Object.entries(r.mats).every(([id, k]) => S.countItem(id) >= k * n);
+function maxMake(r) {
+  return Math.min(...Object.entries(r.mats).map(([id, k]) => Math.floor(S.countItem(id) / k)));
+}
+
+export function openStation(w, station) {
+  const st = STATIONS[station];
+  const list = RECIPES.filter((r) => r.station === station);
+  let sel = list.find((r) => unlocked(r) && S.level('uretim') >= r.lvl && canMake(r)) || list.find(unlocked) || null;
+  let timer = null;
+  UI.openPanel(st.name, (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      body.appendChild(UI.el('div', 'muted', `${st.desc} · Üretim seviyen: ${S.level('uretim')}`));
+      if (station === 'firin') body.appendChild(furnaceBox(w, render));
+      const lay = UI.el('div', 'craft');
+      const ul = UI.el('div', 'recipes');
+      for (const r of list) {
+        const it = ITEMS[r.out];
+        const row = UI.el('div', 'recipe');
+        if (!unlocked(r)) {
+          row.classList.add('locked');
+          row.appendChild(UI.el('span', 'q', '?'));
+          row.appendChild(UI.el('span', 'nm', '???'));
+          row.title = `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`;
+        } else {
+          row.appendChild(UI.icon(it.icon));
+          const nm = UI.el('span', 'nm', it.name);
+          nm.style.color = RARITY[it.rarity].color;
+          row.appendChild(nm);
+          if (S.level('uretim') < r.lvl) { row.classList.add('lvl'); row.appendChild(UI.el('span', 'lv', `Sv. ${r.lvl}`)); }
+          else if (canMake(r)) row.appendChild(UI.el('span', 'ok', '●'));
+        }
+        if (sel === r) row.classList.add('sel');
+        row.addEventListener('click', () => { sfx('click'); sel = r; render(); });
+        ul.appendChild(row);
+      }
+      lay.appendChild(ul);
+      lay.appendChild(recipeDetail(w, station, sel, render));
+      body.appendChild(lay);
+    };
+    render();
+    if (station === 'firin') timer = setInterval(() => { if (!UI.panelOpen()) { clearInterval(timer); return; } render(); }, 1000);
+  }, { wide: true, onClose: () => { if (timer) clearInterval(timer); } });
+}
+
+function furnaceBox(w, render) {
+  const box = UI.el('div', 'furnace-box');
+  const fs = furnaceState();
+  if (!fs.out) {
+    box.appendChild(UI.el('div', 'muted', 'Fırın boş. Aşağıdan bir tarif seç ve ateşe koy.'));
+    return box;
+  }
+  box.appendChild(UI.icon(ITEMS[fs.out].icon));
+  const txt = UI.el('div', 'ftxt');
+  const secs = fs.working ? Math.max(1, Math.ceil((fs.next - Date.now()) / 1000)) : 0;
+  txt.innerHTML = `<b>${UI.escapeHtml(ITEMS[fs.out].name)}</b><br>Hazır: ${fs.ready} · Sırada: ${fs.left}${fs.working ? ` · sıradaki ${secs} sn` : ''}`;
+  box.appendChild(txt);
+  const bar = UI.el('div', 'bar xp');
+  const fill = UI.el('div', 'fill');
+  const f = S.save.furnace;
+  fill.style.width = `${(fs.ready / f.n) * 100}%`;
+  bar.appendChild(fill);
+  box.appendChild(bar);
+  const b = UI.button(`Al (${fs.ready})`, () => { collectFurnace(w); render(); }, 'primary small');
+  b.disabled = fs.ready === 0;
+  box.appendChild(b);
+  return box;
+}
+
+function recipeDetail(w, station, r, render) {
+  const box = UI.el('div', 'detail');
+  if (!r) { box.appendChild(UI.el('div', 'muted', 'Henüz açılmış tarif yok. Malzeme buldukça tarifler açılır.')); return box; }
+  if (!unlocked(r)) {
+    box.appendChild(UI.el('div', 'nm', '???'));
+    box.appendChild(UI.el('div', 'muted', `Bu tarif, ${ITEMS[Object.keys(r.mats)[0]].name} ilk kez bulunca açılır.`));
+    return box;
+  }
+  const it = ITEMS[r.out];
+  const nm = UI.el('div', 'nm', it.name);
+  nm.style.color = RARITY[it.rarity].color;
+  box.appendChild(nm);
+  box.appendChild(UI.el('div', 'muted', `${KIND[it.kind]} · +${r.xp} Üretim XP${station === 'firin' ? ' · 5 sn' : ''}`));
+  for (const l of statLines(it)) box.appendChild(UI.el('div', '', l));
+  if (it.req) {
+    const sk = SKILLS.find((x) => x.key === it.req[0]);
+    box.appendChild(UI.el('div', 'muted', `Kuşanmak için: ${sk.name} ${it.req[1]}`));
+  }
+  const mats = UI.el('div', 'mats');
+  for (const [id, k] of Object.entries(r.mats)) {
+    const have = S.countItem(id);
+    const m = UI.el('div', 'mat' + (have >= k ? ' ok' : ' no'));
+    m.appendChild(UI.icon(ITEMS[id].icon));
+    m.appendChild(UI.el('span', '', `${ITEMS[id].name} ${have}/${k}`));
+    mats.appendChild(m);
+  }
+  box.appendChild(mats);
+  const lvlOk = S.level('uretim') >= r.lvl;
+  if (!lvlOk) {
+    const req = UI.el('div', '', `Gerekli: Üretim ${r.lvl}`);
+    req.style.color = '#ff6b5a';
+    box.appendChild(req);
+  }
+  const row = UI.el('div', 'row');
+  const mx = maxMake(r);
+  const counts = station === 'firin' ? [1, 5, 'max'] : [1, 5];
+  for (const c of counts) {
+    let n = c === 'max' ? mx : c;
+    if (station === 'firin') {
+      const f = S.save.furnace;
+      const room = !furnaceIdle(f) && f.rid !== recipeId(r) ? 0 : FURNACE_MAX - (furnaceIdle(f) ? 0 : f.n);
+      n = Math.min(n, room);
+    }
+    const label = station === 'firin' ? (c === 'max' ? `Hepsini koy (${Math.max(0, n)})` : `Ateşe koy ×${c}`) : `Üret ×${c}`;
+    const b = UI.button(label, () => {
+      make(w, station, r, n);
+      render();
+    }, c === 1 ? 'primary small' : 'small');
+    b.disabled = !lvlOk || n <= 0 || !canMake(r, n);
+    row.appendChild(b);
+  }
+  box.appendChild(row);
+  if (station === 'firin') {
+    const f = S.save.furnace;
+    if (!furnaceIdle(f) && f.rid !== recipeId(r)) box.appendChild(UI.el('div', 'muted', 'Fırın başka bir şey pişiriyor. Önce bitenleri al.'));
+  }
+  return box;
+}
+
+function make(w, station, r, n) {
+  if (n <= 0 || !canMake(r, n) || S.level('uretim') < r.lvl) return;
+  if (station === 'firin') {
+    const f = S.save.furnace;
+    const rid = recipeId(r);
+    if (!furnaceIdle(f) && f.rid !== rid) return;
+    for (const [id, k] of Object.entries(r.mats)) S.removeItem(id, k * n);
+    const fs = furnaceState();
+    if (furnaceIdle(f)) { f.rid = rid; f.n = 0; f.t0 = Date.now(); }
+    else if (!fs.working) {
+      // bitmis ama alinmamis olanlar korunur, yeni isler simdi baslar
+      f.t0 = Date.now() - fs.ready * FURNACE_MS;
+    }
+    f.n += n;
+    sfx('smelt');
+    UI.feed(`Fırına ${n} tane ${UI.itemName(r.out)} koydun. Her biri 5 saniye.`);
+    S.changed();
+    if (w.refreshFurnace) w.refreshFurnace();
+    return;
+  }
+  // stackable olmayan esyalar icin canta yeri kontrolu
+  if (!S.fits(r.out, n)) { UI.feed('Çanta dolu!'); return; }
+  for (const [id, k] of Object.entries(r.mats)) S.removeItem(id, k * n);
+  S.addItem(r.out, n);
+  S.save.stats.crafted += n;
+  sfx('craft');
+  w.player.setFlipX(false);
+  w.player.play({ key: 'c_placeblock', timeScale: 2.4 });
+  w.player.once('animationcomplete', () => w.player.play('c_idle'));
+  const xp = r.xp * n;
+  UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[r.out].icon)}">${UI.itemName(r.out)}${n > 1 ? ` ×${n}` : ''} ürettin! +${xp} Üretim XP`);
+  const ups = S.addXp({ uretim: xp });
+  S.changed();
+  for (const u of ups) w.levelUp(u);
 }

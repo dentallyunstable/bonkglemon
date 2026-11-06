@@ -1,17 +1,22 @@
 // Ana sahne: us (ev, depo, harita, maden girisi) ve zindan odalari.
 import {
   GAME_W, GROUND_Y, ITEMS, SKILLS, SPAWN_TABLE, SHINY_CHANCE, ROOM_WEIGHTS, CHEST_GEAR, CHEST_MATS,
+  ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
+  GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES,
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, moveTo, wait } from './anim.js';
 import { Battle } from './battle.js';
-import { forestBackground, iconUrl } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap } from './panels.js';
+import { forestBackground, caveBackground, iconUrl, MINE_WALL } from './art.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState } from './panels.js';
 
 const PLAYER_HOME = 96;
 const MINE_X = 330;
+const CABIN_DOOR_X = 70;
+const WALK_MODES = ['base', 'house'];
+const MINE_STAND_X = MINE_WALL.x - 14;
 
 function weighted(list) {
   const tot = list.reduce((t, [, w]) => t + w, 0);
@@ -46,14 +51,18 @@ export class WorldScene extends Phaser.Scene {
     window.__BG = this; // testler icin
     this.goBase(false);
     UI.show('#loading', false);
-    UI.feed(`Hoş geldin, ${S.save.char}! Maden girişinden zindana inebilirsin.`);
+    UI.feed(`Hoş geldin, ${S.save.char}! Zindana inebilir, madende kazabilir ya da evinde üretim yapabilirsin.`);
   }
 
   update(time, dt) {
     this.pShadow.x = this.player.x;
     this.pShadow.setAlpha(this.player.alpha);
     if (this.battle && !UI.panelOpen()) this.battle.update(dt);
-    if (this.mode === 'base' && !this.busy && !UI.panelOpen()) {
+    if (this.mode === 'house' && this.furnace) {
+      this.furnaceTick = (this.furnaceTick || 0) + dt;
+      if (this.furnaceTick > 500) { this.furnaceTick = 0; this.refreshFurnace(); }
+    }
+    if (this.canWalk() && !this.busy && !UI.panelOpen()) {
       const left = this.keys.LEFT.isDown || this.keys.A.isDown;
       const right = this.keys.RIGHT.isDown || this.keys.D.isDown;
       if (left !== right) {
@@ -69,6 +78,8 @@ export class WorldScene extends Phaser.Scene {
       }
     }
   }
+
+  canWalk() { return WALK_MODES.includes(this.mode); }
 
   // ------------------------------------------------------------ ust bilgi
   buildHud() {
@@ -99,7 +110,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ yurume
   onTap(ptr, over) {
     if (over && over.length) return;
-    if (this.mode !== 'base' || this.busy || UI.panelOpen()) return;
+    if (!this.canWalk() || this.busy || UI.panelOpen()) return;
     this.walkThen(Phaser.Math.Clamp(ptr.worldX, 12, GAME_W - 12), null);
   }
 
@@ -117,7 +128,8 @@ export class WorldScene extends Phaser.Scene {
     if (opts.act) {
       obj.setInteractive({ useHandCursor: true });
       obj.on('pointerdown', () => {
-        if (this.busy || UI.panelOpen() || this.mode !== 'base') return;
+        if (this.busy || UI.panelOpen() || !(opts.modes || WALK_MODES).includes(this.mode)) return;
+        if (opts.direct) { opts.act(); return; }
         this.walkThen(opts.x ?? obj.x, () => {
           if (opts.face !== undefined) this.player.setFlipX(opts.face);
           opts.act();
@@ -151,14 +163,14 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ us
-  goBase(fromDungeon) {
+  goBase(from) {
     this.mode = 'base';
     this.clearRoom();
     this.bg.setTexture('bg_base');
     const G = GROUND_Y;
     this.addObj(this.add.image(2, G + 3, 'cabin').setOrigin(0, 1).setDepth(3), {
-      x: 70, label: 'Evin', lx: 54, ly: G - 84,
-      act: () => this.say('Evini 0.3 sürümünde büyütüp döşeyebileceksin!'),
+      x: CABIN_DOOR_X, label: 'Evin', lx: 54, ly: G - 84,
+      act: () => this.enterHouse(),
     });
     this.addObj(this.add.image(136, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), {
       x: 118, face: false, label: 'Depo', ly: G - 22, act: () => openDepo(this),
@@ -179,16 +191,338 @@ export class WorldScene extends Phaser.Scene {
       x: MINE_X, label: 'Zindan girişi', ly: G - 62, act: () => openMap(this),
     });
     this.player.setFlipX(false);
-    this.player.x = fromDungeon ? MINE_X : 200;
+    this.player.x = from === 'dungeon' ? MINE_X : from === 'house' ? CABIN_DOOR_X : 200;
     this.player.y = G;
     this.player.alpha = 1;
     this.player.play('c_idle');
     UI.setLocation('Üs');
     UI.setActions([
       { label: 'Zindana gir', cls: 'primary', onClick: () => openMap(this) },
+      { label: 'Maden Ocağı', cls: 'blue', onClick: () => this.enterMine(S.save.mine.depth) },
+      { label: 'Evine gir', onClick: () => this.enterHouse() },
       { label: 'Depo', onClick: () => openDepo(this) },
     ]);
     this.refreshHud();
+    const fs = furnaceState();
+    if (fs.ready > 0) UI.feed(`Fırında ${fs.ready} ${ITEMS[fs.out].name} hazır! Evine girip alabilirsin.`);
+  }
+
+  async enterHouse() {
+    if (this.busy || this.mode !== 'base') return;
+    this.busy = true;
+    this.walkTok++;
+    UI.setActions([]);
+    await moveTo(this.player, CABIN_DOOR_X, { speed: 95, anim: 'c_walk' });
+    await this.fade(true);
+    this.goHouse();
+    await this.fade(false);
+    this.busy = false;
+  }
+
+  async leaveHouse() {
+    if (this.busy || this.mode !== 'house') return;
+    this.busy = true;
+    this.walkTok++;
+    UI.setActions([]);
+    await moveTo(this.player, 26, { speed: 95, anim: 'c_walk' });
+    await this.fade(true);
+    this.goBase('house');
+    await this.fade(false);
+    this.busy = false;
+  }
+
+  // ------------------------------------------------------------ ev ici (uretim istasyonlari)
+  goHouse() {
+    this.mode = 'house';
+    this.clearRoom();
+    this.bg.setTexture('house');
+    const G = GROUND_Y;
+    this.addObj(this.add.image(26, G + 1, 'door_in').setOrigin(0.5, 1).setDepth(3), {
+      x: 30, label: 'Dışarı', ly: G - 52, act: () => this.leaveHouse(),
+    });
+    this.addObj(this.add.image(112, G + 1, 'workbench').setOrigin(0.5, 1).setDepth(4), {
+      x: 88, face: false, label: 'Üretim Masası', ly: G - 30, act: () => openStation(this, 'masa'),
+    });
+    this.furnace = this.add.sprite(196, G + 1, 'furnace', 0).setOrigin(0.5, 1).setDepth(4);
+    this.addObj(this.furnace, {
+      x: 174, face: false, label: 'Fırın', ly: G - 54, act: () => openStation(this, 'firin'),
+    });
+    const caul = this.add.sprite(262, G + 1, 'cauldron', 0).setOrigin(0.5, 1).setDepth(4);
+    caul.play('cauldron');
+    this.addObj(caul, {
+      x: 242, face: false, label: 'Simya Kazanı', ly: G - 34, act: () => openStation(this, 'kazan'),
+    });
+    this.addObj(this.add.image(336, G + 1, 'bed').setOrigin(0.5, 1).setDepth(4), {
+      x: 308, face: false, label: 'Yatak', ly: G - 26,
+      act: () => { this.player.play('c_sit'); this.say('Yatak 0.3 sürümünde işe yarayacak: bayılınca burada uyanacaksın.', 3400); },
+    });
+    this.refreshFurnace();
+    this.player.setFlipX(false);
+    this.player.x = 30;
+    this.player.y = G;
+    this.player.alpha = 1;
+    this.player.play('c_idle');
+    UI.setLocation('Evin');
+    UI.setActions([
+      { label: 'Üretim Masası', cls: 'primary', onClick: () => this.walkThen(88, () => openStation(this, 'masa')) },
+      { label: 'Fırın', cls: 'primary', onClick: () => this.walkThen(174, () => openStation(this, 'firin')) },
+      { label: 'Simya Kazanı', cls: 'purple', onClick: () => this.walkThen(242, () => openStation(this, 'kazan')) },
+      { label: 'Dışarı çık', onClick: () => this.leaveHouse() },
+    ]);
+    this.refreshHud();
+  }
+
+  refreshFurnace() {
+    if (!this.furnace || !this.furnace.active) { this.furnace = null; return; }
+    const on = furnaceState().working;
+    if (on && !this.furnace.anims.isPlaying) this.furnace.play('furnace_on');
+    if (!on && this.furnace.anims.isPlaying) { this.furnace.stop(); this.furnace.setFrame(0); }
+  }
+
+  // ------------------------------------------------------------ maden ocagi
+  async enterMine(depth) {
+    UI.closePanel();
+    if (this.busy || this.mode !== 'base') return;
+    this.busy = true;
+    this.walkTok++;
+    UI.setActions([]);
+    await moveTo(this.player, 240, { speed: 95, anim: 'c_walk' });
+    sfx('stairs');
+    await this.fade(true);
+    this.goMine(depth || S.save.mine.depth || 1);
+    await this.fade(false);
+    this.busy = false;
+    UI.feed('Maden Ocağı! Sol sıradaki ya da yanı açık bloklara dokunup kaz.');
+  }
+
+  goMine(depth) {
+    this.mode = 'mine';
+    this.clearRoom();
+    this.mineDepth = depth;
+    S.save.mine.depth = depth;
+    S.save.stats.deepestMine = Math.max(S.save.stats.deepestMine || 1, depth);
+    S.changed();
+    const key = `cave_${Math.min(depth, 9)}`;
+    if (!this.textures.exists(key)) this.textures.addCanvas(key, caveBackground(Math.min(depth, 9)));
+    this.bg.setTexture(key);
+    this.buildWall(depth);
+    this.bombArmed = false;
+    this.player.setFlipX(false);
+    this.player.x = 150;
+    this.player.y = GROUND_Y;
+    this.player.alpha = 1;
+    this.player.play('c_idle');
+    UI.setLocation(`Maden Ocağı · Derinlik ${depth}`);
+    this.mineActions();
+  }
+
+  buildWall(depth) {
+    const W = MINE_WALL;
+    const weights = oreWeights(depth);
+    const grid = [];
+    for (let r = 0; r < MINE_ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < MINE_COLS; c++) {
+        let kind = weighted(weights);
+        if (depth === 1 && r < 2 && Math.random() < 0.6) kind = 'toprak';
+        row.push(kind);
+      }
+      grid.push(row);
+    }
+    // cevherler damar gibi kumelensin
+    for (let r = 0; r < MINE_ROWS; r++) {
+      for (let c = 0; c < MINE_COLS; c++) {
+        const k = grid[r][c];
+        if ((k === 'komur' || k === 'demir') && Math.random() < 0.35) {
+          const [dr, dc] = pick([[0, 1], [1, 0], [0, -1], [-1, 0]]);
+          const rr = r + dr; const cc = c + dc;
+          if (rr >= 0 && rr < MINE_ROWS && cc >= 0 && cc < MINE_COLS) grid[rr][cc] = k;
+        }
+        if (Math.random() < DEFINE_CHANCE) grid[r][c] = 'define';
+      }
+    }
+    this.wall = [];
+    for (let r = 0; r < MINE_ROWS; r++) {
+      const row = [];
+      for (let c = 0; c < MINE_COLS; c++) {
+        const kind = grid[r][c];
+        const x = W.x + c * W.size + W.size / 2;
+        const y = GROUND_Y - (MINE_ROWS - r) * W.size + W.size / 2;
+        const spr = this.add.image(x, y, 'ores', kind).setDepth(5);
+        spr.setInteractive({ useHandCursor: true });
+        const b = { r, c, kind, hits: 0, spr, crack: null };
+        spr.on('pointerdown', () => this.onBlock(b));
+        this.roomObjs.push(spr);
+        row.push(b);
+      }
+      this.wall.push(row);
+    }
+  }
+
+  blockAt(r, c) {
+    if (r < 0 || c < 0 || r >= MINE_ROWS || c >= MINE_COLS) return null;
+    return this.wall[r][c];
+  }
+
+  isExposed(b) {
+    if (b.c === 0) return true;
+    return [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dr, dc]) => {
+      const n = this.blockAt(b.r + dr, b.c + dc);
+      return n && n.kind === null;
+    });
+  }
+
+  minedCount() { return this.wall.flat().filter((b) => b.kind === null).length; }
+
+  mineActions() {
+    const bombs = S.countItem('bonk_bombasi');
+    const half = this.minedCount() >= (MINE_COLS * MINE_ROWS) / 2;
+    UI.setActions([
+      half ? { label: 'Daha derin ↓', cls: 'primary', onClick: () => this.changeDepth(1) }
+        : { label: `Daha derin (${this.minedCount()}/${(MINE_COLS * MINE_ROWS) / 2})`, cls: 'primary', disabled: true, onClick: () => {} },
+      this.mineDepth > 1 ? { label: 'Yukarı ↑', onClick: () => this.changeDepth(-1) } : null,
+      bombs > 0 ? { label: this.bombArmed ? 'Bomba: bloğa dokun' : `Bonk Bombası (${bombs})`, cls: 'purple', onClick: () => { this.bombArmed = !this.bombArmed; this.mineActions(); } } : null,
+      { label: 'Üsse dön', onClick: () => this.leaveMine() },
+    ]);
+  }
+
+  async changeDepth(d) {
+    if (this.busy) return;
+    this.busy = true;
+    UI.setActions([]);
+    sfx('stairs');
+    await this.fade(true);
+    this.goMine(Math.max(1, this.mineDepth + d));
+    await this.fade(false);
+    this.busy = false;
+    if (d > 0) UI.feed(`Derinlik ${this.mineDepth}: ${mineHardBonus(this.mineDepth) ? 'bloklar daha sert, ' : ''}cevherler daha bol. XP ×${mineXpMult(this.mineDepth).toFixed(2)}`);
+  }
+
+  async leaveMine() {
+    if (this.busy) return;
+    this.busy = true;
+    UI.setActions([]);
+    await moveTo(this.player, 40, { speed: 110, anim: 'c_walk' });
+    await this.fade(true);
+    this.goBase('mine');
+    await this.fade(false);
+    this.busy = false;
+  }
+
+  oreReq(kind) { return ORES[kind].req; }
+
+  // bloga dokununca: kontroller, sonra kazma
+  onBlock(b) {
+    if (this.mode !== 'mine' && this.mode !== 'dungeon') return;
+    if (this.busy || UI.panelOpen() || !b.kind) return;
+    if (this.mode === 'dungeon' && this.battle) return;
+    const ore = ORES[b.kind];
+    const by = b.spr.y - 10;
+    if (this.mode === 'mine' && !this.isExposed(b)) { UI.floatText(b.spr.x, by, 'Önce yanını kaz', 'note'); return; }
+    if (this.bombArmed && this.mode === 'mine') { this.useBomb(b); return; }
+    if (!S.pick()) { UI.feed('Kazma kuşanmadan kazamazsın. (Çanta → Kazma)'); return; }
+    if (S.level('madencilik') < ore.req) { UI.floatText(b.spr.x, by, `Madencilik ${ore.req} gerekli`, 'note'); sfx('weak'); return; }
+    if (ore.drop && !S.fits(ore.drop)) { UI.floatText(b.spr.x, by, 'Çanta dolu!', 'note'); return; }
+    this.mineBlock(b);
+  }
+
+  async mineBlock(b) {
+    this.busy = true;
+    this.walkTok++;
+    const p = this.player;
+    const standX = b.standX ?? MINE_STAND_X;
+    if (Math.abs(p.x - standX) > 2) await moveTo(p, standX, { speed: 110, anim: 'c_walk' });
+    p.setFlipX(false);
+    const depth = this.mode === 'mine' ? this.mineDepth : 1;
+    const need = Math.max(1, Math.ceil((ORES[b.kind].hard + (this.mode === 'mine' ? mineHardBonus(depth) : 0)) / S.pick()));
+    while (b.hits < need) {
+      const swing = playAnim(p, 'c_mine', 1.3);
+      await wait(this, 230);
+      b.hits++;
+      sfx('mine');
+      this.chips(b.spr.x - 4, b.spr.y, b.kind, 3);
+      if (b.hits < need) {
+        const stage = Math.min(3, Math.ceil((b.hits / need) * 3));
+        if (!b.crack) { b.crack = this.add.image(b.spr.x, b.spr.y, 'ores', 'crack1').setDepth(6); this.roomObjs.push(b.crack); }
+        b.crack.setFrame(`crack${stage}`);
+      }
+      await swing;
+    }
+    await this.breakBlock(b, depth);
+    p.play('c_idle');
+    this.busy = false;
+    if (this.mode === 'mine') this.mineActions();
+    else if (this.mode === 'dungeon' && this.afterVein) this.afterVein();
+  }
+
+  async breakBlock(b, depth, silent = false) {
+    const kind = b.kind;
+    const ore = ORES[kind];
+    b.kind = null;
+    b.spr.setVisible(false);
+    b.spr.disableInteractive();
+    if (b.crack) b.crack.setVisible(false);
+    if (!silent) sfx('break');
+    this.chips(b.spr.x, b.spr.y, kind, 7);
+    const xp = Math.round(ore.xp * mineXpMult(depth));
+    S.save.stats.mined++;
+    if (ore.drop) {
+      const left = S.addItem(ore.drop, 1);
+      if (left === 0) UI.floatText(b.spr.x, b.spr.y - 6, `+1 ${ITEMS[ore.drop].name}`, 'info');
+      else UI.feed(`Çanta dolu! ${ITEMS[ore.drop].name} sığmadı.`);
+    }
+    if (kind === 'define') {
+      const gold = 20 + Math.floor(Math.random() * 30 * depth);
+      S.addGold(gold);
+      sfx('rare');
+      S.logDrop(null, 'Define sandığı', { note: `buldun! +${gold} Bonk` });
+      UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Define sandığı! +${gold} Bonk`, 'gold');
+      for (let i = 0; i < 2; i++) this.giveDrop(pick(['komur', 'demir_cevheri', 'sifali_ot', 'kum']), 1 + Math.floor(Math.random() * 3), 'Defineden');
+    }
+    UI.floatText(b.spr.x, b.spr.y - 16, `+${xp} XP`, 'good');
+    const ups = S.addXp({ madencilik: xp });
+    S.changed();
+    for (const u of ups) await this.levelUp(u);
+  }
+
+  chips(x, y, kind, n) {
+    const tint = { toprak: 0xa07150, kum: 0xe6cd88, tas: 0x9e9aa6, komur: 0x3a3642, demir: 0xe0a882, define: 0xffd04d }[kind] || 0x9e9aa6;
+    for (let i = 0; i < n; i++) {
+      const c = this.add.image(x, y, 'chip').setDepth(12).setTint(tint);
+      this.tweens.add({
+        targets: c, x: x + (Math.random() * 28 - 14), y: y + 10 + Math.random() * 14, alpha: 0, angle: Math.random() * 180,
+        duration: 380 + Math.random() * 200, ease: 'Quad.easeOut', onComplete: () => c.destroy(),
+      });
+    }
+  }
+
+  async useBomb(b) {
+    this.bombArmed = false;
+    if (S.removeItem('bonk_bombasi', 1) < 1) { this.mineActions(); return; }
+    this.busy = true;
+    const p = this.player;
+    if (Math.abs(p.x - MINE_STAND_X) > 2) await moveTo(p, MINE_STAND_X - 30, { speed: 110, anim: 'c_walk' });
+    p.setFlipX(false);
+    await playAnim(p, 'c_punch', 1.4);
+    const boom = this.add.sprite(b.spr.x, b.spr.y, 'boom').setDepth(13).setScale(1.3);
+    boom.play('boom');
+    boom.once('animationcomplete', () => boom.destroy());
+    sfx('boom');
+    this.cameras.main.shake(300, 0.016);
+    await wait(this, 150);
+    let skipped = 0;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const n = this.blockAt(b.r + dr, b.c + dc);
+        if (!n || !n.kind) continue;
+        if (S.level('madencilik') < ORES[n.kind].req) { skipped++; continue; }
+        await this.breakBlock(n, this.mineDepth, true);
+      }
+    }
+    if (skipped) UI.feed('Bazı cevherler için Madencilik seviyen yetmedi, bomba onları kıramadı.');
+    p.play('c_idle');
+    this.busy = false;
+    this.mineActions();
   }
 
   async enterDungeon(floor) {
@@ -304,13 +638,93 @@ export class WorldScene extends Phaser.Scene {
       case 'merdiven':
         room.obj = this.addObj(this.add.image(300, G - 1, 'stairs').setOrigin(0.5, 0).setDepth(2));
         break;
+      case 'maden': {
+        if (!room.vein) {
+          const w = [['tas', 55], ['komur', 35], ['demir', this.floor >= 4 ? 18 : 0]];
+          room.vein = [[258, G - 8], [274, G - 8], [266, G - 24]].map(([x, y]) => ({ kind: weighted(w), x, y }));
+        }
+        room.blocks = room.vein.filter((v) => v.kind).map((v) => {
+          const b = { kind: v.kind, hits: 0, crack: null, standX: 236, src: v };
+          b.spr = this.add.image(v.x, v.y, 'ores', v.kind).setDepth(5);
+          b.spr.setInteractive({ useHandCursor: true });
+          b.spr.on('pointerdown', () => this.onBlock(b));
+          this.roomObjs.push(b.spr);
+          return b;
+        });
+        break;
+      }
       default:
         break;
     }
+    // toplanabilir bitki / dal
+    if (room.node === undefined) {
+      const ok = ['savas', 'uyuyan', 'sandik', 'kamp', 'maden', 'arapatron'].includes(room.type);
+      room.node = ok && Math.random() < GATHER_CHANCE ? weighted(Object.entries(GATHER).map(([k, g]) => [k, g.w])) : null;
+      room.nodeX = 146 + Math.floor(Math.random() * 40);
+    }
+    if (room.node && !room.gathered) {
+      const g = GATHER[room.node];
+      room.nodeSpr = this.addObj(this.add.image(room.nodeX, G + 2, `node_${g.node}`).setOrigin(0.5, 1).setDepth(3), {
+        act: () => this.gather(room), modes: ['dungeon'], direct: true,
+      });
+    }
+  }
+
+  // ------------------------------------------------------------ oda eylemleri
+  gatherAction(room) {
+    if (!room.node || room.gathered || !room.cleared) return null;
+    return { label: `Topla: ${GATHER[room.node].name}`, cls: 'blue', onClick: () => this.gather(room) };
+  }
+
+  refreshRoomActions() {
+    const room = this.rooms[this.roomIdx];
+    if (!room || this.mode !== 'dungeon') return;
+    const back = { label: 'Üsse dön', onClick: () => this.returnBase() };
+    const next = { label: 'İlerle →', cls: room.type === 'sandik' || room.type === 'kamp' || room.type === 'maden' ? '' : 'primary', onClick: () => this.nextRoom() };
+    const g = this.gatherAction(room);
+    if (room.type === 'sandik') {
+      UI.setActions([room.opened ? null : { label: 'Sandığı aç', cls: 'primary', onClick: () => this.openChest(room) }, next, g, back]);
+    } else if (room.type === 'kamp') {
+      UI.setActions([room.rested ? null : { label: 'Ateşte dinlen (+%30 can)', cls: 'primary', onClick: () => this.rest(room) }, next, g, back]);
+    } else if (room.type === 'maden') {
+      const left = (room.blocks || []).filter((b) => b.kind);
+      UI.setActions([left.length ? { label: `Kaz (${left.length})`, cls: 'primary', onClick: () => this.onBlock(left[left.length - 1]) } : null, next, g, back]);
+    } else {
+      next.cls = 'primary';
+      UI.setActions([next, g, back]);
+    }
+  }
+
+  async gather(room) {
+    if (this.busy || this.battle || !room.cleared || room.gathered || this.mode !== 'dungeon') return;
+    const g = GATHER[room.node];
+    if (!S.fits(room.node)) { UI.feed('Çanta dolu!'); return; }
+    this.busy = true;
+    UI.setActions([]);
+    const p = this.player;
+    await moveTo(p, room.nodeX - 14, { speed: 100, anim: 'c_walk' });
+    p.setFlipX(false);
+    await playAnim(p, 'c_placeblock', 2.4);
+    sfx('gather');
+    const n = 1 + Math.floor(S.level('toplama') / 10) + (Math.random() < 0.3 ? 1 : 0);
+    this.giveDrop(room.node, n, 'Topladın:', true);
+    if (Math.random() < BAL_CHANCE) this.giveDrop('bal', 1, 'Bir arı kovanı! Topladın:', true);
+    room.gathered = true;
+    S.save.stats.gathered++;
+    if (room.nodeSpr) this.tweens.add({ targets: room.nodeSpr, alpha: 0, y: room.nodeSpr.y + 4, duration: 300 });
+    const xp = Math.round(g.xp * (1 + 0.1 * (this.floor - 1)));
+    UI.floatText(p.x, GROUND_Y - 44, `+${xp} Toplama XP`, 'good');
+    const ups = S.addXp({ toplama: xp });
+    S.changed();
+    for (const u of ups) await this.levelUp(u);
+    p.play('c_idle');
+    this.busy = false;
+    this.refreshRoomActions();
   }
 
   runRoom(room) {
     const back = { label: 'Üsse dön', onClick: () => this.returnBase() };
+    this.afterVein = null;
     switch (room.type) {
       case 'savas':
       case 'arapatron':
@@ -326,22 +740,19 @@ export class WorldScene extends Phaser.Scene {
         ]);
         break;
       case 'sandik':
-        UI.setActions([
-          room.opened ? null : { label: 'Sandığı aç', cls: 'primary', onClick: () => this.openChest(room) },
-          { label: 'İlerle →', onClick: () => this.nextRoom() },
-          back,
-        ]);
+      case 'kamp':
+        room.cleared = true;
+        this.refreshRoomActions();
+        break;
+      case 'maden':
+        room.cleared = true;
+        UI.feed('Maden damarı! Bloklara dokunup kazabilirsin.');
+        this.afterVein = () => this.refreshRoomActions();
+        this.refreshRoomActions();
         break;
       case 'tuzak':
         UI.feed('Dikenli tuzak! Zıplamak için zamanlamayı tuttur.');
         UI.setActions([{ label: 'Zıpla!', cls: 'primary', onClick: () => this.trap(room) }, back]);
-        break;
-      case 'kamp':
-        UI.setActions([
-          room.rested ? null : { label: 'Ateşte dinlen (+%30 can)', cls: 'primary', onClick: () => this.rest(room) },
-          { label: 'İlerle →', onClick: () => this.nextRoom() },
-          back,
-        ]);
         break;
       case 'merdiven':
         UI.setActions([{ label: `Aşağı in (Kat ${this.floor + 1})`, cls: 'primary', onClick: () => this.descend() }, back]);
@@ -352,10 +763,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   roomDone() {
-    UI.setActions([
-      { label: 'İlerle →', cls: 'primary', onClick: () => this.nextRoom() },
-      { label: 'Üsse dön', onClick: () => this.returnBase() },
-    ]);
+    const room = this.rooms[this.roomIdx];
+    if (room) room.cleared = true;
+    if (room && room.node && !room.gathered) UI.feed(`Burada ${GATHER[room.node].name.toLowerCase()} var, toplayabilirsin.`);
+    this.refreshRoomActions();
   }
 
   async nextRoom() {
@@ -575,7 +986,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.alpha = 0;
     await this.fade(true);
     S.endRun();
-    this.goBase(true);
+    this.goBase('dungeon');
     this.player.alpha = 1;
     await this.fade(false);
     UI.feed('Üsse döndün. Topladıkların güvende!');
@@ -608,20 +1019,20 @@ export class WorldScene extends Phaser.Scene {
   async afterDeath() {
     await this.fade(true);
     S.endRun();
-    this.goBase(true);
+    this.goBase('dungeon');
     await this.fade(false);
     this.busy = false;
   }
 
   // ------------------------------------------------------------ ganimet ve seviye
-  giveDrop(id, n, from) {
+  giveDrop(id, n, from, found = false) {
     const it = ITEMS[id];
     const left = S.addItem(id, n);
     const got = n - left;
     if (got > 0) {
       const special = it.rarity !== 'siradan' || !['malzeme', 'tuketim'].includes(it.kind);
       const cls = it.rarity === 'nadir' ? 'rare' : it.rarity === 'epik' ? 'epic' : it.rarity === 'efsanevi' ? 'gold' : '';
-      const text = `${UI.escapeHtml(from)} ${UI.itemName(id)}${got > 1 ? ` ×${got}` : ''} düştü!`;
+      const text = found ? `${UI.escapeHtml(from)} ${UI.itemName(id)}${got > 1 ? ` ×${got}` : ''}` : `${UI.escapeHtml(from)} ${UI.itemName(id)}${got > 1 ? ` ×${got}` : ''} düştü!`;
       UI.feed(`<img class="ico-inline" src="${iconUrl(it.icon)}">${text}`, cls);
       if (special) {
         sfx('rare');
@@ -640,9 +1051,17 @@ export class WorldScene extends Phaser.Scene {
     sfx('levelup');
     UI.bubble(this.player.x, GROUND_Y - 44, `<b>${sk.name}</b> ${up.level}. seviye!`, 2600);
     UI.feed(`<span style="color:#ffd04d">★ ${sk.name} seviyen ${up.level} oldu!</span>`, 'gold');
-    if (up.skill === 'saldiri' && up.level === 5) UI.feed('Artık Diken Kılıcı kuşanabilirsin.');
+    const gear = Object.values(ITEMS).filter((it) => it.req && it.req[0] === up.skill && it.req[1] === up.level);
+    if (gear.length) UI.feed(`Artık kuşanabilirsin: ${gear.map((it) => it.name).join(', ')}`);
     if (up.skill === 'saldiri' && up.level === 20) UI.feed('Yeni yetenek: Döner Kesik! (tüm düşmanlara vurur)', 'gold');
-    if (up.skill === 'savunma' && up.level === 8) UI.feed('Artık Kabuk Zırh giyebilirsin.');
+    if (up.skill === 'uretim') {
+      const rs = RECIPES.filter((r) => r.lvl === up.level);
+      if (rs.length) UI.feed(`Yeni tarifler: ${rs.map((r) => ITEMS[r.out].name).join(', ')}`);
+    }
+    if (up.skill === 'madencilik') {
+      const os = Object.values(ORES).filter((o) => o.req === up.level);
+      if (os.length) UI.feed(`Artık kazabilirsin: ${os.map((o) => o.name).join(', ')}`);
+    }
     await playAnim(this.player, 'c_levelup', 1);
     this.player.play('c_idle');
     this.refreshHud();

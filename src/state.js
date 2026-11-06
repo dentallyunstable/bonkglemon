@@ -30,8 +30,11 @@ function freshSave(char) {
     gold: 0,
     bag,
     depo: new Array(DEPO_SIZE).fill(null),
-    equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null },
-    stats: { kills: 0, deepest: 0, bossKills: 0, shiny: 0, deaths: 0, battles: 0, glemons: {}, playMs: 0 },
+    equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null, kazma: 'tahta_kazma' },
+    stats: { kills: 0, deepest: 0, bossKills: 0, shiny: 0, deaths: 0, battles: 0, glemons: {}, playMs: 0, mined: 0, crafted: 0, gathered: 0, deepestMine: 1 },
+    seen: {},                               // bir kez bulunan esyalar (tarif defteri icin)
+    furnace: { rid: null, n: 0, t0: 0 },    // firindaki is: tarif, adet, baslama zamani
+    mine: { depth: 1 },
     droplog: [],
     settings: { sound: true, auto: false },
   };
@@ -63,6 +66,15 @@ export const S = {
     for (const k of Object.keys(fresh.skills)) if (data.skills[k] === undefined) data.skills[k] = 0;
     for (const k of Object.keys(fresh.stats)) if (data.stats[k] === undefined) data.stats[k] = fresh.stats[k];
     while (data.bag.length < BAG_SIZE) data.bag.push(null);
+    // 0.2: kazma yuvasi ve tarif defteri
+    if (!('kazma' in data.equip)) {
+      const owned = [...data.bag, ...data.depo].some((x) => x && ITEMS[x.id] && ITEMS[x.id].kind === 'kazma');
+      data.equip.kazma = owned ? null : 'tahta_kazma';
+    }
+    for (const x of [...data.bag, ...data.depo]) if (x) data.seen[x.id] = true;
+    for (const id of Object.values(data.equip)) if (id) data.seen[id] = true;
+    // bilinmeyen esya kimliklerini temizle (eski surumlerden kalma)
+    for (const list of [data.bag, data.depo]) list.forEach((x, i) => { if (x && !ITEMS[x.id]) list[i] = null; });
     this.save = data;
     this.hp = this.maxHp();
     storageSet('bonkglemon.last', char);
@@ -102,12 +114,13 @@ export const S = {
   gear() {
     return Object.values(this.save.equip).filter(Boolean).map((id) => ITEMS[id]);
   },
-  setBonusHp() {
+  activeSets() {
     const counts = {};
     for (const it of this.gear()) if (it.set) counts[it.set] = (counts[it.set] || 0) + 1;
-    let hp = 0;
-    for (const [set, n] of Object.entries(counts)) if (n >= SETS[set].pieces) hp += SETS[set].hp;
-    return hp;
+    return Object.entries(counts).filter(([set, n]) => n >= SETS[set].pieces).map(([set]) => SETS[set]);
+  },
+  setBonusHp() {
+    return this.activeSets().reduce((t, st) => t + (st.hp || 0), 0);
   },
   maxHp() {
     return 50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.setBonusHp();
@@ -117,7 +130,13 @@ export const S = {
     return this.level('saldiri') + w;
   },
   def() {
-    return this.level('savunma') + this.gear().reduce((t, it) => t + (it.def || 0), 0);
+    const base = this.level('savunma') + this.gear().reduce((t, it) => t + (it.def || 0), 0);
+    const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0);
+    return Math.round(base * (1 + pct));
+  },
+  pick() {
+    const id = this.save.equip.kazma;
+    return id ? ITEMS[id].pick : 0;
   },
   spd() {
     return 100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0);
@@ -125,14 +144,27 @@ export const S = {
   crit() { return 0.05; },
 
   // ------------------------------------------------ canta
-  countItem(id) {
-    return this.save.bag.reduce((t, s) => t + (s && s.id === id ? s.n : 0), 0);
+  countItem(id, where = 'bag') {
+    return this.save[where].reduce((t, s) => t + (s && s.id === id ? s.n : 0), 0);
+  },
+
+  // esyanin cantaya sigip sigmayacagi (yigin + bos yuva)
+  fits(id, n = 1) {
+    const stackable = ITEMS[id].kind === 'malzeme' || ITEMS[id].kind === 'tuketim';
+    let room = 0;
+    for (const s of this.save.bag) {
+      if (!s) room += stackable ? STACK : 1;
+      else if (stackable && s.id === id) room += STACK - s.n;
+      if (room >= n) return true;
+    }
+    return false;
   },
 
   // Esya ekler. Sigmayan miktari dondurur (0 = hepsi sigdi).
   addItem(id, n = 1, where = 'bag') {
     const list = this.save[where];
     const stackable = ITEMS[id].kind === 'malzeme' || ITEMS[id].kind === 'tuketim';
+    this.save.seen[id] = true;
     let left = n;
     if (stackable) {
       for (const s of list) {

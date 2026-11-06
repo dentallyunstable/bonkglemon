@@ -52,10 +52,30 @@ class BootScene extends Phaser.Scene {
     tex('stairs', ART.stairsDown());
     tex('slash', ART.slash());
     tex('shadow', ART.shadow());
-    const fire = ART.campfire();
-    const ft = this.textures.addCanvas('fire', fire.canvas);
-    for (let i = 0; i < 3; i++) ft.add(i, 0, i * fire.fw, 0, fire.fw, fire.fh);
-    this.anims.create({ key: 'fire', frames: [0, 1, 2].map((i) => ({ key: 'fire', frame: i })), frameRate: 7, repeat: -1 });
+    // yan yana karelerden olusan dokular
+    const strip = (key, art, names) => {
+      if (this.textures.exists(key)) return;
+      const t = this.textures.addCanvas(key, art.canvas);
+      const n = Math.round(art.canvas.width / art.fw);
+      for (let i = 0; i < n; i++) t.add(names ? names[i] : i, 0, i * art.fw, 0, art.fw, art.fh);
+    };
+    const loop = (key, tex, frames, rate) => this.anims.create({ key, frames: frames.map((i) => ({ key: tex, frame: i })), frameRate: rate, repeat: -1 });
+    strip('fire', ART.campfire());
+    loop('fire', 'fire', [0, 1, 2], 7);
+    // 0.2: ev ici, maden ocagi, toplama
+    tex('house', ART.houseInterior());
+    tex('door_in', ART.doorInside());
+    tex('workbench', ART.workbench());
+    tex('bed', ART.bed());
+    strip('furnace', ART.furnaceArt());
+    loop('furnace_on', 'furnace', [1, 2], 6);
+    strip('cauldron', ART.cauldronArt());
+    loop('cauldron', 'cauldron', [0, 1], 3);
+    strip('ores', ART.oreSheet(), ART.ORE_FRAMES);
+    strip('boom', ART.boomArt());
+    this.anims.create({ key: 'boom', frames: [0, 1, 2, 3].map((i) => ({ key: 'boom', frame: i })), frameRate: 12, repeat: 0 });
+    tex('chip', ART.chip());
+    for (const k of ['herb', 'berry', 'branch']) tex(`node_${k}`, ART.gatherNode(k));
     this.scene.start('world', { gmeta, charMeta });
   }
 }
