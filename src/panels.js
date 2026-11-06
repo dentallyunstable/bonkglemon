@@ -265,7 +265,7 @@ export function openProfile(w) {
         const li = UI.el('li');
         const when = `<span class="when">${ago(d.t)}</span>`;
         if (d.item && ITEMS[d.item]) li.innerHTML = `${when}${UI.escapeHtml(d.from)} ${UI.itemName(d.item)}`;
-        else li.innerHTML = `${when}<span style="color:#ffd04d">✦ ${UI.escapeHtml(d.note || d.from)}</span>`;
+        else li.innerHTML = `${when}<span style="color:#ffd04d">✦ ${UI.escapeHtml(d.from)} ${UI.escapeHtml(d.note || '')}</span>`;
         ul.appendChild(li);
       }
       info.appendChild(ul);

@@ -554,7 +554,7 @@ export class WorldScene extends Phaser.Scene {
 
   async bossDefeated() {
     this.busy = true;
-    S.logDrop(null, 'Ağaçbaşı', { note: 'Ağaçbaşı yenildi!' });
+    S.logDrop(null, 'Ağaçbaşı', { note: 'yenildi! Yabani Orman temizlendi' });
     S.changed();
     UI.banner('Yabani Orman temizlendi!', 'Yeni bölgeler 0.5 sürümünde açılacak', 3500, 'gold');
     sfx('rare');

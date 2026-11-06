@@ -156,14 +156,28 @@ export function forestBackground(floor, variant = 0, base = false) {
     const yTop = Math.round((G - 30 - h) / 2) * 2;
     for (let y = yTop; y < G; y++) p.set(x, y, y < yTop + 2 ? mul(hill, 1.08) : hill);
   }
-  // uzak agac sirasi
+  // uzak orman (yuvarlak tepeli agac kumeleri)
   const far = mix(hex('#5c9f74'), hex('#262c4c'), t);
-  const farL = mix(far, hex('#bfe8b0'), 0.18 * (1 - t));
-  for (let x = -6; x < W;) {
-    const w = 10 + Math.floor(r() * 10); const top2 = G - 34 - Math.floor(r() * 30);
-    for (let y = top2; y < G; y++) for (let i = 0; i < w; i++) p.set(x + i, y, i < 2 ? farL : far);
-    p.rect(x + 2, top2 - 4, w - 4, 4, far);
-    x += w - 2 + Math.floor(r() * 4);
+  const farL = mix(far, hex('#bfe8b0'), 0.22 * (1 - t) + 0.05);
+  const farD = mix(far, hex('#10141e'), 0.18);
+  const prof = new Array(W).fill(G);
+  for (let x = -12; x < W + 12; x += 7 + Math.floor(r() * 9)) {
+    const rad = 7 + r() * 9;
+    const cy = G - 30 - r() * 26;
+    for (let i = -Math.ceil(rad); i <= Math.ceil(rad); i++) {
+      const xx = x + i;
+      if (xx < 0 || xx >= W || Math.abs(i) > rad) continue;
+      const top = Math.round((cy - Math.sqrt(rad * rad - i * i)) / 2) * 2;
+      prof[xx] = Math.min(prof[xx], top);
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    for (let y = prof[x]; y < G; y++) {
+      const edge = y < prof[x] + 2 || (x > 0 && prof[x - 1] > y) ;
+      let c = edge ? farL : far;
+      if (!edge && r() < 0.12) c = farD;
+      p.set(x, y, c);
+    }
   }
   // orta agaclar
   const cols = {

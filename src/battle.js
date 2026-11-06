@@ -209,7 +209,11 @@ export class Battle {
     S.persist();
     this.renderAuto();
     if (S.save.settings.auto && (this.phase === 'menu' || this.phase === 'target')) {
-      this.clearTargets();
+      const r = this.targetResolve;
+      this.targetResolve = null;
+      this.removeMarkers();
+      this.phase = null;
+      if (r) r('auto');
       this.autoAct();
     }
   }
@@ -296,7 +300,8 @@ export class Battle {
 
   async onAttack() {
     const t = await this.chooseTarget();
-    if (!t) { if (this.phase !== null) this.showMenu(); return; }
+    if (t === 'auto' || this.over) return;
+    if (!t) { this.showMenu(); return; }
     await this.doAttack(t, false);
   }
 
@@ -308,23 +313,27 @@ export class Battle {
       this.targetResolve = resolve;
       this.acts.innerHTML = '';
       this.acts.appendChild(el('div', 'hint', 'Hedefe dokun'));
-      this.acts.appendChild(button('Geri', () => { this.clearTargets(); resolve(null); }, 'small'));
+      this.acts.appendChild(button('Geri', () => { this.targetResolve = null; this.removeMarkers(); resolve(null); }, 'small'));
       for (const e of alive) {
         const t = el('button', 'target', '▼');
         t.style.left = `${(e.sprite.x / 384) * 100}%`;
         t.style.top = `${((this.topY(e) - 14) / 216) * 100}%`;
-        t.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); sfx('click'); this.clearTargets(); resolve(e); });
+        t.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); sfx('click'); this.targetResolve = null; this.removeMarkers(); resolve(e); });
         $('#bars').appendChild(t);
       }
     });
   }
 
-  clearTargets() {
+  removeMarkers() {
     for (const t of document.querySelectorAll('#bars .target')) t.remove();
-    if (this.targetResolve && this.phase === 'target') {
-      const r = this.targetResolve; this.targetResolve = null; this.phase = null; r(null);
-    }
+  }
+
+  // savas biterken bekleyen hedef secimini iptal et
+  clearTargets() {
+    this.removeMarkers();
+    const r = this.targetResolve;
     this.targetResolve = null;
+    if (r) r('auto');
   }
 
   async autoAct() {
@@ -474,6 +483,15 @@ export class Battle {
     this.scene.tweens.add({ targets: [e.sprite], alpha: 0, y: GROUND_Y - 6, duration: 500, delay: 250, onComplete: () => e.sprite.destroy() });
     this.scene.tweens.add({ targets: [e.shadow], alpha: 0, duration: 500, delay: 250, onComplete: () => e.shadow.destroy() });
     if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
+    // patron dusunce cagirdigi kokler de cekilir (odulsuz)
+    if (e.data.boss) {
+      for (const o of this.alive()) {
+        o.alive = false;
+        if (o.ui) { o.ui.wrap.remove(); o.ui = null; }
+        floatText(o.sprite.x, this.topY(o), 'Kökler çekildi', 'info');
+        this.scene.tweens.add({ targets: [o.sprite, o.shadow], alpha: 0, y: '+=12', duration: 600, onComplete: () => { o.sprite.destroy(); o.shadow.destroy(); } });
+      }
+    }
     // oduller
     const rm = RMULT[e.rarity] || 1;
     let xp = 8 * Math.pow(this.floor, 1.2) * rm;
@@ -493,7 +511,7 @@ export class Battle {
     if (e.data.boss) st.bossKills++;
     if (e.shiny) {
       st.shiny++;
-      S.logDrop(null, e.name, { note: 'Parlak Glemon yendi' });
+      S.logDrop(null, e.name, { note: 'yenildi (1/500 şans!)' });
       feed(`<span style="color:#ffd04d">✦ ${e.name} yendin! (1/500 şans)</span>`, 'gold');
     }
     const manual = this.manualActs >= this.autoActs;
