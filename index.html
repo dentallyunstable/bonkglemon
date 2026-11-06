@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Bonkglemon</title>
+<meta name="description" content="Bonkglemon: arkadaşlarınla Glemon avla, zindanda kas, eşya topla.">
+<meta name="theme-color" content="#14121c">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="game"></div>
+  <div id="ui">
+    <div id="hud" class="hidden">
+      <div class="hud-card" id="hud-me">
+        <div class="hud-row"><span id="hud-name"></span><span id="hud-lvl"></span></div>
+        <div class="bar hp"><div class="fill" id="hud-hp"></div><span id="hud-hp-text"></span></div>
+        <div class="hud-row small"><span id="hud-gold"></span></div>
+      </div>
+      <div id="loc"></div>
+      <div id="hud-btns"></div>
+    </div>
+    <div id="feed"></div>
+    <div id="bars"></div>
+    <div id="floats"></div>
+    <div id="battle" class="hidden"></div>
+    <div id="actions"></div>
+    <div id="overlay"></div>
+    <div id="banner"></div>
+    <div id="panel"></div>
+    <div id="login" class="hidden"></div>
+    <div id="loading">Yükleniyor…</div>
+  </div>
+</div>
+<div id="rotate">Daha büyük görmek için telefonu yan çevir</div>
+<script src="vendor/phaser.min.js"></script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
