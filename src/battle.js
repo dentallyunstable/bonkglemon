@@ -437,11 +437,21 @@ export class Battle {
       this.acts.appendChild(el('div', 'hint', 'Hedefe dokun'));
       this.acts.appendChild(button('Geri', () => { this.targetResolve = null; this.removeMarkers(); resolve(null); }, 'small'));
       for (const e of alive) {
+        const pickIt = (ev) => { ev.stopPropagation(); sfx('click'); this.targetResolve = null; this.removeMarkers(); resolve(e); };
         const t = el('button', 'target', '▼');
         t.style.left = `${(e.sprite.x / 384) * 100}%`;
         t.style.top = `${((this.topY(e) - 14) / 216) * 100}%`;
-        t.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); sfx('click'); this.targetResolve = null; this.removeMarkers(); resolve(e); });
+        t.addEventListener('pointerdown', pickIt);
         $('#bars').appendChild(t);
+        // yaratigin kendisi de dokunulabilir: govdesini kaplayan gorunmez alan (biraz genis)
+        const bd = e.sprite.getBounds();
+        const hit = el('button', 'target target-hit');
+        hit.style.left = `${((bd.x - 4) / 384) * 100}%`;
+        hit.style.top = `${((bd.y - 4) / 216) * 100}%`;
+        hit.style.width = `${((bd.width + 8) / 384) * 100}%`;
+        hit.style.height = `${((bd.height + 8) / 216) * 100}%`;
+        hit.addEventListener('pointerdown', pickIt);
+        $('#bars').prepend(hit);
       }
     });
   }

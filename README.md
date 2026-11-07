@@ -4,6 +4,10 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.3.2
+
+- Savaşta hedef seçerken yaratığın kendisine dokunmak da yetiyor (sadece sarı ok değil).
+
 ## Sürüm 0.3.1
 
 - Ağaç yaprakları artık gövdeye ve birbirine oturuyor (havada yaprak yok).
