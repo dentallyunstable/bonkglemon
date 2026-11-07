@@ -4,6 +4,12 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.3.0 (16x16 blok tarzı)
+
+- Her şey 16x16 bloklardan kuruldu: ev, maden girişi, ağaçlar, tepeler, zemin, ev içi, maden ocağı, savaş ekranı.
+- Her blok dokusu sabit, soluk ve 4-6 tonlu (`src/blocks.js`). Uzak tepe ve ağaçlar aynı blokların sisli hâli.
+- Simgeler 16x16; Glemonların renkleri soldu, ışık ve gölge tonları eklendi.
+
 ## Sürüm 0.2.2 (Ayrı savaş ekranı)
 
 - Savaş artık ayrı bir ekranda açılır: perspektifli çayır, ufukta orman, Glemonlar uzaktaki meydanda bize dönük, karakter sol altta sırtı dönük.

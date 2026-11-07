@@ -4,7 +4,9 @@ Kullanim: python3 tools/gen_glemons.py assets/glemons [onizleme.png]
 
 Kurallar (Oyun Tasarim Belgesi, bolum 16):
 - 1 texel = 2x2 piksel (karakterlerin yuz izgarasi gibi)
-- duz renkler, malzeme basina 2-3 ton, rastgele golgelendirme yok
+- 0.3 (Eren, 2026-11-07): daha fazla ton, soluk renkler. Renkler biraz soldurulur ve
+  her parca 1 piksellik isik/golge alir: sol-ust kenar acik, sag-alt kenar koyu,
+  govdenin alt kismi hafif koyu. Kucuk parcalar (goz, agiz) duz kalir.
 - 1 piksel siyaha yakin dis cizgi (karakterlerin cizgisi gibi)
 - Glemonlar onden ya da 3/4 onden sola bakar (savas ekrani oyuncunun sirtindan bakar)
 Cikti: her Glemon icin <anim>.png ve <anim>_parlak.png yatay seritleri + glemons.json
@@ -227,7 +229,51 @@ def outlined(px):
     return out
 
 
+def mute(c):
+    r, g, b, a = c
+    l = 0.3 * r + 0.59 * g + 0.11 * b
+    return tuple(int(max(0, min(255, (v + (l - v) * 0.18) * 0.94))) for v in (r, g, b)) + (a,)
+
+
+def mulc(c, f):
+    return tuple(int(max(0, min(255, v * f))) for v in c[:3]) + (c[3],)
+
+
+def shaded(px):
+    if not px:
+        return px
+    ys = [y for _, y in px]
+    y0, y1 = min(ys), max(ys)
+    # ayni renkli bitisik bolgelerin boyu (kucuk parcalar golgelenmez)
+    seen, size = set(), {}
+    for k in px:
+        if k in seen:
+            continue
+        stack, comp = [k], []
+        seen.add(k)
+        while stack:
+            q = stack.pop(); comp.append(q)
+            for n in ((q[0] + 1, q[1]), (q[0] - 1, q[1]), (q[0], q[1] + 1), (q[0], q[1] - 1)):
+                if n in px and n not in seen and px[n] == px[k]:
+                    seen.add(n); stack.append(n)
+        for q in comp:
+            size[q] = len(comp)
+    out = {}
+    for (x, y), c in px.items():
+        c2 = mute(c)
+        if size[(x, y)] >= 24 and sum(c[:3]) > 90:
+            if (x - 1, y) not in px or (x, y - 1) not in px:
+                c2 = mulc(c2, 1.12)
+            elif (x + 1, y) not in px or (x, y + 1) not in px or (x + 2, y) not in px:
+                c2 = mulc(c2, 0.8)
+            elif y1 > y0 and (y - y0) / (y1 - y0) > 0.72:
+                c2 = mulc(c2, 0.9)
+        out[(x, y)] = c2
+    return out
+
+
 def render(size, parts, flash=False):
+    parts = [(shaded(pix) if i < 3 else pix, ox, oy) for i, (pix, ox, oy) in enumerate(parts)]
     cw, ch = size
     img = Image.new('RGBA', (cw, ch), (0, 0, 0, 0))
     p = img.load()

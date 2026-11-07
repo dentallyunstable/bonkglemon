@@ -9,12 +9,12 @@ import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
-import { forestBackground, caveBackground, battleBackground, iconUrl, MINE_WALL } from './art.js';
+import { forestBackground, caveBackground, battleBackground, iconUrl, MINE_WALL, CABIN } from './art.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop } from './panels.js';
 
 const PLAYER_HOME = 96;
 const MINE_X = 330;
-const CABIN_DOOR_X = 70;
+const CABIN_DOOR_X = 2 + CABIN.door;
 const WALK_MODES = ['base', 'house'];
 const MINE_STAND_X = MINE_WALL.x - 14;
 const SHOP_X = 256;
@@ -223,14 +223,14 @@ export class WorldScene extends Phaser.Scene {
     this.clearRoom();
     this.bg.setTexture('bg_base');
     const G = GROUND_Y;
-    this.addObj(this.add.image(2, G + 3, 'cabin').setOrigin(0, 1).setDepth(3), {
-      x: CABIN_DOOR_X, label: 'Evin', lx: 54, ly: G - 84,
+    this.addObj(this.add.image(2, G + 1, 'cabin').setOrigin(0, 1).setDepth(3), {
+      x: CABIN_DOOR_X, label: 'Evin', lx: CABIN_DOOR_X, ly: G - 120,
       act: () => this.enterHouse(),
     });
     this.addObj(this.add.image(126, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), {
       x: 110, face: false, label: 'Depo', ly: G - 22, act: () => openDepo(this),
     });
-    const fire = this.add.sprite(164, G + 2, 'fire').setOrigin(0.5, 1).setDepth(4);
+    const fire = this.add.sprite(164, G + 1, 'fire').setOrigin(0.5, 1).setDepth(4);
     fire.play('fire');
     this.addObj(fire, {
       x: 148, face: false, label: 'Kamp ateşi', ly: G - 30,
@@ -239,14 +239,14 @@ export class WorldScene extends Phaser.Scene {
         this.say('Kamp 0.3 sürümünde gelecek: sen yokken 2 saate kadar malzeme toplayacak.', 3600);
       },
     });
-    this.addObj(this.add.image(204, G + 2, 'signpost').setOrigin(0.5, 1).setDepth(4), {
-      x: 190, face: false, label: 'Harita', ly: G - 36, act: () => openMap(this),
+    this.addObj(this.add.image(214, G + 1, 'signpost').setOrigin(0.5, 1).setDepth(4), {
+      x: 196, face: false, label: 'Harita', ly: G - 42, act: () => openMap(this),
     });
-    this.addObj(this.add.image(SHOP_X, G + 2, 'stall').setOrigin(0.5, 1).setDepth(4), {
+    this.addObj(this.add.image(SHOP_X, G + 1, 'stall').setOrigin(0.5, 1).setDepth(4), {
       label: 'Takas Tezgâhı', ly: G - 58, direct: true, act: () => this.goShop(),
     });
-    this.addObj(this.add.image(MINE_X, G + 3, 'mine').setOrigin(0.5, 1).setDepth(3), {
-      x: MINE_X, label: 'Zindan girişi', ly: G - 62, act: () => openMap(this),
+    this.addObj(this.add.image(MINE_X, G + 1, 'mine').setOrigin(0.5, 1).setDepth(3), {
+      x: MINE_X, label: 'Zindan girişi', ly: G - 92, act: () => openMap(this),
     });
     this.player.setFlipX(false);
     this.player.x = from === 'dungeon' ? MINE_X : from === 'house' ? CABIN_DOOR_X : 200;
@@ -301,16 +301,16 @@ export class WorldScene extends Phaser.Scene {
       x: 30, label: 'Dışarı', ly: G - 52, act: () => this.leaveHouse(),
     });
     this.addObj(this.add.image(112, G + 1, 'workbench').setOrigin(0.5, 1).setDepth(4), {
-      x: 88, face: false, label: 'Üretim Masası', ly: G - 30, act: () => openStation(this, 'masa'),
+      x: 88, face: false, label: 'Üretim Masası', ly: G - 26, act: () => openStation(this, 'masa'),
     });
     this.furnace = this.add.sprite(196, G + 1, 'furnace', 0).setOrigin(0.5, 1).setDepth(4);
     this.addObj(this.furnace, {
-      x: 174, face: false, label: 'Fırın', ly: G - 54, act: () => openStation(this, 'firin'),
+      x: 174, face: false, label: 'Fırın', ly: G - 26, act: () => openStation(this, 'firin'),
     });
     const caul = this.add.sprite(262, G + 1, 'cauldron', 0).setOrigin(0.5, 1).setDepth(4);
     caul.play('cauldron');
     this.addObj(caul, {
-      x: 242, face: false, label: 'Simya Kazanı', ly: G - 34, act: () => openStation(this, 'kazan'),
+      x: 242, face: false, label: 'Simya Kazanı', ly: G - 26, act: () => openStation(this, 'kazan'),
     });
     this.addObj(this.add.image(336, G + 1, 'bed').setOrigin(0.5, 1).setDepth(4), {
       x: 308, face: false, label: 'Yatak', ly: G - 26,
@@ -688,16 +688,16 @@ export class WorldScene extends Phaser.Scene {
         room.obj = this.addObj(this.add.image(250, G + 1, room.opened ? 'chest_open' : 'chest').setOrigin(0.5, 1).setDepth(4));
         break;
       case 'tuzak':
-        room.obj = this.addObj(this.add.image(198, G + 2, 'spikes').setOrigin(0.5, 1).setDepth(4));
+        room.obj = this.addObj(this.add.image(198, G + 1, 'spikes').setOrigin(0.5, 1).setDepth(4));
         break;
       case 'kamp': {
-        const fire = this.add.sprite(200, G + 2, 'fire').setOrigin(0.5, 1).setDepth(4);
+        const fire = this.add.sprite(200, G + 1, 'fire').setOrigin(0.5, 1).setDepth(4);
         fire.play('fire');
         room.obj = this.addObj(fire);
         break;
       }
       case 'merdiven':
-        room.obj = this.addObj(this.add.image(300, G - 1, 'stairs').setOrigin(0.5, 0).setDepth(2));
+        room.obj = this.addObj(this.add.image(300, G, 'stairs').setOrigin(0.5, 0).setDepth(2));
         break;
       case 'maden': {
         if (!room.vein) {
@@ -725,7 +725,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (room.node && !room.gathered) {
       const g = GATHER[room.node];
-      room.nodeSpr = this.addObj(this.add.image(room.nodeX, G + 2, `node_${g.node}`).setOrigin(0.5, 1).setDepth(3), {
+      room.nodeSpr = this.addObj(this.add.image(room.nodeX, G + 1, `node_${g.node}`).setOrigin(0.5, 1).setDepth(3), {
         act: () => this.gather(room), modes: ['dungeon'], direct: true,
       });
     }
