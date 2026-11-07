@@ -4,6 +4,10 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.3.1 (Müzik)
+
+- Karakter seçim ekranında menü müziği, her savaşta savaş müziği çalar (Eren'in parçaları, `assets/music/`). Profildeki ses ayarı müziği de kapatır.
+
 ## Sürüm 0.3.0 (Üs)
 
 - **Arsa:** üste "Arsa" düğmesiyle (ya da sağa yürüyerek) kendi blok alanına gidersin. Başta 16×8 blok; İnşa 20'de 20 sütun, 40'ta 24×9, 60'ta 24×10.

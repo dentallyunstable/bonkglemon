@@ -2,7 +2,7 @@
 import { GAME_W, GAME_H, CHARACTERS } from './data.js';
 import { S } from './state.js';
 import { $, show } from './ui.js';
-import { setSound } from './audio.js';
+import { setSound, stopMusic } from './audio.js';
 import { showLogin } from './login.js';
 import { makeAnim, makeAnimFrames } from './anim.js';
 import { WorldScene } from './world.js';
@@ -99,6 +99,7 @@ async function loadJson(url) {
 function startGame(char, charMeta, gmeta) {
   S.load(char);
   window.__S = S; // testler icin
+  stopMusic();
   setSound(S.save.settings.sound);
   BOOT = { char, charMeta: charMeta[char], gmeta };
   $('#loading').textContent = 'Yükleniyor…';

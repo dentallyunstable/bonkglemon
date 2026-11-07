@@ -7,7 +7,7 @@ import {
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
-import { sfx } from './audio.js';
+import { sfx, playMusic, stopMusic } from './audio.js';
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
@@ -1264,6 +1264,7 @@ export class WorldScene extends Phaser.Scene {
   async enterBattleView() {
     if (this.inBattleView) return;
     this.inBattleView = true;
+    playMusic('enemyfight');
     const cam = this.cameras.main;
     cam.flash(120, 255, 255, 255);
     await wait(this, 120);
@@ -1289,6 +1290,7 @@ export class WorldScene extends Phaser.Scene {
 
   async exitBattleView(show = true) {
     if (!this.inBattleView) return;
+    stopMusic();
     if (show) await this.fade(true);
     this.inBattleView = false;
     const p = this.player;

@@ -2,7 +2,7 @@
 let ctx = null;
 let enabled = true;
 
-export function setSound(on) { enabled = on; }
+export function setSound(on) { enabled = on; syncMusic(); }
 
 function ac() {
   if (!ctx) {
@@ -73,3 +73,60 @@ export function sfx(name) {
 }
 
 export function unlockAudio() { if (enabled) ac(); }
+
+// ------------------------------------------------------------ muzik (Eren'in dosyalari)
+// menu: karakter secim ekrani, enemyfight: her savas. Dongu halinde, ses kapaliysa calmaz.
+// Tarayici ilk dokunustan once ses calmaya izin vermezse, ilk dokunusta baslar.
+const MUSIC = { menu: 'assets/music/menu.mp3', enemyfight: 'assets/music/enemyfight.mp3' };
+const MUSIC_VOL = 0.45;
+const tracks = {};
+let want = null;     // su an calmasi gereken parca
+let fadeTimer = null;
+
+function track(key) {
+  if (!tracks[key]) {
+    const a = new Audio(MUSIC[key]);
+    a.loop = true; a.preload = 'auto'; a.volume = 0;
+    tracks[key] = a;
+  }
+  return tracks[key];
+}
+
+function fadeTo(a, vol, ms, then) {
+  const start = a.volume; const t0 = performance.now();
+  const step = () => {
+    const k = Math.min(1, (performance.now() - t0) / ms);
+    a.volume = Math.max(0, Math.min(1, start + (vol - start) * k));
+    if (k < 1) a._fade = requestAnimationFrame(step); else if (then) then();
+  };
+  cancelAnimationFrame(a._fade);
+  step();
+}
+
+function syncMusic() {
+  for (const [key, a] of Object.entries(tracks)) {
+    if (key !== want || !enabled) fadeTo(a, 0, 400, () => a.pause());
+  }
+  if (!want || !enabled) return;
+  const a = track(want);
+  const p = a.play();
+  if (p && p.catch) p.catch(() => { /* izin yok: ilk dokunusu bekle */ });
+  fadeTo(a, MUSIC_VOL, 600);
+}
+
+export function playMusic(key) {
+  if (want === key) { if (enabled && tracks[key] && tracks[key].paused) syncMusic(); return; }
+  want = key;
+  if (key && tracks[key]) tracks[key].currentTime = 0;
+  syncMusic();
+}
+
+export function stopMusic() { want = null; syncMusic(); }
+
+// ilk dokunusta (tarayici izni) bekleyen muzigi baslat
+['pointerdown', 'keydown'].forEach((ev) => window.addEventListener(ev, () => {
+  if (want && enabled && tracks[want] && tracks[want].paused) syncMusic();
+}, true));
+
+// testler icin
+window.__music = () => ({ want, playing: Object.entries(tracks).filter(([, a]) => !a.paused).map(([k]) => k) });

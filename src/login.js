@@ -2,7 +2,7 @@
 import { CHARACTERS, VERSION } from './data.js';
 import { $, el, button, domSprite } from './ui.js';
 import { hasSave } from './state.js';
-import { sfx, unlockAudio } from './audio.js';
+import { sfx, unlockAudio, playMusic } from './audio.js';
 
 const REMEMBER_KEY = 'bonkglemon.remember';
 
@@ -73,6 +73,7 @@ function sha256Fallback(bytes) {
 export function forgetLogin() { store(REMEMBER_KEY, null); }
 
 export function showLogin(charMeta, onLogin) {
+  playMusic('menu');
   const root = $('#login');
   root.innerHTML = '';
   root.classList.remove('hidden');
