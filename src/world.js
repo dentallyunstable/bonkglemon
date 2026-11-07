@@ -9,7 +9,7 @@ import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
-import { forestBackground, caveBackground, iconUrl, MINE_WALL } from './art.js';
+import { forestBackground, caveBackground, battleBackground, iconUrl, MINE_WALL } from './art.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop } from './panels.js';
 
 const PLAYER_HOME = 96;
@@ -871,33 +871,53 @@ export class WorldScene extends Phaser.Scene {
 
   // Savas ekrani: kamera karakterin sirtindan bakar. Karakter solda, yakin, buyuk ve
   // biraz bulanik (arka 3/4); Glemonlar karsida bize donuk.
+  // Savas ayri bir ekranda acilir (Undertale gibi): oda gizlenir, perspektifli savas
+  // sahnesi gelir. Kamera karakterin sirtindan bakar: karakter sol altta, yakin, buyuk
+  // ve hafif bulanik (arka 3/4); Glemonlar karsidaki uzak meydanda bize donuk.
   async enterBattleView() {
     if (this.inBattleView) return;
     this.inBattleView = true;
+    const cam = this.cameras.main;
+    cam.flash(120, 255, 255, 255);
+    await wait(this, 120);
+    await this.fade(true);
+    this.roomBg = this.bg.texture.key;
+    const key = `arena_${Math.min(this.floor || 1, 10)}`;
+    if (!this.textures.exists(key)) this.textures.addCanvas(key, battleBackground(this.floor || 1));
+    this.bg.setTexture(key);
+    this.hiddenObjs = this.roomObjs.filter((o) => o.visible);
+    for (const o of this.hiddenObjs) o.setVisible(false);
+    for (const l of this.labels) l.style.visibility = 'hidden';
+    this.battle.toArena();
     const p = this.player;
-    this.cameras.main.flash(220, 255, 255, 255);
     p.setFlipX(false).setDepth(20).setScale(BPOS.scale);
     p.x = BPOS.x;
     p.y = BPOS.y;
     p.alpha = 1;
     p.play('c_b_idlesway');
     if (p.postFX && !this.pBlur) this.pBlur = p.postFX.addBlur(1, 1, 1, 0.55, 0xffffff, 2);
-    await wait(this, 250);
+    UI.setLocation('Savaş!');
+    await this.fade(false);
   }
 
   async exitBattleView(show = true) {
     if (!this.inBattleView) return;
+    if (show) await this.fade(true);
     this.inBattleView = false;
     const p = this.player;
     if (this.pBlur) { p.postFX.remove(this.pBlur); this.pBlur = null; }
-    if (show) this.cameras.main.flash(160, 255, 255, 255);
+    if (this.roomBg) this.bg.setTexture(this.roomBg);
+    for (const o of this.hiddenObjs || []) if (o.active) o.setVisible(true);
+    this.hiddenObjs = null;
+    for (const l of this.labels) l.style.visibility = '';
+    if (this.mode === 'dungeon' && this.rooms) UI.setLocation(`Yabani Orman · Kat ${this.floor} · Oda ${this.roomIdx + 1}/${this.rooms.length}`);
     p.setDepth(10).setScale(1);
     p.x = this.playerHomeX;
     p.y = GROUND_Y;
     p.setFlipX(false);
     this.idle();
     if (!show) p.alpha = 0;
-    if (show) await wait(this, 180);
+    if (show) await this.fade(false);
   }
 
   async afterFlee(room) {

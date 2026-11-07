@@ -355,6 +355,78 @@ export function forestBackground(floor, variant = 0, base = false, width = GAME_
 }
 
 // ------------------------------------------------------------------ us nesneleri
+// Savas sahnesi (0.2.2): ayri bir ekran, kamera oyuncunun sirtindan bakar.
+// Ufuk yukarida, zemin perspektifle bize dogru genisler; Glemonlar ortadaki uzak
+// meydanda, arkalarinda orman. Oyuncu sol altta, kameraya en yakin yerde durur.
+export const ARENA = { horizon: 92, enemyY: 140, nearY: 206 };
+export function battleBackground(floor = 1) {
+  const TW = GAME_W / 2; const TH = GAME_H / 2; const HZ = ARENA.horizon / 2;
+  const r = rng(floor * 31337 + 5);
+  const t = Math.min(1, (floor - 1) / 9) * 0.85;
+  const C = dn(t);
+  const layers = [];
+  const sky = new Tex(TW, TH);
+  const bands = [C('#94d2f0', '#1b1a36'), C('#a8dcf3', '#271f46'), C('#c0e6f6', '#3d2a55'), C('#d8effa', '#5e365f')];
+  const edges = [0, 12, 24, 34, HZ];
+  for (let b = 0; b < 4; b++) sky.rect(0, edges[b], TW, edges[b + 1] - edges[b], bands[b]);
+  layers.push({ t: sky });
+  const deco = new Tex(TW, TH);
+  if (t >= 0.45) {
+    const star = mix(hex('#ffffff'), bands[0], 0.25);
+    for (let i = 0; i < 22; i++) deco.set(Math.floor(r() * TW), Math.floor(r() * 30), star);
+    deco.ellipse(150, 10, 4, 4, '#ece8f4');
+  }
+  const cloud = C('#ffffff', '#4a4470', 0.9);
+  for (let i = 0; i < 3; i++) { const cx = Math.floor(r() * TW) - 6; const cy = 4 + Math.floor(r() * 16); deco.rrect(cx, cy, 14 + Math.floor(r() * 8), 3, cloud, 1); }
+  layers.push({ t: deco });
+  // en uzak tepe ve orman siluetleri (ufkun hemen ustu)
+  const far = new Tex(TW, TH);
+  const hill = C('#bfe2c8', '#3a3a62');
+  for (let x = 0; x < TW; x++) { const h = 7 + 3 * Math.sin(x * 0.05 + 1) + 2 * Math.sin(x * 0.13); for (let y = Math.round(HZ - h - 6); y < HZ; y++) far.set(x, y, hill); }
+  layers.push({ t: far });
+  const woods = new Tex(TW, TH);
+  const wood = C('#6cae5a', '#24304a'); const woodD = C('#55964a', '#1c2640');
+  for (let x = -4; x < TW + 4; x += 7) {
+    const h = 6 + Math.floor(r() * 5);
+    woods.ellipse(x + 3, HZ - h, 5, h, wood);
+    woods.rect(x + 2, HZ - 3, 2, 3, C('#7a5a3a', '#2a2234'));
+  }
+  for (let x = 0; x < TW; x++) woods.set(x, HZ - 1, woodD);
+  layers.push({ t: woods, ol: 'dark' });
+  // zemin: ufuktan bize dogru kalinlasan cimen seritleri (perspektif)
+  const ground = new Tex(TW, TH);
+  const g1 = C('#8fd068', '#2e4a3e'); const g2 = C('#7cc25a', '#284236');
+  let y = HZ; let k = 0; let h = 1;
+  while (y < TH) { ground.rect(0, y, TW, Math.ceil(h), k % 2 ? g2 : g1); y += Math.ceil(h); h *= 1.42; k++; }
+  // ufuk noktasina dogru giden toprak yol
+  const path = C('#d8b47c', '#4e4050'); const pathD = C('#c09a62', '#3e3442');
+  const vx = 120;
+  for (let yy = HZ; yy < TH; yy++) {
+    const f = (yy - HZ) / (TH - HZ);
+    const cx = vx + (40 - vx) * f; const w = 2 + 46 * f;
+    ground.rect(Math.round(cx - w / 2), yy, Math.round(w), 1, path);
+    ground.set(Math.round(cx - w / 2), yy, pathD); ground.set(Math.round(cx + w / 2), yy, pathD);
+  }
+  // Glemonlarin durdugu uzak meydan
+  const ay = ARENA.enemyY / 2;
+  ground.ellipse(134, ay, 46, 6, C('#a4dc7a', '#36564a'));
+  ground.ellipse(134, ay + 1, 44, 4.5, C('#b4e48a', '#3e6050'));
+  layers.push({ t: ground });
+  // yanlarda yakin agaclar (cerceve gibi) ve calilar: yakin olan buyuk
+  const near = new Tex(TW, TH);
+  const trunk = C('#9a6a40', '#3a2c34'); const trunkD = C('#7e532e', '#2c2230');
+  near.rect(TW - 12, 0, 10, TH, trunk); near.rect(TW - 5, 0, 3, TH, trunkD);
+  near.ellipse(TW - 4, 4, 22, 14, C('#5aa046', '#1e3a34'));
+  near.ellipse(TW - 8, 2, 14, 9, C('#74c452', '#28463a'));
+  near.rect(4, 0, 6, HZ + 4, trunk); near.rect(8, 0, 2, HZ + 4, trunkD);
+  near.ellipse(6, 2, 18, 11, C('#5aa046', '#1e3a34'));
+  for (const [bx, by, br] of [[70, HZ + 6, 4], [176, HZ + 14, 6], [150, TH - 4, 10], [100, HZ + 3, 3]]) {
+    near.ellipse(bx, by, br * 1.6, br, C('#62b04a', '#24423a'));
+  }
+  layers.push({ t: near, ol: 'dark' });
+  return compose(GAME_W, GAME_H, layers, 0).canvas();
+}
+
 export function cabin() {
   const W = 51; const H = 40;
   const wall = new Tex(W, H);

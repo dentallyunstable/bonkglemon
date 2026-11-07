@@ -2,6 +2,7 @@
 // zamanlama cubugu, kacinma, durumlar (Zehir, Sersem), odul ve dusurmeler.
 import { GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY } from './data.js';
 import { S } from './state.js';
+import { ARENA } from './art.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt } from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, moveTo, wait } from './anim.js';
@@ -24,6 +25,14 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
 export const BPOS = { x: 66, y: GROUND_Y + 48, scale: 2.4 };
 const B = (a) => `c_b_${a}`;
+
+// ayri savas ekraninda (arena) Glemonlarin yerleri
+function arenaX(n, i, boss) {
+  if (boss) return [280, 190, 344][i] ?? 190;
+  if (n === 1) return 262;
+  if (n === 2) return [222, 302][i];
+  return [198, 264, 332][i];
+}
 
 function slotX(n, i, boss) {
   if (boss) return [292, 206, 356][i] ?? 206;
@@ -52,6 +61,8 @@ export class Battle {
     this.defXp = 0;
     this.gold = 0;
     this.firstStrike = !!opts.ambush;
+    this.gy = GROUND_Y;   // Glemonlarin durdugu zemin (arenada uzak meydan)
+    this.arena = false;
     specs.forEach((s, i) => this.addEnemy(s, slotX(specs.length, i, opts.boss)));
     if (opts.surprised) for (const e of this.enemies) e.atb = 100;
   }
@@ -61,18 +72,19 @@ export class Battle {
     const data = GLEMONS[spec.key];
     const meta = this.w.gmeta[spec.key];
     const m = floorMult(this.floor);
-    const scale = spec.golden ? 1.35 : 1;
+    const zoom = this.arena ? (data.boss ? 1.5 : 2) : 1;
+    const scale = (spec.golden ? 1.35 : 1) * zoom;
     const sfxk = spec.shiny ? '_p' : '';
     const k = (a) => `g_${spec.key}_${a}${sfxk}`;
-    const sprite = this.scene.add.sprite(x, GROUND_Y, k('durma'))
+    const sprite = this.scene.add.sprite(x, this.gy, k('durma'))
       .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(scale);
     if (spec.golden) sprite.setTint(0xffd86a);
     sprite.play(k('durma'));
     if (spec.sleeping) sprite.anims.timeScale = 0.35;
-    const shadow = this.scene.add.image(x, GROUND_Y + 1, 'shadow').setDepth(7).setScale((meta.bodyW * scale) / 18, 1);
+    const shadow = this.scene.add.image(x, this.gy + 1, 'shadow').setDepth(7).setScale((meta.bodyW * scale) / 18, 1);
     const prefix = spec.shiny ? 'Parlak ' : spec.golden ? 'Altın ' : '';
     const e = {
-      key: spec.key, data, meta, sprite, shadow, k, scale,
+      key: spec.key, data, meta, sprite, shadow, k, scale, spec,
       homeX: x,
       name: prefix + data.name,
       from: prefix + data.from,
@@ -93,7 +105,21 @@ export class Battle {
   }
 
   alive() { return this.enemies.filter((e) => e.alive); }
-  topY(e) { return GROUND_Y - e.meta.ay * e.scale; }
+  topY(e) { return this.gy - e.meta.ay * e.scale; }
+
+  // Ayri savas ekranina gecis: Glemonlar uzak meydana, bize donuk ve buyuk
+  toArena() {
+    this.arena = true;
+    this.gy = ARENA.enemyY;
+    const n = this.enemies.length;
+    this.enemies.forEach((e, i) => {
+      const z = e.data.boss ? 1.5 : 2;
+      e.scale = (e.golden ? 1.35 : 1) * z;
+      e.homeX = arenaX(n, i, !!this.opts.boss);
+      e.sprite.setPosition(e.homeX, this.gy).setScale(e.scale);
+      e.shadow.setPosition(e.homeX, this.gy + 1).setScale((e.meta.bodyW * e.scale) / 18, e.scale * 0.8);
+    });
+  }
 
   // oyuncunun yazilari icin konum (karakter ekranin altinda, buyuk duruyor)
   px() { return this.w.player.x + 6; }
@@ -368,7 +394,7 @@ export class Battle {
     await playAnim(p, B('punch'), 1.4);
     const alive = this.alive();
     const cx = alive.reduce((t, e) => t + e.sprite.x, 0) / alive.length;
-    const boom = this.scene.add.sprite(cx, GROUND_Y - 18, 'boom').setDepth(13).setScale(1.4);
+    const boom = this.scene.add.sprite(cx, this.gy - 30, 'boom').setDepth(13).setScale(1.4);
     boom.play('boom');
     boom.once('animationcomplete', () => boom.destroy());
     sfx('boom');
@@ -583,7 +609,7 @@ export class Battle {
   killEnemy(e) {
     e.alive = false;
     e.sprite.play(e.k('hasar'));
-    this.scene.tweens.add({ targets: [e.sprite], alpha: 0, y: GROUND_Y - 6, duration: 500, delay: 250, onComplete: () => e.sprite.destroy() });
+    this.scene.tweens.add({ targets: [e.sprite], alpha: 0, y: this.gy - 6, duration: 500, delay: 250, onComplete: () => e.sprite.destroy() });
     this.scene.tweens.add({ targets: [e.shadow], alpha: 0, duration: 500, delay: 250, onComplete: () => e.shadow.destroy() });
     if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
     // patron dusunce cagirdigi kokler de cekilir (odulsuz)
@@ -677,7 +703,7 @@ export class Battle {
     e.sprite.setDepth(15);
     e.sprite.play(e.k('yurume'));
     await new Promise((res) => this.scene.tweens.add({
-      targets: e.sprite, x: 168, y: GROUND_Y + 22, scale: e.scale * 1.45, duration: 260, ease: 'Quad.easeIn', onComplete: res,
+      targets: e.sprite, x: 150, y: this.gy + 46, scale: e.scale * 1.4, duration: 260, ease: 'Quad.easeIn', onComplete: res,
     }));
     const atkAnim = playAnim(e.sprite, e.k('saldiri'), 1.6);
     await wait(this.scene, 300 / 1.6);
@@ -709,7 +735,7 @@ export class Battle {
     if (e.sprite.active) {
       e.sprite.play(e.k('yurume'));
       await new Promise((res) => this.scene.tweens.add({
-        targets: e.sprite, x: e.homeX, y: GROUND_Y, scale: e.scale, duration: 300, ease: 'Quad.easeOut', onComplete: res,
+        targets: e.sprite, x: e.homeX, y: this.gy, scale: e.scale, duration: 300, ease: 'Quad.easeOut', onComplete: res,
       }));
       e.sprite.setDepth(8);
       e.sprite.play(e.k('durma'));
@@ -740,13 +766,13 @@ export class Battle {
     await playAnim(e.sprite, e.k('saldiri'), 0.8);
     e.sprite.play(e.k('durma'));
     const used = new Set(this.alive().map((x) => x.homeX));
-    for (const x of [206, 356]) {
+    for (const x of this.arena ? [190, 344] : [206, 356]) {
       if (this.alive().length >= 3) break;
       if (used.has(x)) continue;
       const n = this.addEnemy({ key: act.summon }, x);
       n.atb = 0;
-      n.sprite.y = GROUND_Y + 30;
-      this.scene.tweens.add({ targets: n.sprite, y: GROUND_Y, duration: 500, ease: 'Back.easeOut' });
+      n.sprite.y = this.gy + 30;
+      this.scene.tweens.add({ targets: n.sprite, y: this.gy, duration: 500, ease: 'Back.easeOut' });
       this.makeBar(n);
     }
   }
