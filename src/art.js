@@ -413,6 +413,10 @@ const ICONS = {
     { Y: '#ffd04d', w: '#fff6c0', o: '#d29a22', h: '#7a4c2a', L: '#74c452' }],
   tilsim_can: [['............', '..s......s..', '...s....s...', '....s..s....', '....oooo....', '...oYYYYo...', '...oYrrYo...', '...orrrro...', '...oYrrYo...', '...oYYYYo...', '....oooo....', '............'],
     { s: '#dccc96', o: '#b07a2a', Y: '#ffd04d', r: '#ec4c42' }],
+  tohum_ot: [['............', '............', '.....gg.....', '....g.......', '...pPPp.....', '..pPwPPp....', '..pPPPPp.pp.', '...pPPp.pPPp', '....pp..pPPp', '.........pp.', '............', '............'],
+    { p: '#a08a5a', P: '#c8b07a', w: '#e0d0a0', g: '#6cbc4e' }],
+  tohum_bogurtlen: [['............', '............', '....pp......', '...pPPp..pp.', '...pPwp.pPPp', '....pp..pPPp', '.........pp.', '..pp........', '.pPPp.......', '.pPPp.......', '..pp........', '............'],
+    { p: '#5e2a3a', P: '#8a3a52', w: '#c05a6a' }],
   para: [['............', '....oooo....', '...oYYYYo...', '..oYyYYYYo..', '..oYYBBYYo..', '..oYYBYBYo..', '..oYYBBYYo..', '..oYYBYBYo..', '...oYBBYo...', '....oooo....', '............', '............'],
     { o: '#d29a22', Y: '#ffd04d', y: '#fff3a8', B: '#b8801e' }],
   tas: [['............', '............', '....SSSs....', '..SSssssS...', '.SssssssssS.', '.SsssDssssd.', '.ssssssssDd.', '.sssDsssssd.', '..dddddddd..', '............', '............', '............'],
@@ -465,7 +469,12 @@ const CHESTPLATE = ['............', '.mmm....mmm.', '.mMMmmmmMMm.', '.mMMMMMMMMm
 
 // Simgeler 16x16: blok olan esyalar blogun kendisi, digerleri 12x12 cizimden
 // golgelendirilip (sol ust acik, sag alt koyu) ve renkleri biraz soldurulup cizilir.
-const ICON_BLOCKS = { tas: 'tas', kum: 'kum', kalas: 'kalas', tugla: 'tugla', cam: 'cam', cimen: 'cimen', demir_cevheri: 'demir' };
+const ICON_BLOCKS = {
+  tas: 'tas', kum: 'kum', kalas: 'kalas', tugla: 'tugla', cam: 'cam', cimen: 'cimen', demir_cevheri: 'demir',
+  kutuk: 'kutuk', kaldirim: 'kaldirim', kiremit: 'kiremit', yaprak_blok: 'yaprak', tarla: 'tarla',
+};
+// saydam zeminli bloklar: cercevesiz, sadece cizgiyle
+const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);
@@ -474,7 +483,12 @@ const iconCache = {};
 export function iconUrl(name) {
   if (iconCache[name]) return iconCache[name];
   let p;
-  if (ICON_BLOCKS[name]) {
+  if (ICON_PROPS[name]) {
+    p = new Pix(16, 16);
+    const bl = block(ICON_PROPS[name]);
+    for (let y = 0; y < 14; y++) for (let x = 0; x < 14; x++) { const v = bl.d[Math.floor(y * 16 / 14) * 16 + Math.floor(x * 16 / 14)]; if (v >>> 24) p.set(1 + x, 1 + y, v); }
+    p.outline(INK);
+  } else if (ICON_BLOCKS[name]) {
     p = new Pix(16, 16);
     const b = block(ICON_BLOCKS[name]);
     for (let y = 0; y < 14; y++) for (let x = 0; x < 14; x++) p.set(1 + x, 1 + y, b.d[Math.floor(y * 16 / 14) * 16 + Math.floor(x * 16 / 14)]);

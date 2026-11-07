@@ -227,6 +227,13 @@ html, body {
   padding: 0 calc(4 * var(--u));
 }
 
+/* insa cubugu (0.3) */
+.build-btn { display: inline-flex; align-items: center; gap: calc(2 * var(--u)); }
+.build-btn .ico { width: calc(10 * var(--u)); height: calc(10 * var(--u)); image-rendering: pixelated; }
+.btn.sel { outline: calc(1 * var(--u)) solid #f0d080; outline-offset: calc(1 * var(--u)); filter: brightness(1.15); }
+.btn.locked { filter: grayscale(0.9) brightness(0.6); }
+.camp-list { display: flex; flex-wrap: wrap; gap: calc(4 * var(--u)); margin: calc(4 * var(--u)) 0; }
+
 /* ---------------------------------------------------------- savas paneli */
 #battle {
   position: absolute; left: calc(3 * var(--u)); right: calc(3 * var(--u)); bottom: calc(3 * var(--u));

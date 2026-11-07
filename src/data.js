@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.3.2';
+export const VERSION = '0.3.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -40,7 +40,7 @@ export const SKILLS = [
   { key: 'madencilik', name: 'Madencilik', desc: 'Maden Ocağı\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
   { key: 'toplama', name: 'Toplama', desc: 'Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
   { key: 'uretim', name: 'Üretim', desc: 'Evindeki Masa, Fırın ve Kazan\'da üretince artar. Yeni tarifler açar.' },
-  { key: 'insa', name: 'İnşa', soon: '0.3' },
+  { key: 'insa', name: 'İnşa', desc: 'Arsana blok ve eşya koyunca artar. Yeni bloklar açar, arsan büyür (20, 40, 60).' },
   { key: 'sans', name: 'Şans', soon: '0.5' },
   { key: 'bag', name: 'Glemon Bağı', soon: '0.4' },
 ];
@@ -122,9 +122,20 @@ export const ITEMS = {
   bal: { name: 'Bal', kind: 'malzeme', rarity: 'nadir', icon: 'bal', desc: 'Toplarken nadiren bulunur. Özel Glemon yemi malzemesi (0.4).' },
   // ---- uretilenler
   bos_sise: { name: 'Boş şişe', kind: 'malzeme', rarity: 'siradan', icon: 'sise', desc: 'Fırında kumdan yapılır. İksir şişesi.' },
-  tahta_kalas: { name: 'Tahta Kalas', kind: 'malzeme', rarity: 'siradan', icon: 'kalas', desc: 'İnşa bloğu. 0.3 sürümünde üssüne koyabileceksin.' },
-  tas_tugla: { name: 'Taş Tuğla', kind: 'malzeme', rarity: 'siradan', icon: 'tugla', desc: 'İnşa bloğu. 0.3 sürümünde üssüne koyabileceksin.' },
-  cam: { name: 'Cam', kind: 'malzeme', rarity: 'siradan', icon: 'cam', desc: 'İnşa bloğu (pencere). 0.3 sürümünde.' },
+  tahta_kalas: { name: 'Tahta Kalas', kind: 'malzeme', rarity: 'siradan', icon: 'kalas', desc: 'İnşa bloğu. Arsana koyabilirsin.' },
+  tas_tugla: { name: 'Taş Tuğla', kind: 'malzeme', rarity: 'siradan', icon: 'tugla', desc: 'İnşa bloğu. Arsana koyabilirsin.' },
+  cam: { name: 'Cam', kind: 'malzeme', rarity: 'siradan', icon: 'cam', desc: 'İnşa bloğu (pencere). Arsana koyabilirsin.' },
+  // ---- insa (0.3)
+  kutuk: { name: 'Kütük', kind: 'malzeme', rarity: 'siradan', icon: 'kutuk', desc: 'İnşa bloğu: ağaç gövdesi, ev köşesi.' },
+  kaldirim: { name: 'Kaldırım Taşı', kind: 'malzeme', rarity: 'siradan', icon: 'kaldirim', desc: 'İnşa bloğu: sağlam temel.' },
+  kiremit: { name: 'Kiremit', kind: 'malzeme', rarity: 'siradan', icon: 'kiremit', desc: 'İnşa bloğu: çatı.' },
+  yaprak_blogu: { name: 'Yaprak Bloğu', kind: 'malzeme', rarity: 'siradan', icon: 'yaprak_blok', desc: 'İnşa bloğu: ağaç tacı, çit, süs.' },
+  cit: { name: 'Çit', kind: 'malzeme', rarity: 'siradan', icon: 'cit', desc: 'İnşa eşyası: bahçe çiti.' },
+  fener: { name: 'Fener', kind: 'malzeme', rarity: 'siradan', icon: 'fener', desc: 'İnşa eşyası: asılı fener.' },
+  ahsap_kapi: { name: 'Ahşap Kapı', kind: 'malzeme', rarity: 'siradan', icon: 'kapi', desc: 'İnşa eşyası: 2 blok boyunda kapı.' },
+  tarla: { name: 'Bahçe Tarlası', kind: 'malzeme', rarity: 'siradan', icon: 'tarla', desc: 'Arsanın zeminine koyulur. Tohum ekip ot ve böğürtlen yetiştirirsin.' },
+  ot_tohumu: { name: 'Ot tohumu', kind: 'malzeme', rarity: 'siradan', icon: 'tohum_ot', desc: 'Şifalı ot toplarken bazen çıkar. Bahçe tarlasına ekilir (1 saat).' },
+  bogurtlen_tohumu: { name: 'Böğürtlen tohumu', kind: 'malzeme', rarity: 'siradan', icon: 'tohum_bogurtlen', desc: 'Böğürtlen toplarken bazen çıkar. Bahçe tarlasına ekilir (2 saat).' },
   // ---- tuketilebilir
   iksir_k: { name: 'Küçük Can İksiri', kind: 'tuketim', rarity: 'siradan', icon: 'iksir', heal: 0.25, anim: 'drinkpotion', desc: 'Canının %25\'ini doldurur.' },
   mantar_corbasi: { name: 'Mantar Çorbası', kind: 'tuketim', rarity: 'siradan', icon: 'corba', heal: 0.3, food: true, anim: 'eat', desc: 'Canının %30\'unu doldurur.' },
@@ -257,6 +268,15 @@ export const RECIPES = [
   { out: 'iksir_k', mats: { sifali_ot: 2, bos_sise: 1 }, station: 'kazan', lvl: 5, xp: 55 },
   { out: 'bonk_bombasi', mats: { komur: 3, mantar: 2 }, station: 'kazan', lvl: 10, xp: 90 },
   { out: 'can_tilsimi', mats: { antik_yosun: 2, sifali_ot: 3, bal: 1 }, station: 'kazan', lvl: 8, xp: 250 },
+  // 0.3 insa (sona eklenir: firin isleri tarifin sirasiyla kaydedilir)
+  { out: 'kutuk', mats: { dal: 3 }, station: 'masa', lvl: 1, xp: 18 },
+  { out: 'kaldirim', mats: { tas: 1 }, station: 'masa', lvl: 2, xp: 8 },
+  { out: 'cit', mats: { dal: 2 }, station: 'masa', lvl: 1, xp: 12 },
+  { out: 'tarla', mats: { dal: 4, sifali_ot: 1 }, station: 'masa', lvl: 2, xp: 30 },
+  { out: 'ahsap_kapi', mats: { tahta_kalas: 3 }, station: 'masa', lvl: 4, xp: 30 },
+  { out: 'yaprak_blogu', n: 4, mats: { yaprak_kanadi: 1 }, station: 'masa', lvl: 6, xp: 30 },
+  { out: 'fener', mats: { demir_kulcesi: 1, komur: 1 }, station: 'masa', lvl: 12, xp: 60 },
+  { out: 'kiremit', mats: { kum: 2, komur: 1 }, station: 'firin', lvl: 6, xp: 14 },
 ];
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -267,10 +287,49 @@ export const SHOP = [
   { id: 'bos_sise', price: 10 },
   { id: 'sifali_ot', price: 8 },
   { id: 'komur', price: 6 },
+  { id: 'ot_tohumu', price: 12 },
+  { id: 'bogurtlen_tohumu', price: 15 },
   { id: 'altin_elma', price: 450 },
   { id: 'can_tilsimi', price: 1500 },
 ];
 export const SELL = {
   dal: 1, mantar: 2, diken: 2, tas: 1, kum: 1, komur: 2, demir_cevheri: 4, demir_kulcesi: 10,
   sifali_ot: 2, bogurtlen: 2, bal: 15, yaprak_kanadi: 12, antik_yosun: 40, tahta_kalas: 2, tas_tugla: 2, cam: 2,
+  kutuk: 2, kaldirim: 1, kiremit: 2, cit: 1, ot_tohumu: 3, bogurtlen_tohumu: 4,
 };
+
+// ---------------------------------------------------------------- Us ve insa (0.3)
+// Arsa: usteki ayri bir ekran, yandan gorunen blok izgarasi. Her esya bir bloga karsilik gelir.
+// tex: blocks.js dokusu, lvl: gereken Insa seviyesi, xp: ilk kez koyunca Insa XP, pts: Us Puani
+// tall: 2 blok boyunda (kapi), ground: sadece zemin sirasina, furn: mobilya (oyuncu onunde durur)
+export const BUILD = {
+  tahta_kalas: { tex: 'kalas', lvl: 1, xp: 12, pts: 2 },
+  kutuk: { tex: 'kutuk', lvl: 1, xp: 14, pts: 2 },
+  kum: { tex: 'kum', lvl: 1, xp: 4, pts: 1 },
+  tas: { tex: 'tas', lvl: 1, xp: 4, pts: 1 },
+  cit: { tex: 'cit', lvl: 2, xp: 10, pts: 2 },
+  kaldirim: { tex: 'kaldirim', lvl: 3, xp: 8, pts: 2 },
+  tarla: { tex: 'tarla', lvl: 3, xp: 25, pts: 4, ground: true, furn: true },
+  tas_tugla: { tex: 'tugla', lvl: 5, xp: 16, pts: 3 },
+  ahsap_kapi: { tex: 'kapi_alt', top: 'kapi_ust', lvl: 6, xp: 30, pts: 5, tall: true },
+  kiremit: { tex: 'kiremit', lvl: 8, xp: 16, pts: 3, shapes: ['kiremit', 'kiremit_sol', 'kiremit_sag'] },
+  yaprak_blogu: { tex: 'yaprak', lvl: 10, xp: 10, pts: 2 },
+  fener: { tex: 'fener', lvl: 12, xp: 40, pts: 6 },
+  cam: { tex: 'cam', lvl: 12, xp: 14, pts: 3 },
+};
+export const BUILD_ORDER = Object.keys(BUILD);
+// Arsa boyu Insa seviyesiyle buyur (tasarim belgesi 16x8 -> 32x12; ekrana sigsin diye 24x10'a kadar)
+export function plotSize(insaLvl) {
+  const cols = insaLvl >= 40 ? 24 : insaLvl >= 20 ? 20 : 16;
+  const rows = insaLvl >= 60 ? 10 : insaLvl >= 40 ? 9 : 8;
+  return { cols, rows };
+}
+export const MAX_TARLA = (insaLvl) => Math.min(16, 4 + Math.floor(insaLvl / 10) * 2);
+// Bahce: tohum -> urun
+export const SEEDS = {
+  ot_tohumu: { out: 'sifali_ot', n: [2, 3], ms: 60 * 60 * 1000, xp: 45, name: 'Şifalı ot' },
+  bogurtlen_tohumu: { out: 'bogurtlen', n: [2, 4], ms: 2 * 60 * 60 * 1000, xp: 70, name: 'Böğürtlen' },
+};
+export const SEED_CHANCE = 0.3; // ot / bogurtlen toplarken tohum cikma ihtimali
+// Kamp: oyun kapaliyken en fazla 2 saat, saatte bu kadar basit malzeme (XP ve nadir esya yok)
+export const CAMP = { maxMs: 2 * 60 * 60 * 1000, minMs: 10 * 60 * 1000, perHour: { dal: 6, tas: 6, komur: 3, bogurtlen: 3 } };

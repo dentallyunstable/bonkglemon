@@ -4,17 +4,27 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
-## Sürüm 0.3.2
+## Sürüm 0.3.0 (Üs)
+
+- **Arsa:** üste "Arsa" düğmesiyle (ya da sağa yürüyerek) kendi blok alanına gidersin. Başta 16×8 blok; İnşa 20'de 20 sütun, 40'ta 24×9, 60'ta 24×10.
+- **İnşa modu:** aşağıdan bir blok seç, boş kareye dokun, karakter bloğu koyar. "Kaldır" ile geri alırsın, malzeme çantana döner.
+- **İnşa blokları:** Tahta Kalas, Kütük, Kum, Taş, Çit, Kaldırım Taşı, Bahçe Tarlası, Taş Tuğla, Ahşap Kapı (2 blok), Kiremit (düz / sol / sağ eğim), Yaprak Bloğu, Fener, Cam. Yeni tarifler Üretim Masası'nda (kiremit fırında).
+- **İnşa becerisi (1-99):** blok koydukça artar. XP sadece arsadaki blok sayısı yeni rekora çıkınca gelir (koy-kaldır ile XP kasılmaz).
+- **Bahçe:** tarlaya ot tohumu (1 saat) ya da böğürtlen tohumu (2 saat) ekersin, oyun kapalıyken de büyür. Tohumlar toplarken çıkar ve tezgâhta satılır.
+- **Kamp ödülü:** oyun kapalıyken en fazla 2 saatlik dal, taş, kömür ve böğürtlen birikir; girişte toplarsın.
+- **Üs Puanı** profilde. Zindanda bayılınca evindeki yatakta uyanırsın.
+
+## Sürüm 0.2.5
 
 - Savaşta hedef seçerken yaratığın kendisine dokunmak da yetiyor (sadece sarı ok değil).
 
-## Sürüm 0.3.1
+## Sürüm 0.2.4
 
 - Ağaç yaprakları artık gövdeye ve birbirine oturuyor (havada yaprak yok).
 - Oturma ve zıplama animasyonunda karakter havada durmuyor.
 - Giriş ekranında karakterler kartın tam ortasında dönüyor.
 
-## Sürüm 0.3.0 (16x16 blok tarzı)
+## Sürüm 0.2.3 (16x16 blok tarzı)
 
 - Her şey 16x16 bloklardan kuruldu: ev, maden girişi, ağaçlar, tepeler, zemin, ev içi, maden ocağı, savaş ekranı.
 - Her blok dokusu sabit, soluk ve 4-6 tonlu (`src/blocks.js`). Uzak tepe ve ağaçlar aynı blokların sisli hâli.

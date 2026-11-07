@@ -7,6 +7,8 @@ import { showLogin } from './login.js';
 import { makeAnim, makeAnimFrames } from './anim.js';
 import { WorldScene } from './world.js';
 import * as ART from './art.js';
+import { block, BLOCK_NAMES } from './blocks.js';
+import { Pix } from './pix.js';
 
 const LOOPING = new Set(['idle', 'idlesway', 'walk', 'run', 'sprint', 'ninjadash', 'ninjarun', 'sneakwalk', 'blockwalk', 'sit',
   'sneakspam', 'walkin', 'b_idlesway', 'b_ninjarun', 'b_run']);
@@ -42,6 +44,14 @@ class BootScene extends Phaser.Scene {
     }
     const tex = (key, canvas) => { if (!this.textures.exists(key)) this.textures.addCanvas(key, canvas); };
     tex('bg_base', ART.forestBackground(1, 0, true));
+    tex('bg_plot', ART.forestBackground(1, 3, true));
+    // 0.3: arsada tek tek konan bloklar (her blok bir kare, adiyla)
+    if (!this.textures.exists('blocks')) {
+      const sheet = new Pix(16 * BLOCK_NAMES.length, 16);
+      BLOCK_NAMES.forEach((n, i) => sheet.draw(block(n), i * 16, 0, 16));
+      const bt = this.textures.addCanvas('blocks', sheet.canvas());
+      BLOCK_NAMES.forEach((n, i) => bt.add(n, 0, i * 16, 0, 16, 16));
+    }
     tex('cabin', ART.cabin());
     tex('mine', ART.mineEntrance());
     tex('signpost', ART.signpost());
@@ -97,10 +107,11 @@ function startGame(char, charMeta, gmeta) {
   setInterval(() => {
     if (document.hidden || !S.save) return;
     S.save.stats.playMs += 30000;
+    S.save.lastSeen = Date.now();
     S.persist();
   }, 30000);
   // eslik: sekme kapanirken kaydet
-  window.addEventListener('pagehide', () => S.persist());
+  window.addEventListener('pagehide', () => { S.save.lastSeen = Date.now(); S.persist(); });
   new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',

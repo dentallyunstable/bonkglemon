@@ -350,6 +350,21 @@ function branches() {
   t.rect(12, 9, 2, 2, BARK[0]); t.rect(12, 8, 3, 1, GRASS[1]); t.rect(0, 15, 14, 1, BARK[4]);
   return t;
 }
+// bahce tarlasi: ust kisimda nemli koyu toprak siralari, altta toprak
+function farmland() {
+  const t = dirt(31);
+  t.rect(0, 0, B, 5, '#4e3624');
+  for (let x = 0; x < B; x++) { t.set(x, 0, x % 4 < 2 ? '#5c4029' : '#46301f'); if (x % 4 === 1) t.set(x, 2, '#3a2818'); }
+  t.rect(0, 5, B, 1, '#3e2a1a');
+  return t;
+}
+// buyume asamalari (saydam, tarlanin ustune konur): filiz, fide
+function sprout(stage) {
+  const t = T(null);
+  if (stage === 0) { t.rect(7, 12, 1, 4, GRASS[2]); t.rect(5, 11, 2, 1, GRASS[1]); t.rect(8, 10, 2, 1, GRASS[3]); }
+  else { t.rect(7, 7, 1, 9, GRASS[2]); t.rect(3, 9, 4, 2, GRASS[1]); t.rect(8, 8, 4, 2, GRASS[1]); t.rect(4, 12, 3, 2, GRASS[0]); t.rect(8, 12, 4, 2, GRASS[0]); t.set(3, 9, GRASS[3]); t.set(11, 8, GRASS[3]); }
+  return t;
+}
 function crack(n) {
   const t = T(null); const k = '#141016';
   t.rect(7, 6, 1, 4, k); t.rect(8, 8, 1, 2, k);
@@ -366,7 +381,7 @@ const SOLID = {
   kalas: () => planks(), kutuk: log, yaprak: leaves, kiremit: roof,
   kaldirim: cobble, tugla: brick, cam: glass, kapi_ust: () => door(true), kapi_alt: () => door(false),
   tas_duvar: darkStone, karanlik: dark, bulut: cloud, raf: shelf, tezgah: workbench,
-  firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
+  tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
   kiremit_sol: () => roofStair('sol'), kiremit_sag: () => roofStair('sag'), tente: awning,
@@ -375,7 +390,7 @@ const PROPS = {
   tabela: signBoard, direk: post, cit: fence, cicek_k: () => flower('#b05a50', '#d8b848'), cicek_s: () => flower('#c8a848', '#8a5a2e'),
   ot: tallGrass, gunes: sun, ay: moon, fener: lantern, kazan0: () => cauldron(0), kazan1: () => cauldron(1),
   yatak_bas: () => bed('bas'), yatak_ayak: () => bed('ayak'), diken: spike, ray: rail,
-  bitki: herb, cali: berryBush, dallar: branches, crack1: () => crack(1), crack2: () => crack(2), crack3: () => crack(3),
+  bitki: herb, filiz: () => sprout(0), fide: () => sprout(1), cali: berryBush, dallar: branches, crack1: () => crack(1), crack2: () => crack(2), crack3: () => crack(3),
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust']);
 

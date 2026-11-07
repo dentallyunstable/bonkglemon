@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD } from './data.js';
 
 const SAVE_PREFIX = 'bonkglemon.save.';
 const DEPO_SIZE = 40;
@@ -37,6 +37,9 @@ function freshSave(char) {
     mine: { depth: 1 },
     droplog: [],
     settings: { sound: true, auto: false },
+    // 0.3 Us: arsa hucreleri "sutun,sira" -> { id, shape? }, bahce "sutun" -> { seed, t0 }
+    plot: { cells: {}, garden: {}, best: 0 },
+    lastSeen: Date.now(),
   };
 }
 
@@ -291,6 +294,14 @@ export const S = {
   addGold(n) {
     this.save.gold += n;
     if (this.run) this.run.gold += n;
+  },
+
+  // ------------------------------------------------ us (0.3)
+  baseScore() {
+    return Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0);
+  },
+  placedCount() {
+    return Object.values(this.save.plot.cells).filter((c) => !c.top).length;
   },
 
   rarityColor(r) { return (RARITY[r] || RARITY.siradan).color; },

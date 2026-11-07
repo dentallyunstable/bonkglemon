@@ -3,19 +3,22 @@ import {
   GAME_W, GROUND_Y, ITEMS, SKILLS, SPAWN_TABLE, SHINY_CHANCE, ROOM_WEIGHTS, CHEST_GEAR, CHEST_MATS,
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
+  BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP,
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
+import { block } from './blocks.js';
+import { Pix, INK } from './pix.js';
 import { forestBackground, caveBackground, battleBackground, iconUrl, MINE_WALL, CABIN } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp } from './panels.js';
 
 const PLAYER_HOME = 96;
 const MINE_X = 330;
 const CABIN_DOOR_X = 2 + CABIN.door;
-const WALK_MODES = ['base', 'house'];
+const WALK_MODES = ['base', 'house', 'plot'];
 const MINE_STAND_X = MINE_WALL.x - 14;
 const SHOP_X = 256;
 const SIT_AFTER = 20000; // bu kadar hareketsiz kalinca oturur
@@ -55,7 +58,27 @@ export class WorldScene extends Phaser.Scene {
     window.__BG = this; // testler icin
     this.goBase(false);
     UI.show('#loading', false);
-    UI.feed(`Hoş geldin, ${S.save.char}! Zindana inebilir, madende kazabilir ya da evinde üretim yapabilirsin.`);
+    UI.feed(`Hoş geldin, ${S.save.char}! Zindana inebilir, madende kazabilir, evinde üretim yapabilir ya da arsana inşa edebilirsin.`);
+    this.checkCamp();
+  }
+
+  // ------------------------------------------------------------ kamp (0.3)
+  // Oyun kapaliyken kamp atesinin basinda en fazla 2 saatlik basit malzeme birikir.
+  campReward(awayMs) {
+    const ms = Math.min(CAMP.maxMs, awayMs);
+    if (ms < CAMP.minMs) return null;
+    const h = ms / 3600000;
+    const items = {};
+    for (const [id, per] of Object.entries(CAMP.perHour)) items[id] = Math.max(1, Math.round(per * h));
+    return { ms, items };
+  }
+
+  checkCamp() {
+    const away = Date.now() - (S.save.lastSeen || Date.now());
+    S.save.lastSeen = Date.now();
+    S.persist();
+    const rw = this.campReward(away);
+    if (rw) this.time.delayedCall(700, () => openCamp(this, rw));
   }
 
   update(time, dt) {
@@ -68,6 +91,10 @@ export class WorldScene extends Phaser.Scene {
       if (this.stillMs > SIT_AFTER) { this.stillMs = 0; this.player.play('c_sit'); }
     } else if (cur !== 'c_sit') this.stillMs = 0;
     if (this.battle && !UI.panelOpen()) this.battle.update(dt);
+    if (this.mode === 'plot') {
+      this.gardenTick = (this.gardenTick || 0) + dt;
+      if (this.gardenTick > 2000) { this.gardenTick = 0; this.refreshGarden(); }
+    }
     if (this.mode === 'house' && this.furnace) {
       this.furnaceTick = (this.furnaceTick || 0) + dt;
       if (this.furnaceTick > 500) { this.furnaceTick = 0; this.refreshFurnace(); }
@@ -161,6 +188,7 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ yurume
   onTap(ptr, over) {
+    if (this.mode === 'plot' && !this.busy && !UI.panelOpen() && this.plotTap(ptr)) return;
     if (over && over.length) return;
     if (!this.canWalk() || this.busy || UI.panelOpen()) return;
     this.walkThen(Phaser.Math.Clamp(ptr.worldX, 12, GAME_W - 12), null);
@@ -236,7 +264,7 @@ export class WorldScene extends Phaser.Scene {
       x: 148, face: false, label: 'Kamp ateşi', ly: G - 30,
       act: () => {
         this.player.play('c_sit');
-        this.say('Kamp 0.3 sürümünde gelecek: sen yokken 2 saate kadar malzeme toplayacak.', 3600);
+        this.say('Sen yokken burada 2 saate kadar dal, taş, kömür ve böğürtlen birikir.', 3600);
       },
     });
     this.addObj(this.add.image(214, G + 1, 'signpost').setOrigin(0.5, 1).setDepth(4), {
@@ -249,7 +277,7 @@ export class WorldScene extends Phaser.Scene {
       x: MINE_X, label: 'Zindan girişi', ly: G - 92, act: () => openMap(this),
     });
     this.player.setFlipX(false);
-    this.player.x = from === 'dungeon' ? MINE_X : from === 'house' ? CABIN_DOOR_X : 200;
+    this.player.x = from === 'dungeon' ? MINE_X : from === 'house' ? CABIN_DOOR_X : from === 'plot' ? GAME_W - 16 : 188;
     this.resetPlayer();
     this.idle();
     UI.setLocation('Üs');
@@ -257,6 +285,7 @@ export class WorldScene extends Phaser.Scene {
       { label: 'Zindana gir', cls: 'primary', onClick: () => openMap(this) },
       { label: 'Maden Ocağı', cls: 'blue', onClick: () => this.enterMine(S.save.mine.depth) },
       { label: 'Evine gir', onClick: () => this.enterHouse() },
+      { label: 'Arsa', cls: 'blue', onClick: () => this.enterPlot() },
       { label: 'Takas', onClick: () => this.goShop() },
       { label: 'Depo', onClick: () => openDepo(this) },
     ]);
@@ -292,7 +321,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ ev ici (uretim istasyonlari)
-  goHouse() {
+  goHouse(at = 30) {
     this.mode = 'house';
     this.clearRoom();
     this.bg.setTexture('house');
@@ -314,11 +343,11 @@ export class WorldScene extends Phaser.Scene {
     });
     this.addObj(this.add.image(336, G + 1, 'bed').setOrigin(0.5, 1).setDepth(4), {
       x: 308, face: false, label: 'Yatak', ly: G - 26,
-      act: () => { this.player.play('c_sit'); this.say('Yatak 0.3 sürümünde işe yarayacak: bayılınca burada uyanacaksın.', 3400); },
+      act: () => { this.player.play('c_sit'); this.say('Zindanda bayılınca burada uyanırsın.', 3000); },
     });
     this.refreshFurnace();
     this.player.setFlipX(false);
-    this.player.x = 30;
+    this.player.x = at;
     this.resetPlayer();
     this.idle();
     UI.setLocation('Evin');
@@ -336,6 +365,362 @@ export class WorldScene extends Phaser.Scene {
     const on = furnaceState().working;
     if (on && !this.furnace.anims.isPlaying) this.furnace.play('furnace_on');
     if (!on && this.furnace.anims.isPlaying) { this.furnace.stop(); this.furnace.setFrame(0); }
+  }
+
+  // ------------------------------------------------------------ arsa ve insa (0.3)
+  // Arsa: usteki ayri ekran. Blok izgarasi zeminden yukari (sira 0 = zemin ustu).
+  plotGeom() {
+    const { cols, rows } = plotSize(S.level('insa'));
+    const x0 = Math.floor((GAME_W - cols * 16) / 32) * 16;
+    return { cols, rows, x0 };
+  }
+
+  cellAt(wx, wy) {
+    const g = this.plotGeom();
+    const c = Math.floor((wx - g.x0) / 16);
+    const r = Math.floor((GROUND_Y - wy) / 16);
+    if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return null;
+    return { c, r, key: `${c},${r}` };
+  }
+
+  async enterPlot() {
+    UI.closePanel();
+    if (this.busy || this.mode !== 'base') return;
+    this.busy = true;
+    this.walkTok++;
+    UI.setActions([]);
+    await moveTo(this.player, GAME_W + 10, { speed: 190, anim: 'c_sprint' });
+    await this.fade(true);
+    this.goPlot();
+    this.player.x = -12;
+    await this.fade(false);
+    await moveTo(this.player, 40, { speed: 95, anim: 'c_walk' });
+    this.idle();
+    this.busy = false;
+  }
+
+  async leavePlot() {
+    if (this.busy || this.mode !== 'plot') return;
+    this.stopBuild();
+    this.busy = true;
+    this.walkTok++;
+    UI.setActions([]);
+    await moveTo(this.player, -12, { speed: 190, anim: 'c_sprint' });
+    await this.fade(true);
+    this.goBase('plot');
+    this.player.setFlipX(true);
+    await this.fade(false);
+    this.player.setFlipX(false);
+    this.busy = false;
+  }
+
+  goPlot() {
+    this.mode = 'plot';
+    this.clearRoom();
+    this.bg.setTexture('bg_plot');
+    const g = this.plotGeom();
+    const G = GROUND_Y;
+    // arsanin iki kenarinda direk
+    for (const x of [g.x0 - 8, g.x0 + g.cols * 16 + 8]) this.roomObjs.push(this.add.image(x, G, 'blocks', 'direk').setOrigin(0.5, 1).setDepth(3));
+    this.plotImg = null;
+    this.gardenSprites = {};
+    this.drawPlot();
+    this.refreshGarden();
+    this.player.setFlipX(false);
+    this.resetPlayer();
+    this.idle();
+    this.plotActions();
+    this.refreshHud();
+  }
+
+  plotActions() {
+    const g = this.plotGeom();
+    UI.setLocation(`Arsan · ${g.cols}×${g.rows} · Üs Puanı ${S.baseScore()}`);
+    UI.setActions([
+      { label: 'İnşa et', cls: 'primary', onClick: () => this.startBuild() },
+      { label: 'Üsse dön', onClick: () => this.leavePlot() },
+    ]);
+  }
+
+  // Arsadaki bloklar tek resimde cizilir; yapinin disina karakterdeki gibi koyu cizgi gelir.
+  drawPlot() {
+    const g = this.plotGeom();
+    const pix = new Pix(g.cols * 16 + 2, g.rows * 16 + 2);
+    for (const [key, cell] of Object.entries(S.save.plot.cells)) {
+      const def = BUILD[cell.id];
+      if (!def) continue;
+      const [c, r] = key.split(',').map(Number);
+      if (c >= g.cols || r >= g.rows) continue;
+      const frame = cell.top ? def.top : (cell.shape || def.tex);
+      pix.draw(block(frame), 1 + c * 16, 1 + (g.rows - 1 - r) * 16, 16);
+    }
+    pix.outline(INK);
+    if (this.plotImg) { this.plotImg.destroy(); this.plotImg = null; }
+    if (this.textures.exists('plot_tex')) this.textures.remove('plot_tex');
+    this.textures.addCanvas('plot_tex', pix.canvas());
+    this.plotImg = this.add.image(g.x0 - 1, GROUND_Y - g.rows * 16 - 1, 'plot_tex').setOrigin(0).setDepth(5);
+    this.roomObjs.push(this.plotImg);
+  }
+
+  drawCell() { this.drawPlot(); }
+
+  // bahce: tarlanin ustunde buyuyen bitki
+  gardenInfo(key) {
+    const gd = S.save.plot.garden[key];
+    if (!gd) return null;
+    const sd = SEEDS[gd.seed];
+    const p = (Date.now() - gd.t0) / sd.ms;
+    return { ...gd, sd, p, ready: p >= 1, left: Math.max(0, gd.t0 + sd.ms - Date.now()) };
+  }
+
+  refreshGarden() {
+    if (this.mode !== 'plot') return;
+    const g = this.plotGeom();
+    for (const [key, cell] of Object.entries(S.save.plot.cells)) {
+      if (cell.id !== 'tarla') continue;
+      const info = this.gardenInfo(key);
+      const frame = !info ? null : info.ready ? (info.seed === 'ot_tohumu' ? 'bitki' : 'cali') : info.p < 0.4 ? 'filiz' : 'fide';
+      const cur = this.gardenSprites[key];
+      if (cur && cur.frame.name === frame) continue;
+      if (cur) { cur.destroy(); delete this.gardenSprites[key]; }
+      if (!frame) continue;
+      const [c] = key.split(',').map(Number);
+      const spr = this.add.image(g.x0 + c * 16, GROUND_Y - 32 + 4, 'blocks', frame).setOrigin(0).setDepth(6);
+      this.gardenSprites[key] = spr;
+      this.roomObjs.push(spr);
+    }
+  }
+
+  // arsaya dokununca: insa modunda blok koy/kaldir, degilse tarlaya dokunmak bahceyi acar
+  plotTap(ptr) {
+    const cell = this.cellAt(ptr.worldX, ptr.worldY);
+    if (this.building) {
+      if (!cell) return true; // insa modunda arsa disina dokunmak bir sey yapmaz
+      if (this.buildTool === 'kaldir') this.removeAt(cell); else this.placeAt(cell);
+      return true;
+    }
+    if (!cell) return false;
+    // tarlanin kendisi ya da ustundeki bitki
+    const base = S.save.plot.cells[cell.key] && S.save.plot.cells[cell.key].id === 'tarla' ? cell
+      : cell.r === 1 && S.save.plot.cells[`${cell.c},0`] && S.save.plot.cells[`${cell.c},0`].id === 'tarla' ? { c: cell.c, r: 0, key: `${cell.c},0` } : null;
+    if (!base) return false;
+    this.gardenTap(base);
+    return true;
+  }
+
+  standNear(c) {
+    const g = this.plotGeom();
+    const cx = g.x0 + c * 16 + 8;
+    const side = this.player.x <= cx ? -1 : 1;
+    return { cx, x: Phaser.Math.Clamp(cx + side * 18, 12, GAME_W - 12) };
+  }
+
+  async walkToCell(c) {
+    const { cx, x } = this.standNear(c);
+    if (Math.abs(this.player.x - cx) > 30) await moveTo(this.player, x, { speed: 110, anim: 'c_walk' });
+    this.player.setFlipX(cx < this.player.x);
+  }
+
+  // ---- insa modu
+  startBuild() {
+    if (this.busy) return;
+    this.building = true;
+    if (!this.buildSel || !S.countItem(this.buildSel)) this.buildSel = BUILD_ORDER.find((id) => S.countItem(id) > 0 && S.level('insa') >= BUILD[id].lvl) || null;
+    this.buildTool = 'koy';
+    this.drawGrid();
+    this.buildBar();
+  }
+
+  stopBuild() {
+    if (!this.building) return;
+    this.building = false;
+    if (this.grid) { this.grid.destroy(); this.grid = null; }
+    if (this.mode === 'plot') this.plotActions();
+  }
+
+  drawGrid() {
+    if (this.grid) this.grid.destroy();
+    const g = this.plotGeom();
+    const gr = this.add.graphics().setDepth(8);
+    gr.lineStyle(1, 0xffffff, 0.22);
+    const top = GROUND_Y - g.rows * 16;
+    for (let c = 0; c <= g.cols; c++) gr.lineBetween(g.x0 + c * 16 + 0.5, top, g.x0 + c * 16 + 0.5, GROUND_Y);
+    for (let r = 0; r <= g.rows; r++) gr.lineBetween(g.x0, GROUND_Y - r * 16 + 0.5, g.x0 + g.cols * 16, GROUND_Y - r * 16 + 0.5);
+    this.grid = gr;
+  }
+
+  // alt cubuk: elindeki bloklar (simge + adet), Kaldir, Bitti
+  buildBar() {
+    const bar = UI.$('#actions');
+    bar.innerHTML = '';
+    const lvl = S.level('insa');
+    const owned = BUILD_ORDER.filter((id) => S.countItem(id) > 0);
+    if (!owned.length) UI.feed('Elinde inşa bloğu yok. Evindeki Üretim Masası\'nda Tahta Kalas, Kütük, Çit gibi bloklar yapabilirsin.');
+    for (const id of owned) {
+      const def = BUILD[id];
+      const b = UI.el('button', 'btn small build-btn' + (this.buildTool === 'koy' && this.buildSel === id ? ' sel' : ''));
+      b.appendChild(UI.icon(ITEMS[id].icon));
+      b.appendChild(UI.el('span', '', `${S.countItem(id)}`));
+      b.title = ITEMS[id].name + (lvl < def.lvl ? ` (İnşa ${def.lvl} gerekli)` : '');
+      if (lvl < def.lvl) b.classList.add('locked');
+      b.onclick = (ev) => {
+        ev.stopPropagation(); sfx('click');
+        if (lvl < def.lvl) { UI.feed(`${ITEMS[id].name} koymak için İnşa ${def.lvl} gerekli.`); return; }
+        this.buildSel = id; this.buildTool = 'koy'; this.buildBar();
+      };
+      bar.appendChild(b);
+    }
+    if (this.buildSel === 'kiremit' && this.buildTool === 'koy') {
+      const names = { kiremit: 'Düz', kiremit_sol: 'Sol eğim', kiremit_sag: 'Sağ eğim' };
+      const shape = this.roofShape || 'kiremit';
+      bar.appendChild(UI.button(`Şekil: ${names[shape]}`, () => {
+        const order = BUILD.kiremit.shapes;
+        this.roofShape = order[(order.indexOf(shape) + 1) % order.length];
+        this.buildBar();
+      }, 'small'));
+    }
+    bar.appendChild(UI.button('Kaldır', () => { this.buildTool = this.buildTool === 'kaldir' ? 'koy' : 'kaldir'; this.buildBar(); }, 'small' + (this.buildTool === 'kaldir' ? ' sel red' : '')));
+    bar.appendChild(UI.button('Bitti', () => this.stopBuild(), 'small primary'));
+    const sel = this.buildTool === 'kaldir' ? 'Kaldır: bloğa dokun' : this.buildSel ? `${ITEMS[this.buildSel].name}: boş kareye dokun` : 'Blok seç';
+    UI.setLocation(`İnşa · ${sel}`);
+  }
+
+  canPlace(id, cell) {
+    const def = BUILD[id];
+    const cells = S.save.plot.cells;
+    const g = this.plotGeom();
+    if (cells[cell.key]) return 'Orası dolu.';
+    if (def.ground && cell.r !== 0) return 'Tarla sadece zemine konur.';
+    if (def.tall && (cell.r + 1 >= g.rows || cells[`${cell.c},${cell.r + 1}`])) return 'Kapının üstünde bir boş kare daha lazım.';
+    if (cell.r === 1 && cells[`${cell.c},0`] && cells[`${cell.c},0`].id === 'tarla') return 'Tarlanın üstü bitki için boş kalmalı.';
+    if (id === 'tarla') {
+      const n = Object.values(cells).filter((x) => x.id === 'tarla').length;
+      if (n >= MAX_TARLA(S.level('insa'))) return `En fazla ${MAX_TARLA(S.level('insa'))} tarla koyabilirsin (İnşa seviyesiyle artar).`;
+      if (cells[`${cell.c},1`]) return 'Tarlanın üstü boş olmalı.';
+    }
+    return null;
+  }
+
+  async placeAt(cell) {
+    if (this.busy) return;
+    const id = this.buildSel;
+    if (!id || !S.countItem(id)) { UI.feed('Önce aşağıdan bir blok seç.'); this.sulk(); return; }
+    const def = BUILD[id];
+    if (S.level('insa') < def.lvl) { UI.feed(`İnşa ${def.lvl} gerekli.`); this.sulk(); return; }
+    const why = this.canPlace(id, cell);
+    if (why) { UI.feed(why); return; }
+    this.busy = true;
+    await this.walkToCell(cell.c);
+    // blogu koyar, bir adim geri cekilir (placeblock)
+    sfx('craft');
+    const anim = playAnim(this.player, 'c_placeblock', 2.2);
+    await wait(this, 260);
+    S.removeItem(id, 1);
+    const cells = S.save.plot.cells;
+    cells[cell.key] = id === 'kiremit' && this.roofShape && this.roofShape !== 'kiremit' ? { id, shape: this.roofShape } : { id };
+    if (def.tall) cells[`${cell.c},${cell.r + 1}`] = { id, top: true };
+    this.drawCell(cell.key);
+    if (def.tall) this.drawCell(`${cell.c},${cell.r + 1}`);
+    if (id === 'tarla') this.refreshGarden();
+    // Insa XP sadece arsadaki blok sayisi yeni bir rekora cikinca (koy-kaldir ile XP kasilmaz)
+    const placed = S.placedCount();
+    let ups = [];
+    if (placed > (S.save.plot.best || 0)) {
+      S.save.plot.best = placed;
+      UI.floatText(this.player.x, GROUND_Y - 44, `+${def.xp} İnşa XP`, 'good');
+      const before = this.plotGeom();
+      ups = S.addXp({ insa: def.xp });
+      const after = this.plotGeom();
+      if (after.cols !== before.cols || after.rows !== before.rows) this.time.delayedCall(1200, () => { if (this.mode === 'plot') { UI.banner('Arsan büyüdü!', `${after.cols}×${after.rows} blok`, 2000); const b = this.building; this.goPlot(); if (b) this.startBuild(); } });
+    }
+    S.changed();
+    await anim;
+    this.idle();
+    for (const u of ups) await this.levelUp(u);
+    this.busy = false;
+    if (this.building) { if (!S.countItem(id)) this.buildSel = null; this.buildBar(); }
+  }
+
+  async removeAt(cell) {
+    if (this.busy) return;
+    const cells = S.save.plot.cells;
+    let key = cell.key;
+    let c = cells[key];
+    if (!c) return;
+    if (c.top) { key = `${cell.c},${cell.r - 1}`; c = cells[key]; }
+    if (c.id === 'tarla' && S.save.plot.garden[key]) { UI.feed('Tarlada bitki var. Önce hasat et.'); this.sulk(); return; }
+    if (!S.fits(c.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+    this.busy = true;
+    await this.walkToCell(cell.c);
+    await playAnim(this.player, 'c_punch', 1.6);
+    sfx('break');
+    const [cc, rr] = key.split(',').map(Number);
+    delete cells[key];
+    this.drawCell(key);
+    if (BUILD[c.id] && BUILD[c.id].tall) { delete cells[`${cc},${rr + 1}`]; this.drawCell(`${cc},${rr + 1}`); }
+    S.addItem(c.id, 1);
+    S.changed();
+    this.idle();
+    this.busy = false;
+    if (this.building) this.buildBar();
+  }
+
+  // ---- bahce
+  gardenTap(cell) {
+    const info = this.gardenInfo(cell.key);
+    if (!info) {
+      const seeds = Object.keys(SEEDS).filter((id) => S.countItem(id) > 0);
+      if (!seeds.length) { UI.feed('Tohumun yok. Zindanda ot ve böğürtlen toplarken tohum çıkar, Takas Tezgâhı\'nda da satılır.'); this.sulk(); return; }
+      UI.choice('Bahçe tarlası', 'Ne ekmek istersin?', [
+        ...seeds.map((id) => ({ label: `${SEEDS[id].name} (${S.countItem(id)})`, cls: 'primary', onClick: () => this.plant(cell, id) })),
+        { label: 'Vazgeç' },
+      ]);
+      return;
+    }
+    if (!info.ready) {
+      const m = Math.ceil(info.left / 60000);
+      this.say(`${info.sd.name} büyüyor. ${m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`} kaldı.`, 2600);
+      return;
+    }
+    this.harvest(cell, info);
+  }
+
+  async plant(cell, seed) {
+    if (this.busy || !S.countItem(seed)) return;
+    this.busy = true;
+    await this.walkToCell(cell.c);
+    this.player.play('c_sneakspam');
+    await wait(this, 900);
+    S.removeItem(seed, 1);
+    S.save.plot.garden[cell.key] = { seed, t0: Date.now() };
+    sfx('gather');
+    S.changed();
+    this.refreshGarden();
+    UI.feed(`${SEEDS[seed].name} ektin. ${SEEDS[seed].ms / 3600000} saatte büyür, oyun kapalıyken de.`);
+    this.idle();
+    this.busy = false;
+  }
+
+  async harvest(cell, info) {
+    if (this.busy) return;
+    const n = info.sd.n[0] + Math.floor(Math.random() * (info.sd.n[1] - info.sd.n[0] + 1));
+    if (!S.fits(info.sd.out, n)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+    this.busy = true;
+    await this.walkToCell(cell.c);
+    this.player.play('c_sneakspam');
+    await wait(this, 1100);
+    delete S.save.plot.garden[cell.key];
+    sfx('gather');
+    this.giveDrop(info.sd.out, n, 'Hasat ettin:', true);
+    if (Math.random() < 0.5) this.giveDrop(info.seed, 1, 'Tohum geri geldi:', true);
+    UI.floatText(this.player.x, GROUND_Y - 44, `+${info.sd.xp} Toplama XP`, 'good');
+    const ups = S.addXp({ toplama: info.sd.xp });
+    S.save.stats.gathered++;
+    S.changed();
+    this.refreshGarden();
+    for (const u of ups) await this.levelUp(u);
+    this.idle();
+    this.busy = false;
   }
 
   // ------------------------------------------------------------ maden ocagi
@@ -772,6 +1157,8 @@ export class WorldScene extends Phaser.Scene {
     const n = 1 + Math.floor(S.level('toplama') / 10) + (Math.random() < 0.3 ? 1 : 0);
     this.giveDrop(room.node, n, 'Topladın:', true);
     if (Math.random() < BAL_CHANCE) this.giveDrop('bal', 1, 'Bir arı kovanı! Topladın:', true);
+    const seed = room.node === 'sifali_ot' ? 'ot_tohumu' : room.node === 'bogurtlen' ? 'bogurtlen_tohumu' : null;
+    if (seed && Math.random() < SEED_CHANCE && S.fits(seed)) this.giveDrop(seed, 1, 'Tohum buldun:', true);
     room.gathered = true;
     S.save.stats.gathered++;
     if (room.nodeSpr) this.tweens.add({ targets: room.nodeSpr, alpha: 0, y: room.nodeSpr.y + 4, duration: 300 });
@@ -1137,7 +1524,7 @@ export class WorldScene extends Phaser.Scene {
   async afterDeath() {
     await this.fade(true);
     S.endRun();
-    this.goBase('dungeon');
+    this.goHouse(300); // yatakta uyanir
     await this.fade(false);
     // bayilmak bir basarisizlik: uste aglar (cry)
     await playAnim(this.player, 'c_cry', 1);

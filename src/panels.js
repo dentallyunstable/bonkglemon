@@ -1,5 +1,5 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY } from './data.js';
+import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
@@ -260,6 +260,7 @@ export function openProfile(w) {
         <b>En derin kat:</b> ${st.deepest || 0} &nbsp; <b>Yenilen Glemon:</b> ${st.kills}<br>
         <b>Patron:</b> ${st.bossKills} &nbsp; <b>Parlak:</b> ${st.shiny} &nbsp; <b>Bayılma:</b> ${st.deaths}<br>
         <b>Saldırı</b> ${S.level('saldiri')} · <b>Savunma</b> ${S.level('savunma')} · <b>Can</b> ${S.level('can')} &nbsp; <b>${CURRENCY}:</b> ${S.save.gold}<br>
+        <b>Üs Puanı:</b> ${S.baseScore()} &nbsp; <b>İnşa</b> ${S.level('insa')}<br>
         <b>Oyun süresi:</b> ${hours} sa`;
       info.appendChild(UI.el('h3', '', 'Düşüş günlüğü'));
       const ul = UI.el('ul', 'droplog');
@@ -455,10 +456,11 @@ function recipeDetail(w, station, r, render) {
     return box;
   }
   const it = ITEMS[r.out];
-  const nm = UI.el('div', 'nm', it.name);
+  const nm = UI.el('div', 'nm', it.name + (r.n ? ` ×${r.n}` : ''));
   nm.style.color = RARITY[it.rarity].color;
   box.appendChild(nm);
   box.appendChild(UI.el('div', 'muted', `${KIND[it.kind]} · +${r.xp} Üretim XP${station === 'firin' ? ' · 5 sn' : ''}`));
+  if (BUILD[r.out]) box.appendChild(UI.el('div', '', `İnşa bloğu · koymak için İnşa ${BUILD[r.out].lvl}`));
   for (const l of statLines(it)) box.appendChild(UI.el('div', '', l));
   if (it.req) {
     const sk = SKILLS.find((x) => x.key === it.req[0]);
@@ -526,9 +528,10 @@ function make(w, station, r, n) {
     return;
   }
   // stackable olmayan esyalar icin canta yeri kontrolu
-  if (!S.fits(r.out, n)) { UI.feed('Çanta dolu!'); return; }
+  const per = r.n || 1;
+  if (!S.fits(r.out, n * per)) { UI.feed('Çanta dolu!'); return; }
   for (const [id, k] of Object.entries(r.mats)) S.removeItem(id, k * n);
-  S.addItem(r.out, n);
+  S.addItem(r.out, n * per);
   S.save.stats.crafted += n;
   sfx('craft');
   // masada ve kazanda elle calisir (punch)
@@ -536,7 +539,7 @@ function make(w, station, r, n) {
   w.player.play({ key: 'c_punch', timeScale: 1.4 });
   w.player.once('animationcomplete', () => w.idle());
   const xp = r.xp * n;
-  UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[r.out].icon)}">${UI.itemName(r.out)}${n > 1 ? ` ×${n}` : ''} ürettin! +${xp} Üretim XP`);
+  UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[r.out].icon)}">${UI.itemName(r.out)}${n * per > 1 ? ` ×${n * per}` : ''} ürettin! +${xp} Üretim XP`);
   const ups = S.addXp({ uretim: xp });
   S.changed();
   for (const u of ups) w.levelUp(u);
@@ -610,3 +613,37 @@ export function openShop(w) {
     render();
   });
 }
+
+// ---------------------------------------------------------------- Kamp (0.3)
+// Oyun kapaliyken birikenler: girişte kucuk bir hediye. Cantaya sigmayan depoya gider.
+export function openCamp(w, rw) {
+  const mins = Math.round(rw.ms / 60000);
+  const dur = mins >= 60 ? `${Math.floor(mins / 60)} sa ${mins % 60 ? `${mins % 60} dk` : ''}` : `${mins} dk`;
+  UI.openPanel('Kamp ödülü', (body) => {
+    body.appendChild(UI.el('p', 'choice-text', `Sen yokken (${dur}) kamp ateşinin başında bunlar birikti:`));
+    const list = UI.el('div', 'camp-list');
+    for (const [id, n] of Object.entries(rw.items)) {
+      const m = UI.el('div', 'mat ok');
+      m.appendChild(UI.icon(ITEMS[id].icon));
+      m.appendChild(UI.el('span', '', `${ITEMS[id].name} ×${n}`));
+      list.appendChild(m);
+    }
+    body.appendChild(list);
+    body.appendChild(UI.el('div', 'muted', 'Kamp en fazla 2 saatlik malzeme toplar. XP ve nadir eşya vermez.'));
+    const row = UI.el('div', 'choice-row');
+    row.appendChild(UI.button('Topla', () => {
+      let toDepo = 0;
+      for (const [id, n] of Object.entries(rw.items)) {
+        const left = S.addItemRaw(id, n, 'bag');
+        if (left > 0) toDepo += left - S.addItemRaw(id, left, 'depo');
+      }
+      sfx('gather');
+      UI.feed(`Kamp ödülünü topladın.${toDepo ? ' Çantaya sığmayanlar depoya kondu.' : ''}`);
+      S.changed();
+      UI.closePanel();
+      if (w.mode === 'base') w.player.play('c_cheer');
+    }, 'primary'));
+    body.appendChild(row);
+  });
+}
+
