@@ -38,6 +38,33 @@ function bevel(t, up = 1.08, down = 0.8) {
   return t;
 }
 
+
+// Yumusatma (Eren, 2026-11-07: "dokulari yumusat"): her piksel komsularinin ortalamasina
+// ve dokunun ortalama tonuna biraz yaklasir. Kumlu/karincali gorunum azalir, ton cesidi kalir.
+function soften(t, blur = 0.45, flat = 0.25) {
+  const src = Uint32Array.from(t.d);
+  let sr = 0, sg = 0, sb = 0, n = 0;
+  for (const v of src) { if (!(v >>> 24)) continue; const c = unpack(v); sr += c[0]; sg += c[1]; sb += c[2]; n++; }
+  if (!n) return t;
+  const avg = [sr / n, sg / n, sb / n];
+  const at = (x, y) => src[((y + B) % B) * B + ((x + B) % B)];
+  for (let y = 0; y < B; y++) {
+    for (let x = 0; x < B; x++) {
+      const v = at(x, y);
+      if (!(v >>> 24)) continue;
+      const c = unpack(v);
+      const nb = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].map(unpack);
+      const out = [0, 1, 2].map((i) => {
+        const m = (nb[0][i] + nb[1][i] + nb[2][i] + nb[3][i]) / 4;
+        const b = c[i] + (m - c[i]) * blur;
+        return Math.round(b + (avg[i] - b) * flat);
+      });
+      t.d[y * B + x] = pack(out, c[3]);
+    }
+  }
+  return t;
+}
+
 // ------------------------------------------------------------- dogal bloklar
 const DIRT = ['#7a5638', '#6a4a30', '#86603e', '#5c4029', '#94704c'];
 const STONE = ['#7f7d82', '#706e74', '#8c8a8f', '#626066', '#9a989c'];
@@ -48,8 +75,8 @@ const LEAF = ['#4e7e36', '#5e8f3e', '#43702e', '#6a9a46', '#3a6428'];
 
 function dirt(seed = 1) {
   const r = rng(seed); const t = T(DIRT[0]);
-  blobs(t, r, DIRT.slice(1, 4), 26); speckle(t, r, [DIRT[4]], 6);
-  return t;
+  blobs(t, r, DIRT.slice(1, 4), 22, 1, 3); speckle(t, r, [DIRT[4]], 4);
+  return soften(t);
 }
 function grassSide() {
   const r = rng(2); const t = dirt(3);
@@ -63,12 +90,12 @@ function grassSide() {
 }
 function grassTop() {
   const r = rng(4); const t = T(GRASS[0]);
-  return blobs(t, r, GRASS.slice(1), 30);
+  return soften(blobs(t, r, GRASS.slice(1), 26, 1, 3), 0.5, 0.3);
 }
 function stone(seed = 5) {
   const r = rng(seed); const t = T(STONE[0]);
-  blobs(t, r, STONE.slice(1, 4), 20, 1, 3); speckle(t, r, [STONE[4], STONE[3]], 10);
-  return t;
+  blobs(t, r, STONE.slice(1, 4), 20, 1, 3); speckle(t, r, [STONE[4], STONE[3]], 6);
+  return soften(t, 0.4, 0.2);
 }
 function ore(seed, tones) {
   const r = rng(seed); const t = stone(seed + 100);
@@ -81,8 +108,8 @@ function ore(seed, tones) {
 }
 function sand() {
   const r = rng(7); const t = T('#c4ad7c');
-  blobs(t, r, ['#b8a070', '#d0bb8a', '#ab9364'], 24); speckle(t, r, ['#9c8458'], 6);
-  return t;
+  blobs(t, r, ['#b8a070', '#d0bb8a', '#ab9364'], 22, 1, 3); speckle(t, r, ['#9c8458'], 3);
+  return soften(t, 0.55, 0.3);
 }
 function planks(tones = WOOD) {
   const r = rng(8); const t = T(tones[0]);
@@ -107,9 +134,9 @@ function log() {
 }
 function leaves() {
   const r = rng(10); const t = T(LEAF[0]);
-  blobs(t, r, LEAF.slice(1), 40);
-  speckle(t, r, ['#7aa852'], 5);
-  return t;
+  blobs(t, r, LEAF.slice(1), 34, 1, 3);
+  speckle(t, r, ['#7aa852'], 4);
+  return soften(t, 0.35, 0.15);
 }
 function roof() {
   const r = rng(11); const t = T('#8e4a3c');
@@ -432,6 +459,114 @@ function bones() {
   return t;
 }
 
+// ------------------------------------------------------------- 0.6 us yenileme: zanaat avlusu ve han
+const IRON = ['#9ea2a8', '#c4c8cc', '#74787e', '#54585e'];
+// silah askisi (2 blok): tahta cerceveye yaslanmis kilic, yay ve balta
+function weaponRack(part) {
+  const t = T(null);
+  const fr = (y0, y1) => { t.rect(1, y0, 2, y1 - y0, WOOD[1]); t.rect(13, y0, 2, y1 - y0, WOOD[1]); t.rect(1, y0, 2, 1, WOOD[2]); t.rect(13, y0, 2, 1, WOOD[2]); };
+  if (part === 'ust') {
+    fr(4, 16); t.rect(1, 4, 14, 2, WOOD[0]); t.rect(1, 4, 14, 1, WOOD[2]); t.rect(1, 5, 14, 1, WOOD[3]);
+    // kilic (ucu yukarida)
+    t.rect(4, 0, 2, 13, IRON[0]); t.rect(4, 0, 1, 13, IRON[1]); t.set(5, 0, IRON[2]); t.rect(3, 13, 4, 1, '#8a6a3a');
+    // yay
+    for (let y = 1; y < 16; y++) t.set(9 + (y < 4 || y > 12 ? 1 : 0) + (y < 2 || y > 14 ? 1 : 0), y, '#8e5e30');
+    t.rect(8, 1, 1, 15, '#e8dcc0');
+    // balta sapi + basi
+    t.rect(12, 2, 1, 14, BARK[2]); t.rect(10, 2, 3, 4, IRON[2]); t.rect(10, 2, 1, 4, IRON[1]);
+  } else {
+    fr(0, 13); t.rect(1, 12, 14, 2, WOOD[0]); t.rect(1, 13, 14, 1, WOOD[3]);
+    t.rect(4, 0, 2, 2, '#6e4e2a'); t.rect(4, 2, 2, 1, '#c8a04a'); // kilic kabzasi
+    t.rect(8, 0, 1, 5, '#e8dcc0'); t.set(9, 0, '#8e5e30'); t.set(9, 1, '#8e5e30');
+    t.rect(12, 0, 1, 12, BARK[2]);
+    t.rect(0, 14, B, 2, BARK[3]);
+  }
+  return t;
+}
+// zirh askisi (2 blok): kask + gogusluk ustte, direk ve ayak altta
+function armorStand(part) {
+  const t = T(null);
+  if (part === 'ust') {
+    t.rect(4, 0, 8, 6, IRON[0]); t.rect(4, 0, 8, 1, IRON[1]); t.rect(5, 3, 6, 1, IRON[3]); t.rect(4, 5, 8, 1, IRON[2]);
+    t.rect(7, 4, 2, 2, IRON[3]);
+    t.rect(1, 7, 14, 4, IRON[0]); t.rect(1, 7, 14, 1, IRON[1]); t.rect(3, 11, 10, 5, IRON[0]);
+    t.rect(7, 8, 2, 8, IRON[2]); t.rect(3, 15, 10, 1, IRON[3]); t.rect(1, 10, 2, 1, IRON[2]); t.rect(13, 10, 2, 1, IRON[2]);
+    t.rect(10, 12, 2, 2, '#b84a3c');
+  } else {
+    t.rect(4, 0, 8, 6, IRON[2]); t.rect(4, 0, 8, 1, IRON[0]); t.rect(4, 5, 3, 1, IRON[3]); t.rect(9, 5, 3, 1, IRON[3]);
+    t.rect(7, 6, 2, 8, BARK[2]); t.rect(8, 6, 1, 8, BARK[1]);
+    t.rect(3, 14, 10, 2, WOOD[1]); t.rect(3, 14, 10, 1, WOOD[2]);
+  }
+  return t;
+}
+// ors: kutuk ustunde demir
+function anvil() {
+  const t = T(null);
+  t.rect(3, 9, 10, 7, BARK[0]); t.rect(3, 9, 10, 1, '#a07a50'); t.rect(5, 10, 6, 1, '#8a6a44'); t.rect(3, 15, 10, 1, BARK[3]);
+  t.rect(1, 3, 14, 3, '#5a5e66'); t.rect(1, 3, 14, 1, '#80848c'); t.rect(0, 4, 2, 1, '#5a5e66');
+  t.rect(5, 6, 6, 2, '#4a4e56'); t.rect(4, 8, 8, 1, '#3e4248');
+  t.rect(10, 1, 1, 2, BARK[2]); t.rect(9, 0, 3, 1, '#80848c');
+  return t;
+}
+// yem tezgahi: kucuk tezgah, ustunde sepet bogurtlen ve turta
+function feedTable() {
+  const t = T(null);
+  t.rect(0, 6, B, 3, '#b48654'); t.rect(0, 6, B, 1, '#c4966a'); t.rect(0, 8, B, 1, WOOD[3]);
+  t.rect(1, 9, 2, 7, WOOD[1]); t.rect(13, 9, 2, 7, WOOD[1]); t.rect(3, 12, 10, 1, WOOD[3]);
+  t.rect(1, 2, 6, 4, '#a07040'); t.rect(1, 2, 6, 1, '#c09060'); t.rect(2, 1, 4, 1, '#8a3a4a'); t.set(3, 0, '#b04a5a'); t.set(5, 1, '#6a2a3a');
+  t.rect(9, 3, 6, 3, '#d4a058'); t.rect(9, 3, 6, 1, '#e8bc74'); t.rect(10, 4, 1, 1, '#8a3a4a'); t.rect(12, 4, 1, 1, '#8a3a4a');
+  t.rect(4, 13, 4, 3, '#c8b088'); t.rect(4, 13, 4, 1, '#d8c49a');
+  return t;
+}
+// varil
+function barrel() {
+  const t = T(null);
+  t.rect(3, 2, 10, 14, WOOD[0]); t.rect(2, 4, 12, 10, WOOD[0]);
+  for (const x of [4, 7, 10]) t.rect(x, 2, 1, 14, WOOD[1]);
+  t.rect(2, 5, 12, 1, '#54585e'); t.rect(2, 12, 12, 1, '#54585e'); t.rect(3, 2, 10, 1, WOOD[2]); t.rect(3, 15, 10, 1, WOOD[3]);
+  return t;
+}
+// asili kalkan (duvar susu)
+function wallShield() {
+  const t = T(null);
+  t.rect(3, 2, 10, 8, '#8a4a3a'); t.rect(4, 10, 8, 2, '#8a4a3a'); t.rect(5, 12, 6, 1, '#8a4a3a'); t.rect(6, 13, 4, 1, '#8a4a3a');
+  t.rect(3, 2, 10, 1, '#a85e4a'); t.rect(7, 2, 2, 12, '#c8a04a'); t.rect(3, 6, 10, 2, '#c8a04a');
+  t.rect(3, 2, 1, 9, '#5e3026'); t.rect(12, 2, 1, 9, '#5e3026');
+  return t;
+}
+// duvardaki harita (2 blok genis): eski kagit, yollar, bolgeler, kirmizi isaret
+function wallMap(part) {
+  const t = T(null);
+  const pa = ['#d8c8a0', '#c8b68c', '#e4d6b2'];
+  t.rect(0, 1, B, 13, pa[0]);
+  for (let i = 0; i < 18; i++) t.set((i * 7) % B, 2 + ((i * 5) % 11), pa[(i % 2) + 1]);
+  t.rect(0, 1, B, 1, '#a89670'); t.rect(0, 13, B, 1, '#a89670');
+  if (part === 'sol') {
+    t.rect(0, 1, 1, 13, '#a89670');
+    t.rect(2, 4, 4, 3, '#6e9a5a'); t.rect(3, 3, 2, 1, '#6e9a5a'); t.rect(2, 9, 3, 2, '#6e9a5a'); // orman
+    t.rect(8, 7, 3, 3, '#8a8890'); t.set(9, 6, '#8a8890'); // magara
+    for (let x = 4; x < B; x += 2) t.set(x, 11 - Math.floor(x / 5), '#7a4e2e');
+    t.set(1, 1, '#b84a3c'); t.set(2, 1, '#8e3a2e');
+  } else {
+    t.rect(B - 1, 1, 1, 13, '#a89670');
+    t.rect(2, 3, 6, 4, '#d8b070'); t.rect(4, 2, 3, 1, '#d8b070'); // col
+    t.rect(10, 8, 3, 3, '#5a4e72'); // zindan
+    t.set(10, 7, '#b84a3c'); t.set(12, 7, '#b84a3c'); t.set(11, 8, '#b84a3c'); t.set(10, 9, '#b84a3c'); t.set(12, 9, '#b84a3c');
+    for (let x = 0; x < 10; x += 2) t.set(x, 9 - Math.floor(x / 4), '#7a4e2e');
+    t.set(14, 1, '#b84a3c'); t.set(13, 1, '#8e3a2e');
+  }
+  return t;
+}
+// tezgah ustu: bira kupalari ve sise
+function mugs() {
+  const t = T(null);
+  t.rect(1, 9, 4, 6, '#a07040'); t.rect(1, 9, 4, 1, '#ece4d4'); t.rect(1, 8, 4, 1, '#ece4d4'); t.rect(5, 10, 1, 3, '#a07040');
+  t.rect(7, 10, 4, 5, '#a07040'); t.rect(7, 9, 4, 1, '#ece4d4'); t.rect(11, 11, 1, 2, '#a07040');
+  t.rect(13, 6, 2, 9, '#5a7e4a'); t.rect(13, 5, 2, 1, '#8a6a3a'); t.set(13, 8, '#7aa06a');
+  t.rect(0, 15, B, 1, '#6e4e2a');
+  return t;
+}
+
 const SOLID = {
   toprak: () => dirt(), cimen: grassSide, cimen_ust: grassTop, tas: () => stone(), kum: sand,
   komur: () => ore(20, ['#2e2c32', '#3c3a40', '#24222a', '#4a4850']),
@@ -453,6 +588,8 @@ const PROPS = {
   bitki: herb, filiz: () => sprout(0), fide: () => sprout(1), cali: berryBush, dallar: branches, crack1: () => crack(1), crack2: () => crack(2), crack3: () => crack(3),
   kristal_m: () => crystal('#9a6cc8', '#6e4c9a', '#c8a0ec'), kristal_b: () => crystal('#7cb4d8', '#4e84a8', '#c8e6f8'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
+  silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
+  ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust']);
 

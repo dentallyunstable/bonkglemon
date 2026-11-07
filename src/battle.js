@@ -1020,6 +1020,7 @@ export class Battle {
     st.kills++;
     st.glemons[e.key] = (st.glemons[e.key] || 0) + 1;
     if (S.run) S.run.kills++;
+    if (e.golden) st.golden = (st.golden || 0) + 1;
     if (e.data.boss) { st.bossKills++; this.luckXp += 250 * (ZONES.indexOf(this.zone) + 1); }
     if (e.shiny) {
       st.shiny++;

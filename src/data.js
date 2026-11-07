@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.5.0';
+export const VERSION = '0.5.5';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -38,8 +38,8 @@ export const SKILLS = [
   { key: 'can', name: 'Can', desc: 'Her savaşta artar. Her seviye +10 can.' },
   { key: 'okculuk', name: 'Okçuluk', desc: 'Yayla Glemon yenince artar. Daha iyi yaylar ve ok yetenekleri (20, 40, 60). Uçan Glemonlara tam hasar.' },
   { key: 'madencilik', name: 'Madencilik', desc: 'Maden Ocağı\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
-  { key: 'toplama', name: 'Toplama', desc: 'Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
-  { key: 'uretim', name: 'Üretim', desc: 'Evindeki Masa, Fırın ve Kazan\'da üretince artar. Yeni tarifler açar.' },
+  { key: 'toplama', name: 'Toplama', desc: 'Keşifte ve Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
+  { key: 'uretim', name: 'Üretim', desc: 'Zanaat avlusundaki Masa, Fırın, Kazan ve Yem Tezgâhı\'nda üretince artar. Yeni tarifler açar.' },
   { key: 'insa', name: 'İnşa', desc: 'Arsana blok ve eşya koyunca artar. Yeni bloklar açar, arsan büyür (20, 40, 60).' },
   { key: 'sans', name: 'Şans', desc: 'Patron yenince, sandık açınca ve nadir bir şey düşünce artar. Nadir düşme ve parlak Glemon şansı.' },
   { key: 'bag', name: 'Glemon Bağı', desc: 'Yanındaki Glemon savaşınca ve evcilleştirince artar. Daha zor Glemonları evcilleştirirsin, evcillerin güçlenir ve seviye sınırları artar (Bağ / 2).' },
@@ -267,7 +267,7 @@ export const floorMult = (floor) => 1 + 0.22 * (floor - 1);
 // kind: malzeme | tuketim | silah | kask | gogus | bot | tilsim | kazma
 export const ITEMS = {
   // ---- dusen malzemeler
-  dal: { name: 'Dal parçası', kind: 'malzeme', rarity: 'siradan', icon: 'dal', desc: 'Kütükçükten düşer, zindanda da toplanır. Tahta eşyaların ana malzemesi.' },
+  dal: { name: 'Dal parçası', kind: 'malzeme', rarity: 'siradan', icon: 'dal', desc: 'Kütükçükten düşer, keşifte de toplanır. Tahta eşyaların ana malzemesi.' },
   mantar: { name: 'Mantar şapkası', kind: 'malzeme', rarity: 'siradan', icon: 'mantar', desc: 'Patlakmantardan düşer. Çorba ve Bonk Bombası malzemesi.' },
   diken: { name: 'Diken', kind: 'malzeme', rarity: 'siradan', icon: 'diken', desc: 'Dikentavşandan düşer.' },
   yaprak_kanadi: { name: 'Yaprak kanadı', kind: 'malzeme', rarity: 'nadir', icon: 'yaprak', desc: 'Yaprakböcekten düşer. Hafif ve sağlam.' },
@@ -280,8 +280,8 @@ export const ITEMS = {
   demir_cevheri: { name: 'Demir cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'demir_cevheri', desc: 'Ocağın derinlerinde (Derinlik 2+). Fırında külçe olur.' },
   demir_kulcesi: { name: 'Demir külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'kulce', desc: 'Fırında eritilir. Demir eşyaların ana malzemesi.' },
   // ---- toplama
-  sifali_ot: { name: 'Şifalı ot', kind: 'malzeme', rarity: 'siradan', icon: 'ot', desc: 'Zindanda toplanır. İksir ve çorba malzemesi.' },
-  bogurtlen: { name: 'Böğürtlen', kind: 'tuketim', rarity: 'siradan', icon: 'bogurtlen', heal: 0.1, food: true, anim: 'eat', desc: 'Zindanda toplanır. Yersen biraz can verir. Glemon yemi malzemesi (0.4).' },
+  sifali_ot: { name: 'Şifalı ot', kind: 'malzeme', rarity: 'siradan', icon: 'ot', desc: 'Keşifte toplanır. İksir ve çorba malzemesi.' },
+  bogurtlen: { name: 'Böğürtlen', kind: 'tuketim', rarity: 'siradan', icon: 'bogurtlen', heal: 0.1, food: true, anim: 'eat', desc: 'Keşifte toplanır. Yersen biraz can verir. Glemon yemi malzemesi (0.4).' },
   bal: { name: 'Bal', kind: 'malzeme', rarity: 'nadir', icon: 'bal', desc: 'Toplarken nadiren bulunur. Özel Glemon yemlerinin malzemesi.' },
   // ---- uretilenler
   bos_sise: { name: 'Boş şişe', kind: 'malzeme', rarity: 'siradan', icon: 'sise', desc: 'Fırında kumdan yapılır. İksir şişesi.' },
@@ -566,3 +566,19 @@ export const SEEDS = {
 export const SEED_CHANCE = 0.3; // ot / bogurtlen toplarken tohum cikma ihtimali
 // Kamp: oyun kapaliyken en fazla 2 saat, saatte bu kadar basit malzeme (XP ve nadir esya yok)
 export const CAMP = { maxMs: 2 * 60 * 60 * 1000, minMs: 10 * 60 * 1000, perHour: { dal: 6, tas: 6, komur: 3, bogurtlen: 3 } };
+
+// ---------------------------------------------------------------- Gorevler (0.6, Hanci Lale)
+// Her gorev bir sayacin kabul anindan sonra ne kadar arttigina bakar (zindan: rekor).
+// tier: 0 kolay, 1 orta, 2 zor. Odul: Cimen Blogu + ilgili beceriye XP.
+export const QUESTS = {
+  kill: { name: (n) => `${n} Glemon yen`, stat: (s) => s.stats.kills, amt: [8, 16, 30], skill: 'saldiri' },
+  gather: { name: (n) => `Keşifte ${n} kez toplama yap`, stat: (s) => s.stats.gathered, amt: [3, 6, 10], skill: 'toplama' },
+  mine: { name: (n) => `Madende ${n} blok kaz`, stat: (s) => s.stats.mined, amt: [12, 25, 45], skill: 'madencilik' },
+  craft: { name: (n) => `${n} eşya üret`, stat: (s) => s.stats.crafted, amt: [3, 6, 12], skill: 'uretim' },
+  tame: { name: (n) => `${n} Glemon evcilleştir`, stat: (s) => s.stats.tamed || 0, amt: [1, 1, 2], skill: 'bag', minBag: 1 },
+  boss: { name: (n) => `${n} patron ya da ara patron yen`, stat: (s) => (s.stats.bossKills || 0) + (s.stats.golden || 0), amt: [1, 1, 2], skill: 'sans' },
+  zindan: { name: (n) => `Zindan'da Kat ${n}'e in`, abs: true, stat: (s) => s.stats.zindanBest || 0, amt: [2, 4, 7], skill: 'savunma' },
+  species: { name: (n, k) => `${n} ${GLEMONS[k].name} yen`, stat: (s, k) => (s.stats.glemons || {})[k] || 0, amt: [4, 8, 14], skill: 'saldiri' },
+};
+export const QUEST_SLOTS = 3;
+export const QUEST_REROLL = 15;

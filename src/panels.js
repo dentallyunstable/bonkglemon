@@ -1,10 +1,10 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
 import { forgetLogin } from './login.js';
-import { iconUrl } from './art.js';
+import { iconUrl, hubMap, HUB_SPOTS } from './art.js';
 
 const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma' };
 
@@ -280,7 +280,7 @@ export function openProfile(w) {
       const st = S.save.stats;
       const hours = (st.playMs / 3600000).toFixed(1);
       info.innerHTML = `
-        <b>En derin kat:</b> ${st.deepest || 0} &nbsp; <b>Yenilen Glemon:</b> ${st.kills}<br>
+        <b>Keşif en derin:</b> ${st.deepest || 0} &nbsp; <b>Zindan rekoru:</b> Kat ${st.zindanBest || 0} &nbsp; <b>Yenilen Glemon:</b> ${st.kills}<br>
         <b>Patron:</b> ${st.bossKills} &nbsp; <b>Parlak:</b> ${st.shiny} &nbsp; <b>Bayılma:</b> ${st.deaths}<br>
         <b>Saldırı</b> ${S.level('saldiri')} · <b>Savunma</b> ${S.level('savunma')} · <b>Can</b> ${S.level('can')} &nbsp; <b>${CURRENCY}:</b> ${S.save.gold}<br>
         <b>Üs Puanı:</b> ${S.baseScore()} &nbsp; <b>İnşa</b> ${S.level('insa')}<br>
@@ -326,7 +326,7 @@ export function openProfile(w) {
 // ------------------------------------------------------------ harita
 export function openMap(w) {
   if (w.mode !== 'base') return;
-  UI.openPanel('Harita', (body) => {
+  UI.openPanel('Keşif Haritası', (body) => {
     const deepest = S.save.stats.deepest || 0;
     const kills = S.save.stats.glemons || {};
     for (const z of ZONES) {
@@ -389,8 +389,8 @@ export function openAhir(w) {
       top.appendChild(UI.button('Kombo Defteri', () => openAlbum(w, 'kombo'), 'small purple'));
       body.appendChild(top);
       if (!S.save.pets.length) {
-        body.appendChild(UI.el('p', 'choice-text', 'Ahırın boş. Zindanda bir Glemon\'un canı %25\'in altına inince savaşta "Yem ver" ile evcilleştirebilirsin.'));
-        body.appendChild(UI.el('p', 'muted', 'Her bölgenin yemi farklı: Orman için Orman Turtası (Böğürtlen + Şifalı ot). Yemleri Yem Tezgâhı\'nda yaparsın, Takas Tezgâhı da Orman Turtası satar. Nadir ve Epik Glemonlar özel yem ister ve Glemon Bağı becerisi gerektirir.'));
+        body.appendChild(UI.el('p', 'choice-text', 'Ahırın boş. Keşifte ya da Zindanda bir Glemon\'un canı %25\'in altına inince savaşta "Yem ver" ile evcilleştirebilirsin.'));
+        body.appendChild(UI.el('p', 'muted', 'Her bölgenin yemi farklı: Orman için Orman Turtası (Böğürtlen + Şifalı ot). Yemleri Yem Tezgâhı\'nda yaparsın, Hancı Lale de Orman Turtası satar. Nadir ve Epik Glemonlar özel yem ister ve Glemon Bağı becerisi gerektirir.'));
         return;
       }
       const lay = UI.el('div', 'ahir');
@@ -441,7 +441,7 @@ export function openAhir(w) {
       }
       lay.appendChild(box);
       body.appendChild(lay);
-      body.appendChild(UI.el('p', 'muted', `Ahır ${S.ahirSize()} yer (İnşa seviyenle 30'a kadar büyür). Yanındaki Glemon zindanda seninle savaşır, bayılırsa üsse dönünce iyileşir.`));
+      body.appendChild(UI.el('p', 'muted', `Ahır ${S.ahirSize()} yer (İnşa seviyenle 30'a kadar büyür). Yanındaki Glemon keşifte ve zindanda seninle savaşır, bayılırsa üsse dönünce iyileşir.`));
     };
     render();
   }, { wide: true });
@@ -711,7 +711,7 @@ function make(w, station, r, n) {
 // Cimen Blogu ile alisveris. Alinca karakter blogu tezgaha birakir (placeblock).
 export function openShop(w) {
   let tab = 'al';
-  UI.openPanel('Takas Tezgâhı', (body) => {
+  UI.openPanel('Hancı Lale · Takas', (body) => {
     const render = () => {
       body.innerHTML = '';
       const top = UI.el('div', 'shop-top');
@@ -739,7 +739,7 @@ export function openShop(w) {
         }
       } else {
         const have = Object.keys(SELL).filter((id) => S.countItem(id) > 0);
-        if (!have.length) list.appendChild(UI.el('p', 'muted', 'Satacak malzemen yok. Zindanda ve madende malzeme topla.'));
+        if (!have.length) list.appendChild(UI.el('p', 'muted', 'Satacak malzemen yok. Keşifte, zindanda ve madende malzeme topla.'));
         for (const id of have) {
           const it = ITEMS[id];
           const n = S.countItem(id);
@@ -810,3 +810,107 @@ export function openCamp(w, rw) {
   });
 }
 
+
+// ------------------------------------------------------------ Hanci Lale (0.6)
+// Usteki her yere buradan gidilir: arkasindaki haritada noktalar, altta takas ve gorevler.
+const LALE_SAYS = [
+  'Hoş geldin! Bugün nereye gidiyoruz?',
+  'Zindanda en derine kim inecek, merak ediyorum…',
+  'Glemonlara iyi bak, onlar da seni korur.',
+  'Yorulduysan ateşin başına otur biraz.',
+  'Yeni işlerim var, görevlere bir bak!',
+];
+let hubMapUrl = null;
+export function openHanci(w) {
+  if (!hubMapUrl) hubMapUrl = hubMap().toDataURL();
+  S.fillQuests();
+  UI.openPanel('Hancı Lale', (body) => {
+    body.appendChild(UI.el('p', 'lale-says', `“${LALE_SAYS[Math.floor(Math.random() * LALE_SAYS.length)]}”`));
+    const map = UI.el('div', 'hubmap');
+    map.style.backgroundImage = `url(${hubMapUrl})`;
+    const pin = (spot, label, cls, fn) => {
+      const [x, y] = HUB_SPOTS[spot];
+      const b = UI.button(label, fn, 'small pin ' + cls);
+      b.style.left = `${(x / 192) * 100}%`;
+      b.style.top = `${(y / 96) * 100}%`;
+      map.appendChild(b);
+    };
+    pin('kesif', 'Keşif', 'primary', () => openMap(w));
+    pin('zindan', 'Zindan', 'purple', () => openZindan(w));
+    pin('maden', 'Maden', 'blue', () => { UI.closePanel(); w.enterMine(S.save.mine.depth); });
+    pin('arsa', 'Arsa', 'blue', () => { UI.closePanel(); w.enterPlot(); });
+    pin('ahir', 'Ahır', 'green', () => openAhir(w));
+    body.appendChild(map);
+    const row = UI.el('div', 'choice-row');
+    const done = S.save.quests.list.filter((q) => S.questProgress(q) >= q.target).length;
+    row.appendChild(UI.button('Takas', () => w.goShop(), 'primary'));
+    row.appendChild(UI.button(done ? `Görevler (${done} hazır!)` : 'Görevler', () => openQuests(w), done ? 'green' : ''));
+    row.appendChild(UI.button('Albüm', () => openAlbum(w), 'small'));
+    body.appendChild(row);
+  }, { wide: true });
+}
+
+export function openQuests(w) {
+  S.fillQuests();
+  UI.openPanel('Lale\'nin görevleri', (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      body.appendChild(UI.el('p', 'muted', `Tamamlanan görev: ${S.save.quests.done}. Biri bitince yenisi gelir.`));
+      for (const q of S.save.quests.list) {
+        const prog = S.questProgress(q);
+        const ok = prog >= q.target;
+        const row = UI.el('div', 'zone quest' + (ok ? ' ready' : ''));
+        const left = UI.el('div');
+        left.appendChild(UI.el('div', 'zn', q.text));
+        const sk = SKILLS.find((x) => x.key === q.skill);
+        left.appendChild(UI.el('div', 'zf', `${prog} / ${q.target} · Ödül: ${q.gold} ${CURRENCY} + ${q.xp} ${sk.name} XP`));
+        const bar = UI.el('div', 'qbar'); const fill = UI.el('div', 'qfill'); fill.style.width = `${(prog / q.target) * 100}%`; bar.appendChild(fill); left.appendChild(bar);
+        row.appendChild(left);
+        const btns = UI.el('div', 'zb');
+        if (ok) btns.appendChild(UI.button('Ödülü al', async () => {
+          S.save.quests.list = S.save.quests.list.filter((x) => x.id !== q.id);
+          S.save.quests.done++;
+          S.addGold(q.gold);
+          const ups = S.addXp({ [q.skill]: q.xp });
+          S.fillQuests();
+          S.changed();
+          sfx('coin');
+          UI.feed(`<span style="color:#ffd04d">★ Görev tamam: ${UI.escapeHtml(q.text)}! +${q.gold} ${CURRENCY}, +${q.xp} ${sk.name} XP</span>`, 'gold');
+          render();
+          for (const u of ups) await w.levelUp(u);
+        }, 'primary small'));
+        else {
+          const rb = UI.button(`Değiştir (${QUEST_REROLL})`, () => {
+            if (S.save.gold < QUEST_REROLL) { UI.feed('Yeterli Çimen Bloğu yok.'); return; }
+            S.addGold(-QUEST_REROLL);
+            const i = S.save.quests.list.findIndex((x) => x.id === q.id);
+            S.save.quests.list[i] = S.newQuest(S.save.quests.list.map((x) => x.kind));
+            S.changed();
+            render();
+          }, 'small');
+          btns.appendChild(rb);
+        }
+        row.appendChild(btns);
+        body.appendChild(row);
+      }
+      const back = UI.el('div', 'choice-row');
+      back.appendChild(UI.button('Lale\'ye dön', () => openHanci(w), 'small'));
+      body.appendChild(back);
+    };
+    render();
+  }, { wide: true });
+}
+
+// ------------------------------------------------------------ Zindan (0.6): sonsuz inis
+export function openZindan(w) {
+  if (w.mode !== 'base') return;
+  const best = S.save.stats.zindanBest || 0;
+  UI.openPanel('Zindan', (body) => {
+    body.appendChild(UI.el('p', 'choice-text', 'Aşağı indikçe Glemonlar güçlenir; sonu yok. Her 5 katta bir ara patron ve büyüyen bir ödül sandığı var. Bayılırsan bu turda bulduklarının yarısı gider, "Üsse dön" dersen hepsi seninle.'));
+    body.appendChild(UI.el('p', 'zf', `Rekorun: Kat ${best}. Arkadaşlarınla en derin kat yarışı!`));
+    const row = UI.el('div', 'choice-row');
+    row.appendChild(UI.button('Kat 1\'den başla', () => w.enterZindan(1), 'primary'));
+    for (let f = 11; f <= best; f += 10) row.appendChild(UI.button(`Kat ${f}`, () => w.enterZindan(f), 'small'));
+    body.appendChild(row);
+  });
+}

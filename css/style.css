@@ -493,3 +493,11 @@ html, body {
 .album-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: calc(2 * var(--u)); margin-bottom: calc(3 * var(--u)); }
 .album-card { cursor: default; min-height: calc(40 * var(--u)); }
 .album-card.unseen .pn { color: var(--ink-dim); }
+
+/* 0.6 Hanci Lale: harita uzerinde gidilecek yerler */
+.lale-says { font-style: italic; color: #f0d8b0; margin: 0 0 calc(3 * var(--u)); }
+.hubmap { position: relative; width: calc(236 * var(--u)); max-width: 100%; margin: 0 auto; aspect-ratio: 2 / 1; background-size: 100% 100%; image-rendering: pixelated; box-shadow: inset 0 0 0 calc(1 * var(--u)) #6e5838; margin-bottom: calc(3 * var(--u)); }
+.hubmap .pin { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; }
+.quest .qbar { height: calc(3 * var(--u)); background: #2a2232; margin-top: calc(1.5 * var(--u)); width: calc(110 * var(--u)); }
+.quest .qfill { height: 100%; background: #c8a04a; }
+.quest.ready { box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--gold); }

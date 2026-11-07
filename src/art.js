@@ -127,6 +127,26 @@ function tree(p, x, groundY, trunk, fn = null, wide = true) {
   });
 }
 
+
+// Uzak katmanlar (Eren, 2026-11-07: "bloklar cok yakin gorunuyor"): ayni bloklar kucultulmus
+// olarak (4 ve 8 piksel) arkaya dizilir ve goge karisir; boylece derinlik hissi olur.
+function farMountains(p, r, baseY, s, minH, maxH, top, body, fn, step = 0.5) {
+  const cols = Math.ceil(p.w / s) + 1;
+  let h = minH + Math.floor(r() * (maxH - minH + 1));
+  let dir = 1;
+  for (let c = 0; c < cols; c++) {
+    if (r() < step) { if (r() < 0.25) dir = -dir; h = Math.max(minH, Math.min(maxH, h + dir)); }
+    for (let k = 0; k < h; k++) putScaled(p, k >= h - 1 ? top : body, c * s, baseY - (k + 1) * s, s, fn);
+  }
+}
+function farTrees(p, r, baseY, s, fn) {
+  for (let x = Math.floor(r() * 3) * s; x < p.w + s; x += s * (2 + Math.floor(r() * 3))) {
+    const th = 1 + Math.floor(r() * 2);
+    for (let k = 0; k < th; k++) putScaled(p, 'kutuk', x, baseY - (k + 1) * s, s, fn);
+    for (const [i, j] of [[-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1], [0, 2]]) putScaled(p, 'yaprak', x + i * s, baseY - (th + 1 + j) * s, s, fn);
+  }
+}
+
 // katmani cizgisiyle ana tuvale bas
 function layer(p, fill, ol = 'dark', f = 0.55) {
   const L = new Pix(p.w, p.h);
@@ -144,6 +164,10 @@ export function forestBackground(floor, variant = 0, base = false, width = GAME_
   const p = new Pix(width, GAME_H);
   paintSky(p, G - 2 * B, t, r, T ? { stops: T.stops, sun: T.sun, warm: T.warm } : {});
   const skyLow = toHex(skyColor(9, t, T && T.stops));
+  // en uzak: daglar (4 px bloklar) ve uzak orman (8 px bloklar), goge karisir
+  farMountains(p, r, G - 2 * B, 4, 8, 22, 'cimen_ust', 'tas', fogFn(skyLow, 0.8));
+  farTrees(p, r, G - 2 * B + 6, 6, fogFn(skyLow, 0.7));
+  farMountains(p, r, G - B, 8, 2, 6, 'cimen', 'toprak', fogFn(skyLow, 0.68), 0.4);
   // uzak tepeler (gok rengine karismis) ve uzak agaclar
   hillRow(p, r, G, 3, 5, fogFn(skyLow, 0.62), Math.floor(r() * B));
   layer(p, (L) => {
@@ -294,6 +318,8 @@ export function desertRoomBackground(floor, variant = 0) {
       for (let k = 0; k < h; k++) put(p, k === h - 1 ? 'kum' : 'kumtasi', c * B, baseY - (k + 1) * B, fn);
     }
   };
+  farMountains(p, r, G - 2 * B, 4, 6, 18, 'kum', 'kumtasi', fogFn(skyLow, 0.78));
+  farMountains(p, r, G - B, 8, 2, 6, 'kum', 'kumtasi', fogFn(skyLow, 0.66), 0.35);
   dunes(G, 2, 4, fogFn(skyLow, 0.6));
   // kumtasi kayaliklar (masa)
   layer(p, (L) => {
@@ -441,6 +467,118 @@ export function mineEntrance() {
   return p.canvas();
 }
 
+// 0.6 Us: zanaat avlusu. Catili, arkasi kalas duvar; duvarda kalkan, raf, fener;
+// yerde zirh askisi, silah askisi, ors ve varil. Istasyonlar (masa, firin, kazan, yem, depo)
+// dunyada ayri nesneler olarak bunun onune konur.
+export const YARD = { cols: 11, x: 0 };
+export function workshopYard() {
+  const w = YARD.cols * B;
+  const p = new Pix(w + 18, 4 * B + 2);
+  const wall = shadeFn(0.7);
+  for (let c = 0; c < YARD.cols; c++) for (let k = 1; k <= 3; k++) p.draw(block('kalas'), 9 + c * B, 1 + k * B, B, wall);
+  for (const k of [1, 2, 3]) { p.draw(block('kutuk'), 9, 1 + k * B, B); p.draw(block('kutuk'), 9 + (YARD.cols - 1) * B, 1 + k * B, B); }
+  // cati: kiremit sirasi, iki ucta egim
+  p.draw(block('kiremit_sol'), 1, 1, B);
+  for (let c = 0; c < YARD.cols; c++) p.draw(block('kiremit'), 9 + c * B, 1, B);
+  p.draw(block('kiremit_sag'), 9 + YARD.cols * B - 8, 1, B);
+  const at = (name, c, k, fn = null) => p.draw(block(name), 9 + c * B, 1 + k * B, B, fn);
+  at('kalkan', 4, 1); at('raf', 6, 1); at('fener', 2, 1); at('fener', 8, 1); at('kalkan', 9, 1);
+  at('zirh_ust', 0, 2); at('zirh_alt', 0, 3);
+  at('silahlik_ust', 2, 2); at('silahlik_alt', 2, 3);
+  at('ors', 4, 3); at('varil', 6, 3);
+  p.outline('#16121a');
+  return p.canvas();
+}
+
+// Han: tenteli tahta kulube, arkada asili harita ve fener. Tezgah ayri resim (hanci arkasinda durur).
+export const INN = { cols: 5 };
+export function innBack() {
+  const p = new Pix(INN.cols * B + 2, 4 * B + 2);
+  const wall = shadeFn(0.72);
+  for (let c = 0; c < INN.cols; c++) for (let k = 1; k <= 3; k++) p.draw(block('kalas'), 1 + c * B, 1 + k * B, B, wall);
+  for (let c = 0; c < INN.cols; c++) p.draw(block('tente'), 1 + c * B, 1, B);
+  for (const k of [1, 2, 3]) { p.draw(block('direk'), 1 - 7, 1 + k * B, B); p.draw(block('direk'), 1 + (INN.cols - 1) * B + 7, 1 + k * B, B); }
+  p.draw(block('harita_sol'), 1 + B, 1 + B + 4, B); p.draw(block('harita_sag'), 1 + 2 * B, 1 + B + 4, B);
+  p.draw(block('fener'), 1 + 4 * B - 4, 1 + B, B);
+  p.outline('#16121a');
+  return p.canvas();
+}
+export function innCounter() {
+  const p = new Pix(INN.cols * B + 2, 2 * B + 2);
+  for (let c = 0; c < INN.cols; c++) p.draw(block('kalas'), 1 + c * B, 1 + B + 4, B);
+  p.rect(1, 1 + B + 4, INN.cols * B, 2, '#c4966a');
+  p.draw(block('kupalar'), 1, 1 + 4, B);
+  p.outline('#16121a');
+  return p.canvas();
+}
+
+// Zindan odasi: koyu tas tugla duvar, mesaleler, kaldirim zemin. Derinlestikce kararir.
+export function dungeonRoomBackground(level, variant = 0) {
+  const r = rng(level * 9173 + variant * 37);
+  const dk = Math.min(0.55, 0.15 + level * 0.012);
+  const nf = fogFn('#0e0b14', dk);
+  const p = new Pix(GAME_W, GAME_H);
+  p.rect(0, 0, GAME_W, GAME_H, '#120e18');
+  // arka: uzak kemerler (8 px) ve yakin duvar (16 px)
+  for (let y = 0; y < G - 2 * B; y += 8) for (let x = 0; x < GAME_W; x += 8) putScaled(p, 'tas_duvar', x, y, 8, fogFn('#0e0b14', 0.45));
+  for (let a = Math.floor(r() * 3) * 48 - 24; a < GAME_W; a += 96) {
+    for (let k = 0; k < 5; k++) { putScaled(p, 'tugla', a, G - 2 * B - k * 8, 8, fogFn('#0e0b14', 0.5)); putScaled(p, 'tugla', a + 40, G - 2 * B - k * 8, 8, fogFn('#0e0b14', 0.5)); }
+    for (let x = a; x < a + 48; x += 8) putScaled(p, 'tugla', x, G - 2 * B - 40, 8, fogFn('#0e0b14', 0.5));
+    p.rect(a + 8, G - 2 * B - 32, 32, 32, '#07050a');
+  }
+  layer(p, (L) => {
+    for (let c = 0; c < GAME_W / B; c++) for (let k = 1; k <= 2; k++) put(L, (c * 3 + k + variant) % 7 === 0 ? 'tas' : 'tugla', c * B, G - k * B, chain(shadeFn(0.62), nf));
+    for (let c = 1 + (variant % 3); c < GAME_W / B; c += 6) put(L, 'fener', c * B, G - 3 * B + 6, null);
+  }, 'dark', 0.5);
+  for (let c = 0; c < GAME_W / B; c++) {
+    put(p, 'kaldirim', c * B, G, nf);
+    put(p, 'tas', c * B, G + B, chain(shadeFn(0.7), nf));
+    put(p, 'tas_duvar', c * B, G + 2 * B, nf);
+  }
+  return p.canvas();
+}
+
+// Hanci Lale'nin arkasindaki harita (panelde buyuk gosterilir): eski kagit uzerine
+// kucuk bloklarla bolgeler, us, maden, arsa ve zindan cukuru; aralarinda kesik yollar.
+export const HUB_SPOTS = {
+  us: [34, 58], kesif: [60, 22], zindan: [160, 62], maden: [104, 66], arsa: [16, 70], ahir: [56, 74],
+};
+export function hubMap() {
+  const W = 192, H = 96;
+  const p = new Pix(W, H);
+  const pa = ['#dccb9f', '#d0bd8e', '#e6d8b4', '#c4af80'];
+  const r = rng(77);
+  p.rect(0, 0, W, H, pa[0]);
+  for (let i = 0; i < 260; i++) p.set(Math.floor(r() * W), Math.floor(r() * H), pa[1 + Math.floor(r() * 3)]);
+  const blob = (cx, cy, rw, rh, name, s = 4) => {
+    for (let y = -rh; y <= rh; y++) for (let x = -rw; x <= rw; x++) {
+      if ((x * x) / (rw * rw) + (y * y) / (rh * rh) > 1 + (r() - 0.5) * 0.3) continue;
+      putScaled(p, name, cx + x * s, cy + y * s, s, fogFn('#dccb9f', 0.25));
+    }
+  };
+  blob(40, 22, 6, 3, 'yaprak'); blob(86, 18, 5, 3, 'tas'); blob(132, 22, 6, 3, 'kum');
+  for (const [x, y] of [[28, 14], [44, 26], [52, 16]]) putScaled(p, 'kutuk', x, y + 6, 4);
+  putScaled(p, 'kristal_m', 84, 12, 8); putScaled(p, 'kaktus', 136, 14, 8);
+  putScaled(p, 'kiremit', 30, 50, 8); putScaled(p, 'kalas', 30, 58, 8); putScaled(p, 'ates0', 42, 58, 8);
+  putScaled(p, 'kaldirim', 154, 54, 12); p.rect(157, 57, 6, 6, '#1a1420');
+  putScaled(p, 'demir', 100, 62, 8);
+  putScaled(p, 'cit', 10, 66, 8); putScaled(p, 'tarla', 18, 66, 8);
+  putScaled(p, 'cit', 50, 70, 8); putScaled(p, 'cit', 58, 70, 8);
+  const path = (pts) => {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, y0] = pts[i]; const [x1, y1] = pts[i + 1];
+      const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+      for (let k = 0; k <= n; k++) if (Math.floor(k / 3) % 2 === 0) { const x = Math.round(x0 + ((x1 - x0) * k) / n); const y = Math.round(y0 + ((y1 - y0) * k) / n); p.rect(x, y, 2, 2, '#8a6a44'); }
+    }
+  };
+  path([[40, 56], [44, 34]]); path([[48, 30], [80, 24], [126, 26]]); path([[48, 62], [100, 66], [152, 62]]); path([[30, 64], [18, 68]]);
+  // pusula
+  p.rect(176, 8, 2, 12, '#7a4e2e'); p.rect(171, 13, 12, 2, '#7a4e2e'); p.rect(176, 6, 2, 3, '#b84a3c');
+  // kenar
+  p.rect(0, 0, W, 2, '#a89670'); p.rect(0, H - 2, W, 2, '#a89670'); p.rect(0, 0, 2, H, '#a89670'); p.rect(W - 2, 0, 2, H, '#a89670');
+  return p.canvas();
+}
+
 export function signpost() { return build(['T', 'P'], { T: 'tabela', P: 'direk' }).canvas(); }
 
 // Takas Tezgahi: tente, iki direk, kalas tezgah, ustunde bir Cimen Blogu
@@ -513,6 +651,7 @@ export function houseInterior() {
 }
 
 export function doorInside() { return build(['u', 'd'], { u: 'kapi_ust', d: 'kapi_alt' }).canvas(); }
+export function feedTable() { return build(['t'], { t: 'yem_tezgahi' }).canvas(); }
 export function workbench() { return build(['t'], { t: 'tezgah' }).canvas(); }
 export function furnaceArt() { return strip(['firin0', 'firin1', 'firin2']); }
 export function cauldronArt() { return strip(['kazan0', 'kazan1']); }

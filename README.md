@@ -4,6 +4,17 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.5.5 (Üs yenileme, Keşif ve Zindan)
+
+- **Ev kalktı:** Üretim Masası, Fırın, Simya Kazanı, Yem Tezgâhı ve Depo artık dışarıda, çatılı bir zanaat avlusunda (silah askısı, zırh askısı, örs, kalkanlar). Bayılınca kamp ateşinin başında uyanırsın.
+- **Hancı Lale:** Takas Tezgâhı ve tabelanın yerine han. Lale'ye dokununca arkasındaki harita açılır: Keşif, Zindan, Maden, Arsa ve Ahır'a buradan gidilir. Takas ve görevler de onda.
+- **Görevler:** Lale'den aynı anda 3 görev (Glemon yen, topla, kaz, üret, evcilleştir, Zindan'da in…). Ödül: Çimen Bloğu ve beceri XP'si. Beğenmediğin görevi 15 Çimen Bloğu'na değiştirirsin.
+- **Keşif:** orman, mağara ve çöl; bölge patronlarını yenerek ilerlenir (eski "zindan").
+- **Zindan (yeni):** sonu olmayan iniş. Her kat daha zor, 5 katta bir ara patron ve büyüyen ödül sandığı. Rekorun profilde; 10 katta bir kısayol açılır.
+- Üstte sadece Arsa ve Maden düğmeleri kaldı; gerisine yapılara dokunarak ulaşılır.
+- Toprak, taş, çimen, kum ve yaprak dokuları yumuşatıldı. Arka planlara uzak dağlar ve uzak orman katmanları eklendi.
+- Savaş zemini düz perspektif, karakter daha büyük ve net.
+
 ## Sürüm 0.5.0 (Yeni bölgeler)
 
 - **Yankı Mağaraları (Kat 11-20):** Ağaçbaşı yenilince açılır. Bazı odalar karanlık: çantanda Fener yoksa ıskalarsın. Patron: **Taş Golemi** (sarsıntı, kabuğa çekilme, Mıcır çağırır).

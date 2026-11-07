@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS } from './data.js';
 
 const SAVE_PREFIX = 'bonkglemon.save.';
 const DEPO_SIZE = 40;
@@ -49,6 +49,8 @@ function freshSave(char) {
     // 0.5
     bagBonus: 0,
     waterUntil: 0,
+    // 0.6 Hanci Lale'nin gorevleri
+    quests: { list: [], done: 0, seq: 1 },
   };
 }
 
@@ -313,6 +315,41 @@ export const S = {
   },
 
   endRun() { this.run = null; this.hp = this.maxHp(); this.changed(); },
+
+  // ------------------------------------------------ gorevler (0.6)
+  questProgress(q) {
+    const def = QUESTS[q.kind];
+    const now = def.stat(this.save, q.key);
+    return def.abs ? Math.min(q.target, now) : Math.min(q.target, Math.max(0, now - q.base));
+  },
+  newQuest(avoid = []) {
+    const lvl = this.totalLevel();
+    const kills = this.save.stats.glemons || {};
+    const zones = ZONES.filter((z) => z.open && (!z.after || kills[z.after] > 0));
+    const pool = Object.keys(QUESTS).filter((k) => !avoid.includes(k) && (k !== 'tame' || this.level('bag') >= 1));
+    const kind = pool[Math.floor(Math.random() * pool.length)];
+    const def = QUESTS[kind];
+    const tier = Math.min(2, Math.floor(Math.random() * (lvl > 150 ? 3 : lvl > 60 ? 2 : 1.4)));
+    let key = null;
+    if (kind === 'species') {
+      const z = zones[Math.floor(Math.random() * zones.length)];
+      const opts = ZONE_SPAWNS[z.key].map(([k]) => k).filter((k) => GLEMONS[k].rarity !== 'epik');
+      key = opts[Math.floor(Math.random() * opts.length)];
+    }
+    let target = def.amt[tier];
+    if (def.abs) target = (this.save.stats.zindanBest || 0) + def.amt[tier];
+    const scale = 1 + lvl / 60;
+    const q = {
+      id: this.save.quests.seq++, kind, key, tier, target, base: def.abs ? 0 : def.stat(this.save, key),
+      gold: Math.round((25 + 30 * tier) * scale), xp: Math.round((120 + 180 * tier) * scale * scale), skill: def.skill,
+    };
+    q.text = def.name(def.abs ? target : target, key);
+    return q;
+  },
+  fillQuests() {
+    const qs = this.save.quests;
+    while (qs.list.length < QUEST_SLOTS) qs.list.push(this.newQuest(qs.list.map((q) => q.kind)));
+  },
 
   addGold(n) {
     this.save.gold += n;

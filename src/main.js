@@ -21,6 +21,7 @@ class BootScene extends Phaser.Scene {
     const { char, gmeta } = BOOT;
     this.load.on('progress', (v) => { $('#loading').textContent = `Yükleniyor… %${Math.round(v * 100)}`; });
     // butun karakter kareleri tek atlasta; her karenin pivotu ayak ortasi
+    this.load.spritesheet('hanci', 'assets/npc/hanci.png', { frameWidth: BOOT.npc.w, frameHeight: BOOT.npc.h });
     this.load.atlas('char', `assets/chars/${char}/atlas.png`, `assets/chars/${char}/atlas.json`);
     // 0.4: her Glemon ve evrim asamasi tek resim: ust sira normal, alt sira parlak
     for (const [k, m] of Object.entries(gmeta)) {
@@ -43,6 +44,9 @@ class BootScene extends Phaser.Scene {
         }
       });
     }
+    for (const [a, m] of Object.entries(BOOT.npc.anims)) {
+      if (!this.anims.exists(`npc_${a}`)) this.anims.create({ key: `npc_${a}`, frames: m.frames.map((f, i) => ({ key: 'hanci', frame: f, duration: m.durs[i] })), frameRate: 1000, repeat: a === 'durma' ? -1 : 0 });
+    }
     const tex = (key, canvas) => { if (!this.textures.exists(key)) this.textures.addCanvas(key, canvas); };
     tex('bg_base', ART.forestBackground(1, 0, true));
     tex('bg_plot', ART.forestBackground(1, 3, true));
@@ -53,7 +57,10 @@ class BootScene extends Phaser.Scene {
       const bt = this.textures.addCanvas('blocks', sheet.canvas());
       BLOCK_NAMES.forEach((n, i) => bt.add(n, 0, i * 16, 0, 16, 16));
     }
-    tex('cabin', ART.cabin());
+    tex('yard', ART.workshopYard());
+    tex('inn_back', ART.innBack());
+    tex('inn_counter', ART.innCounter());
+    tex('feedtable', ART.feedTable());
     tex('mine', ART.mineEntrance());
     tex('signpost', ART.signpost());
     tex('stall', ART.stall());
@@ -73,11 +80,8 @@ class BootScene extends Phaser.Scene {
     const loop = (key, tex, frames, rate) => this.anims.create({ key, frames: frames.map((i) => ({ key: tex, frame: i })), frameRate: rate, repeat: -1 });
     strip('fire', ART.campfire());
     loop('fire', 'fire', [0, 1, 2], 7);
-    // 0.2: ev ici, maden ocagi, toplama
-    tex('house', ART.houseInterior());
-    tex('door_in', ART.doorInside());
+    // 0.2: uretim istasyonlari, maden ocagi, toplama (0.6: ev kalkti, istasyonlar dışarıda)
     tex('workbench', ART.workbench());
-    tex('bed', ART.bed());
     strip('furnace', ART.furnaceArt());
     loop('furnace_on', 'furnace', [1, 2], 6);
     strip('cauldron', ART.cauldronArt());
@@ -97,12 +101,12 @@ async function loadJson(url) {
   return r.json();
 }
 
-function startGame(char, charMeta, gmeta) {
+function startGame(char, charMeta, gmeta, npc) {
   S.load(char);
   window.__S = S; // testler icin
   stopMusic();
   setSound(S.save.settings.sound);
-  BOOT = { char, charMeta: charMeta[char], gmeta };
+  BOOT = { char, charMeta: charMeta[char], gmeta, npc };
   $('#loading').textContent = 'Yükleniyor…';
   show('#loading', true);
   // oyun suresi sayaci
@@ -131,10 +135,11 @@ function startGame(char, charMeta, gmeta) {
 async function main() {
   try {
     const gmeta = await loadJson('assets/glemons/glemons.json');
+    const npc = await loadJson('assets/npc/hanci.json');
     const charMeta = {};
     await Promise.all(CHARACTERS.map(async (c) => { charMeta[c.key] = await loadJson(`assets/chars/${c.key}/anims.json`); }));
     show('#loading', false);
-    showLogin(charMeta, (char) => startGame(char, charMeta, gmeta));
+    showLogin(charMeta, (char) => startGame(char, charMeta, gmeta, npc));
   } catch (e) {
     console.error(e);
     $('#loading').textContent = 'Oyun dosyaları yüklenemedi. Sayfayı yenile.';
