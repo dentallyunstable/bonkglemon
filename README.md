@@ -4,6 +4,12 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.3.1
+
+- Ağaç yaprakları artık gövdeye ve birbirine oturuyor (havada yaprak yok).
+- Oturma ve zıplama animasyonunda karakter havada durmuyor.
+- Giriş ekranında karakterler kartın tam ortasında dönüyor.
+
 ## Sürüm 0.3.0 (16x16 blok tarzı)
 
 - Her şey 16x16 bloklardan kuruldu: ev, maden girişi, ağaçlar, tepeler, zemin, ev içi, maden ocağı, savaş ekranı.

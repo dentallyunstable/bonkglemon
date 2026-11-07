@@ -80,15 +80,18 @@ function hillRow(p, r, baseY, minH, maxH, fn, phase) {
   }
 }
 
-// blok agaci: kutuk govde + yaprak taci (5-5-3 sira)
+// blok agaci: kutuk govde + yaprak taci. Tacin en alt sirasi govdenin en ust blogunu
+// sarar, ust siralar bir alttakinin tam ustune oturur (havada yaprak yok).
 function tree(p, x, groundY, trunk, fn = null, wide = true) {
   for (let k = 0; k < trunk; k++) put(p, 'kutuk', x, groundY - (k + 1) * B, fn);
-  const top = groundY - trunk * B;
+  const top = groundY - trunk * B; // en ust kutugun ust kenari
   const rows = wide ? [[-2, 2], [-2, 2], [-1, 1], [0, 0]] : [[-1, 1], [-1, 1], [0, 0]];
+  const cut = wide && (Math.round(x / B) % 2 === 0); // bazi agaclarda 2. siranin koseleri bos
   rows.forEach(([a, b], j) => {
     for (let i = a; i <= b; i++) {
-      if (wide && j < 2 && (i === a || i === b) && j === 0 && ((x / B + i) % 3 === 0)) continue; // kenar bosluklari
-      put(p, 'yaprak', x + i * B, top - j * B + (j === 0 ? B : 0) - B, fn);
+      if (cut && j === 1 && (i === a || i === b)) continue;
+      if (j === 0 && i === 0) continue; // govde gorunsun
+      put(p, 'yaprak', x + i * B, top + B - (j + 1) * B, fn);
     }
   });
 }

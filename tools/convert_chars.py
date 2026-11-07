@@ -74,6 +74,13 @@ def anchor(frame):
 
 
 def strip(frames, out_png):
+    # karakter seridin tam ortasinda dursun: ayak ortasina gore simetrik kirp
+    ax, _ = anchor(frames[0][0])
+    boxes = [f.getbbox() for f, _ in frames if f.getbbox()]
+    x0 = min(b[0] for b in boxes); x1 = max(b[2] for b in boxes)
+    y0 = min(b[1] for b in boxes); y1 = max(b[3] for b in boxes)
+    half = max(ax - x0, x1 - ax) + 1
+    frames = [(f.crop((ax - half, y0, ax + half, y1)), d) for f, d in frames]
     w, h = frames[0][0].size
     img = Image.new('RGBA', (w * len(frames), h), (0, 0, 0, 0))
     for i, (f, _) in enumerate(frames):
@@ -111,23 +118,28 @@ def convert_char(root, prefix, odir):
         if True:
             frs = frames_of(os.path.join(root, f'{prefix}{VIEW_DIR[view]}', anim + '.gif'))
             fnames, durs = [], []
+            # yerde duran ama ayaklari ayak cizgisinin ustunde kalan animasyonlar (oturma,
+            # ziplama) havada durmasin: ayak cizgisi bu animasyonun en alt satiri olur
+            bottom = max((f.getbbox() or (0, 0, 1, 1))[3] for f, _ in frs)
+            piv = pivots[view]
+            if bottom < piv[1] * frs[0][0].height - 0.5:
+                piv = (piv[0], bottom / frs[0][0].height)
             for i, (f, d) in enumerate(frs):
                 box = f.getbbox() or (0, 0, 1, 1)
                 crop = f.crop(box)
-                h = hashlib.md5(view.encode() + bytes(box) + crop.tobytes()).hexdigest()
+                h = hashlib.md5(view.encode() + repr(piv).encode() + bytes(box) + crop.tobytes()).hexdigest()
                 if h not in uniq:
                     uniq[h] = f'{key}/{i}'
-                    tiles.append((uniq[h], crop, box, f.size, view))
+                    tiles.append((uniq[h], crop, box, f.size, piv))
                 fnames.append(uniq[h])
                 durs.append(d)
             meta['anims'][key] = {'view': view, 'frames': fnames, 'durations': durs}
     pos, size = pack([(n, im) for n, im, *_ in tiles])
     atlas = Image.new('RGBA', size, (0, 0, 0, 0))
     jframes = {}
-    for name, im, box, (sw, sh), view in tiles:
+    for name, im, box, (sw, sh), (px, py) in tiles:
         x, y = pos[name]
         atlas.paste(im, (x, y))
-        px, py = pivots[view]
         jframes[name] = {
             'frame': {'x': x, 'y': y, 'w': im.width, 'h': im.height},
             'rotated': False, 'trimmed': True,
