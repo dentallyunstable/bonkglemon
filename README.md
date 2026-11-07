@@ -4,6 +4,24 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.5.0 (Yeni bölgeler)
+
+- **Yankı Mağaraları (Kat 11-20):** Ağaçbaşı yenilince açılır. Bazı odalar karanlık: çantanda Fener yoksa ıskalarsın. Patron: **Taş Golemi** (sarsıntı, kabuğa çekilme, Mıcır çağırır).
+- **Kavurucu Çöl (Kat 21-30):** Taş Golemi yenilince açılır. Sıcak: Su Matarası yoksa her odada biraz can gider. Patron: **Fırtına Çakalı** (kum fırtınası, karanlık, kertenkele çağırır).
+- **10 yeni Glemon:** Mıcır, Taşkabuk, Pırpır (uçar), Kristalböcek, Ametist Kirpi, Kumkıskaç, Kaktüs Bekçisi, Toz Kertenkelesi, Sargıcık, Altın Skarabe. Her bölgenin kendi Glemon tipi var (Orman / Taş / Kum / Gölge); güçlü tip "Etkili!" vurur.
+- **Okçuluk ve yaylar:** Tahta, Taş, Demir, Fırtına ve Çakal yayı. Yayla savaşa önde başlarsın, uçan Glemonlara tam vurursun (kılıç ve yumruk yarım vurur).
+- **Yetenekler:** silah becerisi 20/40/60'ta her silaha 3 yetenek açılır (Döner Kesik, Çoklu Ok, Ateşli Ok, Buz Yumruğu, Patlat…).
+- **Durumlar:** Zehir, Yanma, Sersem, Donma, Karanlık. **Kombolar:** Buz Kırıcı, Alev Patlaması, Zehirli Yağmur; ilk yapışta Kombo Defteri'ne yazılır.
+- Yeni eşyalar: Golem Kılıcı, Golem Yumruğu, Skarabe Tılsımı (Şans), Çanta Eki (+5 yer), Orta İksir, Su Matarası. Şans becerisi artık çalışır (sandık ve nadir düşüş).
+
+## Sürüm 0.4.0 (Glemon dostları)
+
+- **Evcilleştirme:** bir Glemon'un canı %25'in altına inince savaşta "Yem ver". Yemler Yem Tezgâhı'nda yapılır (Orman Turtası, Bal Damlası, Mantar Ezmesi, Kristal Şekeri, Kaktüs Jölesi, Hurma Tatlısı). Nadir ve Epik Glemonlar özel yem ve yüksek Glemon Bağı ister. Uyuyan Glemon daha kolay gelir.
+- **Ahır:** evcil Glemonların burada durur (6 yer, İnşa seviyesiyle 30'a kadar büyür). Birini "Yanıma al" dersen üste ve zindanda yanında yürür, savaşta seninle savaşır, özel yeteneğini ★ ile kullanırsın. Bayılırsa üsse dönünce iyileşir.
+- **Evrim:** Bebek → Genç (Sv. 15) → Usta (Sv. 35). Her evrimde büyür, taç ve renk kazanır. Zindanda nadiren Genç ve Usta yabani Glemonlar da çıkar.
+- **Glemon Bağı becerisi (1-99):** evcilleştirdikçe ve dostunla savaştıkça artar; dostlarının seviye sınırı Bağ'ın yarısıdır.
+- **Albüm:** gördüğün, yendiğin, evcilleştirdiğin ve parlak yakaladığın Glemonlar. Profilde Albüm yüzdesi.
+
 ## Sürüm 0.3.2 (Gün saati)
 
 - Üs ve arsa gerçek saate göre değişir: gündoğumu (06-08), gündüz (08-18), günbatımı (18-20), gece (20-06). Kızıl gökyüzü, yıldızlar, ay; gece kamp ateşi ve fenerler parlar.

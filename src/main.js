@@ -22,11 +22,9 @@ class BootScene extends Phaser.Scene {
     this.load.on('progress', (v) => { $('#loading').textContent = `Yükleniyor… %${Math.round(v * 100)}`; });
     // butun karakter kareleri tek atlasta; her karenin pivotu ayak ortasi
     this.load.atlas('char', `assets/chars/${char}/atlas.png`, `assets/chars/${char}/atlas.json`);
+    // 0.4: her Glemon ve evrim asamasi tek resim: ust sira normal, alt sira parlak
     for (const [k, m] of Object.entries(gmeta)) {
-      for (const a of Object.keys(m.anims)) {
-        this.load.spritesheet(`g_${k}_${a}`, `assets/glemons/${k}/${a}.png`, { frameWidth: m.w, frameHeight: m.h });
-        this.load.spritesheet(`g_${k}_${a}_p`, `assets/glemons/${k}/${a}_parlak.png`, { frameWidth: m.w, frameHeight: m.h });
-      }
+      m.stages.forEach((st, s) => this.load.spritesheet(`gs_${k}_${s}`, `assets/glemons/${k}/${s}.png`, { frameWidth: st.w, frameHeight: st.h }));
     }
   }
 
@@ -35,12 +33,15 @@ class BootScene extends Phaser.Scene {
     for (const [a, m] of Object.entries(charMeta.anims)) {
       makeAnimFrames(this, `c_${a}`, 'char', m.frames, m.durations, LOOPING.has(a) ? -1 : 0);
     }
+    // animasyon adi: g_<tur>_<asama>_<anim>[_p]
     for (const [k, m] of Object.entries(gmeta)) {
-      for (const [a, durs] of Object.entries(m.anims)) {
-        const loop = a === 'durma' || a === 'yurume' ? -1 : 0;
-        makeAnim(this, `g_${k}_${a}`, `g_${k}_${a}`, durs, loop);
-        makeAnim(this, `g_${k}_${a}_p`, `g_${k}_${a}_p`, durs, loop);
-      }
+      m.stages.forEach((st, s) => {
+        for (const [a, an] of Object.entries(m.anims)) {
+          const loop = a === 'durma' || a === 'yurume' ? -1 : 0;
+          makeAnim(this, `g_${k}_${s}_${a}`, `gs_${k}_${s}`, an.durs, loop, an.start);
+          makeAnim(this, `g_${k}_${s}_${a}_p`, `gs_${k}_${s}`, an.durs, loop, an.start + st.n);
+        }
+      });
     }
     const tex = (key, canvas) => { if (!this.textures.exists(key)) this.textures.addCanvas(key, canvas); };
     tex('bg_base', ART.forestBackground(1, 0, true));
@@ -85,7 +86,7 @@ class BootScene extends Phaser.Scene {
     strip('boom', ART.boomArt());
     this.anims.create({ key: 'boom', frames: [0, 1, 2, 3].map((i) => ({ key: 'boom', frame: i })), frameRate: 12, repeat: 0 });
     tex('chip', ART.chip());
-    for (const k of ['herb', 'berry', 'branch']) tex(`node_${k}`, ART.gatherNode(k));
+    for (const k of ['herb', 'berry', 'branch', 'shroom', 'palm', 'sand']) tex(`node_${k}`, ART.gatherNode(k));
     this.scene.start('world', { gmeta, charMeta });
   }
 }

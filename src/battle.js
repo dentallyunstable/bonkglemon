@@ -1,11 +1,15 @@
-// Savas: ATB (bekleme cubugu) sistemi, manuel / otomatik mod,
-// zamanlama cubugu, kacinma, durumlar (Zehir, Sersem), odul ve dusurmeler.
-import { GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY } from './data.js';
+// Savas: ATB (bekleme cubugu) sistemi, manuel / otomatik mod, zamanlama cubugu, kacinma,
+// durumlar (Zehir, Yanma, Sersem, Donma, Karanlik), silah yetenekleri ve kombolar (0.5),
+// yanindaki evcil Glemon ve evcillestirme (0.4), odul ve dusurmeler.
+import {
+  GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
+  typeMult, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES,
+} from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
-import { $, el, button, floatText, feed, timingBar, dodgePrompt } from './ui.js';
+import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner } from './ui.js';
 import { sfx } from './audio.js';
-import { playAnim, moveTo, wait } from './anim.js';
+import { playAnim, wait } from './anim.js';
 
 const RMULT = { siradan: 1, nadir: 1.6, epik: 2.5, efsanevi: 15 };
 const ATB_RATE = 1.0; // Hiz 100 -> cubuk 1 saniyede dolar
@@ -14,17 +18,24 @@ const GRADE = {
   iyi: { mult: 1.2, text: 'İyi!', cls: 'good', sfx: null },
   zayif: { mult: 0.8, text: 'Zayıf', cls: 'weak', sfx: 'weak' },
 };
+const WEAPON_ANIM = { kilic: 'stab', yay: 'bowshot', yumruk: 'punch' };
+const PET_POS = { x: 150, y: 158, scale: 1.7 };
 
 export function calcDamage(atk, mult, def) {
   const d = atk * mult * (100 / (100 + def)) * (0.9 + Math.random() * 0.2);
   return Math.max(1, Math.round(d));
 }
 
-const BATTLE_ITEMS = ['iksir_k', 'mantar_corbasi', 'bogurtlen', 'altin_elma', 'bonk_bombasi'];
+const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
+const HEALS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'hurma', 'bogurtlen'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
 export const BPOS = { x: 66, y: GROUND_Y + 48, scale: 2.4 };
 const B = (a) => `c_b_${a}`;
+// Glemon turunun bolgesi (yemi bu bolgenin yemidir)
+const ZONE_OF_KEY = {};
+for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) ZONE_OF_KEY[k] = z;
+const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0 });
 
 // ayri savas ekraninda (arena) Glemonlarin yerleri
 function arenaX(n, i, boss) {
@@ -42,27 +53,35 @@ function slotX(n, i, boss) {
 }
 
 export class Battle {
-  // specs: [{ key, shiny, golden, sleeping }]
+  // specs: [{ key, shiny, golden, sleeping, stage }]
   constructor(world, specs, opts = {}) {
     this.w = world;
     this.scene = world;
     this.opts = opts;
     this.floor = opts.floor || 1;
+    this.zone = zoneOf(this.floor);
     this.enemies = [];
     this.over = false;
     this.busy = true;
     this.phase = null;
-    this.pAtb = opts.ambush ? 100 : Math.random() * 30;
-    this.status = { zehir: 0, sersem: 0, savun: false, yanma: 0, tok: 0, guc: 0 };
-    this.spinCd = 0;
+    this.wt = S.weaponType();
+    // yayla savasa onde baslarsin (Tek Ok: ilk saldiran sen olursun)
+    this.pAtb = opts.ambush ? 100 : Math.random() * 30 + (this.wt === 'yay' ? 45 : 0);
+    this.status = { zehir: 0, sersem: 0, savun: false, yanma: 0, tok: 0, guc: 0, donma: 0, karanlik: opts.dark ? 3 : 0 };
+    this.cd = {};
     this.manualActs = 0;
     this.autoActs = 0;
     this.killXp = 0;
     this.defXp = 0;
+    this.luckXp = 0;
+    this.bagXp = 0;
+    this.luckBonus = 1;
     this.gold = 0;
+    this.flyTold = false;
     this.firstStrike = !!opts.ambush;
     this.gy = GROUND_Y;   // Glemonlarin durdugu zemin (arenada uzak meydan)
     this.arena = false;
+    this.pet = null;
     specs.forEach((s, i) => this.addEnemy(s, slotX(specs.length, i, opts.boss)));
     if (opts.surprised) for (const e of this.enemies) e.atb = 100;
   }
@@ -70,35 +89,41 @@ export class Battle {
   // -------------------------------------------------------------- dusmanlar
   addEnemy(spec, x) {
     const data = GLEMONS[spec.key];
-    const meta = this.w.gmeta[spec.key];
+    const stage = data.boss ? 0 : (spec.stage || 0);
+    const meta = this.w.gmeta[spec.key].stages[stage];
     const m = floorMult(this.floor);
     const zoom = this.arena ? (data.boss ? 1.5 : 2) : 1;
     const scale = (spec.golden ? 1.35 : 1) * zoom;
-    const sfxk = spec.shiny ? '_p' : '';
-    const k = (a) => `g_${spec.key}_${a}${sfxk}`;
-    const sprite = this.scene.add.sprite(x, this.gy, k('durma'))
+    const tex = `gs_${spec.key}_${stage}`;
+    const k = (a) => `g_${spec.key}_${stage}_${a}${spec.shiny ? '_p' : ''}`;
+    const sprite = this.scene.add.sprite(x, this.gy, tex, spec.shiny ? meta.n : 0)
       .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(scale);
     if (spec.golden) sprite.setTint(0xffd86a);
     sprite.play(k('durma'));
     if (spec.sleeping) sprite.anims.timeScale = 0.35;
     const shadow = this.scene.add.image(x, this.gy + 1, 'shadow').setDepth(7).setScale((meta.bodyW * scale) / 18, 1);
-    const prefix = spec.shiny ? 'Parlak ' : spec.golden ? 'Altın ' : '';
+    const prefix = (spec.shiny ? 'Parlak ' : spec.golden ? 'Altın ' : '') + (stage ? `${STAGES[stage]} ` : '');
+    const sm = STAGE_STAT[stage];
     const e = {
-      key: spec.key, data, meta, sprite, shadow, k, scale, spec,
+      key: spec.key, data, meta, sprite, shadow, k, scale, spec, stage,
       homeX: x,
       name: prefix + data.name,
       from: prefix + data.from,
       rarity: spec.golden ? 'epik' : data.rarity,
+      type: data.type,
+      fly: !!data.fly,
       shiny: !!spec.shiny, golden: !!spec.golden, sleeping: !!spec.sleeping,
-      maxHp: Math.round(data.hp * m * (spec.golden ? 2.2 : 1)),
-      atk: data.atk * m * (spec.golden ? 1.4 : 1),
-      defense: data.def * m,
+      maxHp: Math.round(data.hp * m * sm * (spec.golden ? 2.2 : 1)),
+      atk: data.atk * m * (1 + 0.25 * stage) * (spec.golden ? 1.4 : 1),
+      defense: data.def * m * (1 + 0.2 * stage),
       spd: data.spd,
       atb: Math.random() * 30,
       acts: 0,
       alive: true,
+      st: emptySt(),
     };
     e.hp = e.maxHp;
+    S.seeGlemon(spec.key, spec.shiny);
     if (spec.shiny) this.sparkle(e);
     this.enemies.push(e);
     return e;
@@ -106,6 +131,7 @@ export class Battle {
 
   alive() { return this.enemies.filter((e) => e.alive); }
   topY(e) { return this.gy - e.meta.ay * e.scale; }
+  eDef(e) { return e.defense * (e.st.shell > 0 ? 2 : 1); }
 
   // Ayri savas ekranina gecis: Glemonlar uzak meydana, bize donuk ve buyuk
   toArena() {
@@ -119,6 +145,157 @@ export class Battle {
       e.sprite.setPosition(e.homeX, this.gy).setScale(e.scale);
       e.shadow.setPosition(e.homeX, this.gy + 1).setScale((e.meta.bodyW * e.scale) / 18, e.scale * 0.8);
     });
+    this.makePet();
+  }
+
+  // -------------------------------------------------------------- evcil Glemon (0.4)
+  makePet() {
+    const p = S.activePet();
+    if (!p || (S.run && S.run.petDown) || this.pet) return;
+    const meta = this.w.gmeta[p.key].stages[p.stage];
+    const st = S.petStats(p);
+    const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
+    const sc = PET_POS.scale * (p.stage === 2 ? 0.85 : 1);
+    const sprite = this.scene.add.sprite(PET_POS.x, PET_POS.y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
+      .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(18).setScale(sc).setFlipX(true);
+    sprite.play(k('durma'));
+    const shadow = this.scene.add.image(PET_POS.x, PET_POS.y + 1, 'shadow').setDepth(17).setScale((meta.bodyW * sc) / 18, sc * 0.8);
+    const hp = S.run && S.run.petHp != null ? Math.min(S.run.petHp, st.maxHp) : st.maxHp;
+    this.pet = {
+      p, meta, sprite, shadow, k, scale: sc, data: GLEMONS[p.key], name: S.petName(p),
+      maxHp: st.maxHp, hp, atk: st.atk, def: st.def, spd: st.spd,
+      atb: Math.random() * 40, acts: 0, alive: hp > 0, charged: false, queued: false,
+      taunt: 0, shell: 0, reflect: 0, fought: false,
+    };
+    if (!this.pet.alive) { sprite.destroy(); shadow.destroy(); this.pet = null; }
+  }
+
+  petTop() { const t = this.pet; return t.sprite.y - t.meta.ay * t.scale; }
+
+  makePetBar() {
+    const t = this.pet;
+    if (!t) return;
+    const wrap = el('div', 'ebar pbar');
+    const nm = el('div', 'nm', `${t.name} Sv.${t.p.lvl}`);
+    wrap.appendChild(nm);
+    const hp = el('div', 'bar'); const hf = el('div', 'fill'); hp.appendChild(hf);
+    const atb = el('div', 'bar atb'); const af = el('div', 'fill'); atb.appendChild(af);
+    wrap.appendChild(hp); wrap.appendChild(atb);
+    const sp = button(`★ ${t.data.special ? t.data.special.name : 'Yetenek'}`, () => {
+      if (!t.charged || !t.alive) return;
+      t.queued = true;
+      sfx('click');
+      floatText(t.sprite.x, this.petTop() - 6, 'Hazır!', 'good');
+      this.renderPet();
+    }, 'small purple pet-sp');
+    wrap.appendChild(sp);
+    wrap.style.left = `${(PET_POS.x / 384) * 100}%`;
+    wrap.style.top = `${((this.petTop() - 2) / 216) * 100}%`;
+    $('#bars').appendChild(wrap);
+    t.ui = { wrap, hf, af, sp };
+    this.renderPet();
+  }
+
+  renderPet() {
+    const t = this.pet;
+    if (!t || !t.ui) return;
+    t.ui.hf.style.width = `${Math.max(0, t.hp / t.maxHp) * 100}%`;
+    t.ui.af.style.width = `${t.atb}%`;
+    const show = t.alive && t.charged && !S.save.settings.auto;
+    t.ui.sp.classList.toggle('hidden', !show);
+    t.ui.sp.classList.toggle('queued', !!t.queued);
+  }
+
+  // yanindaki Glemon'un sirasi: normal saldiri ya da ozel yetenek
+  async petTurn() {
+    const t = this.pet;
+    this.busy = true;
+    t.atb = 0;
+    t.acts++;
+    t.fought = true;
+    if (t.taunt > 0) t.taunt--;
+    if (t.shell > 0) t.shell--;
+    if (t.reflect > 0) t.reflect--;
+    if (t.acts % 3 === 0) t.charged = true;
+    const sp = t.data.special;
+    const useSp = t.charged && sp && (t.queued || S.save.settings.auto);
+    this.renderPet();
+    const alive = this.alive();
+    if (!alive.length) { this.endEnemyTurn(); return; }
+    const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
+    if (useSp) {
+      t.charged = false; t.queued = false;
+      floatText(t.sprite.x, this.petTop() - 10, sp.name, 'info');
+      if (sp.heal) {
+        await playAnim(t.sprite, t.k('saldiri'), 1);
+        const h = Math.round(S.maxHp() * 0.2);
+        S.hp = Math.min(S.maxHp(), S.hp + h);
+        t.hp = Math.min(t.maxHp, t.hp + Math.round(t.maxHp * 0.2));
+        floatText(this.px(), this.py(), `+${h}`, 'heal');
+        sfx('heal');
+        this.renderMe();
+      } else if (sp.shell) {
+        await playAnim(t.sprite, t.k('saldiri'), 1);
+        t.shell = 3; t.taunt = 3;
+        floatText(t.sprite.x, this.petTop() - 20, 'Glemonlar ona saldıracak!', 'info');
+      } else if (sp.reflect) {
+        await playAnim(t.sprite, t.k('saldiri'), 1);
+        t.reflect = 3; t.taunt = 2;
+        floatText(t.sprite.x, this.petTop() - 20, 'Dikenler hazır!', 'info');
+      } else {
+        if (sp.luck) { this.luckBonus = 1.3; floatText(t.sprite.x, this.petTop() - 20, 'Şans arttı!', 'perfect'); }
+        await this.petStrike(target, sp.mult || 1.4, sp.status);
+      }
+    } else {
+      await this.petStrike(target, 1, null);
+    }
+    t.sprite.play(t.k('durma'));
+    this.renderPet();
+    this.endEnemyTurn();
+  }
+
+  async petStrike(e, mult, status) {
+    const t = this.pet;
+    const tm = typeMult(t.data.type, e.type);
+    t.sprite.setDepth(16);
+    t.sprite.play(t.k('yurume'));
+    await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: e.sprite.x - 34, y: this.gy + 8, scale: t.scale * 0.8, duration: 240, ease: 'Quad.easeIn', onComplete: res }));
+    const atk = playAnim(t.sprite, t.k('saldiri'), 1.6);
+    await wait(this.scene, 200);
+    if (e.alive) {
+      const dmg = calcDamage(t.atk * tm, mult, this.eDef(e));
+      this.applyDamage(e, dmg, false);
+      if (tm > 1) floatText(e.sprite.x, this.topY(e) - 10, 'Etkili!', 'good');
+      else if (tm < 1) floatText(e.sprite.x, this.topY(e) - 10, 'Etkisiz…', 'weak');
+      if (status && e.alive) this.giveEnemyStatus(e, status);
+      if (e.alive && e.st.reflect > 0) this.damagePet(Math.max(1, Math.round(dmg * 0.3)), 'Diken!');
+    }
+    await atk;
+    if (t.sprite.active) {
+      t.sprite.play(t.k('yurume'));
+      await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: PET_POS.x, y: PET_POS.y, scale: t.scale, duration: 260, ease: 'Quad.easeOut', onComplete: res }));
+      t.sprite.setDepth(18);
+    }
+  }
+
+  damagePet(d, label = null) {
+    const t = this.pet;
+    if (!t || !t.alive) return;
+    t.hp = Math.max(0, t.hp - d);
+    floatText(t.sprite.x, this.petTop(), label ? `${label} -${d}` : `-${d}`, 'hurt');
+    if (S.run) S.run.petHp = t.hp;
+    if (t.hp <= 0) {
+      t.alive = false;
+      if (S.run) S.run.petDown = true;
+      feed(`${t.name} bayıldı! Üsse dönünce iyileşir.`);
+      floatText(t.sprite.x, this.petTop() - 12, 'Bayıldı!', 'warn');
+      t.sprite.play(t.k('hasar'));
+      this.scene.tweens.add({ targets: [t.sprite, t.shadow], alpha: 0, duration: 600, delay: 200 });
+      if (t.ui) { t.ui.wrap.remove(); t.ui = null; }
+    } else {
+      playAnim(t.sprite, t.k('hasar'), 1).then(() => { if (t.alive && t.sprite.active) t.sprite.play(t.k('durma')); });
+      this.renderPet();
+    }
   }
 
   // oyuncunun yazilari icin konum (karakter ekranin altinda, buyuk duruyor)
@@ -164,9 +341,11 @@ export class Battle {
       e.sprite.anims.timeScale = 1;
       this.makeBar(e);
     }
+    this.makePetBar();
     this.buildPanel();
     $('#actions').classList.add('hidden');
     $('#battle').classList.remove('hidden');
+    if (this.status.karanlik > 0) feed('Karanlıkta savaşıyorsun: vuruşların bazen boşa gidecek. (Fener taşı!)');
     return new Promise((res) => {
       this.resolve = res;
       this.busy = false;
@@ -180,11 +359,12 @@ export class Battle {
     wrap.appendChild(nm);
     const hp = el('div', 'bar'); const hf = el('div', 'fill'); hp.appendChild(hf);
     const atb = el('div', 'bar atb'); const af = el('div', 'fill'); atb.appendChild(af);
-    wrap.appendChild(hp); wrap.appendChild(atb);
+    const st = el('div', 'est', '');
+    wrap.appendChild(hp); wrap.appendChild(atb); wrap.appendChild(st);
     wrap.style.left = `${(e.homeX / 384) * 100}%`;
     wrap.style.top = `${((this.topY(e) - 3) / 216) * 100}%`;
     $('#bars').appendChild(wrap);
-    e.ui = { wrap, hf, af };
+    e.ui = { wrap, hf, af, st };
     this.renderEnemy(e);
   }
 
@@ -192,6 +372,12 @@ export class Battle {
     if (!e.ui) return;
     e.ui.hf.style.width = `${Math.max(0, e.hp / e.maxHp) * 100}%`;
     e.ui.af.style.width = `${e.atb}%`;
+    const parts = [];
+    for (const k of ['zehir', 'yanma', 'sersem', 'donma', 'karanlik']) if (e.st[k] > 0) parts.push(STATUS_NAMES[k]);
+    if (e.st.shell > 0) parts.push('Kabuk');
+    if (e.st.reflect > 0) parts.push('Diken');
+    if (e.fly) parts.push('Uçuyor');
+    if (e.ui.st.textContent !== parts.join(' · ')) e.ui.st.textContent = parts.join(' · ');
   }
 
   // -------------------------------------------------------------- panel
@@ -213,6 +399,7 @@ export class Battle {
     b.appendChild(me); b.appendChild(this.acts); b.appendChild(autoWrap);
     this.renderMe();
     this.renderAuto();
+    this.renderStatus();
     this.setHint('');
   }
 
@@ -231,13 +418,17 @@ export class Battle {
       this.atbBar.classList.toggle('ready', this.pAtb >= 100);
     }
     for (const e of this.enemies) if (e.alive) this.renderEnemy(e);
+    if (this.pet && this.pet.alive) this.renderPet();
   }
 
   renderStatus() {
+    if (!this.statusEl) return;
     const parts = [];
     if (this.status.zehir > 0) parts.push(`Zehir ${this.status.zehir}`);
-    if (this.status.sersem > 0) parts.push('Sersem');
+    if (this.status.sersem > 0) parts.push(`Sersem ${this.status.sersem}`);
     if (this.status.yanma > 0) parts.push(`Yanma ${this.status.yanma}`);
+    if (this.status.donma > 0) parts.push('Donmuş');
+    if (this.status.karanlik > 0) parts.push(`Karanlık ${this.status.karanlik}`);
     if (this.status.tok > 0) parts.push(`Tok ${this.status.tok}`);
     if (this.status.guc > 0) parts.push(`Altın güç ${this.status.guc}`);
     if (this.status.savun) parts.push('Savunmada');
@@ -260,7 +451,8 @@ export class Battle {
     S.save.settings.auto = !S.save.settings.auto;
     S.persist();
     this.renderAuto();
-    if (S.save.settings.auto && (this.phase === 'menu' || this.phase === 'target' || this.phase === 'items')) {
+    this.renderPet();
+    if (S.save.settings.auto && ['menu', 'target', 'items', 'skills', 'feed'].includes(this.phase)) {
       const r = this.targetResolve;
       this.targetResolve = null;
       this.removeMarkers();
@@ -274,10 +466,13 @@ export class Battle {
   update(dt) {
     if (this.over || this.busy) return;
     const k = (ATB_RATE * Math.min(dt, 60)) / 1000;
-    this.pAtb = Math.min(100, this.pAtb + S.spd() * k);
-    for (const e of this.alive()) e.atb = Math.min(100, e.atb + e.spd * k);
+    this.pAtb = Math.min(100, this.pAtb + S.spd() * k * (this.status.sersem > 0 ? 0.5 : 1));
+    for (const e of this.alive()) e.atb = Math.min(100, e.atb + e.spd * k * (e.st.sersem > 0 ? 0.5 : 1));
+    const t = this.pet;
+    if (t && t.alive) t.atb = Math.min(100, t.atb + t.spd * k);
     this.renderAtb();
     if (this.pAtb >= 100) { this.playerTurn(); return; }
+    if (t && t.alive && t.atb >= 100) { this.petTurn(); return; }
     const ready = this.alive().find((e) => e.atb >= 100);
     if (ready) this.enemyTurn(ready);
   }
@@ -314,15 +509,16 @@ export class Battle {
     }
     if (this.status.tok > 0) this.status.tok--;
     if (this.status.guc > 0) this.status.guc--;
-    if (this.status.sersem > 0) {
-      this.status.sersem--;
-      floatText(this.px(), this.py() - 10, 'Sersem! Sıra geçti', 'info');
+    if (this.status.sersem > 0) this.status.sersem--;
+    for (const k of Object.keys(this.cd)) if (this.cd[k] > 0) this.cd[k]--;
+    if (this.status.donma > 0) {
+      this.status.donma--;
+      floatText(this.px(), this.py() - 10, 'Dondun! Sıra geçti', 'info');
       this.renderStatus();
       await wait(this.scene, 700);
       this.endPlayerTurn();
       return;
     }
-    if (this.spinCd > 0) this.spinCd--;
     this.renderStatus();
     if (S.save.settings.auto) {
       this.setHint('Otomatik savaş…');
@@ -336,32 +532,71 @@ export class Battle {
   endPlayerTurn() {
     this.phase = null;
     this.pAtb = 0;
+    if (this.status.karanlik > 0) this.status.karanlik--;
     this.setHint('');
     this.renderAtb();
     this.renderStatus();
     if (!this.checkEnd()) this.busy = false;
   }
 
-  canSpin() { return S.level('saldiri') >= 20 && this.spinCd === 0; }
+  // acik yetenekler (silah turune gore)
+  skills() {
+    const lvl = S.level(WEAPON_SKILL[this.wt]);
+    return ABILITIES[this.wt].filter((a) => lvl >= a.lvl);
+  }
+  ready(a) { return !(this.cd[a.key] > 0); }
+
+  tameables() {
+    return this.alive().filter((e) => !e.data.boss && !e.golden && e.hp / e.maxHp < TAME.hpBelow);
+  }
 
   showMenu() {
     this.phase = 'menu';
     this.acts.innerHTML = '';
     this.acts.appendChild(el('div', 'hint', 'Sıra sende!'));
-    this.acts.appendChild(button('Saldır', () => this.onAttack(), 'primary'));
-    const spinLbl = S.level('saldiri') < 20 ? 'Döner Kesik (Saldırı 20)' : this.spinCd > 0 ? `Döner Kesik (${this.spinCd})` : 'Döner Kesik';
-    const sb = button(spinLbl, () => this.spin(false), 'purple');
-    sb.disabled = !this.canSpin();
+    const basic = BASIC[this.wt];
+    this.acts.appendChild(button(this.wt === 'kilic' ? 'Saldır' : basic.name, () => this.onAttack(), 'primary'));
+    const sk = this.skills();
+    const first = ABILITIES[this.wt][0];
+    const skillName = WEAPON_SKILL[this.wt] === 'okculuk' ? 'Okçuluk' : 'Saldırı';
+    const sb = button(sk.length ? 'Yetenek' : `${first.name} (${skillName} ${first.lvl})`, () => this.skillMenu(), 'purple');
+    sb.disabled = !sk.some((a) => this.ready(a));
+    if (sk.length === 1) sb.textContent = this.ready(sk[0]) ? sk[0].name : `${sk[0].name} (${this.cd[sk[0].key]})`;
     this.acts.appendChild(sb);
     const usable = BATTLE_ITEMS.filter((id) => S.countItem(id) > 0);
     const pots = S.countItem('iksir_k');
     const pb = button(usable.length > 1 || (usable.length === 1 && usable[0] !== 'iksir_k') ? 'Eşya' : `İksir (${pots})`, () => this.itemMenu(), 'red');
     pb.disabled = usable.length === 0;
     this.acts.appendChild(pb);
+    if (this.tameables().length) this.acts.appendChild(button('Yem ver', () => this.onFeed(), 'green'));
     this.acts.appendChild(button('Savun', () => this.defend(), 'blue'));
     const fb = button('Kaç', () => this.flee(), 'small');
     fb.disabled = !!this.opts.boss || this.enemies.some((e) => e.golden);
     this.acts.appendChild(fb);
+  }
+
+  skillMenu() {
+    const sk = this.skills();
+    if (sk.length === 1) { this.useSkill(sk[0]); return; }
+    this.phase = 'skills';
+    this.acts.innerHTML = '';
+    this.acts.appendChild(el('div', 'hint', 'Hangi yetenek?'));
+    for (const a of sk) {
+      const b = button(this.ready(a) ? a.name : `${a.name} (${this.cd[a.key]})`, () => this.useSkill(a), 'purple');
+      b.title = a.desc;
+      b.disabled = !this.ready(a);
+      this.acts.appendChild(b);
+    }
+    this.acts.appendChild(button('Geri', () => this.showMenu(), 'small'));
+  }
+
+  async useSkill(a) {
+    if (!this.ready(a)) return;
+    if (a.aoe) { await this.doAttack(null, false, a); return; }
+    const t = await this.chooseTarget();
+    if (t === 'auto' || this.over) return;
+    if (!t) { this.showMenu(); return; }
+    await this.doAttack(t, false, a);
   }
 
   // savasta kullanilabilen esyalar
@@ -394,11 +629,7 @@ export class Battle {
     await playAnim(p, B('punch'), 1.4);
     const alive = this.alive();
     const cx = alive.reduce((t, e) => t + e.sprite.x, 0) / alive.length;
-    const boom = this.scene.add.sprite(cx, this.gy - 30, 'boom').setDepth(13).setScale(1.4);
-    boom.play('boom');
-    boom.once('animationcomplete', () => boom.destroy());
-    sfx('boom');
-    this.scene.cameras.main.shake(300, 0.016);
+    this.boom(cx, this.gy - 30, 1.4);
     await wait(this.scene, 120);
     for (const e of alive) {
       const dmg = Math.round((10 + 6 * this.floor) * (0.9 + Math.random() * 0.2));
@@ -408,6 +639,14 @@ export class Battle {
     await wait(this.scene, 300);
     this.pose();
     this.endPlayerTurn();
+  }
+
+  boom(x, y, sc = 1.4) {
+    const boom = this.scene.add.sprite(x, y, 'boom').setDepth(13).setScale(sc);
+    boom.play('boom');
+    boom.once('animationcomplete', () => boom.destroy());
+    sfx('boom');
+    this.scene.cameras.main.shake(300, 0.016);
   }
 
   // savunmayi gecen sabit hasar (bomba)
@@ -427,14 +666,14 @@ export class Battle {
     await this.doAttack(t, false);
   }
 
-  chooseTarget() {
-    const alive = this.alive();
+  chooseTarget(list = null, hintText = 'Hedefe dokun') {
+    const alive = list || this.alive();
     if (alive.length === 1) return Promise.resolve(alive[0]);
     this.phase = 'target';
     return new Promise((resolve) => {
       this.targetResolve = resolve;
       this.acts.innerHTML = '';
-      this.acts.appendChild(el('div', 'hint', 'Hedefe dokun'));
+      this.acts.appendChild(el('div', 'hint', hintText));
       this.acts.appendChild(button('Geri', () => { this.targetResolve = null; this.removeMarkers(); resolve(null); }, 'small'));
       for (const e of alive) {
         const pickIt = (ev) => { ev.stopPropagation(); sfx('click'); this.targetResolve = null; this.removeMarkers(); resolve(e); };
@@ -472,68 +711,87 @@ export class Battle {
     this.phase = null;
     this.setHint('Otomatik savaş…');
     if (S.hp < S.maxHp() * 0.35) {
-      const heal = ['iksir_k', 'mantar_corbasi', 'bogurtlen'].find((id) => S.countItem(id) > 0);
+      const heal = HEALS.find((id) => S.countItem(id) > 0);
       if (heal) return this.drink(true, heal);
     }
     const alive = this.alive();
-    if (alive.length >= 2 && this.canSpin()) return this.spin(true);
+    const sk = this.skills().filter((a) => this.ready(a));
+    const aoe = sk.find((a) => a.aoe);
+    if (alive.length >= 2 && aoe) return this.doAttack(null, true, aoe);
+    const single = sk.find((a) => !a.aoe && a.key !== 'patlat');
     const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
+    if (single && target.hp > S.atk() * 1.2) return this.doAttack(target, true, single);
     return this.doAttack(target, true);
   }
 
-  async doAttack(target, auto) {
+  // Saldiri ya da yetenek. target null ise alan yetenegi (aoe).
+  async doAttack(target, auto, ab = null) {
     this.phase = null;
     this.setHint('');
-    let mult = 1;
+    let mult = ab ? ab.mult : BASIC[this.wt].mult;
+    const hits = ab ? (ab.hits || 1) : BASIC[this.wt].hits;
     let grade = null;
     if (auto) this.autoActs++;
     else {
       this.manualActs++;
-      grade = await timingBar();
-      mult = GRADE[grade].mult;
+      grade = await timingBar(ab ? `${ab.name.toLocaleUpperCase('tr')}!` : 'VUR!');
+      mult *= GRADE[grade].mult;
     }
+    if (ab) this.cd[ab.key] = ab.cd;
     if (this.firstStrike) { mult *= 1.5; this.firstStrike = false; }
-    const crit = Math.random() < S.crit();
     const p = this.w.player;
-    // silah yoksa yumrukla (az hasar), varsa kilicla
-    const armed = !!S.save.equip.silah;
-    const lunge = this.lunge(p, 34, -8, 200);
-    const swing = playAnim(p, B(armed ? 'stab' : 'punch'), armed ? 2.3 : 1.4);
-    await wait(this.scene, armed ? 760 / 2.3 : 260);
-    await lunge;
-    this.hitEnemy(target, S.atk() * this.atkMult(), mult, crit, grade);
-    await swing;
-    await this.back(p);
+    const wt = this.wt;
+    let targets = target ? [target] : this.alive();
+    if (ab && ab.key === 'coklu') targets = targets.slice(0, 3);
+    const poisonedBefore = targets.some((e) => e.st.zehir > 0);
+    // animasyon: kilic/yumruk one atilir, yay yerinde ok atar
+    const animKey = ab && ab.key === 'doner' ? 'spin' : WEAPON_ANIM[wt];
+    if (wt === 'yay') {
+      await playAnim(p, B('bowshot'), 1.8);
+      await Promise.all(targets.map((e) => this.arrow(e, ab && ab.key === 'atesli')));
+    } else {
+      const lunge = this.lunge(p, 34, -8, 200);
+      this.swing = playAnim(p, B(animKey), animKey === 'stab' ? 2.3 : animKey === 'spin' ? 1 : 1.4);
+      await wait(this.scene, animKey === 'stab' ? 760 / 2.3 : 260);
+      await lunge;
+    }
+    for (let h = 0; h < hits; h++) {
+      for (const e of targets) {
+        if (!e.alive) continue;
+        const crit = Math.random() < S.crit();
+        this.hitEnemy(e, S.atk() * this.atkMult(), mult, crit, h === 0 && e === targets[0] ? grade : null, ab);
+      }
+      if (hits > 1 && h < hits - 1) {
+        await wait(this.scene, 180);
+        if (wt !== 'yay') playAnim(p, B(WEAPON_ANIM[wt]), 2.4);
+      }
+    }
+    // Zehirli Yagmur: zehirli hedefe Coklu Ok -> zehir herkese yayilir
+    if (ab && ab.key === 'coklu' && poisonedBefore) {
+      this.combo('zehirli_yagmur');
+      for (const e of this.alive()) { e.st.zehir = Math.max(e.st.zehir, 5); this.renderEnemy(e); }
+    }
+    if (wt !== 'yay') { await this.swing; await this.back(p); }
+    if (S.hp <= 0) { await this.lose(); if (this.over) return; }
     this.pose();
     this.endPlayerTurn();
   }
 
-  async spin(auto) {
-    if (!this.canSpin()) return;
-    this.phase = null;
-    this.setHint('');
-    let mult = 0.6;
-    let grade = null;
-    if (auto) this.autoActs++;
-    else {
-      this.manualActs++;
-      grade = await timingBar('DÖNER KESİK!');
-      mult *= GRADE[grade].mult;
-    }
-    this.spinCd = 3;
-    const p = this.w.player;
-    this.lunge(p, 40, -10, 220);
-    const sp = playAnim(p, B('spin'), 1);
-    await wait(this.scene, 300);
-    let first2 = true;
-    for (const e of this.alive()) {
-      this.hitEnemy(e, S.atk() * this.atkMult(), mult, Math.random() < S.crit(), first2 ? grade : null);
-      first2 = false;
-    }
-    await sp;
-    await this.back(p);
-    this.pose();
-    this.endPlayerTurn();
+  // ok: oyuncudan hedefe ucan kucuk cubuk
+  arrow(e, fire) {
+    const a = this.scene.add.rectangle(BPOS.x + 30, GROUND_Y - 24, 10, 2, fire ? 0xff9a3a : 0xe8dcc0).setDepth(21);
+    const ty = this.topY(e) + e.meta.bodyH * e.scale * 0.45;
+    a.setRotation(Math.atan2(ty - a.y, e.sprite.x - a.x));
+    return new Promise((res) => this.scene.tweens.add({ targets: a, x: e.sprite.x, y: ty, duration: 180, onComplete: () => { a.destroy(); res(); } }));
+  }
+
+  combo(key) {
+    const c = COMBOS[key];
+    const fresh = !S.save.combos[key];
+    S.save.combos[key] = (S.save.combos[key] || 0) + 1;
+    banner(`KOMBO: ${c.name}!`, fresh ? 'Kombo Defteri\'ne yazıldı' : c.result, 1500, 'gold');
+    sfx('perfect');
+    if (fresh) feed(`<span style="color:#ffd04d">★ Yeni kombo keşfettin: ${c.name}! (${c.how})</span>`, 'gold');
   }
 
   async drink(auto, id = 'iksir_k') {
@@ -564,7 +822,6 @@ export class Battle {
     this.manualActs++;
     this.status.savun = true;
     this.defXp += 2 * this.floor;
-    const p = this.w.player;
     floatText(this.px(), this.py() - 10, 'Savunma ×2', 'info');
     sfx('click');
     this.renderStatus();
@@ -587,6 +844,7 @@ export class Battle {
       p.setFlipX(true);
       p.play(B('ninjarun'));
       await new Promise((res) => this.scene.tweens.add({ targets: p, x: -60, y: BPOS.y + 10, duration: 520, onComplete: res }));
+      this.savePetHp();
       this.cleanup(true);
       this.resolve('flee');
     } else {
@@ -597,13 +855,114 @@ export class Battle {
     }
   }
 
+  // -------------------------------------------------------------- evcillestirme (0.4)
+  foodFor(e) {
+    const z = ZONE_OF_KEY[e.key];
+    if (!z) return null;
+    const [basic, special] = FOODS[z];
+    if (e.rarity === 'siradan' && S.countItem(basic) > 0) return basic;
+    if (S.countItem(special) > 0) return special;
+    return null;
+  }
+
+  async onFeed() {
+    const list = this.tameables();
+    const e = await this.chooseTarget(list, 'Kime yem vereceksin?');
+    if (e === 'auto' || this.over) return;
+    if (!e) { this.showMenu(); return; }
+    const z = ZONE_OF_KEY[e.key];
+    const need = TAME.bagReq[e.data.rarity] + TAME.stageBag[e.stage];
+    const food = this.foodFor(e);
+    let why = null;
+    if (!z) why = 'Bu Glemon evcilleşmez.';
+    else if (S.level('bag') < need) why = `${e.name} için Glemon Bağı ${need} gerekli (sende ${S.level('bag')}).`;
+    else if (!food) {
+      const [basic, special] = FOODS[z];
+      why = e.rarity === 'siradan' ? `Yem yok! ${ITEMS[basic].name} ya da ${ITEMS[special].name} gerekli.` : `${e.name} sadece özel yem yer: ${ITEMS[special].name}.`;
+    } else if (S.save.pets.length >= S.ahirSize()) why = `Ahırın dolu (${S.ahirSize()} yer). İnşa seviyen artınca büyür.`;
+    if (why) { feed(why); sfx('weak'); this.showMenu(); return; }
+    await this.tame(e, food);
+  }
+
+  async tame(e, food) {
+    this.phase = null;
+    this.setHint('');
+    this.manualActs++;
+    S.removeItem(food, 1);
+    const p = this.w.player;
+    // yemi atar: kucuk bir kutu yaya cizerek ucar
+    const crumb = this.scene.add.rectangle(BPOS.x + 30, GROUND_Y - 30, 4, 4, 0xe4b678).setDepth(21);
+    playAnim(p, B('punch'), 1.4);
+    await new Promise((res) => this.scene.tweens.add({ targets: crumb, x: e.sprite.x, y: this.topY(e) + 10, duration: 420, ease: 'Sine.easeOut', onComplete: res }));
+    crumb.destroy();
+    floatText(e.sprite.x, this.topY(e), `${ITEMS[food].name}!`, 'info');
+    await playAnim(e.sprite, e.k('saldiri'), 0.8);
+    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004);
+    if (ITEMS[food].special && e.rarity === 'siradan') ch *= 1.3;
+    const ok = Math.random() < ch;
+    if (!ok) {
+      floatText(e.sprite.x, this.topY(e) - 12, 'Yemi yedi ama gelmedi…', 'weak');
+      sfx('weak');
+      e.sprite.play(e.k('durma'));
+      this.pose();
+      await wait(this.scene, 500);
+      this.endPlayerTurn();
+      return;
+    }
+    // evcillesti: kalpler, Glemon savastan cikip Ahir'a gider
+    const lvl = Math.min(S.petCap(), Math.max(1, this.floor + e.stage * 5));
+    const pet = S.addPet(e.key, e.stage, e.shiny, lvl);
+    e.alive = false;
+    if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
+    sfx('levelup');
+    for (let i = 0; i < 5; i++) {
+      const h = this.scene.add.text(e.sprite.x + (Math.random() - 0.5) * 20, this.topY(e) + 6, '♥', { fontFamily: 'Pixelify Sans', fontSize: '10px', color: '#ff7a9a' }).setDepth(22);
+      this.scene.tweens.add({ targets: h, y: h.y - 22, alpha: 0, duration: 900, delay: i * 120, onComplete: () => h.destroy() });
+    }
+    this.scene.tweens.add({ targets: [e.sprite, e.shadow], alpha: 0, duration: 700, delay: 500, onComplete: () => { e.sprite.destroy(); e.shadow.destroy(); } });
+    const xp = 60 * Math.pow(this.floor, 1.1) * (RMULT[e.rarity] || 1) * (1 + e.stage);
+    this.bagXp += xp;
+    S.save.stats.tamed = (S.save.stats.tamed || 0) + 1;
+    S.logDrop(null, e.name, { note: 'evcilleşti!' });
+    banner(`${e.name} evcilleşti!`, pet && S.save.pet === pet.id ? 'Artık yanında savaşacak' : 'Ahırına gitti', 2200, 'gold');
+    feed(`<span style="color:#ff9ab4">♥ ${e.name} evcilleşti! Ahırında seni bekliyor (Sv. ${lvl}).</span>`, 'gold');
+    S.changed();
+    this.pose();
+    await wait(this.scene, 900);
+    this.endPlayerTurn();
+  }
+
   // -------------------------------------------------------------- hasar
-  hitEnemy(e, atk, mult, crit, grade) {
+  giveEnemyStatus(e, [st, turns]) {
+    e.st[st] = Math.max(e.st[st], turns);
+    floatText(e.sprite.x, this.topY(e) - 14, STATUS_NAMES[st] + '!', 'info');
+    this.renderEnemy(e);
+  }
+
+  hitEnemy(e, atk, mult, crit, grade, ab = null) {
     if (!e.alive) return;
-    const dmg = calcDamage(atk, mult * (crit ? 1.5 : 1), e.defense);
-    e.hp = Math.max(0, e.hp - dmg);
     const top = this.topY(e);
-    floatText(e.sprite.x, top + 4, String(dmg), crit || grade === 'mukemmel' ? 'crit' : 'dmg');
+    if (this.status.karanlik > 0 && Math.random() < 0.25) {
+      floatText(e.sprite.x, top + 4, 'Iska!', 'weak');
+      return;
+    }
+    let m = mult * (crit ? 1.5 : 1);
+    // ucan Glemonlar: kilic ve yumruk yari hasar, yay tam
+    if (e.fly && this.wt !== 'yay') {
+      m *= 0.5;
+      if (!this.flyTold) { this.flyTold = true; floatText(e.sprite.x, top - 20, 'Uçuyor! Yay daha iyi', 'weak'); }
+    }
+    // Buz Kirici: donmus hedefe kilic
+    if (this.wt === 'kilic' && e.st.donma > 0) { m *= 3; e.st.donma = 0; this.combo('buz_kirici'); }
+    // Alev Patlamasi: yanan hedefe Patlat -> butun dusmanlara patlama
+    if (ab && ab.key === 'patlat' && e.st.yanma > 0) {
+      e.st.yanma = 0;
+      this.combo('alev_patlamasi');
+      this.boom(e.sprite.x, this.gy - 26, 1.6);
+      for (const o of this.alive()) if (o !== e) this.applyDamage(o, calcDamage(atk, m * 0.8, this.eDef(o)), true);
+    }
+    const def = ab && ab.pierce ? 0 : this.eDef(e);
+    const dmg = calcDamage(atk, m, def);
     if (grade) floatText(e.sprite.x, top - 8, GRADE[grade].text, GRADE[grade].cls);
     if (crit) floatText(e.sprite.x + 14, top - 2, 'Kritik!', 'perfect');
     sfx(crit ? 'crit' : 'hit');
@@ -611,6 +970,20 @@ export class Battle {
     if (crit || grade === 'mukemmel') this.scene.cameras.main.shake(110, 0.008);
     const sl = this.scene.add.image(e.sprite.x, top + e.meta.bodyH * e.scale * 0.5, 'slash').setDepth(12).setRotation(Math.random() * 1.2 - 0.6);
     this.scene.tweens.add({ targets: sl, alpha: 0, scale: 1.4, duration: 260, onComplete: () => sl.destroy() });
+    this.applyDamage(e, dmg, crit || grade === 'mukemmel');
+    if (e.alive && ab && ab.status) this.giveEnemyStatus(e, ab.status);
+    // dikenli Glemon vuranin canini acitir
+    if (e.st.reflect > 0) {
+      const back = Math.max(1, Math.round(dmg * 0.3));
+      floatText(this.px(), this.py() - 18, 'Diken!', 'warn');
+      this.damagePlayer(back, false);
+    }
+  }
+
+  applyDamage(e, dmg, big) {
+    if (!e.alive) return;
+    e.hp = Math.max(0, e.hp - dmg);
+    floatText(e.sprite.x, this.topY(e) + 4, String(dmg), big ? 'crit' : 'dmg');
     this.renderEnemy(e);
     if (e.hp <= 0) { this.killEnemy(e); return; }
     playAnim(e.sprite, e.k('hasar'), 1).then(() => { if (e.alive && e.sprite.active) e.sprite.play(e.k('durma')); });
@@ -622,42 +995,46 @@ export class Battle {
     this.scene.tweens.add({ targets: [e.sprite], alpha: 0, y: this.gy - 6, duration: 500, delay: 250, onComplete: () => e.sprite.destroy() });
     this.scene.tweens.add({ targets: [e.shadow], alpha: 0, duration: 500, delay: 250, onComplete: () => e.shadow.destroy() });
     if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
-    // patron dusunce cagirdigi kokler de cekilir (odulsuz)
+    // patron dusunce cagirdiklari da cekilir (odulsuz)
     if (e.data.boss) {
       for (const o of this.alive()) {
         o.alive = false;
         if (o.ui) { o.ui.wrap.remove(); o.ui = null; }
-        floatText(o.sprite.x, this.topY(o), 'Kökler çekildi', 'info');
+        floatText(o.sprite.x, this.topY(o), 'Kaçtı!', 'info');
         this.scene.tweens.add({ targets: [o.sprite, o.shadow], alpha: 0, y: '+=12', duration: 600, onComplete: () => { o.sprite.destroy(); o.shadow.destroy(); } });
       }
     }
     // oduller
     const rm = RMULT[e.rarity] || 1;
-    let xp = 8 * Math.pow(this.floor, 1.2) * rm;
+    let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage);
     if (e.shiny) xp *= 2;
     if (e.golden) xp *= 4;
     this.killXp += xp;
-    let gold = Math.round(this.floor * (2 + Math.random() * 2) * Math.min(rm, 3));
+    let gold = Math.round(this.floor * (2 + Math.random() * 2) * Math.min(rm, 3) * (e.data.goldMult || 1));
     if (e.shiny) gold *= 3;
     if (e.golden) gold *= 3;
-    if (e.data.boss) gold = 150 + Math.round(Math.random() * 50);
+    if (e.data.boss) gold = 150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50);
     S.addGold(gold);
     this.gold += gold;
     const st = S.save.stats;
     st.kills++;
     st.glemons[e.key] = (st.glemons[e.key] || 0) + 1;
     if (S.run) S.run.kills++;
-    if (e.data.boss) st.bossKills++;
+    if (e.data.boss) { st.bossKills++; this.luckXp += 250 * (ZONES.indexOf(this.zone) + 1); }
     if (e.shiny) {
       st.shiny++;
-      S.logDrop(null, e.name, { note: 'yenildi (1/500 şans!)' });
-      feed(`<span style="color:#ffd04d">✦ ${e.name} yendin! (1/500 şans)</span>`, 'gold');
+      S.logDrop(null, e.name, { note: 'yenildi (çok nadir parlak!)' });
+      feed(`<span style="color:#ffd04d">✦ ${e.name} yendin! (parlak Glemon)</span>`, 'gold');
+      this.luckXp += 300;
     }
     const manual = this.manualActs >= this.autoActs;
     for (const [id, ch] of e.data.drops) {
-      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1);
+      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + 0.3 * e.stage);
       if (ch >= 1) c = 1;
-      if (Math.random() < Math.min(1, c)) this.w.giveDrop(id, 1, e.from);
+      if (Math.random() < Math.min(1, c)) {
+        this.w.giveDrop(id, 1, e.from);
+        if (ITEMS[id].rarity !== 'siradan' && ch < 1) this.luckXp += 20 * Math.pow(this.floor, 0.8) * (RMULT[ITEMS[id].rarity] || 1);
+      }
     }
   }
 
@@ -677,7 +1054,28 @@ export class Battle {
     this.busy = true;
     e.atb = 0;
     e.acts++;
+    // durumlar: zehir ve yanma acitir, donmus Glemon sirasini kaybeder
+    if (e.st.shell > 0) e.st.shell--;
+    if (e.st.reflect > 0) e.st.reflect--;
+    if (e.st.sersem > 0) e.st.sersem--;
+    for (const [k, pct, txt] of [['zehir', 0.03, 'Zehir'], ['yanma', 0.05, 'Yanıyor']]) {
+      if (e.st[k] > 0 && e.alive) {
+        e.st[k]--;
+        floatText(e.sprite.x, this.topY(e) - 12, txt, 'info');
+        this.applyDamage(e, Math.max(1, Math.round(e.maxHp * pct)), false);
+        await wait(this.scene, 250);
+      }
+    }
     this.renderEnemy(e);
+    if (!e.alive) { this.endEnemyTurn(); return; }
+    if (e.st.donma > 0) {
+      e.st.donma--;
+      floatText(e.sprite.x, this.topY(e) - 12, 'Donmuş!', 'info');
+      await wait(this.scene, 500);
+      this.renderEnemy(e);
+      this.endEnemyTurn();
+      return;
+    }
     const d = e.data;
     let act = { mult: 1 };
     if (d.boss) {
@@ -696,7 +1094,21 @@ export class Battle {
       if (this.alive().length < 3) { await this.summon(e, act); this.endEnemyTurn(); return; }
       act = { mult: 1 };
     }
+    if (act.shell || act.reflect) {
+      floatText(e.sprite.x, this.topY(e) - 12, act.name, 'info');
+      await playAnim(e.sprite, e.k('saldiri'), 1);
+      e.sprite.play(e.k('durma'));
+      if (act.shell) e.st.shell = act.shell + 1;
+      if (act.reflect) e.st.reflect = act.reflect + 1;
+      sfx('warn');
+      this.renderEnemy(e);
+      this.endEnemyTurn();
+      return;
+    }
     const p = this.w.player;
+    const t = this.pet;
+    // hedef: yanindaki Glemon bazen (ya da kabuguna cekildiyse hep) saldiriyi uzerine alir
+    const onPet = !act.aoe && t && t.alive && (t.taunt > 0 || Math.random() < 0.3);
     let dodged = false;
     if (act.telegraph) {
       const top = this.topY(e);
@@ -705,19 +1117,30 @@ export class Battle {
       sfx('warn');
       e.sprite.setTintFill(0xffffff);
       this.scene.time.delayedCall(90, () => { if (e.sprite.active) { e.sprite.clearTint(); if (e.golden) e.sprite.setTint(0xffd86a); } });
-      if (!S.save.settings.auto) dodged = await dodgePrompt();
+      if (!S.save.settings.auto && !onPet) dodged = await dodgePrompt();
       else await wait(this.scene, 550);
     }
     if (this.over) return;
-    // Glemon kameraya (oyuncuya) dogru atilir
+    const missed = e.st.karanlik > 0 && Math.random() < 0.25;
+    if (e.st.karanlik > 0) e.st.karanlik--;
+    // Glemon kameraya (oyuncuya) ya da yanindaki Glemon'a dogru atilir
     e.sprite.setDepth(15);
     e.sprite.play(e.k('yurume'));
+    const tx = onPet ? PET_POS.x + 30 : 150;
+    const ty = onPet ? PET_POS.y + 6 : this.gy + 46;
     await new Promise((res) => this.scene.tweens.add({
-      targets: e.sprite, x: 150, y: this.gy + 46, scale: e.scale * 1.4, duration: 260, ease: 'Quad.easeIn', onComplete: res,
+      targets: e.sprite, x: tx, y: ty, scale: e.scale * (onPet ? 1.1 : 1.4), duration: 260, ease: 'Quad.easeIn', onComplete: res,
     }));
     const atkAnim = playAnim(e.sprite, e.k('saldiri'), 1.6);
     await wait(this.scene, 300 / 1.6);
-    if (dodged) {
+    if (missed) {
+      floatText(onPet ? t.sprite.x : this.px(), onPet ? this.petTop() : this.py() - 10, 'Iskaladı!', 'good');
+    } else if (onPet) {
+      const tm = typeMult(e.type, t.data.type);
+      const dmg = calcDamage(e.atk * tm, act.mult || 1, t.def * (t.shell > 0 ? 2 : 1));
+      this.damagePet(dmg);
+      if (t.reflect > 0 && e.alive) this.applyDamage(e, Math.max(1, Math.round(dmg * 0.5)), false);
+    } else if (dodged) {
       sfx('dodge');
       floatText(this.px(), this.py() - 10, 'Kaçındın!', 'good');
       this.defXp += 3 * this.floor;
@@ -733,16 +1156,19 @@ export class Battle {
       this.defXp += dmg * 0.6;
       if ((act.mult || 1) >= 2) this.scene.cameras.main.shake(180, 0.012);
       if (act.status && S.hp > 0) {
-        const [st, turns] = act.status;
+        const [st, turns0] = act.status;
+        const turns = st === 'donma' ? 1 : turns0; // oyuncu en fazla 1 tur donar
         this.status[st] = Math.max(this.status[st], turns);
-        floatText(this.px(), this.py() - 20, { zehir: 'Zehirlendin!', sersem: 'Sersemledin!', yanma: 'Yanıyorsun!' }[st], 'info');
+        floatText(this.px(), this.py() - 20, { zehir: 'Zehirlendin!', sersem: 'Sersemledin!', yanma: 'Yanıyorsun!', donma: 'Dondun!', karanlik: 'Gözün göremiyor!' }[st], 'info');
         if (st === 'yanma') this.scene.time.delayedCall(500, () => { if (!this.over && S.hp > 0) playAnim(p, B('onfire'), 2).then(() => { if (!this.over) this.pose(); }); });
         this.renderStatus();
       }
+      // alan saldirisi yanindaki Glemon'a da vurur
+      if (act.aoe && t && t.alive) this.damagePet(calcDamage(e.atk * typeMult(e.type, t.data.type), (act.mult || 1) * 0.7, t.def));
     }
     await atkAnim;
     if (S.hp <= 0) { await this.lose(); if (this.over) return; }
-    if (e.sprite.active) {
+    if (e.sprite.active && e.alive) {
       e.sprite.play(e.k('yurume'));
       await new Promise((res) => this.scene.tweens.add({
         targets: e.sprite, x: e.homeX, y: this.gy, scale: e.scale, duration: 300, ease: 'Quad.easeOut', onComplete: res,
@@ -781,6 +1207,7 @@ export class Battle {
       if (used.has(x)) continue;
       const n = this.addEnemy({ key: act.summon }, x);
       n.atb = 0;
+      n.summoned = true;
       n.sprite.y = this.gy + 30;
       this.scene.tweens.add({ targets: n.sprite, y: this.gy, duration: 500, ease: 'Back.easeOut' });
       this.makeBar(n);
@@ -788,22 +1215,44 @@ export class Battle {
   }
 
   // -------------------------------------------------------------- bitis
+  savePetHp() {
+    const t = this.pet;
+    if (t && S.run) { S.run.petHp = t.hp; if (!t.alive) S.run.petDown = true; }
+  }
+
   async win() {
     this.over = true;
     this.busy = true;
     this.phase = null;
+    this.savePetHp();
     await wait(this.scene, 350);
     sfx('win');
     const manual = this.manualActs > 0 && this.manualActs >= this.autoActs;
     const xm = manual ? 1.2 : 1;
-    const gains = { saldiri: this.killXp * 0.7 * xm, can: this.killXp * 0.3 * xm, savunma: this.defXp };
+    const skill = WEAPON_SKILL[this.wt];
+    const gains = { [skill]: this.killXp * 0.7 * xm, can: this.killXp * 0.3 * xm, savunma: this.defXp, sans: this.luckXp };
+    const t = this.pet;
+    let petMsg = '';
+    let evo = null;
+    if (t && t.fought) {
+      this.bagXp += this.killXp * 0.35 * xm;
+      const res = S.petAddXp(t.p, this.killXp * 0.6 * xm);
+      if (res.up) petMsg = ` · ${t.name} Sv.${res.up}!`;
+      if (res.evolved > 0) evo = { name: GLEMONS[t.p.key].name, stage: res.evolved };
+    }
+    gains.bag = this.bagXp;
     const ups = S.addXp(gains);
     S.save.stats.battles++;
     const r = (x) => Math.round(x);
-    feed(`Zafer! +${r(gains.saldiri)} Saldırı, +${r(gains.can)} Can, +${r(gains.savunma)} Savunma XP${manual ? ' <span style="color:#ffd04d">(manuel +%20)</span>' : ''}`);
+    const skName = skill === 'okculuk' ? 'Okçuluk' : 'Saldırı';
+    const extra = [];
+    if (gains.bag >= 1) extra.push(`+${r(gains.bag)} Bağ`);
+    if (gains.sans >= 1) extra.push(`+${r(gains.sans)} Şans`);
+    feed(`Zafer! +${r(gains[skill])} ${skName}, +${r(gains.can)} Can, +${r(gains.savunma)} Savunma${extra.length ? ', ' + extra.join(', ') : ''} XP${manual ? ' <span style="color:#ffd04d">(manuel +%20)</span>' : ''}${petMsg}`);
     if (this.gold > 0) { feed(`<img class="ico-inline" src="${this.w.coinUrl}">+${this.gold} ${CURRENCY}`); sfx('coin'); }
     this.cleanup(false);
     await this.w.exitBattleView();
+    if (evo) await this.w.petEvolved(evo);
     // seviye atladiysa levelup, atlamadiysa rastgele bir sevinme animasyonu
     if (ups.length) for (const up of ups) await this.w.levelUp(up);
     else { await this.w.playPool('sevinc', 1300, 1.2); this.w.idle(); }
@@ -851,6 +1300,12 @@ export class Battle {
     $('#bars').innerHTML = '';
     $('#overlay').className = '';
     $('#overlay').innerHTML = '';
+    if (this.pet) {
+      const t = this.pet;
+      if (t.sprite.active) t.sprite.destroy();
+      if (t.shadow.active) t.shadow.destroy();
+      t.ui = null;
+    }
     if (removeEnemies) {
       for (const e of this.enemies) {
         if (e.sprite.active) e.sprite.destroy();

@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize } from './data.js';
 
 const SAVE_PREFIX = 'bonkglemon.save.';
 const DEPO_SIZE = 40;
@@ -40,6 +40,15 @@ function freshSave(char) {
     // 0.3 Us: arsa hucreleri "sutun,sira" -> { id, shape? }, bahce "sutun" -> { seed, t0 }
     plot: { cells: {}, garden: {}, best: 0 },
     lastSeen: Date.now(),
+    // 0.4 evcil Glemonlar: { id, key, stage, shiny, lvl, xp, t }
+    pets: [],
+    pet: null,          // yanindaki Glemon'un id'si
+    petSeq: 1,
+    album: { seen: {}, shiny: {}, tamed: {} },
+    combos: {},
+    // 0.5
+    bagBonus: 0,
+    waterUntil: 0,
   };
 }
 
@@ -68,7 +77,9 @@ export const S = {
     for (const k of Object.keys(fresh)) if (data[k] === undefined) data[k] = fresh[k];
     for (const k of Object.keys(fresh.skills)) if (data.skills[k] === undefined) data.skills[k] = 0;
     for (const k of Object.keys(fresh.stats)) if (data.stats[k] === undefined) data.stats[k] = fresh.stats[k];
-    while (data.bag.length < BAG_SIZE) data.bag.push(null);
+    while (data.bag.length < BAG_SIZE + (data.bagBonus || 0)) data.bag.push(null);
+    // 0.4: albume daha once yenilenleri ekle
+    for (const k of Object.keys(data.stats.glemons || {})) if (GLEMONS[k]) data.album.seen[k] = true;
     // 0.2: kazma yuvasi ve tarif defteri
     if (!('kazma' in data.equip)) {
       const owned = [...data.bag, ...data.depo].some((x) => x && ITEMS[x.id] && ITEMS[x.id].kind === 'kazma');
@@ -128,10 +139,22 @@ export const S = {
   maxHp() {
     return 50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.setBonusHp();
   },
+  // silah turu: kilic, yay ya da yumruk (silahsiz ya da eldiven)
+  weaponType() {
+    const id = this.save.equip.silah;
+    if (!id) return 'yumruk';
+    return ITEMS[id].wt || 'kilic';
+  },
+  atkSkill() { return WEAPON_SKILL[this.weaponType()]; },
   atk() {
     const w = this.save.equip.silah ? ITEMS[this.save.equip.silah].power : 0;
-    return this.level('saldiri') + w;
+    return this.level(this.atkSkill()) + w;
   },
+  // Sans: nadir dusme ve parlak Glemon (seviye + tilsim)
+  luck() { return this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0); },
+  dropMult() { return 1 + this.luck() * 0.006; },
+  shinyChance() { return 1 / Math.max(200, 500 - this.luck() * 2.5); },
+  bagSize() { return BAG_SIZE + (this.save.bagBonus || 0); },
   def() {
     const base = this.level('savunma') + this.gear().reduce((t, it) => t + (it.def || 0), 0);
     const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0);
@@ -302,6 +325,51 @@ export const S = {
   },
   placedCount() {
     return Object.values(this.save.plot.cells).filter((c) => !c.top).length;
+  },
+
+  // ------------------------------------------------ evcil Glemonlar (0.4)
+  activePet() { return this.save.pets.find((p) => p.id === this.save.pet) || null; },
+  ahirSize() { return ahirSize(this.level('insa')); },
+  petCap() { return petCap(this.level('bag')); },
+  petName(p) { return (p.shiny ? 'Parlak ' : '') + GLEMONS[p.key].name; },
+  petStats(p) {
+    const d = GLEMONS[p.key];
+    const m = petStatMult(p.lvl, p.stage);
+    const bond = 1 + this.level('bag') * 0.005;
+    return {
+      maxHp: Math.round(d.hp * m * (p.shiny ? 1.1 : 1)),
+      atk: d.atk * m * bond * (p.shiny ? 1.1 : 1),
+      def: d.def * m * 0.6,
+      spd: d.spd,
+    };
+  },
+  addPet(key, stage, shiny, lvl) {
+    if (this.save.pets.length >= this.ahirSize()) return null;
+    const p = { id: this.save.petSeq++, key, stage, shiny: !!shiny, lvl: Math.max(1, lvl), xp: petXpFor(Math.max(1, lvl)), t: Date.now() };
+    this.save.pets.push(p);
+    this.save.album.tamed[key] = true;
+    if (shiny) this.save.album.shiny[key] = true;
+    if (!this.save.pet) this.save.pet = p.id;
+    return p;
+  },
+  releasePet(id) {
+    this.save.pets = this.save.pets.filter((p) => p.id !== id);
+    if (this.save.pet === id) this.save.pet = null;
+  },
+  // XP ekler; seviye sinirinda (Bag / 2) birikir. { up: yeni seviye ya da 0, evolved: yeni asama ya da -1 }
+  petAddXp(p, xp) {
+    const cap = this.petCap();
+    p.xp += Math.round(xp);
+    const before = p.lvl;
+    while (p.lvl < Math.min(cap, PET_MAX_LVL) && p.xp >= petXpFor(p.lvl + 1)) p.lvl++;
+    if (p.lvl >= cap) p.xp = Math.min(p.xp, petXpFor(cap + 1) - 1);
+    let evolved = -1;
+    while (p.stage < 2 && p.lvl >= EVOLVE_AT[p.stage]) { p.stage++; evolved = p.stage; }
+    return { up: p.lvl > before ? p.lvl : 0, evolved };
+  },
+  seeGlemon(key, shiny) {
+    this.save.album.seen[key] = true;
+    if (shiny) this.save.album.shiny[key] = true;
   },
 
   rarityColor(r) { return (RARITY[r] || RARITY.siradan).color; },

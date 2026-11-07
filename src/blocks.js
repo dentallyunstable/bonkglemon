@@ -373,6 +373,65 @@ function crack(n) {
   return t;
 }
 
+// ------------------------------------------------------------- 0.5 magara ve col
+function sandstone() {
+  const r = rng(41); const t = T('#cbb284');
+  for (const y of [4, 9, 13]) t.rect(0, y, B, 1, '#b0956a');
+  blobs(t, r, ['#d6bf92', '#bea676'], 10); speckle(t, r, ['#a88c60'], 6);
+  for (const y of [4, 9, 13]) t.rect(0, y, B, 1, '#b0956a');
+  return t;
+}
+function caveFloor() {
+  const t = stone(44);
+  return t.each((v) => { const c = unpack(v); return pack(mix(mul(c.slice(0, 3), 0.85), hex('#5a4e72'), 0.18)); });
+}
+function crystal(c1, c2, c3) {
+  const t = T(null);
+  t.rect(3, 8, 3, 8, c1); t.rect(4, 6, 1, 2, c1); t.rect(4, 9, 1, 6, c3);
+  t.rect(7, 3, 3, 13, c1); t.rect(8, 1, 1, 2, c1); t.rect(8, 4, 1, 10, c3); t.rect(9, 5, 1, 11, c2);
+  t.rect(11, 9, 3, 7, c1); t.rect(12, 8, 1, 1, c1); t.rect(12, 10, 1, 5, c3); t.rect(13, 10, 1, 6, c2);
+  return t;
+}
+function stalactite() {
+  const t = T(null);
+  t.rect(0, 0, B, 3, STONE[1]); t.rect(2, 3, 5, 4, STONE[0]); t.rect(3, 7, 3, 4, STONE[0]); t.rect(4, 11, 1, 3, STONE[3]);
+  t.rect(9, 3, 4, 3, STONE[0]); t.rect(10, 6, 2, 3, STONE[3]); t.rect(2, 3, 1, 4, STONE[4]); t.rect(9, 3, 1, 3, STONE[4]);
+  return t;
+}
+function shrooms() {
+  const t = T(null);
+  for (const [x, y, h, c] of [[2, 9, 7, '#8a7ab4'], [8, 6, 10, '#b48ac8'], [11, 11, 5, '#8a7ab4']]) {
+    t.rect(x + 1, y + 2, 2, h - 2, '#d8d0c4'); t.rect(x, y, 4, 2, c); t.rect(x - 1, y + 1, 6, 1, c); t.set(x + 1, y, '#e8dcf4');
+  }
+  return t;
+}
+function cactus() {
+  const t = T(null);
+  const g = ['#5e9a5a', '#7ab46a', '#4a7e48'];
+  t.rect(6, 1, 4, 15, g[0]); t.rect(7, 1, 1, 15, g[1]); t.rect(9, 1, 1, 15, g[2]);
+  t.rect(2, 5, 2, 6, g[0]); t.rect(2, 10, 4, 2, g[0]); t.rect(12, 3, 2, 5, g[0]); t.rect(10, 7, 4, 2, g[0]);
+  for (const [x, y] of [[6, 4], [9, 8], [6, 12], [3, 7], [12, 5]]) t.set(x, y, '#e8e0b0');
+  return t;
+}
+function palm() {
+  const t = T(null);
+  t.rect(7, 6, 2, 10, BARK[2]); t.rect(7, 8, 2, 1, BARK[3]); t.rect(7, 12, 2, 1, BARK[3]);
+  const L = ['#6a9a46', '#4e7e36'];
+  t.rect(2, 3, 12, 2, L[0]); t.rect(4, 2, 8, 1, L[0]); t.rect(1, 5, 3, 2, L[1]); t.rect(12, 5, 3, 2, L[1]); t.rect(5, 5, 6, 1, L[1]);
+  for (const [x, y] of [[5, 6], [8, 6], [10, 7]]) { t.rect(x, y, 2, 2, '#9a5a2e'); t.set(x, y, '#c07a40'); }
+  return t;
+}
+function sandPile() {
+  const t = T(null);
+  t.rect(3, 11, 10, 5, '#d0bb8a'); t.rect(5, 9, 6, 2, '#d0bb8a'); t.rect(7, 8, 2, 1, '#dcc89a'); t.rect(3, 15, 10, 1, '#ab9364'); t.rect(10, 11, 3, 4, '#b8a070');
+  return t;
+}
+function bones() {
+  const t = T(null);
+  t.rect(2, 13, 10, 2, '#e4dcc4'); t.rect(1, 12, 2, 4, '#e4dcc4'); t.rect(11, 12, 2, 4, '#e4dcc4'); t.rect(2, 14, 10, 1, '#bfb49a');
+  return t;
+}
+
 const SOLID = {
   toprak: () => dirt(), cimen: grassSide, cimen_ust: grassTop, tas: () => stone(), kum: sand,
   komur: () => ore(20, ['#2e2c32', '#3c3a40', '#24222a', '#4a4850']),
@@ -381,6 +440,7 @@ const SOLID = {
   kalas: () => planks(), kutuk: log, yaprak: leaves, kiremit: roof,
   kaldirim: cobble, tugla: brick, cam: glass, kapi_ust: () => door(true), kapi_alt: () => door(false),
   tas_duvar: darkStone, karanlik: dark, bulut: cloud, raf: shelf, tezgah: workbench,
+  kumtasi: sandstone, magara_zemin: caveFloor,
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
@@ -391,6 +451,8 @@ const PROPS = {
   ot: tallGrass, gunes: sun, ay: moon, fener: lantern, kazan0: () => cauldron(0), kazan1: () => cauldron(1),
   yatak_bas: () => bed('bas'), yatak_ayak: () => bed('ayak'), diken: spike, ray: rail,
   bitki: herb, filiz: () => sprout(0), fide: () => sprout(1), cali: berryBush, dallar: branches, crack1: () => crack(1), crack2: () => crack(2), crack3: () => crack(3),
+  kristal_m: () => crystal('#9a6cc8', '#6e4c9a', '#c8a0ec'), kristal_b: () => crystal('#7cb4d8', '#4e84a8', '#c8e6f8'),
+  sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust']);
 

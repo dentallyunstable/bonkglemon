@@ -1,11 +1,11 @@
 // Animasyon yardimcilari: Promise ile "bitince devam et" yazabilmek icin.
 export const animDur = {}; // anim anahtari -> toplam sure (ms)
 
-export function makeAnim(scene, key, sheet, durations, repeat = 0) {
+export function makeAnim(scene, key, sheet, durations, repeat = 0, start = 0) {
   if (scene.anims.exists(key)) return;
   scene.anims.create({
     key,
-    frames: durations.map((d, i) => ({ key: sheet, frame: i, duration: Math.max(0, d - 1) })),
+    frames: durations.map((d, i) => ({ key: sheet, frame: start + i, duration: Math.max(0, d - 1) })),
     frameRate: 1000,
     repeat,
   });

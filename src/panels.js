@@ -1,5 +1,5 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP } from './data.js';
+import { ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
@@ -22,7 +22,9 @@ function slotEl(s, label) {
 
 function statLines(it) {
   const out = [];
-  if (it.power) out.push(`Saldırı gücü +${it.power}`);
+  if (it.power) out.push(`${it.wt === 'yay' ? 'Yay' : it.wt === 'yumruk' ? 'Yumruk' : 'Kılıç'} gücü +${it.power}`);
+  if (it.luck) out.push(`Şans +${it.luck}`);
+  if (it.yem) out.push(it.special ? 'Özel yem: her nadirlik' : 'Basit yem: Sıradan Glemonlar');
   if (it.def) out.push(`Savunma +${it.def}`);
   if (it.hp) out.push(`Can +${it.hp}`);
   if (it.spd) out.push(`Hız +${it.spd}`);
@@ -79,7 +81,7 @@ export function openBag(w) {
 
       const mid = UI.el('div');
       const used = S.save.bag.filter(Boolean).length;
-      mid.appendChild(UI.el('div', 'muted', `Çanta ${used}/${BAG_SIZE}`));
+      mid.appendChild(UI.el('div', 'muted', `Çanta ${used}/${S.bagSize()}`));
       const grid = UI.el('div', 'grid');
       S.save.bag.forEach((s, i) => {
         const d = slotEl(s);
@@ -132,6 +134,27 @@ export function openBag(w) {
             render();
           }, 'small red');
           b.disabled = inBattle || S.hp >= S.maxHp();
+          btns.push(b);
+        }
+        if (it.water || it.bagPlus) {
+          const b = UI.button('Kullan', () => {
+            if (it.bagPlus) {
+              if (S.bagSize() >= 40) { UI.feed('Çantan en büyük boyda (40).'); return; }
+              S.removeItem(id, 1);
+              S.save.bagBonus = (S.save.bagBonus || 0) + it.bagPlus;
+              while (S.save.bag.length < S.bagSize()) S.save.bag.push(null);
+              UI.feed(`Çantan büyüdü! Artık ${S.bagSize()} yuva.`);
+            } else {
+              S.removeItem(id, 1);
+              S.save.waterUntil = Date.now() + 30 * 60 * 1000;
+              UI.feed('Su içtin: 30 dakika çöl sıcağından etkilenmezsin.');
+            }
+            sfx('heal');
+            S.changed();
+            if (!S.save.bag[sel.i]) sel = null;
+            render();
+          }, 'small red');
+          b.disabled = inBattle;
           btns.push(b);
         }
         if (w.mode === 'base') {
@@ -261,6 +284,7 @@ export function openProfile(w) {
         <b>Patron:</b> ${st.bossKills} &nbsp; <b>Parlak:</b> ${st.shiny} &nbsp; <b>Bayılma:</b> ${st.deaths}<br>
         <b>Saldırı</b> ${S.level('saldiri')} · <b>Savunma</b> ${S.level('savunma')} · <b>Can</b> ${S.level('can')} &nbsp; <b>${CURRENCY}:</b> ${S.save.gold}<br>
         <b>Üs Puanı:</b> ${S.baseScore()} &nbsp; <b>İnşa</b> ${S.level('insa')}<br>
+        <b>Albüm:</b> %${Math.round((Object.keys(S.save.album.seen).length / Object.keys(GLEMONS).length) * 100)} &nbsp; <b>Evcil:</b> ${S.save.pets.length} &nbsp; <b>Bağ</b> ${S.level('bag')}<br>
         <b>Oyun süresi:</b> ${hours} sa`;
       info.appendChild(UI.el('h3', '', 'Düşüş günlüğü'));
       const ul = UI.el('ul', 'droplog');
@@ -304,25 +328,34 @@ export function openMap(w) {
   if (w.mode !== 'base') return;
   UI.openPanel('Harita', (body) => {
     const deepest = S.save.stats.deepest || 0;
-    for (const z of ZONES.filter((x) => x.open)) {
-      const row = UI.el('div', 'zone' + (z.open ? '' : ' locked'));
+    const kills = S.save.stats.glemons || {};
+    for (const z of ZONES) {
+      const opened = z.open && (!z.after || kills[z.after] > 0);
+      const atkOk = S.atk() >= z.atk;
+      const row = UI.el('div', 'zone' + (opened ? '' : ' locked'));
       const left = UI.el('div');
       left.appendChild(UI.el('div', 'zn', z.name));
-      left.appendChild(UI.el('div', 'zf', z.open ? `Kat ${z.floors[0]}–${z.floors[1]} · En derin: ${Math.min(deepest, z.floors[1]) || '-'}` : `Kat ${z.floors[0]}–${z.floors[1]} · ${z.soon} sürümünde açılacak`));
+      let info;
+      if (!z.open) info = `Kat ${z.floors[0]}–${z.floors[1]} · 0.8 sürümünde açılacak`;
+      else if (!opened) info = `Kat ${z.floors[0]}–${z.floors[1]} · Önce ${GLEMONS[z.after].name}'ı yen`;
+      else info = `Kat ${z.floors[0]}–${z.floors[1]} · En derin: ${deepest >= z.floors[0] ? Math.min(deepest, z.floors[1]) : '-'} · Giriş gücü ${z.atk}${atkOk ? '' : ` (sende ${S.atk()})`}`;
+      left.appendChild(UI.el('div', 'zf', info));
+      if (opened && z.hazard) left.appendChild(UI.el('div', 'zf', z.hazard));
       row.appendChild(left);
       const btns = UI.el('div', 'zb');
-      if (z.open) {
-        for (const f of [1, 5, 10]) {
-          const b = UI.button(`Kat ${f}`, () => w.enterDungeon(f), f === 1 ? 'primary small' : 'small');
-          b.disabled = f > 1 && deepest < f;
-          if (b.disabled) b.title = `Önce Kat ${f}'e ulaş`;
+      if (opened) {
+        const [a] = z.floors;
+        for (const f of [a, a + 4, a + 9]) {
+          const b = UI.button(`Kat ${f}`, () => w.enterDungeon(f), f === a ? 'primary small' : 'small');
+          b.disabled = (f > a && deepest < f) || !atkOk;
+          if (!atkOk) b.title = `Saldırı gücün en az ${z.atk} olmalı`;
+          else if (b.disabled) b.title = `Önce Kat ${f}'e ulaş`;
           btns.appendChild(b);
         }
       }
       row.appendChild(btns);
       body.appendChild(row);
     }
-    const soon = ZONES.filter((x) => !x.open).map((x) => `${x.name} (${x.soon})`).join(', ');
     const mine = UI.el('div', 'zone');
     const ml = UI.el('div');
     ml.appendChild(UI.el('div', 'zn', 'Orman Maden Ocağı'));
@@ -333,9 +366,138 @@ export function openMap(w) {
     if (S.save.mine.depth > 1) mb.appendChild(UI.button('Derinlik 1', () => w.enterMine(1), 'small'));
     mine.appendChild(mb);
     body.appendChild(mine);
-    body.appendChild(UI.el('p', 'muted', `Yakında: ${soon}.`));
-    body.appendChild(UI.el('p', 'muted', 'Her 5 katta bir kısayol açılır. Kat 5\'te ara patron, Kat 10\'da Ağaçbaşı seni bekliyor.'));
-  });
+    body.appendChild(UI.el('p', 'muted', 'Her bölgede 5. katta ara patron, 10. katta bölge patronu var. 5 ve 10. katlarda kısayol açılır.'));
+  }, { wide: true });
+}
+
+// ------------------------------------------------------------ Ahir (0.4)
+// Evcil Glemonlar: yanina al, serbest birak, seviye ve evrim. Yanda Yem Tezgahi ve Albüm.
+function petLine(p) {
+  const st = S.petStats(p);
+  return `Sv. ${p.lvl} · ${STAGES[p.stage]} · Can ${st.maxHp} · Saldırı ${Math.round(st.atk)} · Hız ${st.spd}`;
+}
+
+export function openAhir(w) {
+  let sel = S.save.pet || (S.save.pets[0] && S.save.pets[0].id) || null;
+  let confirm = false;
+  UI.openPanel(`Ahır · ${S.save.pets.length}/${S.ahirSize()}`, (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      const top = UI.el('div', 'choice-row');
+      top.appendChild(UI.button('Yem Tezgâhı', () => openStation(w, 'yem'), 'small green'));
+      top.appendChild(UI.button('Albüm', () => openAlbum(w), 'small blue'));
+      top.appendChild(UI.button('Kombo Defteri', () => openAlbum(w, 'kombo'), 'small purple'));
+      body.appendChild(top);
+      if (!S.save.pets.length) {
+        body.appendChild(UI.el('p', 'choice-text', 'Ahırın boş. Zindanda bir Glemon\'un canı %25\'in altına inince savaşta "Yem ver" ile evcilleştirebilirsin.'));
+        body.appendChild(UI.el('p', 'muted', 'Her bölgenin yemi farklı: Orman için Orman Turtası (Böğürtlen + Şifalı ot). Yemleri Yem Tezgâhı\'nda yaparsın, Takas Tezgâhı da Orman Turtası satar. Nadir ve Epik Glemonlar özel yem ister ve Glemon Bağı becerisi gerektirir.'));
+        return;
+      }
+      const lay = UI.el('div', 'ahir');
+      const grid = UI.el('div', 'pet-grid');
+      for (const p of S.save.pets) {
+        const c = UI.el('div', 'pet-card' + (p.id === sel ? ' sel' : '') + (p.id === S.save.pet ? ' active' : ''));
+        c.appendChild(UI.glemonImg(w.gmeta, p.key, p.stage, p.shiny, { w: 34, h: 30 }));
+        c.appendChild(UI.el('div', 'pn', `${p.id === S.save.pet ? '★ ' : ''}${S.petName(p)}`));
+        c.appendChild(UI.el('div', 'muted', `Sv. ${p.lvl}`));
+        c.addEventListener('click', () => { sfx('click'); sel = p.id; confirm = false; render(); });
+        grid.appendChild(c);
+      }
+      lay.appendChild(grid);
+      const p = S.save.pets.find((x) => x.id === sel);
+      const box = UI.el('div', 'detail');
+      if (p) {
+        const d = GLEMONS[p.key];
+        const nm = UI.el('div', 'nm', S.petName(p));
+        nm.style.color = RARITY[d.rarity].color;
+        box.appendChild(nm);
+        box.appendChild(UI.glemonImg(w.gmeta, p.key, p.stage, p.shiny, { w: 70, h: 56 }));
+        box.appendChild(UI.el('div', 'muted', `${RARITY[d.rarity].name} · ${d.type} tipi${d.fly ? ' · uçar' : ''}`));
+        box.appendChild(UI.el('div', '', petLine(p)));
+        if (d.special) box.appendChild(UI.el('div', '', `Yetenek: ${d.special.name}`));
+        const cap = S.petCap();
+        const a = petXpFor(p.lvl); const b = petXpFor(p.lvl + 1);
+        const bar = UI.el('div', 'bar xp');
+        const f = UI.el('div', 'fill');
+        f.style.width = p.lvl >= cap ? '100%' : `${Math.min(100, ((p.xp - a) / (b - a)) * 100)}%`;
+        bar.appendChild(f);
+        bar.appendChild(UI.el('span', '', p.lvl >= cap ? `Sınır: Sv. ${cap} (Bağ ${S.level('bag')})` : `${p.xp - a} / ${b - a} XP`));
+        box.appendChild(bar);
+        const next = p.stage < 2 ? `${STAGES[p.stage + 1]} evrimi: Sv. ${EVOLVE_AT[p.stage]}` : 'En son evrimde (Usta)';
+        box.appendChild(UI.el('div', 'muted', `${next}. Seviye sınırı Glemon Bağı'nın yarısı (şu an ${cap}).`));
+        const row = UI.el('div', 'row');
+        if (p.id !== S.save.pet) {
+          row.appendChild(UI.button('Yanıma al', () => { S.save.pet = p.id; S.changed(); w.makeFollower(); sfx('chest'); render(); }, 'primary small'));
+        } else {
+          row.appendChild(UI.button('Ahırda bırak', () => { S.save.pet = null; S.changed(); w.makeFollower(); render(); }, 'small'));
+        }
+        row.appendChild(UI.button(confirm ? 'Emin misin?' : 'Serbest bırak', () => {
+          if (!confirm) { confirm = true; render(); return; }
+          S.releasePet(p.id); S.changed(); w.makeFollower(); sel = S.save.pet; confirm = false;
+          UI.feed(`${S.petName(p)} doğaya döndü. Hoşça kal!`);
+          render();
+        }, 'small close'));
+        box.appendChild(row);
+      }
+      lay.appendChild(box);
+      body.appendChild(lay);
+      body.appendChild(UI.el('p', 'muted', `Ahır ${S.ahirSize()} yer (İnşa seviyenle 30'a kadar büyür). Yanındaki Glemon zindanda seninle savaşır, bayılırsa üsse dönünce iyileşir.`));
+    };
+    render();
+  }, { wide: true });
+}
+
+// ------------------------------------------------------------ Albüm ve Kombo Defteri (0.4 / 0.5)
+export function openAlbum(w, tab = 'glemon') {
+  const keys = Object.keys(GLEMONS);
+  UI.openPanel('Albüm', (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      const al = S.save.album;
+      const seen = keys.filter((k) => al.seen[k]).length;
+      const tabs = UI.el('div', 'choice-row');
+      tabs.appendChild(UI.button(`Glemonlar (${seen}/${keys.length})`, () => { tab = 'glemon'; render(); }, tab === 'glemon' ? 'primary small' : 'small'));
+      tabs.appendChild(UI.button(`Kombo Defteri (${Object.keys(S.save.combos).length}/${Object.keys(COMBOS).length})`, () => { tab = 'kombo'; render(); }, tab === 'kombo' ? 'primary small' : 'small'));
+      body.appendChild(tabs);
+      if (tab === 'kombo') {
+        body.appendChild(UI.el('p', 'muted', 'Kombolar, durumları doğru sırayla birleştirince olur. İlk yaptığında buraya yazılır.'));
+        for (const [k, c] of Object.entries(COMBOS)) {
+          const n = S.save.combos[k];
+          const row = UI.el('div', 'zone' + (n ? '' : ' locked'));
+          const l = UI.el('div');
+          l.appendChild(UI.el('div', 'zn', n ? c.name : '???'));
+          l.appendChild(UI.el('div', 'zf', n ? `${c.how} → ${c.result} · ${n} kez` : `İpucu: ${c.hint}`));
+          row.appendChild(l);
+          body.appendChild(row);
+        }
+        return;
+      }
+      body.appendChild(UI.el('div', 'muted', `Albüm %${Math.round((seen / keys.length) * 100)} · Evcilleştirilen tür: ${keys.filter((k) => al.tamed[k]).length} · Görülmeyenler siyah görünür.`));
+      for (const [zk, z] of [['orman', 'Yabani Orman'], ['magara', 'Yankı Mağaraları'], ['col', 'Kavurucu Çöl']]) {
+        body.appendChild(UI.el('h3', '', z));
+        const grid = UI.el('div', 'album-grid');
+        const zone = ZONES.find((x) => x.key === zk);
+        for (const k of [...ZONE_SPAWNS[zk].map(([x]) => x), zone.boss]) {
+          const d = GLEMONS[k];
+          const c = UI.el('div', 'album-card' + (al.seen[k] ? '' : ' unseen'));
+          c.appendChild(UI.glemonImg(w.gmeta, k, 0, false, { w: 30, h: 26 }, !al.seen[k]));
+          const nm = UI.el('div', 'pn', al.seen[k] ? d.name : '???');
+          if (al.seen[k]) nm.style.color = RARITY[d.rarity].color;
+          c.appendChild(nm);
+          const marks = [];
+          if (al.tamed[k]) marks.push('♥');
+          if (al.shiny[k]) marks.push('✦');
+          const kills = (S.save.stats.glemons || {})[k] || 0;
+          c.appendChild(UI.el('div', 'muted', al.seen[k] ? `${marks.join(' ')} ${kills} yenildi` : d.boss ? 'Patron' : RARITY[d.rarity].name));
+          c.title = al.seen[k] ? `${d.name} · ${d.type} tipi${d.special ? ' · ' + d.special.name : ''}` : '';
+          grid.appendChild(c);
+        }
+        body.appendChild(grid);
+      }
+      body.appendChild(UI.el('p', 'muted', '♥ evcilleştirdin · ✦ parlak versiyonunu gördün'));
+    };
+    render();
+  }, { wide: true });
 }
 
 // ------------------------------------------------------------ uretim istasyonlari (0.2)

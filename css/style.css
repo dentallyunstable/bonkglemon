@@ -469,3 +469,27 @@ html, body {
 .shop-row .shop-nm { flex: 1; }
 .shop-row .shop-nm .muted { font-size: calc(5 * var(--u)); }
 .shop-row button { white-space: nowrap; }
+
+/* ---------------------------------------------------------- 0.4 / 0.5 */
+.btn.green { --btn: #3c8a3a; --btn-light: #64b85a; --btn-dark: #1e4a1c; }
+.ebar .est { font-size: calc(4.5 * var(--u)); color: #c9e05a; margin-top: calc(0.5 * var(--u)); white-space: nowrap; text-shadow: 0 0 calc(1 * var(--u)) #000; }
+.ebar.pbar { width: calc(34 * var(--u)); }
+.ebar.pbar .nm { color: #ff9ab4; }
+.ebar.pbar .bar .fill { background: #62d862; }
+.pet-sp { pointer-events: auto; margin-top: calc(1 * var(--u)); font-size: calc(5 * var(--u)) !important; padding: calc(1 * var(--u)) calc(2 * var(--u)) calc(2 * var(--u)) !important; animation: bob 0.6s ease-in-out infinite; white-space: nowrap; }
+.pet-sp.queued { animation: none; filter: brightness(1.4); }
+.gimg { image-rendering: pixelated; background-repeat: no-repeat; flex: none; margin: 0 auto; }
+.gimg.sil { filter: brightness(0) opacity(0.55); }
+.ahir { display: flex; gap: calc(4 * var(--u)); margin-top: calc(3 * var(--u)); align-items: flex-start; }
+.ahir .detail { flex: 1; margin-top: 0; }
+.pet-grid { display: grid; grid-template-columns: repeat(3, calc(40 * var(--u))); gap: calc(2 * var(--u)); max-height: calc(120 * var(--u)); overflow-y: auto; }
+.pet-card, .album-card {
+  background: #241d2e; box-shadow: inset 0 0 0 calc(1 * var(--u)) #3a3048; padding: calc(2 * var(--u));
+  text-align: center; font-size: calc(5 * var(--u)); cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; overflow: hidden; min-width: 0;
+}
+.pet-card.sel { box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--gold); }
+.pet-card.active .pn { color: #ff9ab4; }
+.pet-card .pn, .album-card .pn { font-size: calc(5.5 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.album-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: calc(2 * var(--u)); margin-bottom: calc(3 * var(--u)); }
+.album-card { cursor: default; min-height: calc(40 * var(--u)); }
+.album-card.unseen .pn { color: var(--ink-dim); }
