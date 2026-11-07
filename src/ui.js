@@ -211,28 +211,59 @@ export function timingBar(title = 'VUR!', tip = 'Çizgi sarıdayken dokun (veya 
 }
 
 // kacinma: 0.6 sn icinde dokun
-export function dodgePrompt() {
+// Kacinma (0.8.5, Eren): her saldirida ekranin rastgele bir yerinde "KAC!" dugmesi cikar,
+// halka kuculup bitmeden dugmeye basmak gerekir. Dugmenin disina basmak iskalamaktir.
+// ms: bir dugmenin suresi, count: arka arkaya kac dugme (patronlarda 2).
+// Sonuc: 'kusursuz' (halkanin ilk yarisinda), true (kacindin) ya da false.
+export function dodgePrompt(ms = 900, count = 1) {
   return new Promise((resolve) => {
     const ov = $('#overlay');
     ov.innerHTML = '';
-    ov.className = 'show';
-    const box = el('div', 'dodge', 'KAÇIN!');
-    box.appendChild(el('div', 'ring'));
-    ov.appendChild(box);
+    ov.className = 'show dodging';
+    let left = count;
+    let perfect = true;
     let done = false;
-    const finish = (ok) => {
+    let timer = null;
+    let lastX = -1;
+    const finish = (res) => {
       if (done) return;
       done = true;
-      ov.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('keydown', onKey);
+      clearTimeout(timer);
+      ov.removeEventListener('pointerdown', onMiss);
       ov.className = ''; ov.innerHTML = '';
-      resolve(ok);
+      resolve(res);
     };
-    const onDown = (ev) => { ev.preventDefault(); finish(true); };
-    const onKey = (ev) => { if (ev.code === 'Space' || ev.key === 'Enter') { ev.preventDefault(); finish(true); } };
-    ov.addEventListener('pointerdown', onDown);
-    window.addEventListener('keydown', onKey);
-    setTimeout(() => finish(false), 600);
+    const onMiss = (ev) => { if (ev.target === ov) { ev.preventDefault(); finish(false); } };
+    ov.addEventListener('pointerdown', onMiss);
+    const spawn = () => {
+      ov.innerHTML = '';
+      // rastgele yer: ust bilgi cubuklari ve alttaki dugmelerden uzak; bir oncekiyle ust uste gelmesin
+      let x;
+      do { x = 14 + Math.random() * 72; } while (lastX >= 0 && Math.abs(x - lastX) < 18);
+      lastX = x;
+      const y = 22 + Math.random() * 46;
+      const box = el('div', 'dodge', count > 1 ? `KAÇ! ${count - left + 1}/${count}` : 'KAÇ!');
+      box.style.left = x + '%';
+      box.style.top = y + '%';
+      const ring = el('div', 'ring');
+      ring.style.animationDuration = ms + 'ms';
+      box.appendChild(ring);
+      ov.appendChild(box);
+      const t0 = performance.now();
+      box.addEventListener('pointerdown', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (done) return;
+        if (performance.now() - t0 > ms * 0.5) perfect = false;
+        clearTimeout(timer);
+        left--;
+        box.classList.add('hit');
+        if (left <= 0) setTimeout(() => finish(perfect ? 'kusursuz' : true), 90);
+        else setTimeout(spawn, 120);
+      });
+      timer = setTimeout(() => finish(false), ms);
+    };
+    spawn();
   });
 }
 

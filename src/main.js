@@ -11,7 +11,7 @@ import { block, BLOCK_NAMES } from './blocks.js';
 import { Pix } from './pix.js';
 
 const LOOPING = new Set(['idle', 'idlesway', 'walk', 'run', 'sprint', 'ninjadash', 'ninjarun', 'sneakwalk', 'blockwalk', 'sit',
-  'sneakspam', 'walkin', 'b_idlesway', 'b_ninjarun', 'b_run']);
+  'sneakspam', 'walkin', 'fish_idle', 'fish_reel', 'b_idlesway', 'b_ninjarun', 'b_run']);
 let BOOT = null;
 
 class BootScene extends Phaser.Scene {

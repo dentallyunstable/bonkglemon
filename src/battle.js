@@ -1123,8 +1123,11 @@ export class Battle {
       sfx('warn');
       e.sprite.setTintFill(0xffffff);
       this.scene.time.delayedCall(90, () => { if (e.sprite.active) { e.sprite.clearTint(); if (e.golden) e.sprite.setTint(0xffd86a); } });
-      if (!S.save.settings.auto && !onPet) dodged = await dodgePrompt();
-      else await wait(this.scene, 550);
+      if (!S.save.settings.auto && !onPet) {
+        // sure: siradan 0,9 sn, nadir/epik 0,75 sn, patron 0,6 sn (bazen 2 dugme)
+        const ms = (d.boss ? 600 : e.rarity === 'siradan' ? 900 : 750) * (1 + (S.dodgeBonus ? S.dodgeBonus() : 0));
+        dodged = await dodgePrompt(ms, d.boss && Math.random() < 0.4 ? 2 : 1);
+      } else await wait(this.scene, 550);
     }
     if (this.over) return;
     const missed = e.st.karanlik > 0 && Math.random() < 0.25;
@@ -1148,7 +1151,12 @@ export class Battle {
       if (t.reflect > 0 && e.alive) this.applyDamage(e, Math.max(1, Math.round(dmg * 0.5)), false);
     } else if (dodged) {
       sfx('dodge');
-      floatText(this.px(), this.py() - 10, 'Kaçındın!', 'good');
+      floatText(this.px(), this.py() - 10, dodged === 'kusursuz' ? 'Kusursuz kaçış!' : 'Kaçındın!', dodged === 'kusursuz' ? 'perfect' : 'good');
+      // kusursuz kacis: kucuk bir karsi saldiri
+      if (dodged === 'kusursuz' && e.alive) {
+        const back = calcDamage(S.atk() * this.atkMult(), 0.5 * (S.counterMult ? S.counterMult() : 1), this.eDef(e));
+        this.scene.time.delayedCall(350, () => { if (!this.over && e.alive) { floatText(e.sprite.x, this.topY(e) - 22, 'Karşı darbe!', 'perfect'); this.applyDamage(e, back, true); } });
+      }
       this.defXp += 3 * this.floor;
       // kacinma animasyonlarindan rastgele biri
       const dk = pick(ANIM_POOLS.kacinma);
