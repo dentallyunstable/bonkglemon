@@ -1,6 +1,6 @@
 // Savas: ATB (bekleme cubugu) sistemi, manuel / otomatik mod,
 // zamanlama cubugu, kacinma, durumlar (Zehir, Sersem), odul ve dusurmeler.
-import { GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult } from './data.js';
+import { GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY } from './data.js';
 import { S } from './state.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt } from './ui.js';
 import { sfx } from './audio.js';
@@ -19,7 +19,11 @@ export function calcDamage(atk, mult, def) {
   return Math.max(1, Math.round(d));
 }
 
-const BATTLE_ITEMS = ['iksir_k', 'mantar_corbasi', 'bonk_bombasi'];
+const BATTLE_ITEMS = ['iksir_k', 'mantar_corbasi', 'bogurtlen', 'altin_elma', 'bonk_bombasi'];
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+// Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
+export const BPOS = { x: 66, y: GROUND_Y + 48, scale: 2.4 };
+const B = (a) => `c_b_${a}`;
 
 function slotX(n, i, boss) {
   if (boss) return [292, 206, 356][i] ?? 206;
@@ -40,7 +44,7 @@ export class Battle {
     this.busy = true;
     this.phase = null;
     this.pAtb = opts.ambush ? 100 : Math.random() * 30;
-    this.status = { zehir: 0, sersem: 0, savun: false };
+    this.status = { zehir: 0, sersem: 0, savun: false, yanma: 0, tok: 0, guc: 0 };
     this.spinCd = 0;
     this.manualActs = 0;
     this.autoActs = 0;
@@ -90,6 +94,23 @@ export class Battle {
 
   alive() { return this.enemies.filter((e) => e.alive); }
   topY(e) { return GROUND_Y - e.meta.ay * e.scale; }
+
+  // oyuncunun yazilari icin konum (karakter ekranin altinda, buyuk duruyor)
+  px() { return this.w.player.x + 6; }
+  py() { return GROUND_Y - 22; }
+  pose() { if (!this.lostDone) this.w.player.play(B('idlesway'), true); }
+  atkMult() { return 1 + (this.status.tok > 0 ? 0.1 : 0) + (this.status.guc > 0 ? 0.3 : 0); }
+  defMult() { return (this.status.savun ? 2 : 1) * (this.status.guc > 0 ? 1.3 : 1); }
+
+  // oyuncu one atilir ve geri doner
+  lunge(p, dx, dy, ms) {
+    return new Promise((res) => this.scene.tweens.add({
+      targets: p, x: BPOS.x + dx, y: BPOS.y + dy, scale: BPOS.scale * 0.9, duration: ms, ease: 'Quad.easeOut', onComplete: res,
+    }));
+  }
+  back(p, ms = 180) {
+    return new Promise((res) => this.scene.tweens.add({ targets: p, x: BPOS.x, y: BPOS.y, scale: BPOS.scale, duration: ms, ease: 'Quad.easeOut', onComplete: res }));
+  }
 
   sparkle(e) {
     const ev = this.scene.time.addEvent({
@@ -190,6 +211,9 @@ export class Battle {
     const parts = [];
     if (this.status.zehir > 0) parts.push(`Zehir ${this.status.zehir}`);
     if (this.status.sersem > 0) parts.push('Sersem');
+    if (this.status.yanma > 0) parts.push(`Yanma ${this.status.yanma}`);
+    if (this.status.tok > 0) parts.push(`Tok ${this.status.tok}`);
+    if (this.status.guc > 0) parts.push(`Altın güç ${this.status.guc}`);
     if (this.status.savun) parts.push('Savunmada');
     if (this.firstStrike) parts.push('Pusu hazır');
     this.statusEl.textContent = parts.join(' · ');
@@ -245,15 +269,28 @@ export class Battle {
     if (this.status.zehir > 0) {
       this.status.zehir--;
       const d = Math.max(1, Math.round(S.maxHp() * 0.03));
-      floatText(p.x, p.y - 44, 'Zehir', 'info');
+      floatText(this.px(), this.py() - 10, 'Zehir', 'info');
       this.damagePlayer(d, false);
       this.renderStatus();
-      if (S.hp <= 0) { this.lose(); return; }
+      if (S.hp <= 0) { await this.lose(); if (this.over) return; }
       await wait(this.scene, 400);
     }
+    if (this.status.yanma > 0) {
+      this.status.yanma--;
+      const d = Math.max(1, Math.round(S.maxHp() * 0.05));
+      floatText(this.px(), this.py() - 10, 'Yanıyorsun!', 'info');
+      this.damagePlayer(d, false);
+      this.renderStatus();
+      if (S.hp <= 0) { await this.lose(); if (this.over) return; }
+      await playAnim(p, B('onfire'), 2);
+      this.pose();
+      if (this.over) return;
+    }
+    if (this.status.tok > 0) this.status.tok--;
+    if (this.status.guc > 0) this.status.guc--;
     if (this.status.sersem > 0) {
       this.status.sersem--;
-      floatText(p.x, p.y - 44, 'Sersem! Sıra geçti', 'info');
+      floatText(this.px(), this.py() - 10, 'Sersem! Sıra geçti', 'info');
       this.renderStatus();
       await wait(this.scene, 700);
       this.endPlayerTurn();
@@ -310,8 +347,8 @@ export class Battle {
     this.acts.appendChild(el('div', 'hint', 'Ne kullanacaksın?'));
     for (const id of usable) {
       const it = ITEMS[id];
-      const b = button(`${it.name} (${S.countItem(id)})`, () => this.useItem(id, false), it.bomb ? 'purple' : 'red');
-      if (it.heal && S.hp >= S.maxHp()) b.disabled = true;
+      const b = button(`${it.name} (${S.countItem(id)})`, () => this.useItem(id, false), it.bomb ? 'purple' : it.golden ? 'primary' : 'red');
+      if (it.heal && !it.golden && S.hp >= S.maxHp()) b.disabled = true;
       this.acts.appendChild(b);
     }
     this.acts.appendChild(button('Geri', () => this.showMenu(), 'small'));
@@ -328,8 +365,7 @@ export class Battle {
     if (S.removeItem('bonk_bombasi', 1) < 1) { this.showMenu(); return; }
     if (auto) this.autoActs++; else this.manualActs++;
     const p = this.w.player;
-    p.setFlipX(false);
-    await playAnim(p, 'c_punch', 1.4);
+    await playAnim(p, B('punch'), 1.4);
     const alive = this.alive();
     const cx = alive.reduce((t, e) => t + e.sprite.x, 0) / alive.length;
     const boom = this.scene.add.sprite(cx, GROUND_Y - 18, 'boom').setDepth(13).setScale(1.4);
@@ -344,7 +380,7 @@ export class Battle {
     }
     S.changed();
     await wait(this.scene, 300);
-    p.play('c_idle');
+    this.pose();
     this.endPlayerTurn();
   }
 
@@ -400,7 +436,7 @@ export class Battle {
     this.phase = null;
     this.setHint('Otomatik savaş…');
     if (S.hp < S.maxHp() * 0.35) {
-      const heal = ['iksir_k', 'mantar_corbasi'].find((id) => S.countItem(id) > 0);
+      const heal = ['iksir_k', 'mantar_corbasi', 'bogurtlen'].find((id) => S.countItem(id) > 0);
       if (heal) return this.drink(true, heal);
     }
     const alive = this.alive();
@@ -423,17 +459,16 @@ export class Battle {
     if (this.firstStrike) { mult *= 1.5; this.firstStrike = false; }
     const crit = Math.random() < S.crit();
     const p = this.w.player;
-    const home = this.w.playerHomeX;
-    const tx = target.sprite.x - (target.meta.bodyW * target.scale) / 2 - 22;
-    await moveTo(p, tx, { speed: 420, anim: 'c_run', timeScale: 1.6 });
-    p.setFlipX(false);
-    const stab = playAnim(p, 'c_stab', 2.3);
-    await wait(this.scene, 760 / 2.3);
-    this.hitEnemy(target, S.atk(), mult, crit, grade);
-    await stab;
-    await moveTo(p, home, { speed: 420, anim: 'c_run', timeScale: 1.6 });
-    p.setFlipX(false);
-    p.play('c_idle');
+    // silah yoksa yumrukla (az hasar), varsa kilicla
+    const armed = !!S.save.equip.silah;
+    const lunge = this.lunge(p, 34, -8, 200);
+    const swing = playAnim(p, B(armed ? 'stab' : 'punch'), armed ? 2.3 : 1.4);
+    await wait(this.scene, armed ? 760 / 2.3 : 260);
+    await lunge;
+    this.hitEnemy(target, S.atk() * this.atkMult(), mult, crit, grade);
+    await swing;
+    await this.back(p);
+    this.pose();
     this.endPlayerTurn();
   }
 
@@ -451,20 +486,17 @@ export class Battle {
     }
     this.spinCd = 3;
     const p = this.w.player;
-    const first = this.alive().reduce((a, b) => (a.sprite.x < b.sprite.x ? a : b));
-    await moveTo(p, first.sprite.x - 30, { speed: 420, anim: 'c_run', timeScale: 1.6 });
-    p.setFlipX(false);
-    const sp = playAnim(p, 'c_spin', 1);
+    this.lunge(p, 40, -10, 220);
+    const sp = playAnim(p, B('spin'), 1);
     await wait(this.scene, 300);
     let first2 = true;
     for (const e of this.alive()) {
-      this.hitEnemy(e, S.atk(), mult, Math.random() < S.crit(), first2 ? grade : null);
+      this.hitEnemy(e, S.atk() * this.atkMult(), mult, Math.random() < S.crit(), first2 ? grade : null);
       first2 = false;
     }
     await sp;
-    await moveTo(p, this.w.playerHomeX, { speed: 420, anim: 'c_run', timeScale: 1.6 });
-    p.setFlipX(false);
-    p.play('c_idle');
+    await this.back(p);
+    this.pose();
     this.endPlayerTurn();
   }
 
@@ -475,13 +507,17 @@ export class Battle {
     if (auto) this.autoActs++; else this.manualActs++;
     const it = ITEMS[id];
     const p = this.w.player;
-    if (it.anim === 'eat') await playAnim(p, 'c_eat', 1.8);
-    else await playAnim(p, 'c_drinkpotion', 3.2);
+    if (it.anim === 'goldenapple') await playAnim(p, B('goldenapple'), 1.6);
+    else if (it.anim === 'eat') await playAnim(p, B('eat'), 1.8);
+    else await playAnim(p, B('drinkpotion'), 3.2);
     const heal = Math.round(S.maxHp() * it.heal);
     S.hp = Math.min(S.maxHp(), S.hp + heal);
     sfx('heal');
-    floatText(p.x, p.y - 44, `+${heal}`, 'heal');
-    p.play('c_idle');
+    floatText(this.px(), this.py(), `+${heal}`, 'heal');
+    // yemek yiyince guclenir: normal yemek 3 tur +%10 saldiri, Altin Elma 5 tur +%30 saldiri ve savunma
+    if (it.golden) { this.status.guc = 5; sfx('levelup'); floatText(this.px(), this.py() - 14, 'Altın güç!', 'perfect'); }
+    else if (it.food) { this.status.tok = 3; floatText(this.px(), this.py() - 14, 'Tok: saldırı +%10', 'info'); }
+    this.pose();
     this.renderMe();
     S.changed();
     this.endPlayerTurn();
@@ -493,7 +529,7 @@ export class Battle {
     this.status.savun = true;
     this.defXp += 2 * this.floor;
     const p = this.w.player;
-    floatText(p.x, p.y - 44, 'Savunma ×2', 'info');
+    floatText(this.px(), this.py() - 10, 'Savunma ×2', 'info');
     sfx('click');
     this.renderStatus();
     await wait(this.scene, 450);
@@ -511,12 +547,14 @@ export class Battle {
       sfx('dodge');
       this.over = true;
       this.busy = true;
+      // savastan ninja kosusuyla kacar
       p.setFlipX(true);
-      await moveTo(p, -30, { speed: 170, anim: 'c_run' });
+      p.play(B('ninjarun'));
+      await new Promise((res) => this.scene.tweens.add({ targets: p, x: -60, y: BPOS.y + 10, duration: 520, onComplete: res }));
       this.cleanup(true);
       this.resolve('flee');
     } else {
-      floatText(p.x, p.y - 44, 'Kaçamadın!', 'info');
+      floatText(this.px(), this.py() - 10, 'Kaçamadın!', 'info');
       sfx('weak');
       await wait(this.scene, 600);
       this.endPlayerTurn();
@@ -590,11 +628,11 @@ export class Battle {
   damagePlayer(d, anim = true) {
     S.hp = Math.max(0, S.hp - d);
     const p = this.w.player;
-    floatText(p.x, p.y - 36, `-${d}`, 'hurt');
+    floatText(this.px(), this.py(), `-${d}`, 'hurt');
     sfx('hurt');
     this.renderMe();
     if (anim && S.hp > 0) {
-      playAnim(p, 'c_hurt', 3).then(() => { if (!this.over || S.hp > 0) p.play('c_idle'); });
+      playAnim(p, B('hurt'), 3).then(() => { if (!this.over || S.hp > 0) this.pose(); });
     }
   }
 
@@ -635,19 +673,25 @@ export class Battle {
       else await wait(this.scene, 550);
     }
     if (this.over) return;
-    const reach = p.x + 20 + (e.meta.bodyW * e.scale) / 2;
-    await moveTo(e.sprite, reach, { speed: 380, anim: e.k('yurume'), flip: 'left', timeScale: 2 });
-    e.sprite.setFlipX(false);
+    // Glemon kameraya (oyuncuya) dogru atilir
+    e.sprite.setDepth(15);
+    e.sprite.play(e.k('yurume'));
+    await new Promise((res) => this.scene.tweens.add({
+      targets: e.sprite, x: 168, y: GROUND_Y + 22, scale: e.scale * 1.45, duration: 260, ease: 'Quad.easeIn', onComplete: res,
+    }));
     const atkAnim = playAnim(e.sprite, e.k('saldiri'), 1.6);
     await wait(this.scene, 300 / 1.6);
     if (dodged) {
       sfx('dodge');
-      floatText(p.x, p.y - 44, 'Kaçındın!', 'good');
+      floatText(this.px(), this.py() - 10, 'Kaçındın!', 'good');
       this.defXp += 3 * this.floor;
-      p.play({ key: 'c_jump', timeScale: 1.6 });
-      this.scene.tweens.add({ targets: p, x: p.x - 16, y: p.y - 10, duration: 160, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { p.y = GROUND_Y; p.play('c_idle'); } });
+      // kacinma animasyonlarindan rastgele biri
+      const dk = pick(ANIM_POOLS.kacinma);
+      p.play({ key: B(dk), timeScale: dk === 'shake' ? 1.4 : 1.3 });
+      this.scene.tweens.add({ targets: p, x: BPOS.x - 18, y: BPOS.y + (dk === 'shake' ? 0 : -14), duration: 200, yoyo: true, ease: 'Sine.easeOut', onComplete: () => { p.x = BPOS.x; p.y = BPOS.y; } });
+      this.scene.time.delayedCall(900, () => { if (!this.over) this.pose(); });
     } else {
-      const def = S.def() * (this.status.savun ? 2 : 1);
+      const def = S.def() * this.defMult();
       const dmg = calcDamage(e.atk, act.mult || 1, def);
       this.damagePlayer(dmg, true);
       this.defXp += dmg * 0.6;
@@ -655,15 +699,19 @@ export class Battle {
       if (act.status && S.hp > 0) {
         const [st, turns] = act.status;
         this.status[st] = Math.max(this.status[st], turns);
-        floatText(p.x, p.y - 56, st === 'zehir' ? 'Zehirlendin!' : 'Sersemledin!', 'info');
+        floatText(this.px(), this.py() - 20, { zehir: 'Zehirlendin!', sersem: 'Sersemledin!', yanma: 'Yanıyorsun!' }[st], 'info');
+        if (st === 'yanma') this.scene.time.delayedCall(500, () => { if (!this.over && S.hp > 0) playAnim(p, B('onfire'), 2).then(() => { if (!this.over) this.pose(); }); });
         this.renderStatus();
       }
     }
     await atkAnim;
-    if (S.hp <= 0) { this.lose(); return; }
+    if (S.hp <= 0) { await this.lose(); if (this.over) return; }
     if (e.sprite.active) {
-      await moveTo(e.sprite, e.homeX, { speed: 380, anim: e.k('yurume'), flip: 'left', timeScale: 2 });
-      e.sprite.setFlipX(false);
+      e.sprite.play(e.k('yurume'));
+      await new Promise((res) => this.scene.tweens.add({
+        targets: e.sprite, x: e.homeX, y: GROUND_Y, scale: e.scale, duration: 300, ease: 'Quad.easeOut', onComplete: res,
+      }));
+      e.sprite.setDepth(8);
       e.sprite.play(e.k('durma'));
     }
     this.endEnemyTurn();
@@ -717,13 +765,12 @@ export class Battle {
     S.save.stats.battles++;
     const r = (x) => Math.round(x);
     feed(`Zafer! +${r(gains.saldiri)} Saldırı, +${r(gains.can)} Can, +${r(gains.savunma)} Savunma XP${manual ? ' <span style="color:#ffd04d">(manuel +%20)</span>' : ''}`);
-    if (this.gold > 0) { feed(`<img class="ico-inline" src="${this.w.coinUrl}">+${this.gold} Bonk`); sfx('coin'); }
+    if (this.gold > 0) { feed(`<img class="ico-inline" src="${this.w.coinUrl}">+${this.gold} ${CURRENCY}`); sfx('coin'); }
     this.cleanup(false);
-    const p = this.w.player;
-    p.setFlipX(false);
-    await playAnim(p, 'c_cheer', 1.6);
-    p.play('c_idle');
-    for (const up of ups) await this.w.levelUp(up);
+    await this.w.exitBattleView();
+    // seviye atladiysa levelup, atlamadiysa rastgele bir sevinme animasyonu
+    if (ups.length) for (const up of ups) await this.w.levelUp(up);
+    else { await this.w.playPool('sevinc', 1300, 1.2); this.w.idle(); }
     S.changed();
     this.resolve('win');
   }
@@ -736,8 +783,26 @@ export class Battle {
     this.phase = null;
     this.clearTargets();
     const p = this.w.player;
+    // Can Tilsimi takiliysa bir kez ayaga kaldirir (totem)
+    if (S.save.equip.tilsim && ITEMS[S.save.equip.tilsim].revive) {
+      const it = ITEMS[S.save.equip.tilsim];
+      S.save.equip.tilsim = null;
+      sfx('rare');
+      feed(`<span style="color:#c08cff">${it.name} kırıldı ve seni ayağa kaldırdı!</span>`, 'epic');
+      await playAnim(p, B('totem'), 1.2);
+      S.hp = Math.max(1, Math.round(S.maxHp() * it.revive));
+      floatText(this.px(), this.py(), `+${S.hp}`, 'heal');
+      S.changed();
+      this.renderMe();
+      this.over = false;
+      this.lost = false;
+      this.pose();
+      return;
+    }
     sfx('death');
-    await playAnim(p, 'c_death', 1);
+    // olum animasyonlarindan rastgele biri
+    await playAnim(p, B(pick(ANIM_POOLS.olum)), 1);
+    this.lostDone = true;
     this.cleanup(true);
     this.resolve('lose');
   }

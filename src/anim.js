@@ -16,6 +16,18 @@ export function wait(scene, ms) {
   return new Promise((res) => scene.time.delayedCall(ms, res));
 }
 
+// Atlas karelerinden animasyon (karakterler)
+export function makeAnimFrames(scene, key, tex, names, durations, repeat = 0) {
+  if (scene.anims.exists(key)) return;
+  scene.anims.create({
+    key,
+    frames: names.map((n, i) => ({ key: tex, frame: n, duration: Math.max(0, durations[i] - 1) })),
+    frameRate: 1000,
+    repeat,
+  });
+  animDur[key] = durations.reduce((a, b) => a + b, 0);
+}
+
 // Animasyonu oynat; dongusel degilse bitince cozulur.
 export function playAnim(sprite, key, timeScale = 1) {
   return new Promise((resolve) => {

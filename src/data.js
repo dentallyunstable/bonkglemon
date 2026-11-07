@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.2';
+export const VERSION = '0.2.1';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -14,10 +14,16 @@ export const CHARACTERS = [
   { key: 'bonk', name: 'bonk', hash: '8aa05c8b979de923f929e3d16b6844cdb89f3237bba6bdbdbba207974a99fbc9' },
 ];
 
-// Oyuncunun kullandigi karakter animasyonlari (yan gorunum)
-export const CHAR_ANIMS = ['idle', 'walk', 'run', 'stab', 'punch', 'hurt', 'death', 'drinkpotion',
-  'eat', 'cheer', 'joy', 'levelup', 'sit', 'vanish', 'ninjadash', 'jump', 'sneakwalk', 'surprise',
-  'spin', 'totem', 'wave', 'mine', 'placeblock'];
+// Karakter animasyonlari tools/convert_chars.py ile tek bir atlas resmine donusur.
+// Kural (Eren, 2026-11-07): hareket ederken yandan, dururken 3/4 onden gorunur.
+// Ayni ise yarayan animasyonlardan her seferinde rastgele biri oynar:
+export const ANIM_POOLS = {
+  sevinc: ['cheer', 'clap', 'joy', 'piglindance'],
+  olum: ['death', 'explosion', 'mcdeath', 'vanish'],
+  kacinma: ['jump', 'mcjump', 'shake'],
+};
+// Para birimi: Cimen Blogu (kayitta hala "gold" alani)
+export const CURRENCY = 'Çimen Bloğu';
 
 export const RARITY = {
   siradan: { name: 'Sıradan', color: '#c4c4bc' },
@@ -75,13 +81,14 @@ export const GLEMONS = {
   agacbasi: {
     name: 'Ağaçbaşı', from: "Ağaçbaşı'ndan", rarity: 'efsanevi', type: 'Orman', boss: true,
     hp: 85, atk: 4.2, def: 3.2, spd: 85,
-    pattern: ['normal', 'kok', 'normal', 'cagir', 'normal', 'darbe'],
+    pattern: ['normal', 'kok', 'normal', 'cagir', 'normal', 'darbe', 'normal', 'recine'],
     specials: {
       kok: { name: 'Kök Sarması', mult: 1.0, status: ['sersem', 1], telegraph: true },
       darbe: { name: 'Dev Darbe', mult: 2.0, telegraph: true },
       cagir: { name: 'Köklerden Çağrı', summon: 'kutukcuk' },
+      recine: { name: 'Yanan Reçine', mult: 0.8, status: ['yanma', 3], telegraph: true },
     },
-    drops: [['agac_kalbi', 1], ['kabuk_zirh', 0.03]],
+    drops: [['agac_kalbi', 1], ['kabuk_zirh', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08]],
   },
 };
 
@@ -111,7 +118,7 @@ export const ITEMS = {
   demir_kulcesi: { name: 'Demir külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'kulce', desc: 'Fırında eritilir. Demir eşyaların ana malzemesi.' },
   // ---- toplama
   sifali_ot: { name: 'Şifalı ot', kind: 'malzeme', rarity: 'siradan', icon: 'ot', desc: 'Zindanda toplanır. İksir ve çorba malzemesi.' },
-  bogurtlen: { name: 'Böğürtlen', kind: 'malzeme', rarity: 'siradan', icon: 'bogurtlen', desc: 'Zindanda toplanır. Glemon yemi malzemesi (0.4).' },
+  bogurtlen: { name: 'Böğürtlen', kind: 'tuketim', rarity: 'siradan', icon: 'bogurtlen', heal: 0.1, food: true, anim: 'eat', desc: 'Zindanda toplanır. Yersen biraz can verir. Glemon yemi malzemesi (0.4).' },
   bal: { name: 'Bal', kind: 'malzeme', rarity: 'nadir', icon: 'bal', desc: 'Toplarken nadiren bulunur. Özel Glemon yemi malzemesi (0.4).' },
   // ---- uretilenler
   bos_sise: { name: 'Boş şişe', kind: 'malzeme', rarity: 'siradan', icon: 'sise', desc: 'Fırında kumdan yapılır. İksir şişesi.' },
@@ -120,7 +127,8 @@ export const ITEMS = {
   cam: { name: 'Cam', kind: 'malzeme', rarity: 'siradan', icon: 'cam', desc: 'İnşa bloğu (pencere). 0.3 sürümünde.' },
   // ---- tuketilebilir
   iksir_k: { name: 'Küçük Can İksiri', kind: 'tuketim', rarity: 'siradan', icon: 'iksir', heal: 0.25, anim: 'drinkpotion', desc: 'Canının %25\'ini doldurur.' },
-  mantar_corbasi: { name: 'Mantar Çorbası', kind: 'tuketim', rarity: 'siradan', icon: 'corba', heal: 0.3, anim: 'eat', desc: 'Canının %30\'unu doldurur.' },
+  mantar_corbasi: { name: 'Mantar Çorbası', kind: 'tuketim', rarity: 'siradan', icon: 'corba', heal: 0.3, food: true, anim: 'eat', desc: 'Canının %30\'unu doldurur.' },
+  altin_elma: { name: 'Altın Elma', kind: 'tuketim', rarity: 'epik', icon: 'altin_elma', heal: 0.4, golden: true, battleOnly: true, anim: 'goldenapple', desc: 'Çok nadir. Savaşta yersen canının %40\'ı dolar, 5 tur boyunca saldırın ve savunman %30 artar.' },
   bonk_bombasi: { name: 'Bonk Bombası', kind: 'tuketim', rarity: 'nadir', icon: 'bomba', bomb: true, desc: 'Savaşta bütün Glemonlara vurur, madende 3×3 bloğu tek seferde kırar.' },
   // ---- silahlar
   pasli_kilic: { name: 'Paslı Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_pas', power: 4, desc: 'Herkesin ilk kılıcı.' },
@@ -147,6 +155,7 @@ export const ITEMS = {
   yosun_bot: { name: 'Yosun Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_yosun', def: 2, spd: 5, set: 'yosun', desc: 'Sandıklarda bulunur.' },
   kabuk_zirh: { name: 'Kabuk Zırh', kind: 'gogus', rarity: 'epik', icon: 'gogus_kabuk', def: 9, hp: 10, req: ['savunma', 8], desc: 'Ağaçbaşının kabuğundan. Çok nadir.' },
   yaprak_tilsimi: { name: 'Yaprak Tılsımı', kind: 'tilsim', rarity: 'nadir', icon: 'tilsim_yaprak', spd: 15, desc: 'Hız +15.' },
+  can_tilsimi: { name: 'Can Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_can', revive: 0.3, desc: 'Takılıyken savaşta canın biterse seni bir kez %30 canla ayağa kaldırır, sonra kırılır.' },
 };
 
 export const SETS = {
@@ -247,4 +256,21 @@ export const RECIPES = [
   { out: 'mantar_corbasi', mats: { mantar: 2, sifali_ot: 1 }, station: 'firin', lvl: 3, xp: 40 },
   { out: 'iksir_k', mats: { sifali_ot: 2, bos_sise: 1 }, station: 'kazan', lvl: 5, xp: 55 },
   { out: 'bonk_bombasi', mats: { komur: 3, mantar: 2 }, station: 'kazan', lvl: 10, xp: 90 },
+  { out: 'can_tilsimi', mats: { antik_yosun: 2, sifali_ot: 3, bal: 1 }, station: 'kazan', lvl: 8, xp: 250 },
 ];
+
+// ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
+// Fiyatlar Cimen Blogu. Satis fiyati uretim maliyetinden dusuk tutulur.
+export const SHOP = [
+  { id: 'iksir_k', price: 30 },
+  { id: 'mantar_corbasi', price: 35 },
+  { id: 'bos_sise', price: 10 },
+  { id: 'sifali_ot', price: 8 },
+  { id: 'komur', price: 6 },
+  { id: 'altin_elma', price: 450 },
+  { id: 'can_tilsimi', price: 1500 },
+];
+export const SELL = {
+  dal: 1, mantar: 2, diken: 2, tas: 1, kum: 1, komur: 2, demir_cevheri: 4, demir_kulcesi: 10,
+  sifali_ot: 2, bogurtlen: 2, bal: 15, yaprak_kanadi: 12, antik_yosun: 40, tahta_kalas: 2, tas_tugla: 2, cam: 2,
+};

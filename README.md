@@ -4,6 +4,16 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.2.1 (Animasyonlar)
+
+- Karakter yürürken yandan, dururken 3/4 önden görünür; bir yere girerken kısa süre arkadan yürür.
+- Savaş ekranı karakterin sırtından bakar: karakter solda, yakın ve hafif bulanık, Glemonlar karşıda bize dönük.
+- Ölüm, sevinç ve kaçınma animasyonları her seferinde rastgele seçilir. Uzun süre durunca karakter oturur.
+- Para birimi artık **Çimen Bloğu**. Üste **Takas Tezgâhı** geldi (al / sat).
+- Yeni eşyalar: Altın Elma (savaşta 5 tur güç), Can Tılsımı (bir kez ayağa kaldırır). Yemekler 3 tur güç verir.
+- Ağaçbaşı'nın yeni saldırısı Yanan Reçine seni yakar.
+- Karakter resimleri tek bir atlas dosyasında (`tools/convert_chars.py`).
+
 ## Sürüm 0.2 (Zanaat)
 
 - **Yeni çizim tarzı:** Her şey karakterler gibi düz renkli, az tonlu, iri pikselli ve

@@ -1,5 +1,5 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX } from './data.js';
+import { ITEMS, SLOTS, SKILLS, ZONES, BAG_SIZE, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
@@ -28,6 +28,8 @@ function statLines(it) {
   if (it.spd) out.push(`Hız +${it.spd}`);
   if (it.pick) out.push(`Kazma gücü ${it.pick}`);
   if (it.heal) out.push(`Canın %${Math.round(it.heal * 100)}'ini doldurur`);
+  if (it.food) out.push('Savaşta yersen 3 tur saldırı +%10');
+  if (it.revive) out.push(`Bir kez %${Math.round(it.revive * 100)} canla kaldırır`);
   if (it.set) out.push(`${SETS[it.set].name}: ${SETS[it.set].pieces} parça = ${SETS[it.set].bonus}`);
   return out;
 }
@@ -113,13 +115,13 @@ export function openBag(w) {
         const it = ITEMS[id];
         if (it.kind in S.save.equip) {
           const b = UI.button('Kuşan', () => {
-            if (S.equipFromBag(sel.i)) { sfx('chest'); sel = { equip: it.kind }; }
+            if (S.equipFromBag(sel.i)) { sfx('chest'); sel = { equip: it.kind }; } else if (w.sulk) w.sulk();
             render();
           }, 'primary small');
           b.disabled = inBattle || !S.canEquip(id);
           btns.push(b);
         }
-        if (it.kind === 'tuketim' && it.heal) {
+        if (it.kind === 'tuketim' && it.heal && !it.battleOnly) {
           const b = UI.button('Kullan', () => {
             S.removeItem(id, 1);
             const heal = Math.round(S.maxHp() * it.heal);
@@ -257,7 +259,7 @@ export function openProfile(w) {
       info.innerHTML = `
         <b>En derin kat:</b> ${st.deepest || 0} &nbsp; <b>Yenilen Glemon:</b> ${st.kills}<br>
         <b>Patron:</b> ${st.bossKills} &nbsp; <b>Parlak:</b> ${st.shiny} &nbsp; <b>Bayılma:</b> ${st.deaths}<br>
-        <b>Saldırı</b> ${S.level('saldiri')} · <b>Savunma</b> ${S.level('savunma')} · <b>Can</b> ${S.level('can')} &nbsp; <b>Bonk:</b> ${S.save.gold}<br>
+        <b>Saldırı</b> ${S.level('saldiri')} · <b>Savunma</b> ${S.level('savunma')} · <b>Can</b> ${S.level('can')} &nbsp; <b>${CURRENCY}:</b> ${S.save.gold}<br>
         <b>Oyun süresi:</b> ${hours} sa`;
       info.appendChild(UI.el('h3', '', 'Düşüş günlüğü'));
       const ul = UI.el('ul', 'droplog');
@@ -529,12 +531,82 @@ function make(w, station, r, n) {
   S.addItem(r.out, n);
   S.save.stats.crafted += n;
   sfx('craft');
+  // masada ve kazanda elle calisir (punch)
   w.player.setFlipX(false);
-  w.player.play({ key: 'c_placeblock', timeScale: 2.4 });
-  w.player.once('animationcomplete', () => w.player.play('c_idle'));
+  w.player.play({ key: 'c_punch', timeScale: 1.4 });
+  w.player.once('animationcomplete', () => w.idle());
   const xp = r.xp * n;
   UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[r.out].icon)}">${UI.itemName(r.out)}${n > 1 ? ` ×${n}` : ''} ürettin! +${xp} Üretim XP`);
   const ups = S.addXp({ uretim: xp });
   S.changed();
   for (const u of ups) w.levelUp(u);
+}
+
+// ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
+// Cimen Blogu ile alisveris. Alinca karakter blogu tezgaha birakir (placeblock).
+export function openShop(w) {
+  let tab = 'al';
+  UI.openPanel('Takas Tezgâhı', (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      const top = UI.el('div', 'shop-top');
+      top.innerHTML = `<img class="ico-inline" src="${iconUrl('cimen')}"><b>${S.save.gold}</b> ${CURRENCY}`;
+      const tabs = UI.el('div', 'choice-row');
+      const ta = UI.button('Al', () => { tab = 'al'; render(); }, tab === 'al' ? 'primary small' : 'small');
+      const ts = UI.button('Sat', () => { tab = 'sat'; render(); }, tab === 'sat' ? 'primary small' : 'small');
+      tabs.appendChild(ta); tabs.appendChild(ts);
+      top.appendChild(tabs);
+      body.appendChild(top);
+      const list = UI.el('div', 'shop-list');
+      if (tab === 'al') {
+        for (const { id, price } of SHOP) {
+          const it = ITEMS[id];
+          const row = UI.el('div', 'shop-row r-' + it.rarity);
+          row.appendChild(UI.icon(it.icon));
+          const nm = UI.el('div', 'shop-nm');
+          nm.innerHTML = `${UI.itemName(id)}<div class="muted">${UI.escapeHtml(it.desc)}</div>`;
+          row.appendChild(nm);
+          const b = UI.button(`${price}`, () => buy(id, price), 'small primary');
+          b.prepend(Object.assign(document.createElement('img'), { className: 'ico-inline', src: iconUrl('cimen') }));
+          b.disabled = S.save.gold < price;
+          row.appendChild(b);
+          list.appendChild(row);
+        }
+      } else {
+        const have = Object.keys(SELL).filter((id) => S.countItem(id) > 0);
+        if (!have.length) list.appendChild(UI.el('p', 'muted', 'Satacak malzemen yok. Zindanda ve madende malzeme topla.'));
+        for (const id of have) {
+          const it = ITEMS[id];
+          const n = S.countItem(id);
+          const row = UI.el('div', 'shop-row');
+          row.appendChild(UI.icon(it.icon));
+          row.appendChild(UI.el('div', 'shop-nm', `${it.name} ×${n} · tanesi ${SELL[id]}`));
+          row.appendChild(UI.button('Sat 1', () => sell(id, 1), 'small'));
+          if (n > 1) row.appendChild(UI.button(`Hepsi (${n * SELL[id]})`, () => sell(id, n), 'small blue'));
+          list.appendChild(row);
+        }
+        body.appendChild(UI.el('p', 'muted', 'Satış fiyatı düşüktür: asıl değer malzemede.'));
+      }
+      body.appendChild(list);
+    };
+    const buy = (id, price) => {
+      if (S.save.gold < price) { sfx('weak'); return; }
+      if (!S.fits(id)) { UI.feed('Çanta dolu!'); if (w.sulk) w.sulk(); return; }
+      S.save.gold -= price;
+      S.addItem(id, 1);
+      S.changed();
+      sfx('coin');
+      UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[id].icon)}">${UI.itemName(id)} aldın! (−${price} ${CURRENCY})`);
+      UI.closePanel();
+      w.tradeDone().then(() => { if (w.mode === 'base' && !UI.panelOpen()) openShop(w); });
+    };
+    const sell = (id, n) => {
+      const got = S.removeItem(id, n);
+      S.save.gold += got * SELL[id];
+      S.changed();
+      sfx('coin');
+      render();
+    };
+    render();
+  });
 }

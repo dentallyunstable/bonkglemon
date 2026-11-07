@@ -96,8 +96,9 @@ export function showLogin(charMeta, onLogin) {
 
   for (const c of CHARACTERS) {
     const card = el('button', 'char-card');
-    const meta = charMeta[c.key]['front/idle'];
-    card.appendChild(domSprite(`assets/chars/${c.key}/front/idle.png`, meta, 1.15));
+    // giris ekraninda karakterler yavasca doner (turn)
+    const meta = charMeta[c.key]['front/turn'];
+    card.appendChild(domSprite(`assets/chars/${c.key}/front/turn.png`, meta, 1.15));
     card.appendChild(el('div', '', c.name));
     if (hasSave(c.key)) card.appendChild(el('div', 'muted', 'kayıt var'));
     card.addEventListener('click', () => {

@@ -2,21 +2,24 @@
 import {
   GAME_W, GROUND_Y, ITEMS, SKILLS, SPAWN_TABLE, SHINY_CHANCE, ROOM_WEIGHTS, CHEST_GEAR, CHEST_MATS,
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
-  GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES,
+  GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
-import { playAnim, moveTo, wait } from './anim.js';
-import { Battle } from './battle.js';
+import { playAnim, moveTo, wait, animDur } from './anim.js';
+import { Battle, BPOS } from './battle.js';
 import { forestBackground, caveBackground, iconUrl, MINE_WALL } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop } from './panels.js';
 
 const PLAYER_HOME = 96;
 const MINE_X = 330;
 const CABIN_DOOR_X = 70;
 const WALK_MODES = ['base', 'house'];
 const MINE_STAND_X = MINE_WALL.x - 14;
+const SHOP_X = 256;
+const SIT_AFTER = 20000; // bu kadar hareketsiz kalinca oturur
+const SPRINT_DIST = 150; // bundan uzaga dokununca kosar
 
 function weighted(list) {
   const tot = list.reduce((t, [, w]) => t + w, 0);
@@ -33,13 +36,14 @@ export class WorldScene extends Phaser.Scene {
 
   create() {
     this.playerHomeX = PLAYER_HOME;
-    this.coinUrl = iconUrl('para');
+    this.coinUrl = iconUrl('cimen');
     this.bg = this.add.image(0, 0, 'bg_base').setOrigin(0).setDepth(0);
     this.roomObjs = [];
     this.labels = [];
     this.pShadow = this.add.image(0, GROUND_Y + 1, 'shadow').setDepth(9);
-    this.player = this.add.sprite(200, GROUND_Y, 'c_idle').setOrigin(32 / 67, 56 / 76).setDepth(10);
+    this.player = this.add.sprite(200, GROUND_Y, 'char', this.charMeta.anims.idle.frames[0]).setDepth(10);
     this.player.play('c_idle');
+    this.stillMs = 0;
     this.battle = null;
     this.busy = false;
     this.mode = 'base';
@@ -56,7 +60,13 @@ export class WorldScene extends Phaser.Scene {
 
   update(time, dt) {
     this.pShadow.x = this.player.x;
-    this.pShadow.setAlpha(this.player.alpha);
+    this.pShadow.setAlpha(this.inBattleView ? 0 : this.player.alpha);
+    // uzun sure hareketsiz kalinca otur
+    const cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
+    if ((cur === 'c_idle' || cur === 'c_idlesway') && !this.busy && !this.battle && !UI.panelOpen()) {
+      this.stillMs += dt;
+      if (this.stillMs > SIT_AFTER) { this.stillMs = 0; this.player.play('c_sit'); }
+    } else if (cur !== 'c_sit') this.stillMs = 0;
     if (this.battle && !UI.panelOpen()) this.battle.update(dt);
     if (this.mode === 'house' && this.furnace) {
       this.furnaceTick = (this.furnaceTick || 0) + dt;
@@ -74,12 +84,54 @@ export class WorldScene extends Phaser.Scene {
         this.kbWalk = true;
       } else if (this.kbWalk) {
         this.kbWalk = false;
-        this.player.play('c_idle');
+        this.idle();
       }
     }
   }
 
   canWalk() { return WALK_MODES.includes(this.mode); }
+
+  // Durma: usteyken (dis ve ev) idle, baska her yerde idlesway. Ikisi de 3/4 onden.
+  idle() {
+    this.stillMs = 0;
+    this.player.play(WALK_MODES.includes(this.mode) ? 'c_idle' : 'c_idlesway', true);
+  }
+
+  // Ayni ise yarayan animasyonlardan rastgele biri; kisa olanlar tekrar eder
+  async playPool(pool, minMs = 1300, timeScale = 1) {
+    const key = 'c_' + pick(ANIM_POOLS[pool]);
+    const one = (this.anims.get(key) ? animDur[key] : 500) / timeScale;
+    const times = Math.max(1, Math.round(minMs / one));
+    for (let i = 0; i < times; i++) await playAnim(this.player, key, timeScale);
+  }
+
+  async celebrate() {
+    if (this.inBattleView) return;
+    await this.playPool('sevinc', 1400);
+    if (!this.inBattleView) this.idle();
+  }
+
+  // Bir sey yapilamayinca omuz silker (sulk)
+  sulk() {
+    if (this.inBattleView) return;
+    const p = this.player;
+    const cur = p.anims.currentAnim && p.anims.currentAnim.key;
+    if (cur && !['c_idle', 'c_idlesway', 'c_sit', 'c_sulk'].includes(cur)) return;
+    playAnim(p, 'c_sulk', 1).then(() => playAnim(p, 'c_sulk', 1)).then(() => { if (p.anims.currentAnim && p.anims.currentAnim.key === 'c_sulk') this.idle(); });
+  }
+
+  // Bir yere girerken kisa sure arkadan yurur (iceri giriyormus gibi)
+  async walkIn(dy = -4) {
+    const p = this.player;
+    p.play('c_walkin');
+    await new Promise((res) => this.tweens.add({ targets: p, y: p.y + dy, scale: 0.92, duration: 420, onComplete: res }));
+  }
+
+  resetPlayer() {
+    this.player.setScale(1);
+    this.player.y = GROUND_Y;
+    this.player.alpha = 1;
+  }
 
   // ------------------------------------------------------------ ust bilgi
   buildHud() {
@@ -100,7 +152,7 @@ export class WorldScene extends Phaser.Scene {
     UI.$('#hud-lvl').textContent = `Toplam Sv. ${S.totalLevel()}`;
     UI.$('#hud-hp').style.width = `${(S.hp / max) * 100}%`;
     UI.$('#hud-hp-text').textContent = `${S.hp} / ${max}`;
-    UI.$('#hud-gold').innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${S.save.gold} Bonk`;
+    UI.$('#hud-gold').innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${S.save.gold} ${CURRENCY}`;
   }
 
   say(text, ms = 3000) {
@@ -116,9 +168,10 @@ export class WorldScene extends Phaser.Scene {
 
   async walkThen(x, fn) {
     const tok = ++this.walkTok;
-    await moveTo(this.player, x, { speed: 80, anim: 'c_walk' });
+    const far = Math.abs(x - this.player.x) > SPRINT_DIST;
+    await moveTo(this.player, x, far ? { speed: 190, anim: 'c_sprint' } : { speed: 80, anim: 'c_walk' });
     if (tok !== this.walkTok) return;
-    this.player.play('c_idle');
+    this.idle();
     if (fn) fn();
   }
 
@@ -156,6 +209,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   fade(out) {
+    if (out === !!this.faded) return Promise.resolve();
+    this.faded = out;
     return new Promise((res) => {
       const cam = this.cameras.main;
       if (out) { cam.fadeOut(220, 10, 8, 16); cam.once('camerafadeoutcomplete', res); } else { cam.fadeIn(220, 10, 8, 16); cam.once('camerafadeincomplete', res); }
@@ -172,34 +227,37 @@ export class WorldScene extends Phaser.Scene {
       x: CABIN_DOOR_X, label: 'Evin', lx: 54, ly: G - 84,
       act: () => this.enterHouse(),
     });
-    this.addObj(this.add.image(136, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), {
-      x: 118, face: false, label: 'Depo', ly: G - 22, act: () => openDepo(this),
+    this.addObj(this.add.image(126, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), {
+      x: 110, face: false, label: 'Depo', ly: G - 22, act: () => openDepo(this),
     });
-    const fire = this.add.sprite(184, G + 2, 'fire').setOrigin(0.5, 1).setDepth(4);
+    const fire = this.add.sprite(164, G + 2, 'fire').setOrigin(0.5, 1).setDepth(4);
     fire.play('fire');
     this.addObj(fire, {
-      x: 166, face: false, label: 'Kamp ateşi', ly: G - 30,
+      x: 148, face: false, label: 'Kamp ateşi', ly: G - 30,
       act: () => {
         this.player.play('c_sit');
         this.say('Kamp 0.3 sürümünde gelecek: sen yokken 2 saate kadar malzeme toplayacak.', 3600);
       },
     });
-    this.addObj(this.add.image(240, G + 2, 'signpost').setOrigin(0.5, 1).setDepth(4), {
-      x: 224, face: false, label: 'Harita', ly: G - 36, act: () => openMap(this),
+    this.addObj(this.add.image(204, G + 2, 'signpost').setOrigin(0.5, 1).setDepth(4), {
+      x: 190, face: false, label: 'Harita', ly: G - 36, act: () => openMap(this),
+    });
+    this.addObj(this.add.image(SHOP_X, G + 2, 'stall').setOrigin(0.5, 1).setDepth(4), {
+      label: 'Takas Tezgâhı', ly: G - 58, direct: true, act: () => this.goShop(),
     });
     this.addObj(this.add.image(MINE_X, G + 3, 'mine').setOrigin(0.5, 1).setDepth(3), {
       x: MINE_X, label: 'Zindan girişi', ly: G - 62, act: () => openMap(this),
     });
     this.player.setFlipX(false);
     this.player.x = from === 'dungeon' ? MINE_X : from === 'house' ? CABIN_DOOR_X : 200;
-    this.player.y = G;
-    this.player.alpha = 1;
-    this.player.play('c_idle');
+    this.resetPlayer();
+    this.idle();
     UI.setLocation('Üs');
     UI.setActions([
       { label: 'Zindana gir', cls: 'primary', onClick: () => openMap(this) },
       { label: 'Maden Ocağı', cls: 'blue', onClick: () => this.enterMine(S.save.mine.depth) },
       { label: 'Evine gir', onClick: () => this.enterHouse() },
+      { label: 'Takas', onClick: () => this.goShop() },
       { label: 'Depo', onClick: () => openDepo(this) },
     ]);
     this.refreshHud();
@@ -213,7 +271,8 @@ export class WorldScene extends Phaser.Scene {
     this.walkTok++;
     UI.setActions([]);
     await moveTo(this.player, CABIN_DOOR_X, { speed: 95, anim: 'c_walk' });
-    await this.fade(true);
+    this.fade(true);
+    await this.walkIn();
     this.goHouse();
     await this.fade(false);
     this.busy = false;
@@ -225,7 +284,8 @@ export class WorldScene extends Phaser.Scene {
     this.walkTok++;
     UI.setActions([]);
     await moveTo(this.player, 26, { speed: 95, anim: 'c_walk' });
-    await this.fade(true);
+    this.fade(true);
+    await this.walkIn();
     this.goBase('house');
     await this.fade(false);
     this.busy = false;
@@ -259,9 +319,8 @@ export class WorldScene extends Phaser.Scene {
     this.refreshFurnace();
     this.player.setFlipX(false);
     this.player.x = 30;
-    this.player.y = G;
-    this.player.alpha = 1;
-    this.player.play('c_idle');
+    this.resetPlayer();
+    this.idle();
     UI.setLocation('Evin');
     UI.setActions([
       { label: 'Üretim Masası', cls: 'primary', onClick: () => this.walkThen(88, () => openStation(this, 'masa')) },
@@ -286,9 +345,10 @@ export class WorldScene extends Phaser.Scene {
     this.busy = true;
     this.walkTok++;
     UI.setActions([]);
-    await moveTo(this.player, 240, { speed: 95, anim: 'c_walk' });
+    await moveTo(this.player, MINE_X, { speed: 95, anim: 'c_walk' });
     sfx('stairs');
-    await this.fade(true);
+    this.fade(true);
+    await this.walkIn();
     this.goMine(depth || S.save.mine.depth || 1);
     await this.fade(false);
     this.busy = false;
@@ -309,9 +369,8 @@ export class WorldScene extends Phaser.Scene {
     this.bombArmed = false;
     this.player.setFlipX(false);
     this.player.x = 150;
-    this.player.y = GROUND_Y;
-    this.player.alpha = 1;
-    this.player.play('c_idle');
+    this.resetPlayer();
+    this.idle();
     UI.setLocation(`Maden Ocağı · Derinlik ${depth}`);
     this.mineActions();
   }
@@ -418,11 +477,11 @@ export class WorldScene extends Phaser.Scene {
     if (this.mode === 'dungeon' && this.battle) return;
     const ore = ORES[b.kind];
     const by = b.spr.y - 10;
-    if (this.mode === 'mine' && !this.isExposed(b)) { UI.floatText(b.spr.x, by, 'Önce yanını kaz', 'note'); return; }
+    if (this.mode === 'mine' && !this.isExposed(b)) { UI.floatText(b.spr.x, by, 'Önce yanını kaz', 'note'); this.sulk(); return; }
     if (this.bombArmed && this.mode === 'mine') { this.useBomb(b); return; }
-    if (!S.pick()) { UI.feed('Kazma kuşanmadan kazamazsın. (Çanta → Kazma)'); return; }
-    if (S.level('madencilik') < ore.req) { UI.floatText(b.spr.x, by, `Madencilik ${ore.req} gerekli`, 'note'); sfx('weak'); return; }
-    if (ore.drop && !S.fits(ore.drop)) { UI.floatText(b.spr.x, by, 'Çanta dolu!', 'note'); return; }
+    if (!S.pick()) { UI.feed('Kazma kuşanmadan kazamazsın. (Çanta → Kazma)'); this.sulk(); return; }
+    if (S.level('madencilik') < ore.req) { UI.floatText(b.spr.x, by, `Madencilik ${ore.req} gerekli`, 'note'); sfx('weak'); this.sulk(); return; }
+    if (ore.drop && !S.fits(ore.drop)) { UI.floatText(b.spr.x, by, 'Çanta dolu!', 'note'); this.sulk(); return; }
     this.mineBlock(b);
   }
 
@@ -449,7 +508,7 @@ export class WorldScene extends Phaser.Scene {
       await swing;
     }
     await this.breakBlock(b, depth);
-    p.play('c_idle');
+    this.idle();
     this.busy = false;
     if (this.mode === 'mine') this.mineActions();
     else if (this.mode === 'dungeon' && this.afterVein) this.afterVein();
@@ -475,8 +534,9 @@ export class WorldScene extends Phaser.Scene {
       const gold = 20 + Math.floor(Math.random() * 30 * depth);
       S.addGold(gold);
       sfx('rare');
-      S.logDrop(null, 'Define sandığı', { note: `buldun! +${gold} Bonk` });
-      UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Define sandığı! +${gold} Bonk`, 'gold');
+      S.logDrop(null, 'Define sandığı', { note: `buldun! +${gold} ${CURRENCY}` });
+      UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Define sandığı! +${gold} ${CURRENCY}`, 'gold');
+      this.celebrate();
       for (let i = 0; i < 2; i++) this.giveDrop(pick(['komur', 'demir_cevheri', 'sifali_ot', 'kum']), 1 + Math.floor(Math.random() * 3), 'Defineden');
     }
     UI.floatText(b.spr.x, b.spr.y - 16, `+${xp} XP`, 'good');
@@ -520,7 +580,7 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     if (skipped) UI.feed('Bazı cevherler için Madencilik seviyen yetmedi, bomba onları kıramadı.');
-    p.play('c_idle');
+    this.idle();
     this.busy = false;
     this.mineActions();
   }
@@ -533,6 +593,8 @@ export class WorldScene extends Phaser.Scene {
     UI.setActions([]);
     await moveTo(this.player, MINE_X, { speed: 95, anim: 'c_walk' });
     sfx('stairs');
+    this.fade(true);
+    await this.walkIn();
     S.startRun(floor);
     S.hp = S.maxHp();
     this.mode = 'dungeon';
@@ -590,14 +652,13 @@ export class WorldScene extends Phaser.Scene {
     this.bg.setTexture(key);
     this.player.setFlipX(false);
     this.player.x = -20;
-    this.player.y = GROUND_Y;
-    this.player.alpha = 1;
+    this.resetPlayer();
     this.prepareRoom(room);
     UI.setLocation(`Yabani Orman · Kat ${this.floor} · Oda ${i + 1}/${this.rooms.length}`);
     await this.fade(false);
     if (i === 0) UI.banner(`Kat ${this.floor}`, 'Yabani Orman', 1600);
     await moveTo(this.player, PLAYER_HOME, { speed: 115, anim: 'c_walk', timeScale: 1.3 });
-    this.player.play('c_idle');
+    this.idle();
     this.busy = false;
     this.runRoom(room);
   }
@@ -698,13 +759,15 @@ export class WorldScene extends Phaser.Scene {
   async gather(room) {
     if (this.busy || this.battle || !room.cleared || room.gathered || this.mode !== 'dungeon') return;
     const g = GATHER[room.node];
-    if (!S.fits(room.node)) { UI.feed('Çanta dolu!'); return; }
+    if (!S.fits(room.node)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
     this.busy = true;
     UI.setActions([]);
     const p = this.player;
     await moveTo(p, room.nodeX - 14, { speed: 100, anim: 'c_walk' });
     p.setFlipX(false);
-    await playAnim(p, 'c_placeblock', 2.4);
+    // yerden toplarken egilip kalkar (sneakspam)
+    p.play('c_sneakspam');
+    await wait(this, 1300);
     sfx('gather');
     const n = 1 + Math.floor(S.level('toplama') / 10) + (Math.random() < 0.3 ? 1 : 0);
     this.giveDrop(room.node, n, 'Topladın:', true);
@@ -717,7 +780,7 @@ export class WorldScene extends Phaser.Scene {
     const ups = S.addXp({ toplama: xp });
     S.changed();
     for (const u of ups) await this.levelUp(u);
-    p.play('c_idle');
+    this.idle();
     this.busy = false;
     this.refreshRoomActions();
   }
@@ -792,17 +855,49 @@ export class WorldScene extends Phaser.Scene {
       sfx('warn');
       await wait(this, 900);
     } else {
-      playAnim(this.player, 'c_surprise', 2).then(() => this.player.play('c_idle'));
-      await wait(this, 450);
+      await wait(this, 300);
     }
+    await this.enterBattleView();
     const res = await this.battle.start();
     this.battle = null;
+    if (this.inBattleView) await this.exitBattleView(res !== 'lose');
     this.busy = false;
     if (res === 'win') {
       if (room.type === 'boss') this.bossDefeated();
       else this.roomDone();
     } else if (res === 'lose') this.onDeath();
     else if (res === 'flee') this.afterFlee(room);
+  }
+
+  // Savas ekrani: kamera karakterin sirtindan bakar. Karakter solda, yakin, buyuk ve
+  // biraz bulanik (arka 3/4); Glemonlar karsida bize donuk.
+  async enterBattleView() {
+    if (this.inBattleView) return;
+    this.inBattleView = true;
+    const p = this.player;
+    this.cameras.main.flash(220, 255, 255, 255);
+    p.setFlipX(false).setDepth(20).setScale(BPOS.scale);
+    p.x = BPOS.x;
+    p.y = BPOS.y;
+    p.alpha = 1;
+    p.play('c_b_idlesway');
+    if (p.postFX && !this.pBlur) this.pBlur = p.postFX.addBlur(1, 1, 1, 0.55, 0xffffff, 2);
+    await wait(this, 250);
+  }
+
+  async exitBattleView(show = true) {
+    if (!this.inBattleView) return;
+    this.inBattleView = false;
+    const p = this.player;
+    if (this.pBlur) { p.postFX.remove(this.pBlur); this.pBlur = null; }
+    if (show) this.cameras.main.flash(160, 255, 255, 255);
+    p.setDepth(10).setScale(1);
+    p.x = this.playerHomeX;
+    p.y = GROUND_Y;
+    p.setFlipX(false);
+    this.idle();
+    if (!show) p.alpha = 0;
+    if (show) await wait(this, 180);
   }
 
   async afterFlee(room) {
@@ -815,7 +910,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.x = -24;
     this.prepareRoom(room);
     await moveTo(this.player, 50, { speed: 85, anim: 'c_walk' });
-    this.player.play('c_idle');
+    this.idle();
     this.busy = false;
     UI.feed('Kaçtın! Glemonlar hâlâ burada bekliyor.');
     UI.setActions([
@@ -826,7 +921,7 @@ export class WorldScene extends Phaser.Scene {
           UI.setActions([]);
           this.busy = true;
           await moveTo(this.player, PLAYER_HOME, { speed: 85, anim: 'c_walk' });
-          this.player.play('c_idle');
+          this.idle();
           this.fight(room);
         },
       },
@@ -853,7 +948,7 @@ export class WorldScene extends Phaser.Scene {
     await wait(this, 500);
     await moveTo(this.player, PLAYER_HOME, { speed: 140, anim: 'c_run' });
     this.player.setFlipX(false);
-    this.player.play('c_idle');
+    this.idle();
     this.battle.wake(true);
     room.type = 'savas';
     room.specs = room.specs.map((s) => ({ ...s, sleeping: false }));
@@ -865,8 +960,9 @@ export class WorldScene extends Phaser.Scene {
     this.busy = true;
     UI.setActions([]);
     for (const z of room.zzz || []) z.remove();
-    await playAnim(this.player, 'c_ninjadash', 1);
-    this.player.play('c_idle');
+    // uyuyan Glemon'a ninja kosusuyla atilir
+    await moveTo(this.player, PLAYER_HOME + 60, { speed: 240, anim: 'c_ninjadash' });
+    this.idle();
     UI.feed('Pusu! İlk vuruşun ×1.5 güçlü.');
     this.battle.wake(false);
     this.fight(room);
@@ -883,15 +979,17 @@ export class WorldScene extends Phaser.Scene {
     room.obj.setTexture('chest_open');
     room.opened = true;
     sfx('chest');
-    this.player.play('c_idle');
+    this.idle();
     const f = this.floor;
     const gold = f * 8 + Math.floor(Math.random() * (f * 4 + 4));
     S.addGold(gold);
-    UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Sandıktan ${gold} Bonk çıktı!`);
+    UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Sandıktan ${gold} ${CURRENCY} çıktı!`);
     sfx('coin');
     if (Math.random() < 0.6) this.giveDrop('iksir_k', 1, 'Sandıktan');
     if (Math.random() < 0.18) this.giveDrop(weighted(CHEST_GEAR), 1, 'Sandıktan');
     if (Math.random() < 0.3) this.giveDrop(pick(CHEST_MATS), 1 + Math.floor(Math.random() * 3), 'Sandıktan');
+    if (Math.random() < 0.03 + 0.004 * f) this.giveDrop('altin_elma', 1, 'Sandıktan');
+    if (Math.random() < 0.006 + 0.001 * f) this.giveDrop('can_tilsimi', 1, 'Sandıktan');
     S.changed();
     this.busy = false;
     this.roomDone();
@@ -902,15 +1000,16 @@ export class WorldScene extends Phaser.Scene {
     this.busy = true;
     UI.setActions([]);
     await moveTo(this.player, 160, { speed: 75, anim: 'c_walk' });
-    this.player.play('c_idle');
+    this.idle();
     const grade = await UI.timingBar('ZIPLA!', 'Sarı ya da maviye denk getir');
     const p = this.player;
     if (grade !== 'zayif') {
       sfx('jump');
       UI.floatText(p.x, GROUND_Y - 44, grade === 'mukemmel' ? 'Kusursuz atlayış!' : 'Atladın!', 'good');
-      p.play({ key: 'c_jump', timeScale: 1.3 });
-      this.tweens.add({ targets: p, y: GROUND_Y - 26, duration: 320, yoyo: true, ease: 'Sine.easeOut' });
-      await moveTo(p, 240, { speed: 125, ease: 'Linear' });
+      // kosup dikenlerin ustunden atlar (skip)
+      p.play({ key: 'c_skip', timeScale: 1.4 });
+      this.tweens.add({ targets: p, y: GROUND_Y - 26, duration: 340, delay: 120, yoyo: true, ease: 'Sine.easeOut' });
+      await moveTo(p, 240, { speed: 100, ease: 'Linear' });
       p.y = GROUND_Y;
       if (grade === 'mukemmel') { const ups = S.addXp({ savunma: 4 * this.floor }); for (const u of ups) await this.levelUp(u); }
     } else {
@@ -924,7 +1023,7 @@ export class WorldScene extends Phaser.Scene {
       await playAnim(p, 'c_hurt', 2.2);
       await moveTo(p, 240, { speed: 60, anim: 'c_walk' });
     }
-    p.play('c_idle');
+    this.idle();
     room.crossed = true;
     S.changed();
     this.busy = false;
@@ -945,7 +1044,7 @@ export class WorldScene extends Phaser.Scene {
     UI.floatText(this.player.x, GROUND_Y - 40, `+${heal}`, 'heal');
     S.changed();
     await wait(this, 600);
-    this.player.play('c_idle');
+    this.idle();
     room.rested = true;
     this.busy = false;
     this.roomDone();
@@ -969,9 +1068,8 @@ export class WorldScene extends Phaser.Scene {
     S.changed();
     UI.banner('Yabani Orman temizlendi!', 'Yeni bölgeler 0.5 sürümünde açılacak', 3500, 'gold');
     sfx('rare');
-    await playAnim(this.player, 'c_joy', 1);
-    await playAnim(this.player, 'c_joy', 1);
-    this.player.play('c_idle');
+    await this.playPool('sevinc', 2600);
+    this.idle();
     this.busy = false;
     UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
   }
@@ -981,10 +1079,10 @@ export class WorldScene extends Phaser.Scene {
     if (this.busy) return;
     this.busy = true;
     UI.setActions([]);
-    sfx('vanish');
-    await playAnim(this.player, 'c_vanish', 1.6);
+    this.fade(true);
+    this.player.setFlipX(true);
+    await moveTo(this.player, Math.max(-30, this.player.x - 90), { speed: 200, anim: 'c_sprint' });
     this.player.alpha = 0;
-    await this.fade(true);
     S.endRun();
     this.goBase('dungeon');
     this.player.alpha = 1;
@@ -1006,7 +1104,7 @@ export class WorldScene extends Phaser.Scene {
         li.innerHTML = `${UI.itemName(l.id)} ×${l.n}`;
         ul.appendChild(li);
       }
-      if (res.gold > 0) { const li = UI.el('li'); li.innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${res.gold} Bonk`; ul.appendChild(li); }
+      if (res.gold > 0) { const li = UI.el('li'); li.innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${res.gold} ${CURRENCY}`; ul.appendChild(li); }
       if (!res.lost.length && !res.gold) ul.appendChild(UI.el('li', '', 'Kaybedecek bir şey yoktu, şanslısın!'));
       body.appendChild(ul);
       body.appendChild(UI.el('p', 'muted', 'İpucu: Canın azalınca "Üsse dön" ile her şeyini koruyabilirsin.'));
@@ -1021,7 +1119,32 @@ export class WorldScene extends Phaser.Scene {
     S.endRun();
     this.goBase('dungeon');
     await this.fade(false);
+    // bayilmak bir basarisizlik: uste aglar (cry)
+    await playAnim(this.player, 'c_cry', 1);
+    this.idle();
     this.busy = false;
+  }
+
+  // ------------------------------------------------------------ takas tezgahi
+  // Elinde Cimen Blogu ile tezgaha yurur (blockwalk)
+  async goShop() {
+    if (this.busy || this.mode !== 'base') return;
+    const tok = ++this.walkTok;
+    this.busy = true;
+    await moveTo(this.player, SHOP_X - 26, { speed: 90, anim: 'c_blockwalk' });
+    this.busy = false;
+    if (tok !== this.walkTok) return;
+    this.player.setFlipX(false);
+    this.idle();
+    openShop(this);
+  }
+
+  // Takas basarili: blogu tezgaha birakir, birkac adim geri cekilir (placeblock), sonra durur
+  async tradeDone() {
+    const p = this.player;
+    p.setFlipX(false);
+    await playAnim(p, 'c_placeblock', 1.6);
+    this.idle();
   }
 
   // ------------------------------------------------------------ ganimet ve seviye
@@ -1038,7 +1161,7 @@ export class WorldScene extends Phaser.Scene {
         sfx('rare');
         UI.bubble(this.player.x, GROUND_Y - 44, text, 3200);
         S.logDrop(id, from);
-        playAnim(this.player, 'c_cheer', 1.2).then(() => { if (!this.battle || this.battle.over) this.player.play('c_idle'); });
+        if (!this.battle && !this.busy) this.celebrate();
       } else sfx('drop');
     }
     if (left > 0) UI.feed(`Çanta dolu! ${UI.itemName(id, false)} ×${left} sığmadı.`);
@@ -1062,8 +1185,10 @@ export class WorldScene extends Phaser.Scene {
       const os = Object.values(ORES).filter((o) => o.req === up.level);
       if (os.length) UI.feed(`Artık kazabilirsin: ${os.map((o) => o.name).join(', ')}`);
     }
-    await playAnim(this.player, 'c_levelup', 1);
-    this.player.play('c_idle');
+    if (!this.inBattleView) {
+      await playAnim(this.player, 'c_levelup', 1);
+      this.idle();
+    }
     this.refreshHud();
   }
 }

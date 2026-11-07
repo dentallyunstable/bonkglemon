@@ -429,6 +429,28 @@ export function signpost() {
   return compose(30, 34, [{ t: post, ol: INK }, { t, ol: INK }]).canvas();
 }
 
+// Takas Tezgahi: iki direk, tezgah, cizgili tente, ustunde bir cimen blogu
+export function stall() {
+  const W = 22; const H = 26;
+  const posts = new Tex(W, H);
+  posts.rect(1, 6, 2, 20, '#a2703f'); posts.rect(2, 6, 1, 20, '#875a30');
+  posts.rect(19, 6, 2, 20, '#a2703f'); posts.rect(20, 6, 1, 20, '#875a30');
+  const counter = new Tex(W, H);
+  counter.rect(0, 16, 22, 2, '#d49b58'); counter.rect(0, 17, 22, 1, '#b07a40');
+  counter.rect(1, 18, 20, 8, '#c88f4c'); counter.rect(1, 25, 20, 1, '#a6713a');
+  for (const x of [6, 11, 16]) counter.rect(x, 18, 1, 8, '#a6713a');
+  const awn = new Tex(W, H);
+  for (let i = 0; i < 6; i++) awn.rect(i * 4 - 1, 1, 4, 5, i % 2 ? '#f4ecd8' : '#62a844');
+  awn.rect(0, 0, 22, 1, '#4c8434');
+  for (let i = 0; i < 6; i++) awn.rect(i * 4, 6, 2, 1, i % 2 ? '#f4ecd8' : '#62a844');
+  const block = new Tex(W, H);
+  block.rect(13, 11, 5, 5, '#a07150'); block.rect(13, 11, 5, 2, '#74c452'); block.rect(14, 13, 1, 1, '#74c452'); block.rect(16, 13, 1, 1, '#74c452');
+  block.rect(17, 13, 1, 3, '#86583a');
+  const pot = new Tex(W, H);
+  pot.rect(5, 13, 3, 3, '#ec4c42'); pot.rect(6, 12, 1, 1, '#dcecf4'); pot.rect(5, 13, 1, 1, '#ffd4cc');
+  return compose(W * 2 + 2, H * 2 + 2, [{ t: posts, ol: INK }, { t: counter, ol: INK }, { t: awn, ol: INK }, { t: block, ol: INK }, { t: pot, ol: INK }]).canvas();
+}
+
 export function chest(open = false) {
   const body = new Tex(9, 9);
   const wood = '#c88f4c'; const woodD = '#a6713a'; const band = '#6e4626';
@@ -809,6 +831,12 @@ const ICONS = {
     { m: '#68a542', M: '#8acb5c', d: '#4c8434' }],
   tilsim_yaprak: [['............', '..s......s..', '...s....s...', '....s..s....', '.....ss.....', '.....oo.....', '....oLLo....', '...oLvLLo...', '...oLLLLo...', '....oLLo....', '.....oo.....', '............'],
     { s: '#dccc96', o: '#d0a040', L: '#74c452', v: '#c8f0a0' }],
+  cimen: [['............', '............', '..gggggggg..', '..gGgggGgg..', '..gdGgdgGg..', '..dddgddgd..', '..dDddddDd..', '..dddDdddd..', '..ddddddDd..', '..dDdddddd..', '............', '............'],
+    { g: '#8cd060', G: '#62a844', d: '#a07150', D: '#7a5034' }],
+  altin_elma: [['............', '......h.....', '.....hL.....', '...YYhYY....', '..YwYYYYY...', '..YwYYYYYo..', '..YYYYYYYo..', '..YYYYYYYo..', '...YYYYYo...', '....oooo....', '............', '............'],
+    { Y: '#ffd04d', w: '#fff6c0', o: '#d29a22', h: '#7a4c2a', L: '#74c452' }],
+  tilsim_can: [['............', '..s......s..', '...s....s...', '....s..s....', '....oooo....', '...oYYYYo...', '...oYrrYo...', '...orrrro...', '...oYrrYo...', '...oYYYYo...', '....oooo....', '............'],
+    { s: '#dccc96', o: '#b07a2a', Y: '#ffd04d', r: '#ec4c42' }],
   para: [['............', '....oooo....', '...oYYYYo...', '..oYyYYYYo..', '..oYYBBYYo..', '..oYYBYBYo..', '..oYYBBYYo..', '..oYYBYBYo..', '...oYBBYo...', '....oooo....', '............', '............'],
     { o: '#d29a22', Y: '#ffd04d', y: '#fff3a8', B: '#b8801e' }],
   tas: [['............', '............', '....SSSs....', '..SSssssS...', '.SssssssssS.', '.SsssDssssd.', '.ssssssssDd.', '.sssDsssssd.', '..dddddddd..', '............', '............', '............'],

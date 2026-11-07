@@ -238,11 +238,12 @@ html, body {
   padding: calc(2 * var(--u)) calc(4 * var(--u)) calc(3 * var(--u));
   width: calc(84 * var(--u));
   pointer-events: auto;
+  order: 2; margin-left: auto; /* sol taraf savasta karakterin yeri */
 }
 .b-me .status { font-size: calc(5.5 * var(--u)); color: #c9e05a; min-height: calc(6 * var(--u)); margin-top: calc(1 * var(--u)); }
-.b-acts { flex: 1; display: flex; flex-wrap: wrap; gap: calc(3 * var(--u)); justify-content: center; align-items: flex-end; }
+.b-acts { flex: 1; order: 1; margin-left: calc(104 * var(--u)); display: flex; flex-wrap: wrap; gap: calc(3 * var(--u)); justify-content: center; align-items: flex-end; }
 .b-acts .hint { width: 100%; text-align: center; font-size: calc(6.5 * var(--u)); color: var(--gold); }
-.b-auto { pointer-events: auto; }
+.b-auto { pointer-events: auto; order: 3; }
 .btn.auto-on { --btn: #2f6aa8; --btn-light: #5a96d4; --btn-dark: #1a3c66; }
 
 .ebar {
@@ -449,3 +450,11 @@ html, body {
 .furnace-box .ico { width: calc(14 * var(--u)); height: calc(14 * var(--u)); image-rendering: pixelated; }
 .furnace-box .ftxt { flex: 1; line-height: 1.4; }
 .furnace-box .bar { width: calc(50 * var(--u)); margin-top: 0; }
+
+/* Takas Tezgahi (0.2.1) */
+.shop-top { display: flex; align-items: center; justify-content: space-between; gap: calc(4 * var(--u)); font-size: calc(7 * var(--u)); margin-bottom: calc(3 * var(--u)); }
+.shop-list { display: flex; flex-direction: column; gap: calc(2 * var(--u)); max-height: calc(110 * var(--u)); overflow-y: auto; }
+.shop-row { display: flex; align-items: center; gap: calc(4 * var(--u)); padding: calc(2 * var(--u)); background: #221c30; border-radius: calc(2 * var(--u)); font-size: calc(6 * var(--u)); }
+.shop-row .shop-nm { flex: 1; }
+.shop-row .shop-nm .muted { font-size: calc(5 * var(--u)); }
+.shop-row button { white-space: nowrap; }

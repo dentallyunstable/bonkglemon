@@ -6,7 +6,7 @@ Kurallar (Oyun Tasarim Belgesi, bolum 16):
 - 1 texel = 2x2 piksel (karakterlerin yuz izgarasi gibi)
 - duz renkler, malzeme basina 2-3 ton, rastgele golgelendirme yok
 - 1 piksel siyaha yakin dis cizgi (karakterlerin cizgisi gibi)
-- Glemonlar sola bakar (oyuncu solda durur)
+- Glemonlar onden ya da 3/4 onden sola bakar (savas ekrani oyuncunun sirtindan bakar)
 Cikti: her Glemon icin <anim>.png ve <anim>_parlak.png yatay seritleri + glemons.json
 """
 import colorsys, json, os, sys
@@ -74,35 +74,37 @@ SPECIES = {
         ],
         'fx': 'spores',
     },
-    'dikentavsan': {
+    'dikentavsan': {  # 3/4 onden, sola (oyuncuya) donuk
         'pal': {'H': '#a8d880', 'g': '#80b45c', 'G': '#62944a', 'e': '#eca4ac', 't': '#e0cc92',
                 'T': '#b09a62', 'c': '#f0eacc', 'w': '#ffffff', 'k': '#100c14', 'p': '#ec8c9c',
-                'l': '#4c7434'},
+                'o': '#5a2a14', 'l': '#4c7434'},
         'map': [
-            "..Hg.Hg.....",
-            "..He.He.....",
-            "..ge.ge..t.t",
-            ".gHHggg.tTtT",
-            "gHwkgggHgTgT",
-            "ggkkggggggGg",
-            "pggcggggggGc",
-            ".gcccgggGGcc",
-            "..ccgggGGGc.",
-            "..ll..lll...",
+            "..He...He...",
+            "..He...He...",
+            "..gH...gH.t.",
+            ".gHHHHgggtTt",
+            "gHwkHHwkggTt",
+            "gHkkHHkkgGTT",
+            "gpgcccgpgGGt",
+            ".gccoccggGG.",
+            ".gcccccggGG.",
+            "..ccccgggG..",
+            "..ll...ll...",
         ],
         'fx': 'thorn',
     },
-    'yaprakbocek': {
+    'yaprakbocek': {  # 3/4 onden, sola donuk
         'pal': {'a': '#34442a', 'h': '#72a048', 'L': '#78c856', 'v': '#ccf2a4', 'D': '#58a442',
                 'k': '#100c14', 'w': '#ffffff', 'o': '#2a3a1c', 'l': '#34442a'},
         'map': [
-            ".a..a.......",
-            "..a.a.LLLL..",
-            ".hhhhLLvLLD.",
-            "hwkhhLvLLLDD",
-            "hkkhLvLLLDDD",
-            ".hoh.DDDDDD.",
-            "..l.l.l.l...",
+            ".a...a......",
+            "..a.a..LLL..",
+            ".hhhhhLLvLD.",
+            "hwkhwkLvLLDD",
+            "hkkhkkhLLDDD",
+            "hhhohhhDDDD.",
+            ".hhhhhDDDD..",
+            "..l.l..l.l..",
         ],
         'fx': 'leaf',
     },

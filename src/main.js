@@ -1,14 +1,15 @@
 // Bonkglemon giris noktasi: verileri yukle, giris ekranini goster, oyunu baslat.
-import { GAME_W, GAME_H, CHARACTERS, CHAR_ANIMS } from './data.js';
+import { GAME_W, GAME_H, CHARACTERS } from './data.js';
 import { S } from './state.js';
 import { $, show } from './ui.js';
 import { setSound } from './audio.js';
 import { showLogin } from './login.js';
-import { makeAnim } from './anim.js';
+import { makeAnim, makeAnimFrames } from './anim.js';
 import { WorldScene } from './world.js';
 import * as ART from './art.js';
 
-const LOOPING = new Set(['idle', 'walk', 'run', 'sneakwalk', 'sit', 'ninjadash']);
+const LOOPING = new Set(['idle', 'idlesway', 'walk', 'run', 'sprint', 'ninjadash', 'ninjarun', 'sneakwalk', 'blockwalk', 'sit',
+  'sneakspam', 'walkin', 'b_idlesway', 'b_ninjarun', 'b_run']);
 let BOOT = null;
 
 class BootScene extends Phaser.Scene {
@@ -17,9 +18,8 @@ class BootScene extends Phaser.Scene {
   preload() {
     const { char, gmeta } = BOOT;
     this.load.on('progress', (v) => { $('#loading').textContent = `Yükleniyor… %${Math.round(v * 100)}`; });
-    for (const a of CHAR_ANIMS) {
-      this.load.spritesheet(`c_${a}`, `assets/chars/${char}/side/${a}.png`, { frameWidth: 67, frameHeight: 76 });
-    }
+    // butun karakter kareleri tek atlasta; her karenin pivotu ayak ortasi
+    this.load.atlas('char', `assets/chars/${char}/atlas.png`, `assets/chars/${char}/atlas.json`);
     for (const [k, m] of Object.entries(gmeta)) {
       for (const a of Object.keys(m.anims)) {
         this.load.spritesheet(`g_${k}_${a}`, `assets/glemons/${k}/${a}.png`, { frameWidth: m.w, frameHeight: m.h });
@@ -30,9 +30,8 @@ class BootScene extends Phaser.Scene {
 
   create() {
     const { charMeta, gmeta } = BOOT;
-    for (const a of CHAR_ANIMS) {
-      const meta = charMeta[`side/${a}`];
-      if (meta) makeAnim(this, `c_${a}`, `c_${a}`, meta.durations, LOOPING.has(a) ? -1 : 0);
+    for (const [a, m] of Object.entries(charMeta.anims)) {
+      makeAnimFrames(this, `c_${a}`, 'char', m.frames, m.durations, LOOPING.has(a) ? -1 : 0);
     }
     for (const [k, m] of Object.entries(gmeta)) {
       for (const [a, durs] of Object.entries(m.anims)) {
@@ -46,6 +45,7 @@ class BootScene extends Phaser.Scene {
     tex('cabin', ART.cabin());
     tex('mine', ART.mineEntrance());
     tex('signpost', ART.signpost());
+    tex('stall', ART.stall());
     tex('chest', ART.chest(false));
     tex('chest_open', ART.chest(true));
     tex('spikes', ART.spikes());
