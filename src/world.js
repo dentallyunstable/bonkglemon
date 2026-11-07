@@ -1495,7 +1495,6 @@ export class WorldScene extends Phaser.Scene {
     p.y = BPOS.y;
     p.alpha = 1;
     p.play('c_b_idlesway');
-    if (p.postFX && !this.pBlur) this.pBlur = p.postFX.addBlur(1, 1, 1, 0.55, 0xffffff, 2);
     UI.setLocation('Savaş!');
     await this.fade(false);
   }
@@ -1506,7 +1505,6 @@ export class WorldScene extends Phaser.Scene {
     if (show) await this.fade(true);
     this.inBattleView = false;
     const p = this.player;
-    if (this.pBlur) { p.postFX.remove(this.pBlur); this.pBlur = null; }
     if (this.roomBg) this.bg.setTexture(this.roomBg);
     for (const o of this.hiddenObjs || []) if (o.active) o.setVisible(true);
     this.hiddenObjs = null;

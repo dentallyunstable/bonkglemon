@@ -215,26 +215,7 @@ function forestArena(floor) {
   }
   woods.outline('dark', 0.6);
   p.draw(woods, 0, 0, woods.w);
-  // zemin: ufuk noktasina giden blok izgarasi
-  const vx = 192;
-  const pathAt = (y) => { const f = (y - HZ) / (GAME_H - HZ); return vx - 10 + (40 - (vx - 10)) * f; };
-  let y = HZ;
-  let row = 0;
-  while (y < GAME_H) {
-    const s = Math.max(3, Math.round(2 + (y - HZ) * 0.34));
-    const off = ((row * 7) % 3) * 0.33;
-    const c0 = Math.floor((0 - vx) / s) - 1;
-    for (let c = c0; c * s + vx < GAME_W; c++) {
-      const x = Math.round(vx + (c + off) * s);
-      const cx = x + s / 2;
-      const onPath = Math.abs(cx - pathAt(y + s / 2)) < s * 1.1;
-      const kind = onPath ? 'kum' : ((c * 13 + row * 7) % 17 === 0 ? 'toprak' : 'cimen_ust');
-      const dim = 0.78 + 0.22 * Math.min(1, (y - HZ) / 60);
-      putScaled(p, kind, x, y, s, chain(shadeFn(dim), nf));
-    }
-    y += s;
-    row++;
-  }
+  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? 'kum' : (c * 13 + row * 7) % 17 === 0 ? 'toprak' : 'cimen_ust'), skyLow);
   // yanlarda yakin (iri, 32 piksel) agaclar ve calilar: cerceve gibi
   const near = new Pix(GAME_W, GAME_H);
   const s2 = 32;
@@ -338,23 +319,39 @@ export function desertRoomBackground(floor, variant = 0) {
 }
 
 // savas ekrani: magara (tavan ve duvar, kristalli cerceve)
-function arenaGround(p, HZ, nf, pick) {
-  const vx = 192;
-  const pathAt = (y) => { const f = (y - HZ) / (GAME_H - HZ); return vx - 10 + (40 - (vx - 10)) * f; };
-  let y = HZ;
-  let row = 0;
-  while (y < GAME_H) {
-    const s = Math.max(3, Math.round(2 + (y - HZ) * 0.34));
-    const off = ((row * 7) % 3) * 0.33;
-    const c0 = Math.floor((0 - vx) / s) - 1;
-    for (let c = c0; c * s + vx < GAME_W; c++) {
-      const x = Math.round(vx + (c + off) * s);
-      const onPath = Math.abs(x + s / 2 - pathAt(y + s / 2)) < s * 1.1;
-      const dim = 0.78 + 0.22 * Math.min(1, (y - HZ) / 60);
-      putScaled(p, pick(onPath, c, row), x, y, s, chain(shadeFn(dim), nf));
+// Duz zemin: her ekran pikseli perspektifle yere izdusurulur (tek parca, duz bir yuzey).
+// Bloklar yine 16x16 dokular; yakinda iri, uzakta kucuk ve sise karisir.
+function arenaGround(p, HZ, nf, pick, fogCol = null) {
+  const vx = 192; // kaybolma noktasi
+  const F = 190; // yatay olcek (buyudukce zemin daha "yatik" gorunur)
+  const K = 9000; // derinlik olcegi
+  const C = 3; // ufuk cizgisinin hemen altinda sonsuza gitmesin
+  const tex = {};
+  const T = (n) => tex[n] || (tex[n] = block(n).d);
+  // patika: oyuncunun onunden dusmanlarin ortasina giden duz bir yol (dunya koordinatinda)
+  const vNear = K / (GAME_H - HZ + C);
+  const uNear = ((40 - vx) * vNear) / F;
+  const vFar = K / 18;
+  const uFar = ((vx - 6 - vx) * vFar) / F;
+  const pathU = (v) => uNear + ((uFar - uNear) * (v - vNear)) / (vFar - vNear);
+  for (let y = HZ; y < GAME_H; y++) {
+    const dy = y - HZ + C;
+    const v = K / dy;
+    const dim = 0.74 + 0.26 * Math.min(1, (y - HZ) / 70);
+    const shade = chain(shadeFn(dim), nf);
+    const far = Math.max(0, 1 - (y - HZ) / 26); // ufka yakin satirlar sise karisir
+    const tv = Math.floor(v / B);
+    const py = ((Math.floor(v) % B) + B) % B;
+    for (let x = 0; x < GAME_W; x++) {
+      const u = ((x - vx + 0.5) * v) / F;
+      const tu = Math.floor(u / B);
+      const onPath = Math.abs((tu + 0.5) * B - pathU((tv + 0.5) * B)) < B * 1.05;
+      const px = ((Math.floor(u) % B) + B) % B;
+      let c = T(pick(onPath, tu, tv))[py * B + px];
+      c = shade(c);
+      if (far > 0 && fogCol) c = fogFn(fogCol, far * 0.85)(c);
+      p.set(x, y, c);
     }
-    y += s;
-    row++;
   }
 }
 function caveArena(floor) {
@@ -373,7 +370,7 @@ function caveArena(floor) {
   }
   far.outline('dark', 0.6);
   p.draw(far, 0, 0, far.w);
-  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? 'kaldirim' : (c * 13 + row * 7) % 11 === 0 ? 'komur' : 'magara_zemin'));
+  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? 'kaldirim' : (c * 13 + row * 7) % 11 === 0 ? 'komur' : 'magara_zemin'), CAVE_DARK);
   const near = new Pix(GAME_W, GAME_H);
   const s2 = 32;
   for (let i = 0; i < 6; i++) putScaled(near, 'tas', i * s2 - 8, -18, s2, chain(shadeFn(0.7), nf));
@@ -403,7 +400,7 @@ function desertArena(floor) {
   }
   far.outline('dark', 0.6);
   p.draw(far, 0, 0, far.w);
-  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? 'kumtasi' : (c * 13 + row * 7) % 17 === 0 ? 'kumtasi' : 'kum'));
+  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? 'kumtasi' : (c * 13 + row * 7) % 17 === 0 ? 'kumtasi' : 'kum'), '#e8d6b0');
   const near = new Pix(GAME_W, GAME_H);
   const s2 = 32;
   putScaled(near, 'hurmalik', GAME_W - 64, HZ - 40, 64, nf);

@@ -30,7 +30,7 @@ const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'bogurtlen', 'h
 const HEALS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'hurma', 'bogurtlen'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
-export const BPOS = { x: 66, y: GROUND_Y + 48, scale: 2.4 };
+export const BPOS = { x: 62, y: GROUND_Y + 56, scale: 3.1 };
 const B = (a) => `c_b_${a}`;
 // Glemon turunun bolgesi (yemi bu bolgenin yemidir)
 const ZONE_OF_KEY = {};
