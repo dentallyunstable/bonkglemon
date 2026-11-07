@@ -113,7 +113,7 @@ function hillRow(p, r, baseY, minH, maxH, fn, phase) {
 
 // blok agaci: kutuk govde + yaprak taci. Tacin en alt sirasi govdenin en ust blogunu
 // sarar, ust siralar bir alttakinin tam ustune oturur (havada yaprak yok).
-function tree(p, x, groundY, trunk, fn = null, wide = true) {
+function tree(p, x, groundY, trunk, fn = null, wide = true, leaf = 'yaprak') {
   for (let k = 0; k < trunk; k++) put(p, 'kutuk', x, groundY - (k + 1) * B, fn);
   const top = groundY - trunk * B; // en ust kutugun ust kenari
   const rows = wide ? [[-2, 2], [-2, 2], [-1, 1], [0, 0]] : [[-1, 1], [-1, 1], [0, 0]];
@@ -122,7 +122,7 @@ function tree(p, x, groundY, trunk, fn = null, wide = true) {
     for (let i = a; i <= b; i++) {
       if (cut && j === 1 && (i === a || i === b)) continue;
       if (j === 0 && i === 0) continue; // govde gorunsun
-      put(p, 'yaprak', x + i * B, top + B - (j + 1) * B, fn);
+      put(p, leaf, x + i * B, top + B - (j + 1) * B, fn);
     }
   });
 }
@@ -139,11 +139,11 @@ function farMountains(p, r, baseY, s, minH, maxH, top, body, fn, step = 0.5) {
     for (let k = 0; k < h; k++) putScaled(p, k >= h - 1 ? top : body, c * s, baseY - (k + 1) * s, s, fn);
   }
 }
-function farTrees(p, r, baseY, s, fn) {
+function farTrees(p, r, baseY, s, fn, leaf = 'yaprak') {
   for (let x = Math.floor(r() * 3) * s; x < p.w + s; x += s * (2 + Math.floor(r() * 3))) {
     const th = 1 + Math.floor(r() * 2);
     for (let k = 0; k < th; k++) putScaled(p, 'kutuk', x, baseY - (k + 1) * s, s, fn);
-    for (const [i, j] of [[-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1], [0, 2]]) putScaled(p, 'yaprak', x + i * s, baseY - (th + 1 + j) * s, s, fn);
+    for (const [i, j] of [[-1, 0], [0, 0], [1, 0], [-1, 1], [0, 1], [1, 1], [0, 2]]) putScaled(p, leaf, x + i * s, baseY - (th + 1 + j) * s, s, fn);
   }
 }
 
@@ -215,6 +215,7 @@ export const ARENA = { horizon: 92, enemyY: 140, nearY: 206 };
 export function battleBackground(floor = 1, zone = 'orman') {
   if (zone === 'magara') return caveArena(floor);
   if (zone === 'col') return desertArena(floor);
+  if (BIOME[zone]) return biomeArena(floor, zone);
   return forestArena(floor);
 }
 function forestArena(floor) {
@@ -433,6 +434,106 @@ function desertArena(floor) {
   putScaled(near, 'hurmalik', -14, HZ - 52, 64, nf);
   putScaled(near, 'kaktus', 300, GAME_H - 34, s2, nf);
   putScaled(near, 'kemik', 334, GAME_H - 22, 24, nf);
+  near.outline('dark', 0.5);
+  p.draw(near, 0, 0, near.w);
+  return p.canvas();
+}
+
+// ------------------------------------------------------------------ 0.8 Donmus Zirve, Kor Diyari, Golge Boslugu
+// Uc yeni bolge ayni duzenle cizilir: gok, uzak daglar (kucuk bloklar), orta katman, zemin, suslemeler.
+const BIOME = {
+  buz: {
+    stops: ['#7c98bc', '#a8c0d8', '#dce6ee'], t: 0, clouds: 3,
+    far: ['kar_ust', 'tas'], mid: ['kar_ust', 'buz'], hill: ['kar', 'donmus_toprak'],
+    ground: ['kar', 'donmus_toprak', 'tas'], props: ['karli_cali', 'kristal_b', 'buz'], trees: 'karli_yaprak',
+    arena: { path: 'buz', main: 'kar_ust', alt: 'buz', near: ['buz', 'kristal_b'] },
+  },
+  kor: {
+    stops: ['#24141a', '#5a2420', '#b4502a'], t: 0.1, clouds: 0, sun: 'left',
+    far: ['kor_kaya', 'bazalt'], mid: ['kor_kaya', 'bazalt'], hill: ['bazalt', 'bazalt'],
+    ground: ['bazalt', 'kor_kaya', 'bazalt'], props: ['kor_kristal', 'olu_agac', 'biberlik'], lavaPools: true,
+    arena: { path: 'kor_kaya', main: 'bazalt', alt: 'lav', near: ['kor_kristal', 'olu_agac'] },
+  },
+  golge: {
+    stops: ['#0c0816', '#22183a', '#46345e'], t: 0.9, clouds: 0, stars: true,
+    far: ['golge_tas', 'golge_tas'], mid: ['golge_zemin', 'golge_tas'], hill: ['golge_zemin', 'golge_tas'],
+    ground: ['golge_zemin', 'golge_tas', 'golge_tas'], props: ['golge_kristal', 'gece_mantarlari', 'olu_agac'],
+    arena: { path: 'golge_tas', main: 'golge_zemin', alt: 'golge_tas', near: ['golge_kristal', 'gece_mantarlari'] },
+  },
+};
+export const BIOME_KEYS = Object.keys(BIOME);
+function biomeSky(p, b, bottom, r) {
+  paintSky(p, bottom, 0, r, { stops: b.stops, clouds: b.clouds, sun: b.sun });
+  if (b.stars) {
+    for (let i = 0; i < 40; i++) p.set(Math.floor(r() * p.w), Math.floor(r() * bottom * 0.75), r() < 0.3 ? '#c8a0f0' : '#d8d4ec');
+  }
+  if (b.sun === 'left') {
+    // kor diyarinda gunes yerine kizgin pus: ufukta parlak bant
+    for (let y = bottom - 30; y < bottom; y++) for (let x = 0; x < p.w; x++) {
+      const v = p.get(x, y); const c = unpack(v);
+      p.set(x, y, pack(mix(c.slice(0, 3), hex('#e07034'), 0.25 * (y - bottom + 30) / 30)));
+    }
+  }
+}
+export function biomeRoomBackground(zone, floor, variant = 0) {
+  const b = BIOME[zone];
+  const r = rng(floor * 5309 + variant * 787 + zone.length * 31);
+  const deep = Math.min(1, ((floor - 1) % 10) / 9);
+  const nf = b.t > 0.5 ? fogFn('#120c20', 0.12 + deep * 0.1) : zone === 'kor' ? fogFn('#40140c', 0.08 + deep * 0.12) : nightFn(deep * 0.3);
+  const p = new Pix(GAME_W, GAME_H);
+  biomeSky(p, b, G - 2 * B, r);
+  const skyLow = toHex(skyColor(9, 0, b.stops));
+  farMountains(p, r, G - 2 * B, 4, 8, 24, b.far[0], b.far[1], fogFn(skyLow, 0.78));
+  if (b.trees) farTrees(p, r, G - 2 * B + 6, 6, fogFn(skyLow, 0.66), b.trees);
+  farMountains(p, r, G - B, 8, 2, 7, b.mid[0], b.mid[1], fogFn(skyLow, 0.6), 0.4);
+  // orta katman: tepeler ve buyuk kayaliklar
+  layer(p, (L) => {
+    const colsN = Math.ceil(GAME_W / B) + 1;
+    let h = 1 + Math.floor(r() * 2);
+    for (let c = 0; c < colsN; c++) {
+      if (r() < 0.4) h = Math.max(0, Math.min(3, h + (r() < 0.5 ? -1 : 1)));
+      for (let k = 0; k < h; k++) put(L, k === h - 1 ? b.hill[0] : b.hill[1], c * B, G - (k + 1) * B, chain(fogFn(skyLow, 0.32), nf));
+    }
+    if (b.trees) for (let i = 0; i < 2 + Math.floor(r() * 2); i++) tree(L, Math.floor(r() * (GAME_W / B)) * B, G, 3 + Math.floor(r() * 2), chain(shadeFn(0.9), nf), true, b.trees);
+  }, 'dark', 0.5);
+  // zemin
+  for (let c = 0; c < GAME_W / B; c++) {
+    const pool = b.lavaPools && (c * 7 + variant * 3 + floor) % 9 === 4;
+    put(p, pool ? 'lav' : b.ground[0], c * B, G, nf);
+    put(p, (c * 7 + variant) % 9 === 3 ? b.ground[1] : b.ground[2], c * B, G + B, chain(shadeFn(0.88), nf));
+    put(p, b.ground[2], c * B, G + 2 * B, chain(shadeFn(0.75), nf));
+  }
+  // susler
+  layer(p, (L) => {
+    for (let i = 0; i < 4; i++) put(L, b.props[Math.floor(r() * b.props.length)], Math.floor(r() * (GAME_W / B)) * B, G - B, nf);
+  }, 'dark', 0.5);
+  return p.canvas();
+}
+function biomeArena(floor, zone) {
+  const b = BIOME[zone];
+  const a = b.arena;
+  const HZ = ARENA.horizon;
+  const r = rng(floor * 9173 + zone.length);
+  const nf = zone === 'golge' ? fogFn('#120c20', 0.15) : zone === 'kor' ? fogFn('#40140c', 0.12) : null;
+  const p = new Pix(GAME_W, GAME_H);
+  biomeSky(p, b, HZ, r);
+  const skyLow = toHex(skyColor(5, 0, b.stops));
+  const s1 = 8;
+  const far = new Pix(GAME_W, GAME_H);
+  for (let x = 0, h = 2; x < GAME_W; x += s1) {
+    if (r() < 0.4) h = Math.max(1, Math.min(5, h + (r() < 0.5 ? -1 : 1)));
+    for (let k = 0; k < h; k++) putScaled(far, k === h - 1 ? b.mid[0] : b.mid[1], x, HZ - (k + 1) * s1, s1, fogFn(skyLow, 0.45));
+    if (r() < 0.1) putScaled(far, b.props[0], x, HZ - (h + 1) * s1, s1, fogFn(skyLow, 0.3));
+  }
+  far.outline('dark', 0.6);
+  p.draw(far, 0, 0, far.w);
+  const fog = zone === 'buz' ? '#dce6ee' : zone === 'kor' ? '#8a3a22' : '#2a1e40';
+  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? a.path : (c * 13 + row * 7) % 13 === 0 ? a.alt : a.main), fog);
+  const near = new Pix(GAME_W, GAME_H);
+  putScaled(near, a.near[0], GAME_W - 66, GAME_H - 40, 40, nf);
+  putScaled(near, a.near[1], -6, GAME_H - 44, 44, nf);
+  putScaled(near, a.near[0], 300, GAME_H - 30, 28, nf);
+  if (zone === 'buz') for (let i = 0; i < 6; i++) putScaled(near, 'buz_sarkit', i * 70 - 10, -6, 28, null);
   near.outline('dark', 0.5);
   p.draw(near, 0, 0, near.w);
   return p.canvas();
@@ -687,7 +788,7 @@ export function caveBackground(depth = 1) {
 }
 
 // Cevher bloklari (16x16): toprak, kum, tas, komur, demir, define + 3 catlak
-export const ORE_FRAMES = ['toprak', 'kum', 'tas', 'komur', 'demir', 'define', 'crack1', 'crack2', 'crack3'];
+export const ORE_FRAMES = ['toprak', 'kum', 'tas', 'komur', 'demir', 'define', 'crack1', 'crack2', 'crack3', 'altin', 'kristal', 'kor', 'bonkit', 'golge'];
 export function oreSheet() {
   const out = new Pix(B * ORE_FRAMES.length, B);
   ORE_FRAMES.forEach((k, i) => out.draw(block(k), i * B, 0, B));
@@ -716,7 +817,7 @@ export function boomArt() {
 }
 
 // ------------------------------------------------------------------ toplanabilirler
-const NODE_BLOCK = { herb: 'bitki', berry: 'cali', branch: 'dallar', shroom: 'mantarlar', palm: 'hurmalik', sand: 'kum_yigini' };
+const NODE_BLOCK = { herb: 'bitki', berry: 'cali', branch: 'dallar', shroom: 'mantarlar', palm: 'hurmalik', sand: 'kum_yigini', snowberry: 'karli_cali', pepper: 'biberlik', nightshroom: 'gece_mantarlari' };
 export function gatherNode(kind) {
   return build(['x'], { x: NODE_BLOCK[kind] || 'dallar' }).canvas();
 }
@@ -856,6 +957,78 @@ const ICONS = {
   yay_firtina: [null, { W: '#e8c050', B: '#a87a30', s: '#f4f0e8' }],
   yay_cakal: [null, { W: '#d49a54', B: '#8a5a2e', s: '#ecd8b0' }],
 };
+
+// 0.8 simgeleri: cogu eski cizimlerin yeni renkli hali
+const EGG = ['............', '.....oo.....', '....oYYo....', '...oYwYYo...', '...oYYYYo...', '..oYsYYsYo..', '..oYYYYYYo..', '..oYYsYYYo..', '..oYYYYYso..', '...oYYYYo...', '....oooo....', '............'];
+const like = (base, pal) => [ICONS[base][0], pal];
+const TILSIM = (Y, y) => like('tilsim_skarabe', { s: '#dccc96', o: '#b07a2a', Y, y });
+Object.assign(ICONS, {
+  buz_kristali: like('kristal', { c: '#9cc8e8', C: '#d8eef8', v: '#ffffff', d: '#6a7a98' }),
+  saf_kristal: like('kristal', { c: '#5aa8d0', C: '#a8dcf4', v: '#e8f8ff', d: '#6e6a7a' }),
+  kor_tasi: like('kristal', { c: '#d8561e', C: '#f49a34', v: '#ffe080', d: '#3e3638' }),
+  bonkit: like('kristal', { c: '#36a868', C: '#80e4a8', v: '#e0fff0', d: '#3e3638' }),
+  golge_tasi: like('kristal', { c: '#5a3a8a', C: '#8a6ac0', v: '#e0c8ff', d: '#2a2040' }),
+  yakut: like('ametist', { p: '#c8304a', P: '#ff7a8a', v: '#ffe0e8', d: '#6e6a7a' }),
+  aurora_boynuzu: like('dis', { w: '#7ae0c8', v: '#e0fff8', d: '#c08af0' }),
+  ay_tozu: like('seker', { w: '#c8c8f0', c: '#fff0a0', C: '#fff8d0', v: '#ffffff' }),
+  kar_tuyu: like('bocek_kanadi', { c: '#c8d8e8', C: '#f4fbff', v: '#ffffff' }),
+  kivilcim: like('bal_damlasi', { Y: '#f07a2a', y: '#ffd060', o: '#c8401a' }),
+  golge_ozu: like('bal_damlasi', { Y: '#6a4a9a', y: '#b88af0', o: '#3a2a5a' }),
+  kiragi_postu: like('sargi', { b: '#c8dcec', B: '#8ab0d0' }),
+  gece_postu: like('sargi', { b: '#4a3a6a', B: '#2e2440' }),
+  kul: like('kum', { L: '#8a8288', s: '#6a6268', S: '#4a4448' }),
+  kor_pulu: like('pul', { S: '#a83a14', s: '#f08a3a' }),
+  altin_cevheri: like('demir_cevheri', { S: '#bdb9c6', s: '#9e9aa6', d: '#7a7684', o: '#f0c850' }),
+  altin_kulcesi: like('kulce', { L: '#fff0a0', w: '#f0d060', M: '#d0a030', m: '#a87a20' }),
+  kor_kulcesi: like('kulce', { L: '#ffb060', w: '#f07a30', M: '#c8501e', m: '#8a3014' }),
+  bonkit_kulcesi: like('kulce', { L: '#c0f8d8', w: '#80e4a8', M: '#4ec888', m: '#2a8a58' }),
+  golge_kulcesi: like('kulce', { L: '#c8a0f0', w: '#8a6ac0', M: '#5a3a8a', m: '#3a2a5a' }),
+  buzul_kalbi: like('kalp', { A: '#4a6a90', a: '#9cc8e8', G: '#ffffff', g: '#d8eef8' }),
+  magma_kabugu: like('cekirdek', { s: '#3e3638', S: '#564a4a', p: '#e0602a', P: '#ffb040', v: '#fff0a0' }),
+  bosluk_tasi: like('cekirdek', { s: '#2a2040', S: '#3a2e4e', p: '#7a5ab0', P: '#7af0e0', v: '#ffffff' }),
+  kar_cilegi: like('bogurtlen', { r: '#5a8ac0', R: '#c8e0f8', g: '#6cbc4e' }),
+  ates_biberi: like('hurma', { h: '#c8301e', H: '#f07a3a', g: '#4e7a2e' }),
+  gece_mantari: like('mantar', { r: '#3a8a8a', w: '#c8fff4', d: '#2a5a5a', s: '#c8b8d8', S: '#8a7aa0' }),
+  kar_kurabiyesi: like('turta', { c: '#f4f8fb', R: '#5a8ac0', d: '#d8b080', b: '#a87a4a' }),
+  aurora_sekeri: like('seker', { w: '#c08af0', c: '#7ae0c8', C: '#c8fff4', v: '#ffffff' }),
+  biber_kebabi: like('hurma_tatlisi', { h: '#c8301e', H: '#f07a3a', Y: '#a86a3a', y: '#d8a06a', p: '#8a6a40' }),
+  yakut_receli: like('bal', { c: '#c99a6a', g: '#c4dcea', G: '#a8c4d4', y: '#ff8a9a', Y: '#c8304a', o: '#8a1a2a' }),
+  gece_coregi: like('ezme', { m: '#3a8a8a', M: '#c8fff4', b: '#8a7aa0', B: '#4a3a6a' }),
+  ay_pastasi: like('hurma_tatlisi', { h: '#fff0a0', H: '#ffffff', Y: '#8a6ac0', y: '#c8a0f0', p: '#d8d0c4' }),
+  sicak_corba: like('corba', { s: '#f4f4f8', b: '#a85a2a', B: '#7a3e1e', c: '#e0602a', m: '#ffd060' }),
+  ates_iksiri: like('iksir', { c: '#c99a6a', k: '#dcecf4', g: '#a8d0e2', R: '#5aa8d0', r: '#3a7aa8', w: '#d8eef8' }),
+  iksir_buyuk: like('iksir_orta', { c: '#c99a6a', k: '#dcecf4', g: '#a8d0e2', R: '#c040a0', r: '#8a2a70', w: '#f8c8ec' }),
+  yumurta_orman: [EGG, { o: '#4e8434', Y: '#a8d878', w: '#ffffff', s: '#ec96a4' }],
+  yumurta_magara: [EGG, { o: '#4a6a90', Y: '#a8d4ec', w: '#ffffff', s: '#9a6cc8' }],
+  yumurta_col: [EGG, { o: '#b88a30', Y: '#ffe08a', w: '#ffffff', s: '#e86a2a' }],
+  yumurta_buz: [EGG, { o: '#6a7a98', Y: '#e4ebf2', w: '#ffffff', s: '#7ae0c8' }],
+  yumurta_kor: [EGG, { o: '#a83a14', Y: '#ffb060', w: '#fff0a0', s: '#e8502a' }],
+  yumurta_golge: [EGG, { o: '#2a2040', Y: '#5a4a8a', w: '#c8a0f0', s: '#fff0a0' }],
+  kilic_buzul: [null, { W: '#f4fbff', B: '#9cc8e8', G: '#4a6a90', h: '#5a4a3a', P: '#7aa4c4' }],
+  kilic_kor_ozel: [null, { W: '#ffe080', B: '#e0602a', G: '#3e3638', h: '#2a2426', P: '#c8401a' }],
+  eldiven_ayi: like('eldiven', { g: '#c8d8e8', G: '#f4f8fb', c: '#5aa8d0', S: '#8aa8c8', s: '#a8c0d8' }),
+  gogus_magma: [null, { m: '#3e3638', M: '#564a4a', y: '#f07a2a', d: '#2a2426' }],
+  yay_bosluk: [null, { W: '#8a6ac0', B: '#3a2a5a', s: '#7af0e0' }],
+  pelerin: like('gogus_yosun', { m: '#2a2040', M: '#4a3a6a', y: '#7af0e0', d: '#1a1428' }),
+  tilsim_aurora: TILSIM('#7ae0c8', '#e0fff8'),
+  tilsim_yakut: TILSIM('#c8304a', '#ff9aa0'),
+  tilsim_ay: TILSIM('#8a8ac8', '#fff0a0'),
+});
+// seviye esyalari: kilic, yay, kazma, kask, goguslik, bot (renk: ana, acik, koyu, ikinci)
+const TIER_COL = {
+  kristal: ['#7cc0e0', '#d8f2fc', '#4a88b0', '#e8c050'],
+  kor: ['#d8561e', '#ffb050', '#8a3014', '#3e3638'],
+  bonkit: ['#4ec888', '#c0f8d8', '#2a8a58', '#e8f0ea'],
+  golge: ['#5a3a8a', '#b88af0', '#2e2040', '#7af0e0'],
+};
+for (const [t, [m, l, d, x]] of Object.entries(TIER_COL)) {
+  ICONS[`kilic_${t}`] = [null, { W: l, B: m, G: x, h: '#5a3e26', P: d }];
+  ICONS[`yay_${t}`] = [null, { W: l, B: d, s: x === '#3e3638' ? '#ffd060' : '#e4dcc4' }];
+  ICONS[`kazma_${t}`] = [null, { H: l, D: m, h: '#7e4e2a' }];
+  ICONS[`kask_${t}`] = [null, { m, M: l, d }];
+  ICONS[`gogus_${t}`] = [null, { m, M: l, y: x, d }];
+  ICONS[`bot_${t}`] = [null, { m, M: l, d }];
+}
 const BOW = ['......WB....', '.....W..s...', '....W...s...', '...W....s...', '...W....s...', '..WB....s...', '..WB....s...', '...W....s...', '...W....s...', '....W...s...', '.....W..s...', '......WB....'];
 const PICK = ['............', '...DHHHHD...', '..HH....HH..', '.HD..h...DH.', '.D...h....D.', '.....h......', '.....h......', '.....h......', '.....h......', '.....h......', '.....h......', '............'];
 const SWORD = ['............', '...........W', '..........WB', '.........WB.', '........WB..', '.......WB...', '..G...WB....', '...G.WB.....', '....G.......', '...h.G......', '..h...G.....', '.P..........'];

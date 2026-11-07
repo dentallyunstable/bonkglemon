@@ -4,7 +4,7 @@ import {
   ZONES, zoneOf, ZONE_SPAWNS, ZONE_GATHER, ZONE_CHEST, wildStageChances, ABILITIES,
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
-  BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP,
+  BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -13,7 +13,7 @@ import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
-import { TOD, todNow, forestBackground, caveBackground, battleBackground, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, iconUrl, MINE_WALL } from './art.js';
+import { TOD, todNow, forestBackground, caveBackground, battleBackground, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL } from './art.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan } from './panels.js';
 
 const PLAYER_HOME = 96;
@@ -865,12 +865,13 @@ export class WorldScene extends Phaser.Scene {
     for (let r = 0; r < MINE_ROWS; r++) {
       for (let c = 0; c < MINE_COLS; c++) {
         const k = grid[r][c];
-        if ((k === 'komur' || k === 'demir') && Math.random() < 0.35) {
+        if (['komur', 'demir', 'altin', 'kristal', 'kor', 'golge'].includes(k) && Math.random() < 0.35) {
           const [dr, dc] = pick([[0, 1], [1, 0], [0, -1], [-1, 0]]);
           const rr = r + dr; const cc = c + dc;
           if (rr >= 0 && rr < MINE_ROWS && cc >= 0 && cc < MINE_COLS) grid[rr][cc] = k;
         }
         if (Math.random() < DEFINE_CHANCE) grid[r][c] = 'define';
+        else if (Math.random() < BONKIT_CHANCE) grid[r][c] = 'bonkit';
       }
     }
     this.wall = [];
@@ -1019,7 +1020,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   chips(x, y, kind, n) {
-    const tint = { toprak: 0xa07150, kum: 0xe6cd88, tas: 0x9e9aa6, komur: 0x3a3642, demir: 0xe0a882, define: 0xffd04d }[kind] || 0x9e9aa6;
+    const tint = { toprak: 0xa07150, kum: 0xe6cd88, tas: 0x9e9aa6, komur: 0x3a3642, demir: 0xe0a882, define: 0xffd04d, altin: 0xf0c850, kristal: 0xa8d8f0, kor: 0xf08a3a, bonkit: 0x80e4a8, golge: 0x8a6ac0 }[kind] || 0x9e9aa6;
     for (let i = 0; i < n; i++) {
       const c = this.add.image(x, y, 'chip').setDepth(12).setTint(tint);
       this.tweens.add({
@@ -1125,6 +1126,10 @@ export class WorldScene extends Phaser.Scene {
     if (Math.random() < 0.15 + n * 0.01) this.giveDrop('altin_elma', 1, 'Ödül sandığından');
     if (Math.random() < 0.04 + n * 0.006) this.giveDrop('can_tilsimi', 1, 'Ödül sandığından');
     if (n >= 10 && Math.random() < 0.5) this.giveDrop('orta_iksir', 2, 'Ödül sandığından');
+    // 0.8: derinlerde nadir cevherler ve efsanevi yumurta
+    if (n >= 15 && Math.random() < 0.25) this.giveDrop(pick(['altin_cevheri', 'saf_kristal', 'kor_tasi']), 2 + Math.floor(n / 10), 'Ödül sandığından');
+    if (n >= 20 && Math.random() < 0.06 + n * 0.002) this.giveDrop('bonkit', 1, 'Ödül sandığından');
+    if (Math.random() < Math.min(0.15, 0.02 + n * 0.002) * S.dropMult()) this.giveDrop(`yumurta_${pick(zs).key}`, 1, 'Ödül sandığından');
   }
 
   zindanRooms(level) {
@@ -1155,7 +1160,7 @@ export class WorldScene extends Phaser.Scene {
       if (i === 0 && (t === 'tuzak' || t === 'kamp')) t = 'savas';
       if (t === 'kamp') { if (kamp) t = 'savas'; kamp = true; }
       // magarada bazi odalar karanlik (fener gerekir)
-      rooms.push({ type: t, dark: zone.key === 'magara' && i > 0 && Math.random() < 0.3 });
+      rooms.push({ type: t, dark: i > 0 && Math.random() < (zone.key === 'magara' ? 0.3 : zone.key === 'golge' ? 0.5 : 0) });
     }
     if (zf === 5) rooms.push({ type: 'arapatron' });
     if (zf === 10) {
@@ -1224,7 +1229,7 @@ export class WorldScene extends Phaser.Scene {
     const key = zin ? `zbg_${Math.min(this.zLevel, 40)}_${v}` : `bg_${this.floor}_${v}${room.dark ? '_d' : ''}`;
     if (!this.textures.exists(key)) {
       const cv = zin ? dungeonRoomBackground(Math.min(this.zLevel, 40), v) : zone.key === 'magara' ? caveRoomBackground(this.floor, v, !!room.dark)
-        : zone.key === 'col' ? desertRoomBackground(this.floor, v) : forestBackground(this.floor, v);
+        : zone.key === 'col' ? desertRoomBackground(this.floor, v) : BIOME_KEYS.includes(zone.key) ? biomeRoomBackground(zone.key, this.floor, v) : forestBackground(this.floor, v);
       this.textures.addCanvas(key, cv);
     }
     this.bg.setTexture(key);
@@ -1240,9 +1245,11 @@ export class WorldScene extends Phaser.Scene {
     await moveTo(this.player, PLAYER_HOME, { speed: 115, anim: 'c_walk', timeScale: 1.3 });
     this.idle();
     if (zone.key === 'col' && !zin) await this.heat();
+    if (zone.key === 'buz' && !zin) await this.coldCheck();
+    if (zone.key === 'kor' && !zin) await this.lavaCheck();
     if (room.dark && i > 0 && !room.toldDark) {
       room.toldDark = true;
-      UI.feed(S.countItem('fener') > 0 ? 'Karanlık oda! Fenerin yolu aydınlatıyor.' : 'Karanlık oda! Fenerin yok, Glemonları zor göreceksin. (Fener: Üretim Masası)');
+      UI.feed(S.darkproof() ? 'Karanlık oda! Ama gölgelerin içini görebiliyorsun.' : S.countItem('fener') > 0 ? 'Karanlık oda! Fenerin yolu aydınlatıyor.' : 'Karanlık oda! Fenerin yok, Glemonları zor göreceksin. (Fener: Üretim Masası)');
     }
     this.busy = false;
     this.runRoom(room);
@@ -1263,7 +1270,53 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  unlit(room) { return !!room.dark && S.countItem('fener') === 0; }
+  unlit(room) { return !!room.dark && S.countItem('fener') === 0 && !S.darkproof(); }
+
+  // 0.8 Donmus Zirve: sicak corba yoksa savaslarda yavaslarsin
+  cold() { return this.zone().key === 'buz' && !this.inZindan() && Date.now() >= (S.save.warmUntil || 0); }
+  async coldCheck() {
+    if (Date.now() < (S.save.warmUntil || 0)) return;
+    if (S.countItem('sicak_corba') > 0) {
+      S.removeItem('sicak_corba', 1);
+      S.save.warmUntil = Date.now() + 30 * 60 * 1000;
+      S.hp = Math.min(S.maxHp(), S.hp + Math.round(S.maxHp() * 0.2));
+      UI.feed('Üşüdün ve Sıcak Çorba içtin. 30 dakika soğuktan etkilenmezsin.');
+      await playAnim(this.player, 'c_eat', 2.4);
+      this.idle();
+      this.refreshHud();
+      S.changed();
+      return;
+    }
+    if (!this.toldCold) { this.toldCold = true; UI.feed('Donmuş Zirve çok soğuk! Sıcak Çorba taşımazsan savaşlarda yavaşlarsın. (Fırın: Mantar + Şifalı ot + Kömür, ya da Hancı Lale)'); }
+  }
+  // 0.8 Kor Diyari: ates direnci yoksa savaslara yanarak baslarsin
+  burning() { return this.zone().key === 'kor' && !this.inZindan() && Date.now() >= (S.save.fireResUntil || 0) && !S.fireproof(); }
+  async lavaCheck() {
+    if (Date.now() < (S.save.fireResUntil || 0) || S.fireproof()) return;
+    if (S.countItem('ates_iksiri') > 0) {
+      S.removeItem('ates_iksiri', 1);
+      S.save.fireResUntil = Date.now() + 30 * 60 * 1000;
+      UI.feed('Lavın sıcağı geldi ve Ateş Direnci İksiri içtin. 30 dakika yanmazsın.');
+      await playAnim(this.player, 'c_drinkpotion', 2.4);
+      this.idle();
+      S.changed();
+      return;
+    }
+    if (!this.toldLava) { this.toldLava = true; UI.feed('Kor Diyarı yakıyor! Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın. (Simya Kazanı ya da Hancı Lale)'); }
+  }
+  battleOpts(room) { return { floor: this.floor, dark: this.unlit(room), cold: this.cold(), burn: this.burning() }; }
+
+  async eggHatched(h) {
+    if (h.progress) { UI.feed(`${h.name} çatırdıyor… (${h.progress}/${EGG_BATTLES} savaş)`); return; }
+    if (h.full) { UI.feed(`${h.name} çatlamaya hazır ama Ahır dolu! Ahırda yer aç.`); return; }
+    const g = GLEMONS[h.key];
+    UI.banner('Yumurta çatladı!', `${h.pet.shiny ? 'Parlak ' : ''}${g.name} doğdu!`, 3000, 'gold');
+    UI.feed(`<span style="color:#ffd04d">★ Efsanevi yumurta çatladı: ${h.pet.shiny ? 'Parlak ' : ''}${g.name}! Ahırına gitti.</span>`, 'gold');
+    sfx('rare');
+    this.celebrate();
+    this.makeFollower();
+    await wait(this, 1200);
+  }
 
   // Col sicagi: su matarasi yoksa her odada biraz can gider (bayiltmaz)
   async heat() {
@@ -1290,20 +1343,20 @@ export class WorldScene extends Phaser.Scene {
     switch (room.type) {
       case 'savas':
         room.specs = room.specs || this.enemySpecs(this.enemyCount(this.floor));
-        this.battle = new Battle(this, room.specs, { floor: this.floor, dark: this.unlit(room) });
+        this.battle = new Battle(this, room.specs, this.battleOpts(room));
         break;
       case 'arapatron': {
         const table = ZONE_SPAWNS[this.zone().key].filter(([k]) => GLEMONS[k].rarity !== 'epik');
         room.specs = room.specs || [{ key: weighted(table), golden: true }];
-        this.battle = new Battle(this, room.specs, { floor: this.floor });
+        this.battle = new Battle(this, room.specs, this.battleOpts({}));
         break;
       }
       case 'boss':
-        this.battle = new Battle(this, [{ key: zoneOf(this.floor).boss }], { floor: this.floor, boss: true });
+        this.battle = new Battle(this, [{ key: zoneOf(this.floor).boss }], { ...this.battleOpts({}), boss: true });
         break;
       case 'uyuyan': {
         room.specs = room.specs || this.enemySpecs(Math.random() < 0.7 ? 1 : 2, { sleeping: true });
-        this.battle = new Battle(this, room.specs, { floor: this.floor, dark: this.unlit(room) });
+        this.battle = new Battle(this, room.specs, this.battleOpts(room));
         room.zzz = this.battle.enemies.map((e) => UI.bubble(e.sprite.x + 6, this.battle.topY(e) - 2, 'Zzz', 9e8, 'zzz'));
         for (const z of room.zzz) this.labels.push(z);
         break;
@@ -1327,7 +1380,11 @@ export class WorldScene extends Phaser.Scene {
         if (!room.vein) {
           const zk = this.zone().key;
           const w = zk === 'orman' ? [['tas', 55], ['komur', 35], ['demir', this.floor >= 4 ? 18 : 0]]
-            : zk === 'magara' ? [['tas', 40], ['komur', 30], ['demir', 30], ['define', 3]] : [['kum', 35], ['tas', 30], ['demir', 25], ['define', 4]];
+            : zk === 'magara' ? [['tas', 40], ['komur', 30], ['demir', 30], ['define', 3]]
+              : zk === 'buz' ? [['tas', 30], ['demir', 25], ['altin', 25], ['kristal', 18], ['define', 4]]
+                : zk === 'kor' ? [['tas', 25], ['komur', 25], ['altin', 20], ['kor', 25], ['define', 4]]
+                  : zk === 'golge' ? [['tas', 25], ['kristal', 20], ['kor', 20], ['golge', 20], ['bonkit', 1], ['define', 5]]
+                    : [['kum', 35], ['tas', 30], ['demir', 25], ['define', 4]];
           room.vein = [[258, G - 8], [274, G - 8], [266, G - 24]].map(([x, y]) => ({ kind: weighted(w), x, y }));
         }
         room.blocks = room.vein.filter((v) => v.kind).map((v) => {
@@ -1512,7 +1569,7 @@ export class WorldScene extends Phaser.Scene {
     await wait(this, 120);
     await this.fade(true);
     this.roomBg = this.bg.texture.key;
-    const zk = this.inZindan() ? 'magara' : zoneOf(this.floor || 1).key;
+    const zk = this.inZindan() ? 'magara' : this.zone().key;
     const key = `arena_${zk}_${this.floor || 1}`;
     if (!this.textures.exists(key)) this.textures.addCanvas(key, battleBackground(this.floor || 1, zk));
     this.bg.setTexture(key);
@@ -1723,7 +1780,7 @@ export class WorldScene extends Phaser.Scene {
     S.logDrop(null, GLEMONS[z.boss].name, { note: `yenildi! ${z.name} temizlendi` });
     S.changed();
     const nextOpen = next && next.open;
-    UI.banner(`${z.name} temizlendi!`, nextOpen ? `${next.name} açıldı!` : 'Yeni bölgeler 0.8 sürümünde açılacak', 3500, 'gold');
+    UI.banner(`${z.name} temizlendi!`, nextOpen ? `${next.name} açıldı!` : 'Bütün Keşif bölgelerini bitirdin! Zindan seni bekliyor.', 3500, 'gold');
     sfx('rare');
     await this.playPool('sevinc', 2600);
     this.idle();

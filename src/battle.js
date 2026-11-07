@@ -67,7 +67,7 @@ export class Battle {
     this.wt = S.weaponType();
     // yayla savasa onde baslarsin (Tek Ok: ilk saldiran sen olursun)
     this.pAtb = opts.ambush ? 100 : Math.random() * 30 + (this.wt === 'yay' ? 45 : 0);
-    this.status = { zehir: 0, sersem: 0, savun: false, yanma: 0, tok: 0, guc: 0, donma: 0, karanlik: opts.dark ? 3 : 0 };
+    this.status = { zehir: 0, sersem: 0, savun: false, yanma: opts.burn && !S.fireproof() ? 3 : 0, tok: 0, guc: 0, donma: 0, karanlik: opts.dark && !S.darkproof() ? 3 : 0 };
     this.cd = {};
     this.manualActs = 0;
     this.autoActs = 0;
@@ -346,6 +346,8 @@ export class Battle {
     $('#actions').classList.add('hidden');
     $('#battle').classList.remove('hidden');
     if (this.status.karanlik > 0) feed('Karanlıkta savaşıyorsun: vuruşların bazen boşa gidecek. (Fener taşı!)');
+    if (this.opts.cold) feed('Üşüyorsun: bu savaşta yavaşsın. (Sıcak Çorba: Fırın)');
+    if (this.status.yanma > 0 && this.opts.burn) feed('Lav sıcağı seni yaktı! (Ateş Direnci İksiri: Simya Kazanı)');
     return new Promise((res) => {
       this.resolve = res;
       this.busy = false;
@@ -466,7 +468,7 @@ export class Battle {
   update(dt) {
     if (this.over || this.busy) return;
     const k = (ATB_RATE * Math.min(dt, 60)) / 1000;
-    this.pAtb = Math.min(100, this.pAtb + S.spd() * k * (this.status.sersem > 0 ? 0.5 : 1));
+    this.pAtb = Math.min(100, this.pAtb + S.spd() * k * (this.status.sersem > 0 ? 0.5 : 1) * (this.opts.cold ? 0.7 : 1));
     for (const e of this.alive()) e.atb = Math.min(100, e.atb + e.spd * k * (e.st.sersem > 0 ? 0.5 : 1));
     const t = this.pet;
     if (t && t.alive) t.atb = Math.min(100, t.atb + t.spd * k);
@@ -972,6 +974,9 @@ export class Battle {
     this.scene.tweens.add({ targets: sl, alpha: 0, scale: 1.4, duration: 260, onComplete: () => sl.destroy() });
     this.applyDamage(e, dmg, crit || grade === 'mukemmel');
     if (e.alive && ab && ab.status) this.giveEnemyStatus(e, ab.status);
+    // 0.8: bazi silahlar vurunca durum verir (Buzul Kilici dondurur, Kor Kilici yakar)
+    const wpn = S.save.equip.silah && ITEMS[S.save.equip.silah];
+    if (e.alive && wpn && wpn.onHit && Math.random() < wpn.onHit[1]) this.giveEnemyStatus(e, [wpn.onHit[0], wpn.onHit[0] === 'donma' ? 1 : 3]);
     // dikenli Glemon vuranin canini acitir
     if (e.st.reflect > 0) {
       const back = Math.max(1, Math.round(dmg * 0.3));
@@ -1156,7 +1161,9 @@ export class Battle {
       this.damagePlayer(dmg, true);
       this.defXp += dmg * 0.6;
       if ((act.mult || 1) >= 2) this.scene.cameras.main.shake(180, 0.012);
-      if (act.status && S.hp > 0) {
+      const immune = act.status && ((act.status[0] === 'yanma' && S.fireproof()) || (act.status[0] === 'karanlik' && S.darkproof()));
+      if (immune) floatText(this.px(), this.py() - 20, 'İşlemedi!', 'good');
+      if (act.status && S.hp > 0 && !immune) {
         const [st, turns0] = act.status;
         const turns = st === 'donma' ? 1 : turns0; // oyuncu en fazla 1 tur donar
         this.status[st] = Math.max(this.status[st], turns);
@@ -1244,6 +1251,7 @@ export class Battle {
     gains.bag = this.bagXp;
     const ups = S.addXp(gains);
     S.save.stats.battles++;
+    const hatched = S.tickEggs();
     const r = (x) => Math.round(x);
     const skName = skill === 'okculuk' ? 'Okçuluk' : 'Saldırı';
     const extra = [];
@@ -1254,6 +1262,7 @@ export class Battle {
     this.cleanup(false);
     await this.w.exitBattleView();
     if (evo) await this.w.petEvolved(evo);
+    for (const h of hatched) await this.w.eggHatched(h);
     // seviye atladiysa levelup, atlamadiysa rastgele bir sevinme animasyonu
     if (ups.length) for (const up of ups) await this.w.levelUp(up);
     else { await this.w.playPool('sevinc', 1300, 1.2); this.w.idle(); }

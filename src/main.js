@@ -90,7 +90,7 @@ class BootScene extends Phaser.Scene {
     strip('boom', ART.boomArt());
     this.anims.create({ key: 'boom', frames: [0, 1, 2, 3].map((i) => ({ key: 'boom', frame: i })), frameRate: 12, repeat: 0 });
     tex('chip', ART.chip());
-    for (const k of ['herb', 'berry', 'branch', 'shroom', 'palm', 'sand']) tex(`node_${k}`, ART.gatherNode(k));
+    for (const k of ['herb', 'berry', 'branch', 'shroom', 'palm', 'sand', 'snowberry', 'pepper', 'nightshroom']) tex(`node_${k}`, ART.gatherNode(k));
     this.scene.start('world', { gmeta, charMeta });
   }
 }

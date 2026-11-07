@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES } from './data.js';
 
 const SAVE_PREFIX = 'bonkglemon.save.';
 const DEPO_SIZE = 40;
@@ -169,7 +169,27 @@ export const S = {
   spd() {
     return 100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0);
   },
-  crit() { return 0.05; },
+  crit() { return 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0); },
+  // 0.8: Kor seti / Magma Goguslugu yanmaz, Golge seti / Bekci Pelerini karanlikta gorur
+  fireproof() { return this.gear().some((it) => it.fireproof) || this.activeSets().some((st) => st.fireproof); },
+  darkproof() { return this.gear().some((it) => it.darkproof) || this.activeSets().some((st) => st.darkproof); },
+  // efsanevi yumurtalar: cantadaki her yumurta her zaferde bir adim catlar
+  tickEggs() {
+    const out = [];
+    this.save.bag.forEach((s, i) => {
+      if (!s || !ITEMS[s.id] || !ITEMS[s.id].egg) return;
+      s.p = Math.min(EGG_BATTLES, (s.p || 0) + 1);
+      if (s.p < EGG_BATTLES) { if (s.p % 25 === 0) out.push({ progress: s.p, name: ITEMS[s.id].name }); return; }
+      const key = EGGS[ITEMS[s.id].egg];
+      const pet = this.addPet(key, 0, Math.random() < 0.05, 1);
+      if (!pet) { if (!s.full) { s.full = true; out.push({ full: true, name: ITEMS[s.id].name }); } return; }
+      this.save.bag[i] = null;
+      this.save.stats.hatched = (this.save.stats.hatched || 0) + 1;
+      this.seeGlemon(key, pet.shiny);
+      out.push({ pet, key });
+    });
+    return out;
+  },
 
   // ------------------------------------------------ canta
   countItem(id, where = 'bag') {
@@ -272,6 +292,15 @@ export const S = {
   moveSlot(fromList, index, toList) {
     const s = this.save[fromList][index];
     if (!s) return false;
+    // yumurta catlama sayacini korusun: yuvayi oldugu gibi tasi
+    if (ITEMS[s.id].egg) {
+      const j = this.save[toList].indexOf(null);
+      if (j < 0) return false;
+      this.save[toList][j] = s;
+      this.save[fromList][index] = null;
+      this.changed();
+      return true;
+    }
     const left = this.addItemRaw(s.id, s.n, toList);
     if (left === s.n) return false;
     if (left === 0) this.save[fromList][index] = null;

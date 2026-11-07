@@ -4,6 +4,18 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.8.0 (Dünya tamam)
+
+- **3 yeni Keşif bölgesi:** Donmuş Zirve (Kat 31-40), Kor Diyarı (41-50) ve Gölge Boşluğu (51-60). Her biri kendi arka planı, savaş arenası ve 5 yeni Glemonuyla.
+- **Yeni patronlar:** Buzul Ayısı (buz nefesi, çığ), Magma Kaplumbağası (kızgın kabuk herkesi yakar) ve Boşluk Bekçisi (ışınlanır, gölge kopyaları çağırır).
+- **Bölge tehlikeleri:** Zirvede Sıcak Çorba içmezsen savaşlarda yavaşlarsın. Kor Diyarında Ateş Direnci İksiri yoksa savaşa yanarak başlarsın. Gölge Boşluğunda odaların yarısı karanlık.
+- **Yeni cevherler:** Altın (Madencilik 25), Kristal (35), Kor taşı (50), Bonkit (65, her derinlikte %0,5) ve Gölge taşı (80). Derin madende çıkarlar.
+- **Yeni ekipman seviyeleri:** Kristal, Kor, Bonkit ve Gölge (kılıç, yay, kazma, kask, göğüslük, bot). Set bonusları: +20 can, yanmazlık, kritik +%10, karanlıkta görme.
+- **Özel eşyalar:** Buzul Kılıcı (dondurur), Kor Kılıcı (yakar), Ayı Eldiveni, Magma Göğüslüğü, Boşluk Yayı, Bekçi Pelerini ve 3 yeni tılsım.
+- **Efsanevi yumurtalar:** her bölgenin patronundan (%10) ve Zindan ödül sandıklarından düşer. Çantanda taşırsan 100 savaştan sonra çatlar ve 6 efsanevi Glemondan biri çıkar.
+- Albüm artık bütün bölgeleri ve efsanevileri gösterir. Hancı Lale Sıcak Çorba ve Ateş Direnci İksiri de satıyor.
+- Çok oyunculu özellikler (0.6 ve 0.7) şimdilik rafa kalktı.
+
 ## Sürüm 0.5.5 (Üs yenileme, Keşif ve Zindan)
 
 - **Ev kalktı:** Üretim Masası, Fırın, Simya Kazanı, Yem Tezgâhı ve Depo artık dışarıda, çatılı bir zanaat avlusunda (silah askısı, zırh askısı, örs, kalkanlar). Bayılınca kamp ateşinin başında uyanırsın.

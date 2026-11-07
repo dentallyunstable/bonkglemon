@@ -1,12 +1,12 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
 import { forgetLogin } from './login.js';
 import { iconUrl, hubMap, HUB_SPOTS } from './art.js';
 
-const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma' };
+const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', yumurta: 'Yumurta' };
 
 function slotEl(s, label) {
   const d = UI.el('div', 'slot');
@@ -31,6 +31,13 @@ function statLines(it) {
   if (it.pick) out.push(`Kazma gücü ${it.pick}`);
   if (it.heal) out.push(`Canın %${Math.round(it.heal * 100)}'ini doldurur`);
   if (it.food) out.push('Savaşta yersen 3 tur saldırı +%10');
+  if (it.crit) out.push(`Kritik +%${Math.round(it.crit * 100)}`);
+  if (it.onHit) out.push(`Vuruşların %${Math.round(it.onHit[1] * 100)} ihtimalle ${it.onHit[0] === 'donma' ? 'dondurur' : 'yakar'}`);
+  if (it.fireproof) out.push('Yanma işlemez');
+  if (it.darkproof) out.push('Karanlık işlemez');
+  if (it.warm) out.push('30 dakika soğuktan korur');
+  if (it.fireRes) out.push('30 dakika lavdan korur');
+  if (it.egg) out.push(`Çantanda ${EGG_BATTLES} savaş taşıyınca çatlar`);
   if (it.revive) out.push(`Bir kez %${Math.round(it.revive * 100)} canla kaldırır`);
   if (it.set) out.push(`${SETS[it.set].name}: ${SETS[it.set].pieces} parça = ${SETS[it.set].bonus}`);
   return out;
@@ -95,7 +102,7 @@ export function openBag(w) {
       const right = UI.el('div');
       right.style.flex = '1';
       const st = UI.el('div', 'stats-box');
-      const sets = S.activeSets().filter((x) => x.hp || x.defPct).map((x) => x.bonus).join(', ');
+      const sets = S.activeSets().filter((x) => x.hp || x.defPct || x.crit || x.fireproof || x.darkproof).map((x) => x.bonus).join(', ');
       st.innerHTML = `<b>Can</b> ${S.hp}/${S.maxHp()} &nbsp; <b>Saldırı</b> ${S.atk()} &nbsp; <b>Savunma</b> ${S.def()}<br><b>Hız</b> ${S.spd()} &nbsp; <b>Kritik</b> %${Math.round(S.crit() * 100)} &nbsp; <b>Kazma</b> ${S.pick()}${sets ? `<br><b>Set</b> ${sets}` : ''}`;
       right.appendChild(st);
 
@@ -128,12 +135,26 @@ export function openBag(w) {
             S.removeItem(id, 1);
             const heal = Math.round(S.maxHp() * it.heal);
             S.hp = Math.min(S.maxHp(), S.hp + heal);
+            if (it.warm) { S.save.warmUntil = Date.now() + 30 * 60 * 1000; UI.feed('Isındın: 30 dakika soğuktan etkilenmezsin.'); }
             sfx('heal');
             S.changed();
             if (!S.save.bag[sel.i]) sel = null;
             render();
           }, 'small red');
-          b.disabled = inBattle || S.hp >= S.maxHp();
+          b.disabled = inBattle || (S.hp >= S.maxHp() && !it.warm);
+          btns.push(b);
+        }
+        if (it.fireRes) {
+          const b = UI.button('Kullan', () => {
+            S.removeItem(id, 1);
+            S.save.fireResUntil = Date.now() + 30 * 60 * 1000;
+            UI.feed('Ateş Direnci İksiri içtin: 30 dakika lav seni yakmaz.');
+            sfx('heal');
+            S.changed();
+            if (!S.save.bag[sel.i]) sel = null;
+            render();
+          }, 'small red');
+          b.disabled = inBattle;
           btns.push(b);
         }
         if (it.water || it.bagPlus) {
@@ -175,7 +196,10 @@ export function openBag(w) {
         }
       }
       if (inBattle) right.appendChild(UI.el('div', 'muted', 'Savaş sırasında eşya değiştiremezsin.'));
-      right.appendChild(detailBox(id, btns));
+      const dbox = detailBox(id, btns);
+      const eslot = sel && sel.i !== undefined && S.save.bag[sel.i];
+      if (eslot && ITEMS[eslot.id].egg) dbox.insertBefore(UI.el('div', '', `Çatlamaya: ${eslot.p || 0}/${EGG_BATTLES} savaş`), dbox.lastChild.previousSibling);
+      right.appendChild(dbox);
       lay.appendChild(right);
       body.appendChild(lay);
     };
@@ -473,11 +497,12 @@ export function openAlbum(w, tab = 'glemon') {
         return;
       }
       body.appendChild(UI.el('div', 'muted', `Albüm %${Math.round((seen / keys.length) * 100)} · Evcilleştirilen tür: ${keys.filter((k) => al.tamed[k]).length} · Görülmeyenler siyah görünür.`));
-      for (const [zk, z] of [['orman', 'Yabani Orman'], ['magara', 'Yankı Mağaraları'], ['col', 'Kavurucu Çöl']]) {
+      const groups = ZONES.filter((z) => z.open).map((z) => [z.name, [...ZONE_SPAWNS[z.key].map(([x]) => x), z.boss]]);
+      groups.push(['Efsaneviler (yumurtadan)', Object.values(EGGS)]);
+      for (const [z, list] of groups) {
         body.appendChild(UI.el('h3', '', z));
         const grid = UI.el('div', 'album-grid');
-        const zone = ZONES.find((x) => x.key === zk);
-        for (const k of [...ZONE_SPAWNS[zk].map(([x]) => x), zone.boss]) {
+        for (const k of list) {
           const d = GLEMONS[k];
           const c = UI.el('div', 'album-card' + (al.seen[k] ? '' : ' unseen'));
           c.appendChild(UI.glemonImg(w.gmeta, k, 0, false, { w: 30, h: 26 }, !al.seen[k]));
@@ -488,7 +513,7 @@ export function openAlbum(w, tab = 'glemon') {
           if (al.tamed[k]) marks.push('♥');
           if (al.shiny[k]) marks.push('✦');
           const kills = (S.save.stats.glemons || {})[k] || 0;
-          c.appendChild(UI.el('div', 'muted', al.seen[k] ? `${marks.join(' ')} ${kills} yenildi` : d.boss ? 'Patron' : RARITY[d.rarity].name));
+          c.appendChild(UI.el('div', 'muted', al.seen[k] ? (d.egg ? marks.join(' ') || 'Efsanevi' : `${marks.join(' ')} ${kills} yenildi`) : d.boss ? 'Patron' : d.egg ? 'Yumurta' : RARITY[d.rarity].name));
           c.title = al.seen[k] ? `${d.name} · ${d.type} tipi${d.special ? ' · ' + d.special.name : ''}` : '';
           grid.appendChild(c);
         }

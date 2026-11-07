@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.5.5';
+export const VERSION = '0.8.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -88,7 +88,7 @@ export const GLEMONS = {
       cagir: { name: 'Köklerden Çağrı', summon: 'kutukcuk' },
       recine: { name: 'Yanan Reçine', mult: 0.8, status: ['yanma', 3], telegraph: true },
     },
-    drops: [['agac_kalbi', 1], ['kabuk_zirh', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08]],
+    drops: [['agac_kalbi', 1], ['kabuk_zirh', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08], ['yumurta_orman', 0.1]],
   },
   // ---------------------------------------------------------------- 0.5 Yanki Magaralari (Tas)
   micir: {
@@ -130,7 +130,7 @@ export const GLEMONS = {
       cagir: { name: 'Çakıl Yağmuru', summon: 'micir' },
       kabuk: { name: 'Taş Deri', shell: 2 },
     },
-    drops: [['golem_cekirdegi', 1], ['golem_yumrugu', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08]],
+    drops: [['golem_cekirdegi', 1], ['golem_yumrugu', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08], ['yumurta_magara', 0.1]],
   },
   // ---------------------------------------------------------------- 0.5 Kavurucu Col (Kum)
   kumkiskic: {
@@ -172,7 +172,159 @@ export const GLEMONS = {
       isirik: { name: 'Çakal Isırığı', mult: 2.2, telegraph: true },
       cagir: { name: 'Uluma', summon: 'toz_kertenkelesi' },
     },
-    drops: [['firtina_disi', 1], ['cakal_yayi', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08]],
+    drops: [['firtina_disi', 1], ['cakal_yayi', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08], ['yumurta_col', 0.1]],
+  },
+  // ---------------------------------------------------------------- 0.8 Donmus Zirve (Buz)
+  kar_penguen: {
+    name: 'Kar Pengueni', from: "Kar Pengueni'nden", rarity: 'siradan', type: 'Buz',
+    hp: 16, atk: 3.2, def: 3, spd: 90,
+    special: { name: 'Buz Kayması', mult: 1.5, telegraph: true }, every: 3,
+    drops: [['buz_kristali', 0.3], ['kar_tuyu', 0.1]],
+  },
+  kiragi_tilki: {
+    name: 'Kırağı Tilkisi', from: "Kırağı Tilkisi'nden", rarity: 'siradan', type: 'Buz',
+    hp: 13, atk: 3.6, def: 2, spd: 130,
+    special: { name: 'Kırağı Pençesi', mult: 1.2, status: ['donma', 1], telegraph: true }, every: 3,
+    drops: [['kiragi_postu', 0.3]],
+  },
+  buzcuk: {
+    name: 'Buzcuk', from: "Buzcuk'tan", rarity: 'siradan', type: 'Buz',
+    hp: 18, atk: 2.8, def: 5, spd: 75,
+    special: { name: 'Buz Zırhı', shell: 2 }, every: 3,
+    drops: [['buz_kristali', 0.5]],
+  },
+  kar_baykusu: {
+    name: 'Kar Baykuşu', from: "Kar Baykuşu'ndan", rarity: 'nadir', type: 'Buz', fly: true,
+    hp: 17, atk: 4, def: 3, spd: 115,
+    special: { name: 'Tipi', mult: 0.8, status: ['karanlik', 2], telegraph: true, aoe: true }, every: 3,
+    drops: [['kar_tuyu', 0.4], ['buz_kristali', 0.3]],
+  },
+  aurora_geyigi: {
+    name: 'Aurora Geyiği', from: "Aurora Geyiği'nden", rarity: 'epik', type: 'Buz',
+    hp: 28, atk: 3.6, def: 5, spd: 100,
+    special: { name: 'Kutup Işığı', heal: 0.25 }, every: 2,
+    drops: [['aurora_boynuzu', 0.12], ['buz_kristali', 0.5]],
+  },
+  buzul_ayisi: {
+    name: 'Buzul Ayısı', from: "Buzul Ayısı'ndan", rarity: 'efsanevi', type: 'Buz', boss: true,
+    hp: 104, atk: 5.2, def: 4.2, spd: 80,
+    pattern: ['normal', 'nefes', 'normal', 'pence', 'normal', 'cagir', 'normal', 'nefes'],
+    specials: {
+      nefes: { name: 'Buz Nefesi', mult: 0.9, status: ['donma', 1], telegraph: true, aoe: true },
+      pence: { name: 'Buzul Pençesi', mult: 2.4, telegraph: true },
+      cagir: { name: 'Çığ', summon: 'buzcuk' },
+    },
+    drops: [['buzul_kalbi', 1], ['ayi_eldiveni', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08], ['yumurta_buz', 0.1]],
+  },
+  // ---------------------------------------------------------------- 0.8 Kor Diyari (Ates)
+  kor_semender: {
+    name: 'Kor Semenderi', from: "Kor Semenderi'nden", rarity: 'siradan', type: 'Ateş',
+    hp: 15, atk: 3.6, def: 2.5, spd: 110,
+    special: { name: 'Kıvılcım Tükürüğü', mult: 1.0, status: ['yanma', 3], telegraph: true }, every: 3,
+    drops: [['kor_pulu', 0.3]],
+  },
+  kivilcim_yarasa: {
+    name: 'Kıvılcım Yarasası', from: "Kıvılcım Yarasası'ndan", rarity: 'siradan', type: 'Ateş', fly: true,
+    hp: 12, atk: 3.4, def: 1.5, spd: 135,
+    special: { name: 'Kor Kanat', mult: 1.4, telegraph: true }, every: 3,
+    drops: [['kivilcim', 0.3]],
+  },
+  magma_salyangoz: {
+    name: 'Magma Salyangozu', from: "Magma Salyangozu'ndan", rarity: 'siradan', type: 'Ateş',
+    hp: 22, atk: 2.8, def: 6, spd: 60,
+    special: { name: 'Kızgın Kabuk', reflect: 2 }, every: 3,
+    drops: [['kor_pulu', 0.2], ['kul', 0.3]],
+  },
+  kul_koc: {
+    name: 'Kül Koçu', from: "Kül Koçu'ndan", rarity: 'nadir', type: 'Ateş',
+    hp: 20, atk: 4.4, def: 4, spd: 95,
+    special: { name: 'Kor Toslaması', mult: 2.0, status: ['sersem', 1], telegraph: true }, every: 3,
+    drops: [['kul', 0.5], ['kivilcim', 0.2]],
+  },
+  yakut_ejder: {
+    name: 'Yakut Ejderi', from: "Yakut Ejderi'nden", rarity: 'epik', type: 'Ateş',
+    hp: 28, atk: 4.6, def: 4, spd: 105,
+    special: { name: 'Ejder Nefesi', mult: 1.0, status: ['yanma', 3], telegraph: true, aoe: true }, every: 3,
+    drops: [['yakut', 0.12], ['kor_pulu', 0.5]],
+  },
+  magma_kaplumbaga: {
+    name: 'Magma Kaplumbağası', from: "Magma Kaplumbağası'ndan", rarity: 'efsanevi', type: 'Ateş', boss: true,
+    hp: 120, atk: 5.4, def: 5.2, spd: 66,
+    pattern: ['normal', 'kizgin', 'normal', 'kabuk', 'normal', 'lav', 'normal', 'kizgin'],
+    specials: {
+      kizgin: { name: 'Kızgın Kabuk', mult: 0.9, status: ['yanma', 3], telegraph: true, aoe: true },
+      kabuk: { name: 'Volkan Kabuğu', shell: 2 },
+      lav: { name: 'Lav Fışkırması', mult: 2.3, telegraph: true },
+    },
+    drops: [['magma_kabugu', 1], ['kor_kilici', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08], ['yumurta_kor', 0.1]],
+  },
+  // ---------------------------------------------------------------- 0.8 Golge Boslugu (Golge)
+  fisilti: {
+    name: 'Fısıltı', from: "Fısıltı'dan", rarity: 'siradan', type: 'Gölge', fly: true,
+    hp: 14, atk: 3.8, def: 2, spd: 125,
+    special: { name: 'Korkutma', mult: 0.9, status: ['sersem', 1], telegraph: true }, every: 3,
+    drops: [['golge_ozu', 0.3]],
+  },
+  gece_pisi: {
+    name: 'Gece Pisisi', from: "Gece Pisisi'nden", rarity: 'siradan', type: 'Gölge',
+    hp: 16, atk: 4, def: 2.5, spd: 125,
+    special: { name: 'Gölge Pençesi', mult: 1.6, telegraph: true }, every: 3,
+    drops: [['gece_postu', 0.3]],
+  },
+  bosluk_kurdu: {
+    name: 'Boşluk Kurdu', from: "Boşluk Kurdu'ndan", rarity: 'siradan', type: 'Gölge',
+    hp: 20, atk: 3.4, def: 4, spd: 80,
+    special: { name: 'Mor Salya', mult: 1.0, status: ['zehir', 4], telegraph: true }, every: 3,
+    drops: [['golge_ozu', 0.3], ['gece_postu', 0.1]],
+  },
+  gozmantar: {
+    name: 'Gözmantar', from: "Gözmantar'dan", rarity: 'nadir', type: 'Gölge',
+    hp: 21, atk: 4.4, def: 3.5, spd: 95,
+    special: { name: 'Bakış', mult: 1.2, status: ['karanlik', 3], telegraph: true }, every: 3,
+    drops: [['golge_ozu', 0.4], ['gece_mantari', 0.3]],
+  },
+  ay_guvesi: {
+    name: 'Ay Güvesi', from: "Ay Güvesi'nden", rarity: 'epik', type: 'Gölge', fly: true,
+    hp: 26, atk: 4, def: 4, spd: 120, goldMult: 2,
+    special: { name: 'Ay Tozu', mult: 0.6, status: ['sersem', 2], luck: true, telegraph: true, aoe: true }, every: 3,
+    drops: [['ay_tozu', 0.12], ['golge_ozu', 0.5]],
+  },
+  bosluk_bekcisi: {
+    name: 'Boşluk Bekçisi', from: "Boşluk Bekçisi'nden", rarity: 'efsanevi', type: 'Gölge', boss: true, fly: true,
+    hp: 130, atk: 5.8, def: 4.6, spd: 100,
+    pattern: ['normal', 'isinlan', 'normal', 'kopya', 'normal', 'karanlik', 'normal', 'darbe'],
+    specials: {
+      isinlan: { name: 'Işınlanma', shell: 2 },
+      kopya: { name: 'Gölge Kopyaları', summon: 'fisilti' },
+      karanlik: { name: 'Sonsuz Gece', mult: 0.9, status: ['karanlik', 3], telegraph: true, aoe: true },
+      darbe: { name: 'Boşluk Darbesi', mult: 2.5, telegraph: true },
+    },
+    drops: [['bosluk_tasi', 1], ['bekci_pelerini', 0.03], ['altin_elma', 0.3], ['can_tilsimi', 0.08], ['yumurta_golge', 0.1]],
+  },
+  // ---------------------------------------------------------------- 0.8 Efsanevi Glemonlar (sadece yumurtadan)
+  cicek_aslani: {
+    name: 'Çiçek Aslanı', from: "Çiçek Aslanı'ndan", rarity: 'efsanevi', type: 'Orman', egg: 'orman',
+    hp: 30, atk: 4.6, def: 4.4, spd: 105, special: { name: 'Çiçek Kükremesi', heal: 0.25 }, every: 3, drops: [],
+  },
+  kristal_yilan: {
+    name: 'Kristal Yılan', from: "Kristal Yılan'dan", rarity: 'efsanevi', type: 'Taş', egg: 'magara',
+    hp: 30, atk: 4.8, def: 5, spd: 100, special: { name: 'Kristal Sokma', mult: 1.4, status: ['donma', 2], telegraph: true }, every: 3, drops: [],
+  },
+  gunes_kusu: {
+    name: 'Güneş Kuşu', from: "Güneş Kuşu'ndan", rarity: 'efsanevi', type: 'Kum', egg: 'col', fly: true,
+    hp: 28, atk: 5, def: 4, spd: 125, special: { name: 'Güneş Işını', mult: 1.2, status: ['karanlik', 2], aoe: true, telegraph: true }, every: 3, drops: [],
+  },
+  kuzey_kurdu: {
+    name: 'Kuzey Kurdu', from: "Kuzey Kurdu'ndan", rarity: 'efsanevi', type: 'Buz', egg: 'buz',
+    hp: 32, atk: 5.2, def: 4.6, spd: 120, special: { name: 'Aurora Uluması', mult: 1.3, status: ['donma', 2], telegraph: true }, every: 3, drops: [],
+  },
+  anka_yavrusu: {
+    name: 'Anka Yavrusu', from: "Anka Yavrusu'ndan", rarity: 'efsanevi', type: 'Ateş', egg: 'kor', fly: true,
+    hp: 30, atk: 5.4, def: 4.2, spd: 120, special: { name: 'Küllerden Doğuş', mult: 1.0, status: ['yanma', 3], aoe: true, telegraph: true }, every: 3, drops: [],
+  },
+  yildiz_balinasi: {
+    name: 'Yıldız Balinası', from: "Yıldız Balinası'ndan", rarity: 'efsanevi', type: 'Gölge', egg: 'golge', fly: true,
+    hp: 36, atk: 4.8, def: 5.4, spd: 95, special: { name: 'Yıldız Yağmuru', mult: 0.9, aoe: true, telegraph: true }, every: 3, drops: [],
   },
 };
 
@@ -181,7 +333,16 @@ export const ZONE_SPAWNS = {
   orman: [['kutukcuk', 0.27], ['patlakmantar', 0.27], ['dikentavsan', 0.26], ['yaprakbocek', 0.17], ['yosunbaba', 0.03]],
   magara: [['micir', 0.28], ['taskabuk', 0.26], ['pirpir', 0.26], ['kristalbocek', 0.17], ['ametist_kirpi', 0.03]],
   col: [['kumkiskic', 0.27], ['kaktus_bekcisi', 0.26], ['toz_kertenkelesi', 0.27], ['sargicik', 0.17], ['altin_skarabe', 0.03]],
+  buz: [['kar_penguen', 0.27], ['kiragi_tilki', 0.27], ['buzcuk', 0.26], ['kar_baykusu', 0.17], ['aurora_geyigi', 0.03]],
+  kor: [['kor_semender', 0.27], ['kivilcim_yarasa', 0.27], ['magma_salyangoz', 0.26], ['kul_koc', 0.17], ['yakut_ejder', 0.03]],
+  golge: [['fisilti', 0.27], ['gece_pisi', 0.27], ['bosluk_kurdu', 0.26], ['gozmantar', 0.17], ['ay_guvesi', 0.03]],
 };
+// Efsanevi yumurtalar (0.8): her bolgenin patronundan (%10) ve Zindan odul sandiklarindan dusur.
+// Cantanda tasirsan 100 savastan sonra catlar.
+export const EGGS = {
+  orman: 'cicek_aslani', magara: 'kristal_yilan', col: 'gunes_kusu', buz: 'kuzey_kurdu', kor: 'anka_yavrusu', golge: 'yildiz_balinasi',
+};
+export const EGG_BATTLES = 100;
 // Tip tablosu: guclu oldugu tiplere 1.5 kat, onu yenen tiplere 0.67 kat hasar
 export const TYPE_STRONG = {
   Orman: ['Taş', 'Kum'], Taş: ['Ateş', 'Buz'], Kum: ['Ateş', 'Gölge'],
@@ -205,7 +366,7 @@ export const STAGE_STAT = [1, 1.4, 1.9];
 export const TAME = {
   hpBelow: 0.25,
   chance: [0.3, 0.08, 0.01],          // Bebek, Genc, Usta
-  bagReq: { siradan: 1, nadir: 20, epik: 40 },
+  bagReq: { siradan: 1, nadir: 20, epik: 40, efsanevi: 99 },
   stageBag: [0, 10, 20],
   sleepingBonus: 2,
 };
@@ -214,6 +375,9 @@ export const FOODS = {
   orman: ['orman_turtasi', 'bal_damlasi'],
   magara: ['mantar_ezmesi', 'kristal_sekeri'],
   col: ['kaktus_jolesi', 'hurma_tatlisi'],
+  buz: ['kar_kurabiyesi', 'aurora_sekeri'],
+  kor: ['biber_kebabi', 'yakut_receli'],
+  golge: ['gece_coregi', 'ay_pastasi'],
 };
 export const PET_MAX_LVL = 50;
 export const EVOLVE_AT = [15, 35];
@@ -363,13 +527,89 @@ export const ITEMS = {
   golem_kilici: { name: 'Golem Kılıcı', kind: 'silah', rarity: 'nadir', icon: 'kilic_golem', power: 20, req: ['saldiri', 25], desc: 'Golem Çekirdeğiyle yapılır. Çok güçlü.' },
   golem_yumrugu: { name: 'Golem Yumruğu', kind: 'silah', wt: 'yumruk', rarity: 'epik', icon: 'eldiven', power: 18, def: 4, req: ['saldiri', 15], desc: 'Taş Goleminden çok nadir düşer. Yumruk eldiveni: iki vuruşluk Seri Yumruk.' },
   skarabe_tilsimi: { name: 'Skarabe Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_skarabe', luck: 15, desc: 'Şans +15: daha çok nadir düşüş ve parlak Glemon.' },
+  // ---- 0.8 Donmus Zirve, Kor Diyari, Golge Boslugu
+  buz_kristali: { name: 'Buz kristali', kind: 'malzeme', rarity: 'siradan', icon: 'buz_kristali', desc: 'Buzcuk ve Kar Penguenden düşer. Ateş Direnci İksiri malzemesi.' },
+  kar_tuyu: { name: 'Kar tüyü', kind: 'malzeme', rarity: 'siradan', icon: 'kar_tuyu', desc: 'Kar Baykuşundan düşer. Kristal Yay ipi.' },
+  kiragi_postu: { name: 'Kırağı postu', kind: 'malzeme', rarity: 'siradan', icon: 'kiragi_postu', desc: 'Kırağı Tilkisinden düşer. Sıcak tutar.' },
+  aurora_boynuzu: { name: 'Aurora boynuzu', kind: 'malzeme', rarity: 'epik', icon: 'aurora_boynuzu', desc: 'Aurora Geyiğinden düşer. Aurora Tılsımı malzemesi.' },
+  buzul_kalbi: { name: 'Buzul Kalbi', kind: 'malzeme', rarity: 'nadir', icon: 'buzul_kalbi', bound: true, desc: 'Buzul Ayısının kalbi. Buzul Kılıcı malzemesi. Takas edilemez.' },
+  kor_pulu: { name: 'Kor pulu', kind: 'malzeme', rarity: 'siradan', icon: 'kor_pulu', desc: 'Kor Semenderinden düşer. Kor eşyaların ikinci malzemesi.' },
+  kivilcim: { name: 'Kıvılcım', kind: 'malzeme', rarity: 'siradan', icon: 'kivilcim', desc: 'Kıvılcım Yarasasından düşer. Kor Yay ipi.' },
+  kul: { name: 'Kül', kind: 'malzeme', rarity: 'siradan', icon: 'kul', desc: 'Kül Koçundan düşer, Kor Diyarında toplanır.' },
+  yakut: { name: 'Yakut', kind: 'malzeme', rarity: 'epik', icon: 'yakut', desc: 'Yakut Ejderinden düşer. Yakut Tılsımı malzemesi.' },
+  magma_kabugu: { name: 'Magma Kabuğu', kind: 'malzeme', rarity: 'nadir', icon: 'magma_kabugu', bound: true, desc: 'Magma Kaplumbağasının kabuk parçası. Magma Göğüslüğü malzemesi. Takas edilemez.' },
+  golge_ozu: { name: 'Gölge özü', kind: 'malzeme', rarity: 'siradan', icon: 'golge_ozu', desc: 'Gölge Glemonlarından düşer. Gölge eşyaların ikinci malzemesi.' },
+  gece_postu: { name: 'Gece postu', kind: 'malzeme', rarity: 'siradan', icon: 'gece_postu', desc: 'Gece Pisisinden düşer. Gölge Yay ipi.' },
+  ay_tozu: { name: 'Ay tozu', kind: 'malzeme', rarity: 'epik', icon: 'ay_tozu', desc: 'Ay Güvesinden düşer. Ay Tılsımı malzemesi.' },
+  bosluk_tasi: { name: 'Boşluk Taşı', kind: 'malzeme', rarity: 'nadir', icon: 'bosluk_tasi', bound: true, desc: 'Boşluk Bekçisinin taşı. Boşluk Yayı malzemesi. Takas edilemez.' },
+  kar_cilegi: { name: 'Kar çileği', kind: 'tuketim', rarity: 'siradan', icon: 'kar_cilegi', heal: 0.12, food: true, anim: 'eat', desc: 'Donmuş Zirvede toplanır. Yersen biraz can verir.' },
+  ates_biberi: { name: 'Ateş biberi', kind: 'malzeme', rarity: 'siradan', icon: 'ates_biberi', desc: 'Kor Diyarında toplanır. Sıcak Çorba ve Biber Kebabı malzemesi.' },
+  gece_mantari: { name: 'Gece mantarı', kind: 'malzeme', rarity: 'siradan', icon: 'gece_mantari', desc: 'Gölge Boşluğunda toplanır. Parlıyor.' },
+  // ---- 0.8 cevherler ve kulceler
+  altin_cevheri: { name: 'Altın cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'altin_cevheri', desc: 'Madende Derinlik 3+ (Madencilik 25). Fırında külçe olur.' },
+  altin_kulcesi: { name: 'Altın külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'altin_kulcesi', desc: 'Kristal eşyaların ve tılsımların malzemesi.' },
+  saf_kristal: { name: 'Saf kristal', kind: 'malzeme', rarity: 'siradan', icon: 'saf_kristal', desc: 'Madende Derinlik 5+ (Madencilik 35). Kristal eşyaların ana malzemesi.' },
+  kor_tasi: { name: 'Kor taşı', kind: 'malzeme', rarity: 'siradan', icon: 'kor_tasi', desc: 'Madende Derinlik 7+ (Madencilik 50). Fırında Kor külçesi olur.' },
+  kor_kulcesi: { name: 'Kor külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'kor_kulcesi', desc: 'Kor eşyaların ana malzemesi.' },
+  bonkit: { name: 'Bonkit', kind: 'malzeme', rarity: 'epik', icon: 'bonkit', desc: 'Her derinlikte çok nadir (%0,5, Madencilik 65). Oyunun en sert cevheri.' },
+  bonkit_kulcesi: { name: 'Bonkit külçesi', kind: 'malzeme', rarity: 'epik', icon: 'bonkit_kulcesi', desc: 'Bonkit eşyaların ana malzemesi.' },
+  golge_tasi: { name: 'Gölge taşı', kind: 'malzeme', rarity: 'nadir', icon: 'golge_tasi', desc: 'Madende Derinlik 9+ (Madencilik 80). Fırında Gölge külçesi olur.' },
+  golge_kulcesi: { name: 'Gölge külçesi', kind: 'malzeme', rarity: 'nadir', icon: 'golge_kulcesi', desc: 'Gölge eşyaların ana malzemesi.' },
+  // ---- 0.8 yemler ve tuketilebilirler
+  kar_kurabiyesi: { name: 'Kar Kurabiyesi', kind: 'malzeme', rarity: 'siradan', icon: 'kar_kurabiyesi', yem: 'buz', desc: 'Buz Glemonlarının sevdiği basit yem.' },
+  aurora_sekeri: { name: 'Aurora Şekeri', kind: 'malzeme', rarity: 'nadir', icon: 'aurora_sekeri', yem: 'buz', special: true, desc: 'Özel yem: Nadir ve Epik Buz Glemonlarını da evcilleştirir.' },
+  biber_kebabi: { name: 'Biber Kebabı', kind: 'malzeme', rarity: 'siradan', icon: 'biber_kebabi', yem: 'kor', desc: 'Ateş Glemonlarının sevdiği basit yem.' },
+  yakut_receli: { name: 'Yakut Reçeli', kind: 'malzeme', rarity: 'nadir', icon: 'yakut_receli', yem: 'kor', special: true, desc: 'Özel yem: Nadir ve Epik Ateş Glemonlarını da evcilleştirir.' },
+  gece_coregi: { name: 'Gece Çöreği', kind: 'malzeme', rarity: 'siradan', icon: 'gece_coregi', yem: 'golge', desc: 'Gölge Glemonlarının sevdiği basit yem.' },
+  ay_pastasi: { name: 'Ay Pastası', kind: 'malzeme', rarity: 'nadir', icon: 'ay_pastasi', yem: 'golge', special: true, desc: 'Özel yem: Nadir ve Epik Gölge Glemonlarını da evcilleştirir.' },
+  sicak_corba: { name: 'Sıcak Çorba', kind: 'tuketim', rarity: 'siradan', icon: 'sicak_corba', heal: 0.2, food: true, warm: true, anim: 'eat', desc: 'Donmuş Zirvede soğuğu 30 dakika engeller. Üşüyünce kendiliğinden içersin.' },
+  ates_iksiri: { name: 'Ateş Direnci İksiri', kind: 'tuketim', rarity: 'nadir', icon: 'ates_iksiri', fireRes: true, anim: 'drinkpotion', desc: 'Kor Diyarında lavın yakmasını 30 dakika engeller. Gerekince kendiliğinden içersin.' },
+  buyuk_iksir: { name: 'Büyük Can İksiri', kind: 'tuketim', rarity: 'epik', icon: 'iksir_buyuk', heal: 0.75, anim: 'drinkpotion', desc: 'Canının %75\'ini doldurur.' },
+  // ---- 0.8 efsanevi yumurtalar
+  yumurta_orman: { name: 'Orman Yumurtası', kind: 'yumurta', rarity: 'efsanevi', icon: 'yumurta_orman', egg: 'orman', bound: true, desc: 'Efsanevi bir Glemon yumurtası. Çantanda taşırsan 100 savaştan sonra çatlar.' },
+  yumurta_magara: { name: 'Mağara Yumurtası', kind: 'yumurta', rarity: 'efsanevi', icon: 'yumurta_magara', egg: 'magara', bound: true, desc: 'Efsanevi bir Glemon yumurtası. Çantanda taşırsan 100 savaştan sonra çatlar.' },
+  yumurta_col: { name: 'Çöl Yumurtası', kind: 'yumurta', rarity: 'efsanevi', icon: 'yumurta_col', egg: 'col', bound: true, desc: 'Efsanevi bir Glemon yumurtası. Çantanda taşırsan 100 savaştan sonra çatlar.' },
+  yumurta_buz: { name: 'Buz Yumurtası', kind: 'yumurta', rarity: 'efsanevi', icon: 'yumurta_buz', egg: 'buz', bound: true, desc: 'Efsanevi bir Glemon yumurtası. Çantanda taşırsan 100 savaştan sonra çatlar.' },
+  yumurta_kor: { name: 'Kor Yumurtası', kind: 'yumurta', rarity: 'efsanevi', icon: 'yumurta_kor', egg: 'kor', bound: true, desc: 'Efsanevi bir Glemon yumurtası. Çantanda taşırsan 100 savaştan sonra çatlar.' },
+  yumurta_golge: { name: 'Gölge Yumurtası', kind: 'yumurta', rarity: 'efsanevi', icon: 'yumurta_golge', egg: 'golge', bound: true, desc: 'Efsanevi bir Glemon yumurtası. Çantanda taşırsan 100 savaştan sonra çatlar.' },
+  // ---- 0.8 ozel esyalar
+  buzul_kilici: { name: 'Buzul Kılıcı', kind: 'silah', rarity: 'nadir', icon: 'kilic_buzul', power: 28, onHit: ['donma', 0.2], req: ['saldiri', 35], desc: 'Buzul Kalbiyle yapılır. Vuruşların bazen dondurur.' },
+  ayi_eldiveni: { name: 'Ayı Eldiveni', kind: 'silah', wt: 'yumruk', rarity: 'epik', icon: 'eldiven_ayi', power: 30, def: 6, req: ['saldiri', 35], desc: 'Buzul Ayısından çok nadir düşer. Yumruk eldiveni.' },
+  kor_kilici: { name: 'Kor Kılıcı', kind: 'silah', rarity: 'epik', icon: 'kilic_kor_ozel', power: 38, onHit: ['yanma', 0.3], req: ['saldiri', 45], desc: 'Magma Kaplumbağasından çok nadir düşer. Vuruşların sık sık yakar.' },
+  magma_gogus: { name: 'Magma Göğüslüğü', kind: 'gogus', rarity: 'nadir', icon: 'gogus_magma', def: 20, hp: 20, fireproof: true, req: ['savunma', 45], desc: 'Magma Kabuğuyla yapılır. Yanma işlemez.' },
+  bosluk_yayi: { name: 'Boşluk Yayı', kind: 'silah', wt: 'yay', rarity: 'nadir', icon: 'yay_bosluk', power: 52, req: ['okculuk', 62], desc: 'Boşluk Taşıyla yapılır. Çok güçlü.' },
+  bekci_pelerini: { name: 'Bekçi Pelerini', kind: 'tilsim', rarity: 'epik', icon: 'pelerin', def: 6, spd: 15, darkproof: true, desc: 'Boşluk Bekçisinden çok nadir düşer. Karanlık işlemez, Hız +15.' },
+  aurora_tilsimi: { name: 'Aurora Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_aurora', hp: 30, desc: 'Can +30.' },
+  yakut_tilsimi: { name: 'Yakut Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_yakut', crit: 0.08, luck: 8, desc: 'Kritik +%8, Şans +8.' },
+  ay_tilsimi: { name: 'Ay Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_ay', spd: 25, desc: 'Hız +25.' },
 };
+
+// 0.8 ekipman seviyeleri: Kristal, Kor, Bonkit, Golge (kilic, yay, kazma, kask, goguslik, bot)
+export const TIERS = {
+  kristal: { name: 'Kristal', atk: 22, bow: 21, pick: 7, def: [7, 13, 7], lvl: 30, mine: 35 },
+  kor: { name: 'Kor', atk: 32, bow: 30, pick: 11, def: [9, 17, 9], lvl: 45, mine: 50 },
+  bonkit: { name: 'Bonkit', atk: 44, bow: 42, pick: 16, def: [12, 22, 12], lvl: 60, mine: 65 },
+  golge: { name: 'Gölge', atk: 58, bow: 55, pick: 24, def: [15, 28, 15], lvl: 75, mine: 80 },
+};
+for (const [t, T] of Object.entries(TIERS)) {
+  const d = 'Üretim Masasında yapılır.';
+  ITEMS[`${t}_kilic`] = { name: `${T.name} Kılıç`, kind: 'silah', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `kilic_${t}`, power: T.atk, req: ['saldiri', T.lvl], desc: d };
+  ITEMS[`${t}_yay`] = { name: `${T.name} Yay`, kind: 'silah', wt: 'yay', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `yay_${t}`, power: T.bow, req: ['okculuk', T.lvl], desc: d };
+  ITEMS[`${t}_kazma`] = { name: `${T.name} Kazma`, kind: 'kazma', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `kazma_${t}`, pick: T.pick, req: ['madencilik', T.mine], desc: d };
+  ['kask', 'gogus', 'bot'].forEach((k, i) => {
+    ITEMS[`${t}_${k}`] = { name: `${T.name} ${{ kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot' }[k]}`, kind: k, rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `${k}_${t}`, def: T.def[i], set: t, req: ['savunma', T.lvl], desc: d };
+  });
+}
 
 export const SETS = {
   yosun: { pieces: 3, hp: 15, name: 'Yosun seti', bonus: '+15 can' },
   tahta: { pieces: 3, name: 'Tahta seti', bonus: 'bonus yok' },
   tas: { pieces: 3, hp: 5, name: 'Taş seti', bonus: '+5 can' },
   demir: { pieces: 3, defPct: 0.1, name: 'Demir seti', bonus: 'Savunma +%10' },
+  kristal: { pieces: 3, hp: 20, name: 'Kristal seti', bonus: '+20 can' },
+  kor: { pieces: 3, fireproof: true, name: 'Kor seti', bonus: 'Yanma işlemez' },
+  bonkit: { pieces: 3, crit: 0.1, name: 'Bonkit seti', bonus: 'Kritik +%10' },
+  golge: { pieces: 3, darkproof: true, name: 'Gölge seti', bonus: 'Karanlık işlemez' },
 };
 
 export const SLOTS = [
@@ -386,6 +626,9 @@ export const ZONE_CHEST = {
   orman: { mats: CHEST_MATS },
   magara: { mats: ['tas', 'komur', 'ham_kristal', 'yarasa_zari', 'demir_cevheri'], gear: [['tas_yay', 2], ['tas_kilic', 2], ['fener', 2]] },
   col: { mats: ['kum', 'pul', 'kaktus_suyu', 'hurma', 'demir_kulcesi'], gear: [['su_matarasi', 4], ['demir_yay', 1], ['orta_iksir', 2]] },
+  buz: { mats: ['buz_kristali', 'kar_tuyu', 'kiragi_postu', 'kar_cilegi', 'altin_kulcesi'], gear: [['sicak_corba', 4], ['kristal_yay', 1], ['kristal_kilic', 1], ['orta_iksir', 2]] },
+  kor: { mats: ['kor_pulu', 'kul', 'kivilcim', 'ates_biberi', 'kor_tasi'], gear: [['ates_iksiri', 4], ['kor_yay', 1], ['kor_kask', 1], ['orta_iksir', 2]] },
+  golge: { mats: ['golge_ozu', 'gece_postu', 'gece_mantari', 'kor_kulcesi', 'golge_tasi'], gear: [['fener', 2], ['golge_yay', 0.5], ['golge_bot', 0.5], ['buyuk_iksir', 2]] },
 };
 
 // Kat odalari
@@ -397,9 +640,9 @@ export const ZONES = [
   { key: 'orman', name: 'Yabani Orman', floors: [1, 10], open: true, boss: 'agacbasi', type: 'Orman', atk: 1 },
   { key: 'magara', name: 'Yankı Mağaraları', floors: [11, 20], open: true, boss: 'tas_golemi', type: 'Taş', atk: 15, after: 'agacbasi', hazard: 'Karanlık odalar: çantanda Fener yoksa göremezsin.' },
   { key: 'col', name: 'Kavurucu Çöl', floors: [21, 30], open: true, boss: 'firtina_cakali', type: 'Kum', atk: 30, after: 'tas_golemi', hazard: 'Sıcak: Su Matarası yoksa her odada biraz can kaybedersin.' },
-  { key: 'buz', name: 'Donmuş Zirve', floors: [31, 40], soon: '0.8' },
-  { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], soon: '0.8' },
-  { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], soon: '0.8' },
+  { key: 'buz', name: 'Donmuş Zirve', floors: [31, 40], open: true, boss: 'buzul_ayisi', type: 'Buz', atk: 45, after: 'firtina_cakali', hazard: 'Soğuk: Sıcak Çorba içmezsen savaşlarda yavaşlarsın.' },
+  { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], open: true, boss: 'magma_kaplumbaga', type: 'Ateş', atk: 60, after: 'buzul_ayisi', hazard: 'Lav: Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın.' },
+  { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], open: true, boss: 'bosluk_bekcisi', type: 'Gölge', atk: 75, after: 'magma_kaplumbaga', hazard: 'Karanlık: odaların yarısı karanlık, Fener taşı.' },
 ];
 
 // ---------------------------------------------------------------- Madencilik (0.2)
@@ -412,7 +655,14 @@ export const ORES = {
   komur: { name: 'Kömür', hard: 3, xp: 25, req: 1, drop: 'komur' },
   demir: { name: 'Demir', hard: 6, xp: 75, req: 15, drop: 'demir_cevheri' },
   define: { name: 'Define sandığı', hard: 3, xp: 30, req: 1, drop: null },
+  // 0.8 yeni cevherler (Madencilik seviyesi; derinlikle artar)
+  altin: { name: 'Altın', hard: 9, xp: 120, req: 25, drop: 'altin_cevheri' },
+  kristal: { name: 'Kristal', hard: 18, xp: 180, req: 35, drop: 'saf_kristal' },
+  kor: { name: 'Kor taşı', hard: 30, xp: 260, req: 50, drop: 'kor_tasi' },
+  bonkit: { name: 'Bonkit', hard: 44, xp: 700, req: 65, drop: 'bonkit' },
+  golge: { name: 'Gölge taşı', hard: 64, xp: 420, req: 80, drop: 'golge_tasi' },
 };
+export const BONKIT_CHANCE = 0.005;
 export const zoneOf = (floor) => ZONES.find((z) => floor >= z.floors[0] && floor <= z.floors[1]) || ZONES[0];
 export const MINE_COLS = 8;
 export const MINE_ROWS = 6;
@@ -422,7 +672,13 @@ export const DEFINE_CHANCE = 0.006;
 export function oreWeights(depth) {
   if (depth <= 1) return [['toprak', 22], ['tas', 50], ['kum', 13], ['komur', 15]];
   if (depth === 2) return [['toprak', 6], ['tas', 56], ['kum', 12], ['komur', 20], ['demir', 6]];
-  return [['tas', 54], ['kum', 7], ['komur', 23], ['demir', Math.min(22, 10 + (depth - 3) * 3)]];
+  const w = [['tas', 54], ['kum', 7], ['komur', 23], ['demir', Math.min(22, 10 + (depth - 3) * 3)]];
+  // 0.8: derinlik 3'ten sonra altin, 5'ten sonra kristal, 7'den sonra kor tasi, 9'dan sonra golge tasi
+  if (depth >= 3) w.push(['altin', Math.min(12, 4 + (depth - 3) * 2)]);
+  if (depth >= 5) w.push(['kristal', Math.min(10, 3 + (depth - 5) * 2)]);
+  if (depth >= 7) w.push(['kor', Math.min(9, 3 + (depth - 7) * 2)]);
+  if (depth >= 9) w.push(['golge', Math.min(8, 2 + (depth - 9) * 2)]);
+  return w;
 }
 export const mineXpMult = (depth) => Math.min(1.5, 1 + 0.05 * (depth - 1));
 export const mineHardBonus = (depth) => Math.floor((depth - 1) / 4);
@@ -435,12 +691,19 @@ export const GATHER = {
   mantar: { name: 'Mantar', node: 'shroom', xp: 22 },
   hurma: { name: 'Hurma', node: 'palm', xp: 24 },
   kum: { name: 'Kum', node: 'sand', xp: 12 },
+  kar_cilegi: { name: 'Kar çileği', node: 'snowberry', xp: 30 },
+  ates_biberi: { name: 'Ateş biberi', node: 'pepper', xp: 34 },
+  kul: { name: 'Kül', node: 'sand', xp: 20 },
+  gece_mantari: { name: 'Gece mantarı', node: 'nightshroom', xp: 38 },
 };
 // bolgeye gore toplanabilirler [esya, agirlik]
 export const ZONE_GATHER = {
   orman: [['sifali_ot', 40], ['bogurtlen', 35], ['dal', 25]],
   magara: [['mantar', 45], ['sifali_ot', 30], ['dal', 25]],
   col: [['hurma', 45], ['kum', 30], ['bogurtlen', 25]],
+  buz: [['kar_cilegi', 50], ['sifali_ot', 25], ['dal', 25]],
+  kor: [['ates_biberi', 50], ['kul', 25], ['dal', 25]],
+  golge: [['gece_mantari', 55], ['sifali_ot', 25], ['dal', 20]],
 };
 export const BAL_CHANCE = 0.06;
 
@@ -462,6 +725,19 @@ const gearSet = (tier, main, lvl, xpEach) => [
   { out: `${tier}_gogus`, mats: { [main]: 8 } },
   { out: `${tier}_bot`, mats: { [main]: 4 } },
 ].map((r) => ({ ...r, station: 'masa', lvl, xp: xpEach * r.mats[main] }));
+
+// 0.8 seviye seti: ana malzeme + ikinci malzeme (yay ipi ayri). k: Bonkit gibi nadir cevherde adet carpani
+function tierSet(tier, main, extra, string, lvl, xpEach, k) {
+  const n = (v) => Math.max(1, Math.round(v * k));
+  return [
+    { out: `${tier}_kilic`, mats: { [main]: n(3), [extra]: 2 } },
+    { out: `${tier}_yay`, mats: { [main]: n(3), [string]: 2 } },
+    { out: `${tier}_kazma`, mats: { [main]: n(3), dal: 2 } },
+    { out: `${tier}_kask`, mats: { [main]: n(5), [extra]: 1 } },
+    { out: `${tier}_gogus`, mats: { [main]: n(8), [extra]: 2 } },
+    { out: `${tier}_bot`, mats: { [main]: n(4), [extra]: 1 } },
+  ].map((r) => ({ ...r, station: 'masa', lvl, xp: xpEach * r.mats[main] }));
+}
 
 export const RECIPES = [
   { out: 'tahta_kalas', mats: { dal: 2 }, station: 'masa', lvl: 1, xp: 15 },
@@ -506,6 +782,30 @@ export const RECIPES = [
   { out: 'golem_kilici', mats: { golem_cekirdegi: 1, demir_kulcesi: 4, ham_kristal: 4 }, station: 'masa', lvl: 20, xp: 400 },
   { out: 'firtina_yayi', mats: { firtina_disi: 1, demir_kulcesi: 3, yarasa_zari: 4 }, station: 'masa', lvl: 24, xp: 450 },
   { out: 'skarabe_tilsimi', mats: { altin_kanat: 2, bal: 1 }, station: 'masa', lvl: 20, xp: 300 },
+  // 0.8 (sona eklenir)
+  { out: 'altin_kulcesi', mats: { altin_cevheri: 2, komur: 1 }, station: 'firin', lvl: 22, xp: 70 },
+  { out: 'kor_kulcesi', mats: { kor_tasi: 2, komur: 2 }, station: 'firin', lvl: 38, xp: 140 },
+  { out: 'bonkit_kulcesi', mats: { bonkit: 1, kor_tasi: 1 }, station: 'firin', lvl: 52, xp: 300 },
+  { out: 'golge_kulcesi', mats: { golge_tasi: 2, kor_tasi: 1 }, station: 'firin', lvl: 64, xp: 260 },
+  ...tierSet('kristal', 'saf_kristal', 'altin_kulcesi', 'kar_tuyu', 30, 40, 1),
+  ...tierSet('kor', 'kor_kulcesi', 'kor_pulu', 'kivilcim', 42, 70, 1),
+  ...tierSet('bonkit', 'bonkit_kulcesi', 'saf_kristal', 'yarasa_zari', 55, 160, 0.5),
+  ...tierSet('golge', 'golge_kulcesi', 'golge_ozu', 'gece_postu', 68, 130, 1),
+  { out: 'kar_kurabiyesi', mats: { kar_cilegi: 2, dal: 1 }, station: 'yem', lvl: 26, xp: 70 },
+  { out: 'aurora_sekeri', mats: { kar_cilegi: 2, bal: 1 }, station: 'yem', lvl: 30, xp: 140 },
+  { out: 'biber_kebabi', mats: { ates_biberi: 2, kul: 1 }, station: 'yem', lvl: 36, xp: 90 },
+  { out: 'yakut_receli', mats: { ates_biberi: 2, bal: 1 }, station: 'yem', lvl: 40, xp: 170 },
+  { out: 'gece_coregi', mats: { gece_mantari: 2, dal: 1 }, station: 'yem', lvl: 46, xp: 110 },
+  { out: 'ay_pastasi', mats: { gece_mantari: 2, bal: 1 }, station: 'yem', lvl: 50, xp: 200 },
+  { out: 'sicak_corba', mats: { mantar: 2, sifali_ot: 1, komur: 1 }, station: 'firin', lvl: 24, xp: 60 },
+  { out: 'ates_iksiri', mats: { buz_kristali: 2, sifali_ot: 1, bos_sise: 1 }, station: 'kazan', lvl: 32, xp: 120 },
+  { out: 'buyuk_iksir', mats: { sifali_ot: 3, kar_cilegi: 2, bos_sise: 1 }, station: 'kazan', lvl: 40, xp: 180 },
+  { out: 'buzul_kilici', mats: { buzul_kalbi: 1, saf_kristal: 4, altin_kulcesi: 2 }, station: 'masa', lvl: 34, xp: 600 },
+  { out: 'magma_gogus', mats: { magma_kabugu: 1, kor_kulcesi: 4 }, station: 'masa', lvl: 45, xp: 800 },
+  { out: 'bosluk_yayi', mats: { bosluk_tasi: 1, golge_kulcesi: 3, gece_postu: 3 }, station: 'masa', lvl: 66, xp: 1100 },
+  { out: 'aurora_tilsimi', mats: { aurora_boynuzu: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 34, xp: 500 },
+  { out: 'yakut_tilsimi', mats: { yakut: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 46, xp: 650 },
+  { out: 'ay_tilsimi', mats: { ay_tozu: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 56, xp: 800 },
 ];
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -520,6 +820,8 @@ export const SHOP = [
   { id: 'bogurtlen_tohumu', price: 15 },
   { id: 'orman_turtasi', price: 25 },
   { id: 'tahta_yay', price: 60 },
+  { id: 'sicak_corba', price: 45 },
+  { id: 'ates_iksiri', price: 80 },
   { id: 'altin_elma', price: 450 },
   { id: 'can_tilsimi', price: 1500 },
 ];
@@ -529,6 +831,10 @@ export const SELL = {
   kutuk: 2, kaldirim: 1, kiremit: 2, cit: 1, ot_tohumu: 3, bogurtlen_tohumu: 4,
   ham_kristal: 4, yarasa_zari: 3, bocek_kanadi: 80, ametist: 120, akrep_ignesi: 20, kaktus_suyu: 3, pul: 3,
   eski_sargi: 25, altin_kanat: 150, hurma: 3, orman_turtasi: 6, mantar_ezmesi: 6, kaktus_jolesi: 8,
+  buz_kristali: 5, kar_tuyu: 5, kiragi_postu: 6, aurora_boynuzu: 180, kor_pulu: 6, kivilcim: 6, kul: 3, yakut: 220,
+  golge_ozu: 8, gece_postu: 8, ay_tozu: 260, kar_cilegi: 4, ates_biberi: 5, gece_mantari: 6,
+  altin_cevheri: 8, altin_kulcesi: 20, saf_kristal: 14, kor_tasi: 18, kor_kulcesi: 40, bonkit: 200, bonkit_kulcesi: 420,
+  golge_tasi: 30, golge_kulcesi: 70, kar_kurabiyesi: 10, biber_kebabi: 12, gece_coregi: 14,
 };
 
 // ---------------------------------------------------------------- Us ve insa (0.3)

@@ -452,9 +452,445 @@ def boss_agacbasi():
     return {'pal': {keymap[k]: v for k, v in pal.items()}, 'map': rows, 'fx': 'slam', 'boss': True}
 
 
+
+# ---------------------------------------------------------------- 0.8 Donmus Zirve (buz-mavi)
+SPECIES.update({
+    'kar_penguen': {  # atkili tombul penguen yavrusu, sola donuk
+        'pal': {'n': '#3a4a6a', 'N': '#2a3450', 'b': '#eef6fc', 'o': '#f0a040', 's': '#d85a5a',
+                'k': '#100c14', 'w': '#ffffff', 'l': '#f0a040'},
+        'map': [
+            "...nnnn...",
+            "..nnnnnnn.",
+            ".nbwknnnn.",
+            "onbkknnnnn",
+            "oosssssnnn",
+            ".nbbbbbnnn",
+            ".nbbbbbnnN",
+            "..bbbbbnN.",
+            "...l..l...",
+        ],
+        'fx': 'beam', 'accent': '#d85a5a',
+    },
+    'kiragi_tilki': {  # buz rengi, kar kuyruklu tilki
+        'pal': {'f': '#c8dcec', 'e': '#8ab0d0', 'T': '#f4fbff', 't': '#a8c8e4', 'm': '#ffffff',
+                'o': '#2a3450', 'k': '#100c14', 'w': '#ffffff', 'l': '#8ab0d0'},
+        'map': [
+            ".e..e........",
+            ".ee.ee.......",
+            "fffffff....TT",
+            "fwkffwkf..TtT",
+            "fkkffkkf..Tt.",
+            "offfffffffTt.",
+            ".mmffffffff..",
+            "..fffffffff..",
+            "..l..l..l..l.",
+        ],
+        'fx': 'thorn', 'fxcol': ('#e8f4fc', '#8ab0d0'), 'accent': '#9cc8e8',
+    },
+    'buzcuk': {  # kristal tepeli buz topu
+        'pal': {'i': '#9cc8e8', 'I': '#d8eef8', 'c': '#c8e6f8', 'C': '#f4fbff', 'o': '#4a6a90',
+                'k': '#100c14', 'w': '#ffffff', 'l': '#6a98c0'},
+        'map': [
+            "....cc....",
+            "...cCCc...",
+            "..cCCCCc..",
+            ".iiiiiiii.",
+            "iIwkiiwkIi",
+            "iIkkiikkIi",
+            "iiiiooiiii",
+            ".iIiiiiIi.",
+            "..iiiiii..",
+            "..l....l..",
+        ],
+        'fx': 'beam', 'accent': '#f4fbff',
+    },
+    'kar_baykusu': {  # kocaman gozlu kar baykusu, ucar
+        'pal': {'e': '#9cb8d0', 'o': '#e8f0f6', 'W': '#b8d0e4', 'y': '#f0c050', 'b': '#d0e0ec',
+                'v': '#a8c0d8', 'k': '#100c14', 'w': '#ffffff', 'l': '#f0c050'},
+        'map': [
+            ".e......e.",
+            ".oe....eo.",
+            ".oooooooo.",
+            "oWWWooWWWo",
+            "oWwkooWwko",
+            "oWkkyyWkko",
+            "voobbbboov",
+            "vvobbbbovv",
+            ".voobbbov.",
+            "..l....l..",
+        ],
+        'fx': 'wind', 'fxcol': ('#f4fbff', '#a8c8e4'), 'accent': '#f0c050', 'fly': True,
+    },
+    'aurora_geyigi': {  # parlak boynuzlu kucuk geyik (nadir)
+        'pal': {'d': '#b8c8e8', 'D': '#e0e8f8', 'a': '#7ae0c8', 'A': '#c08af0', 'm': '#ffffff',
+                'o': '#4a5a80', 't': '#ffffff', 'k': '#100c14', 'w': '#ffffff', 'l': '#7a8ab0'},
+        'map': [
+            "a.A..A.a....",
+            ".aAaaAa.....",
+            "..dddd......",
+            ".dwkddd.....",
+            "odkkdddddddt",
+            ".dddddDDDDdt",
+            "..mdddDDDDd.",
+            "...dddddddd.",
+            "...l.l..l.l.",
+        ],
+        'fx': 'star', 'accent': '#7ae0c8',
+    },
+})
+
+# ---------------------------------------------------------------- 0.8 Kor Diyari (ates-kirmizi)
+SPECIES.update({
+    'kor_semender': {  # sirti alevli semender, sola donuk
+        'pal': {'h': '#e86a3a', 'R': '#d0502e', 'r': '#ffb050', 'y': '#ffd060', 'f': '#ffd060',
+                'F': '#f08a3a', 't': '#ff9a4a', 'o': '#5a1a10', 'k': '#100c14', 'w': '#ffffff',
+                'l': '#8a3020'},
+        'map': [
+            ".hhhh...fF...",
+            "hwkhhh.fFf...",
+            "hkkhhhRrRRf..",
+            "hohhhRRyRrR..",
+            ".hhhRRrRRyRt.",
+            "...RRRRRRRRtt",
+            ".l..l...l..l.",
+        ],
+        'fx': 'spores', 'fxcol': ('#ffd060', '#f05a2a'), 'accent': '#ffd060',
+    },
+    'kivilcim_yarasa': {  # kanatlari kor gibi parlayan yarasa, ucar
+        'pal': {'W': '#d8583a', 'w': '#f08a3a', 'b': '#5a2a3a', 'B': '#7a3a48', 'e': '#5a2a3a',
+                'y': '#ffd060', 'o': '#fff0d0', 'k': '#100c14', 'l': '#3a1a24'},
+        'map': mirror([
+            "W..e..",
+            "WW.ee.",
+            "WwWbbb",
+            ".WwByk",
+            "..Wbkk",
+            "...bbo",
+            "....bb",
+            "....l.",
+        ]),
+        'fx': 'spores', 'fxcol': ('#ffd060', '#f05a2a'), 'accent': '#ffd060', 'fly': True,
+    },
+    'magma_salyangoz': {  # kabugu magma catlakli salyangoz
+        'pal': {'b': '#e89a5a', 'a': '#e89a5a', 'A': '#ffd060', 's': '#4a3438', 'S': '#6a4a48',
+                'm': '#ff7a2a', 'M': '#ffd060', 'k': '#100c14', 'w': '#ffffff', 'l': '#c87a4a'},
+        'map': [
+            ".A.A..sSSs..",
+            ".a.a.sSmmSs.",
+            ".a.a.sMmsmS.",
+            "bbb.sSmSsmSs",
+            "wkbbsSmmmSSs",
+            "kkbbbsSSSSs.",
+            "bbbbbbbbbbbb",
+            ".l.l.l.l.l..",
+        ],
+        'fx': 'thorn', 'fxcol': ('#ffd060', '#ff7a2a'), 'accent': '#ff7a2a',
+    },
+    'kul_koc': {  # yunu kul, icinde korlar parlayan koc
+        'pal': {'c': '#5a4a50', 'h': '#e8a050', 'H': '#ffd060', 'w': '#8a7e88', 'W': '#ff8a4a',
+                'o': '#2a2028', 'k': '#100c14', 'l': '#3a2e34'},
+        'map': [
+            "..hhh.......",
+            ".hHHhh......",
+            ".h.ccc.wWwW.",
+            "..cwkcwwWwwW",
+            "..ckkcwWwwWw",
+            ".occccwwwWww",
+            "..cc.wWwwwWw",
+            ".....wwwWww.",
+            ".....l.l.l.l",
+        ],
+        'fx': 'slam', 'accent': '#ff8a4a',
+    },
+    'yakut_ejder': {  # yakut pullu minik ejder (nadir)
+        'pal': {'r': '#c8304a', 'e': '#ffd060', 'v': '#e85a6a', 'V': '#ff9aa0', 'y': '#ffd8a0',
+                'o': '#5a1020', 't': '#c8304a', 'k': '#100c14', 'w': '#ffffff', 'l': '#7a1a2a'},
+        'map': [
+            "...e..e.....",
+            "..rrrrr..vV.",
+            ".rrwkrr.vVVv",
+            "orrkkrrvVVv.",
+            ".rrrrrrrrr..",
+            "..yyrrrrrrtt",
+            "..yyrrrrr..t",
+            "...l...l....",
+        ],
+        'fx': 'beam', 'fxcol': ('#ffb050', '#fff0a0'), 'accent': '#ffd060',
+    },
+})
+
+# ---------------------------------------------------------------- 0.8 Golge Boslugu (mor)
+SPECIES.update({
+    'fisilti': {  # parlak gozlu golge hayaleti, ucar
+        'pal': {'s': '#4a3a6a', 'S': '#6a4a9a', 'G': '#b8f0f0', 'o': '#1a1028', 'l': '#4a3a6a'},
+        'map': [
+            "...ssss...",
+            "..ssssss..",
+            ".ssssssss.",
+            ".sGGssGGs.",
+            ".sGGssGGs.",
+            ".ssssosss.",
+            ".sSssssSs.",
+            ".s.sSs.s..",
+            "s...s...s.",
+        ],
+        'fx': 'wave', 'fxcol': ('#b88af0',), 'accent': '#b88af0', 'fly': True,
+    },
+    'gece_pisi': {  # iki kuyruklu golge kedisi
+        'pal': {'c': '#3a2e4e', 'C': '#5a4a7a', 'e': '#5a4a7a', 'y': '#7af0e0', 'o': '#c88aa0',
+                't': '#3a2e4e', 'T': '#b88af0', 'k': '#100c14', 'l': '#2a2038'},
+        'map': [
+            ".e...e.......",
+            ".ee.ee.....T.",
+            ".ccccc....t.T",
+            "cykccykc..t.t",
+            "ckkcckkc..tt.",
+            "cccoccccccct.",
+            ".ccccccccccc.",
+            "..cccCCCCccc.",
+            "..l..l...l.l.",
+        ],
+        'fx': 'thorn', 'fxcol': ('#b88af0', '#5a3a8a'), 'accent': '#7af0e0',
+    },
+    'bosluk_kurdu': {  # halka halka parlayan bosluk kurdu
+        'pal': {'v': '#6a4a9a', 'm': '#4a3a6a', 'M': '#b88af0', 'o': '#1a1028', 'k': '#100c14',
+                'w': '#ffffff', 'l': '#3a2a5a'},
+        'map': [
+            ".vvvv.......",
+            "vwkvwkv.....",
+            "vkkvkkvmmm..",
+            "vvoovvmMMmm.",
+            ".vvvvmMmmMmm",
+            "..vvmmmMmmMm",
+            "..l.l..l..l.",
+        ],
+        'fx': 'spores', 'fxcol': ('#b88af0', '#6a4a9a'), 'accent': '#b88af0',
+    },
+    'gozmantar': {  # sapkasinda tek koca goz olan mantar
+        'pal': {'p': '#5a3a8a', 'P': '#7af0e0', 'W': '#f4f0ff', 's': '#c8b8d8', 'o': '#3a2a5a',
+                'k': '#100c14', 'l': '#8a7aa0'},
+        'map': [
+            "...pppp...",
+            ".ppPppPpp.",
+            "pPpWWWWpPp",
+            "ppWWkkWWpp",
+            "ppWWkkWWpp",
+            "pppWWWWppp",
+            "...ssss...",
+            "..ssoss...",
+            "..ssssss..",
+            "..l....l..",
+        ],
+        'fx': 'beam', 'fxcol': ('#b88af0', '#f4f0ff'), 'accent': '#7af0e0',
+    },
+    'ay_guvesi': {  # kanadinda ay lekesi olan guve (nadir), ucar
+        'pal': {'W': '#3a3a7a', 'v': '#b8c8f8', 'm': '#fff0a0', 'b': '#e8e0f8', 'a': '#b8c8f8',
+                'k': '#100c14', 'w': '#ffffff', 'l': '#8a8ab0'},
+        'map': mirror([
+            "WW..a.",
+            "WvW..a",
+            "WvvWbb",
+            "WvmWwk",
+            ".WvWkk",
+            ".WvWbb",
+            "..WWbb",
+            "....l.",
+        ]),
+        'fx': 'star', 'accent': '#fff0a0', 'fly': True,
+    },
+})
+
+
+# ---------------------------------------------------------------- 0.8 Efsanevi Glemonlar (yumurtadan cikar)
+SPECIES.update({
+    'cicek_aslani': {  # yelesi cicek tacli aslan yavrusu
+        'pal': {'y': '#e8c070', 'P': '#ec96a4', 'r': '#d86a7a', 'o': '#7a3e2a', 't': '#e8c070',
+                'k': '#100c14', 'w': '#ffffff', 'l': '#b88a4a'},
+        'map': [
+            "..PrPrP.....",
+            ".PryyyyrP...",
+            "PrywkywkrP..",
+            "PrykkykkrP..",
+            ".PryoyyrPyyt",
+            "..PrPrPyyyyP",
+            "...yyyyyyyy.",
+            "...yyyyyyyy.",
+            "...l.l..l.l.",
+        ],
+        'fx': 'leaf', 'accent': '#ec96a4',
+    },
+    'kristal_yilan': {  # sirti ametist kristalli buz mavisi yilan
+        'pal': {'c': '#7cb4d8', 'C': '#c8e6f8', 'v': '#9a6cc8', 'o': '#e85a6a', 'k': '#100c14',
+                'w': '#ffffff'},
+        'map': [
+            ".cccc........",
+            "cCwkCc.......",
+            "cCkkCc...cvc.",
+            "occCCcc.cCvCc",
+            "...cCCcccCCc.",
+            "....cCCvCCc..",
+            "......ccc....",
+        ],
+        'fx': 'beam', 'fxcol': ('#c8a0ec', '#f0e0ff'), 'accent': '#9a6cc8',
+    },
+    'gunes_kusu': {  # altin tuylu, turuncu kanatli gunes kusu
+        'pal': {'Y': '#ffd04d', 'f': '#ff8a2e', 'W': '#e86a2a', 'w': '#ffb04a', 'o': '#c87a1a',
+                'T': '#e86a2a', 'k': '#100c14', 'l': '#c87a1a'},
+        'map': mirror([
+            "....f.",
+            "...fY.",
+            "W..YYY",
+            "WWwYwk",
+            "WwwWkk",
+            ".WwYYo",
+            "..WYYY",
+            "...TT.",
+            "....l.",
+        ]),
+        'fx': 'wave', 'fxcol': ('#ffe080',), 'accent': '#ffd04d', 'fly': True,
+    },
+    'kuzey_kurdu': {  # sirtinda aurora yelesi olan kurt
+        'pal': {'f': '#8a9ab8', 'e': '#6a7a98', 'a': '#7ae0c8', 'A': '#c08af0', 'T': '#e4ebf2',
+                't': '#7ae0c8', 'm': '#e4ebf2', 'o': '#1a1a28', 'k': '#100c14', 'w': '#ffffff',
+                'l': '#5a6a88'},
+        'map': [
+            ".e..e........",
+            ".eeeee.aA....",
+            "fffffffAaA.TT",
+            "fwkffwkffffTt",
+            "fkkffkkffff.T",
+            "offffffffff..",
+            ".mmffffffff..",
+            "..fffffffff..",
+            "..l..l..l..l.",
+        ],
+        'fx': 'beam', 'accent': '#7ae0c8',
+    },
+    'anka_yavrusu': {  # alev tuylu anka yavrusu
+        'pal': {'F': '#e8502a', 'f': '#ffd060', 'W': '#ff8a2e', 'w': '#ffd060', 'o': '#ffd060',
+                'k': '#100c14', 'l': '#a83a14'},
+        'map': mirror([
+            "f.....",
+            ".f..f.",
+            "..fFF.",
+            "W..FFF",
+            "WWwFwk",
+            "WwwWkk",
+            ".WwFFo",
+            "..WFFF",
+            "..ff..",
+            "....l.",
+        ]),
+        'fx': 'spores', 'fxcol': ('#ffd060', '#f05a2a'), 'accent': '#ffd060', 'fly': True,
+    },
+    'yildiz_balinasi': {  # havada yuzen, yildiz benekli kucuk balina
+        'pal': {'b': '#3a3a7a', 'B': '#8a8ac8', 's': '#fff0a0', 't': '#3a3a7a', 'T': '#c8a0f0',
+                'k': '#100c14', 'w': '#ffffff'},
+        'map': [
+            "...........tt.",
+            "...bbbbbb..tT.",
+            ".bbbsbbbbbbtt.",
+            "bbwkbbbsbbbbt.",
+            "bbkkbbbbbbbbb.",
+            "bBBBBBBBbbbb..",
+            ".BBsBBBBBBb...",
+            "..BBBBBBB.....",
+        ],
+        'fx': 'star', 'accent': '#fff0a0', 'fly': True,
+    },
+})
+
+
+def _pad(rows):
+    w = max(len(r) for r in rows)
+    return [r.ljust(w, '.') for r in rows]
+
+
+def boss_ayi():
+    """Buzul Ayisi (Buz 40. kat): omuzlari buz kristalli koca beyaz ayi."""
+    half = _pad([
+        "..ee......",
+        ".eEEeffff.",
+        ".eEEffffff",
+        "..ffffffff",
+        "..ffwkffff",
+        "..ffkkffff",
+        "...fffffmm",
+        "C...ffffmo",
+        "Cc..fffmmm",
+        "CcC.ffffff",
+        "cCcffffBBB",
+        ".cffffBBBB",
+        "..fffBBBBB",
+        ".ffffBBBBB",
+        ".fdddfBBBB",
+        ".fdddfBBBB",
+        "..ffffffff",
+        "..ll....ll",
+    ])
+    pal = {'f': '#e8f0f8', 'e': '#c8d8e8', 'E': '#f0b8c8', 'm': '#ffffff', 'o': '#2a3450',
+           'B': '#c8dcec', 'd': '#a8c0d8', 'c': '#9cc8e8', 'C': '#d8eef8', 'k': '#100c14',
+           'w': '#ffffff', 'l': '#8aa8c8'}
+    return {'pal': pal, 'map': mirror(half), 'fx': 'beam', 'boss': True, 'ts': 3}
+
+
+def boss_kaplumbaga():
+    """Magma Kaplumbagasi (Kor 50. kat): sirti tutup kizaran volkan kabuklu kaplumbaga."""
+    rows = _pad([
+        "............M...........",
+        "...........mMm..........",
+        "...........SSSS.........",
+        ".........SSmMSSS........",
+        ".......SSSSmSSmSSS......",
+        "......SSmSSSSSSmMSS.....",
+        ".....SSmMmSSSmSSSSSS....",
+        ".hhh.SSSSSSmSSSSmSSSS...",
+        "hhhhhSSmSSSSSSmMmSSSSS..",
+        "hwkhhrrrrrrrrrrrrrrrrrr.",
+        "hkkhhhrrrrrrrrrrrrrrrrrt",
+        "hhhhh.hhhh.......hhhh.tt",
+        "oohh..hhhh.......hhhh...",
+        "......llll.......llll...",
+    ])
+    pal = {'S': '#4a3438', 'm': '#ff7a2a', 'M': '#ffd060', 'r': '#c8603a', 'h': '#a0603e',
+           'o': '#5a2a1a', 't': '#a0603e', 'k': '#100c14', 'w': '#ffffff', 'l': '#6a3a24'}
+    return {'pal': pal, 'map': rows, 'fx': 'slam', 'boss': True, 'ts': 3}
+
+
+def boss_bekci():
+    """Bosluk Bekcisi (Golge 60. kat): havada suzulen, kapusonlu, mor tasli bekci."""
+    half = _pad([
+        "......hhhh",
+        ".....hHHHH",
+        "....hHhhhh",
+        "...hHhkkkk",
+        "...hHkGGkk",
+        "...hHkGGkk",
+        "...hHkkkkk",
+        "..hHHhkkkk",
+        "..hHhhhhhh",
+        ".hHhhhhhhV",
+        "hhHhhhhhVv",
+        "AhHhhhhhhV",
+        "aAhHhhhhhh",
+        "aa.hHhhhhh",
+        "...hHhhhhh",
+        "....hHhhhh",
+        ".....h.h.h",
+        "......h..h",
+    ])
+    pal = {'h': '#2a2040', 'H': '#4a3a6a', 'k': '#0a0612', 'G': '#7af0e0', 'V': '#b88af0',
+           'v': '#f4f0ff', 'a': '#b88af0', 'A': '#5a3a8a'}
+    return {'pal': pal, 'map': mirror(half), 'fx': 'wave', 'fxcol': ('#b88af0',), 'boss': True,
+            'ts': 3, 'fly': True}
+
+
 SPECIES['agacbasi'] = boss_agacbasi()
 SPECIES['tas_golemi'] = boss_golem()
 SPECIES['firtina_cakali'] = boss_cakal()
+SPECIES['buzul_ayisi'] = boss_ayi()
+SPECIES['magma_kaplumbaga'] = boss_kaplumbaga()
+SPECIES['bosluk_bekcisi'] = boss_bekci()
 
 
 # ---------------------------------------------------------------- evrim (0.4)
@@ -621,21 +1057,21 @@ def fx_pixels(kind, t, h, fxcol=None):
         for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1), (2, 0), (-2, 0)):
             pts[(-12 + dx, h - 6 + dy)] = col2
     elif kind == 'wave' and t >= 2:
-        col = hx('#f4e070')
+        col = hx(fxcol[0]) if fxcol else hx('#f4e070')
         d = (t - 2) * 4
         for r in (3, 6):
             for yy in range(-r, r + 1):
                 xx = -int((r * r - yy * yy) ** 0.5)
                 pts[(xx - 3 - d, mid + yy)] = col
     elif kind == 'beam' and t >= 2:
-        col, col2 = hx('#c8e6f8'), hx('#f0faff')
+        col, col2 = (hx(fxcol[0]), hx(fxcol[1])) if fxcol else (hx('#c8e6f8'), hx('#f0faff'))
         L = 6 + (t - 2) * 6
         for dx in range(L):
             pts[(-2 - dx, mid - 4)] = col
             pts[(-2 - dx, mid - 3)] = col2
             pts[(-2 - dx, mid - 2)] = col
     elif kind == 'wind' and t >= 2:
-        col, col2 = hx('#e8d098'), hx('#c8a060')
+        col, col2 = (hx(fxcol[0]), hx(fxcol[1])) if fxcol else (hx('#e8d098'), hx('#c8a060'))
         d = (t - 2) * 5
         for i in range(10):
             pts[(-4 - d - (i * 3) % 9, 6 + (i * 7) % (h - 8))] = col if i % 2 else col2

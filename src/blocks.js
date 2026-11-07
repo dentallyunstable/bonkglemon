@@ -567,6 +567,101 @@ function mugs() {
   return t;
 }
 
+
+// ------------------------------------------------------------- 0.8 buz, kor, golge
+const SNOW = ['#e4ebf2', '#d6e0ea', '#eef3f8', '#c8d4e0', '#b8c6d4'];
+const BASALT = ['#3e3638', '#342c2e', '#4a4042', '#2a2426', '#564a4a'];
+const VOID = ['#382c4a', '#2e2440', '#44385a', '#261e36', '#56467a'];
+const tintTo = (t, to, k) => t.each((v) => { const c = unpack(v); return pack(mix(c.slice(0, 3), hex(to), k), c[3]); });
+function snowTop() {
+  const r = rng(51); const t = T(SNOW[0]);
+  blobs(t, r, SNOW.slice(1, 4), 24, 1, 3); speckle(t, r, [SNOW[4]], 3);
+  return soften(t, 0.5, 0.3);
+}
+function frozenDirt(seed = 53) { return tintTo(dirt(seed), '#6a7488', 0.35); }
+function snowSide() {
+  const r = rng(52); const t = frozenDirt();
+  for (let x = 0; x < B; x++) {
+    const h = 3 + (r() < 0.5 ? 1 : 0) + (r() < 0.3 ? 1 : 0);
+    for (let y = 0; y < h; y++) t.set(x, y, SNOW[Math.floor(r() * 3)]);
+    t.set(x, h, SNOW[4]);
+  }
+  for (let x = 0; x < B; x++) t.set(x, 0, x % 3 ? SNOW[2] : SNOW[0]);
+  return t;
+}
+function ice() {
+  const r = rng(54); const t = T('#94bcd8');
+  blobs(t, r, ['#a4c8e2', '#86b0d0', '#b2d2ea'], 14, 1, 3);
+  soften(t, 0.5, 0.3);
+  for (const [x0, y0, n] of [[2, 3, 5], [8, 7, 6], [4, 11, 4]]) for (let i = 0; i < n; i++) t.set(x0 + i, y0 - i, '#dceef8');
+  return t;
+}
+function basalt(seed = 55) {
+  const r = rng(seed); const t = T(BASALT[0]);
+  blobs(t, r, BASALT.slice(1, 4), 22, 1, 3); speckle(t, r, [BASALT[4]], 5);
+  return soften(t, 0.4, 0.2);
+}
+function emberRock() {
+  const r = rng(56); const t = basalt(57);
+  let x = 1; let y = 2 + Math.floor(r() * 4);
+  for (let i = 0; i < 14; i++) { t.set(x, y, i % 3 ? '#e0602a' : '#ffa040'); x++; if (r() < 0.4) y += r() < 0.5 ? 1 : -1; y = Math.max(1, Math.min(14, y)); }
+  for (let i = 0; i < 4; i++) t.set(3 + i * 3, 12 + (i % 2), '#c8461e');
+  return t;
+}
+function lava() {
+  const r = rng(58); const t = T('#d8561e');
+  blobs(t, r, ['#ec7426', '#f49a34', '#c0441a'], 20, 1, 3); speckle(t, r, ['#ffd070'], 6);
+  return soften(t, 0.5, 0.2);
+}
+function voidStone(seed = 59) {
+  const r = rng(seed); const t = T(VOID[0]);
+  blobs(t, r, VOID.slice(1, 4), 22, 1, 3); speckle(t, r, [VOID[4], '#7a5ab0'], 4);
+  return soften(t, 0.4, 0.2);
+}
+function voidFloor() {
+  const t = voidStone(60);
+  for (const [x, y] of [[3, 4], [11, 9], [6, 13]]) { t.set(x, y, '#8ae8e0'); t.set(x + 1, y, '#5ab8b8'); }
+  return t;
+}
+function snowLeaves() {
+  const r = rng(61); const t = tintTo(leaves(), '#2e5040', 0.35);
+  for (let x = 0; x < B; x++) { const h = 2 + Math.floor(r() * 3); for (let y = 0; y < h; y++) t.set(x, y, SNOW[Math.floor(r() * 3)]); }
+  for (let i = 0; i < 5; i++) t.set(Math.floor(r() * B), 5 + Math.floor(r() * 10), SNOW[2]);
+  return t;
+}
+function snowBerry() {
+  const t = snowLeaves();
+  for (let x = 0; x < B; x++) for (let y = 0; y < 3; y++) if ((x < 2 || x > 13) || (y < 1 && (x < 4 || x > 11))) t.set(x, y, 0);
+  for (const [x, y] of [[3, 6], [8, 5], [11, 9], [5, 11], [12, 12]]) { t.rect(x, y, 2, 2, '#6a9ad0'); t.set(x, y, '#c8e0f8'); }
+  return t;
+}
+function pepperPlant() {
+  const t = T(null);
+  t.rect(7, 5, 1, 11, '#4e6a2e');
+  for (const [x, y] of [[3, 7], [9, 6], [4, 11], [9, 11]]) { t.rect(x, y, 4, 2, '#5e7a36'); t.rect(x, y + 1, 4, 1, '#46602a'); }
+  for (const [x, y] of [[4, 9], [10, 8], [6, 13]]) { t.rect(x, y, 2, 3, '#d8401e'); t.set(x, y, '#f07a3a'); t.set(x, y - 1, '#4e6a2e'); }
+  return t;
+}
+function nightShrooms() {
+  const t = T(null);
+  for (const [x, y, h, c] of [[2, 9, 7, '#3a8a8a'], [8, 6, 10, '#5ac8c0'], [11, 11, 5, '#3a8a8a']]) {
+    t.rect(x + 1, y + 2, 2, h - 2, '#8a7aa0'); t.rect(x, y, 4, 2, c); t.rect(x - 1, y + 1, 6, 1, c); t.set(x + 1, y, '#c8fff4');
+  }
+  return t;
+}
+function iceSpike() {
+  const t = T(null); const c = ['#a4c8e2', '#dceef8', '#7aa4c4'];
+  t.rect(0, 0, B, 3, c[0]); t.rect(2, 3, 5, 4, c[0]); t.rect(3, 7, 3, 4, c[0]); t.rect(4, 11, 1, 3, c[2]);
+  t.rect(9, 3, 4, 3, c[0]); t.rect(10, 6, 2, 3, c[2]); t.rect(2, 3, 1, 4, c[1]); t.rect(9, 3, 1, 3, c[1]); t.rect(0, 0, B, 1, c[1]);
+  return t;
+}
+function deadTree() {
+  const t = T(null); const c = ['#2a2224', '#3a3032', '#1e181a'];
+  t.rect(7, 4, 2, 12, c[1]); t.rect(8, 4, 1, 12, c[2]);
+  t.rect(3, 6, 4, 1, c[1]); t.rect(3, 4, 1, 2, c[1]); t.rect(9, 8, 4, 1, c[1]); t.rect(12, 5, 1, 3, c[1]); t.rect(6, 1, 1, 3, c[0]); t.rect(7, 3, 1, 1, c[0]);
+  return t;
+}
+
 const SOLID = {
   toprak: () => dirt(), cimen: grassSide, cimen_ust: grassTop, tas: () => stone(), kum: sand,
   komur: () => ore(20, ['#2e2c32', '#3c3a40', '#24222a', '#4a4850']),
@@ -576,6 +671,13 @@ const SOLID = {
   kaldirim: cobble, tugla: brick, cam: glass, kapi_ust: () => door(true), kapi_alt: () => door(false),
   tas_duvar: darkStone, karanlik: dark, bulut: cloud, raf: shelf, tezgah: workbench,
   kumtasi: sandstone, magara_zemin: caveFloor,
+  kar: snowSide, kar_ust: snowTop, donmus_toprak: () => frozenDirt(62), buz: ice, bazalt: () => basalt(), kor_kaya: emberRock, lav: lava,
+  golge_tas: () => voidStone(), golge_zemin: voidFloor, karli_yaprak: snowLeaves,
+  altin: () => ore(23, ['#d8b048', '#b88a30', '#ecd070', '#fff0a0']),
+  kristal: () => ore(24, ['#7cc0e0', '#a8d8f0', '#5aa0c8', '#e8f8ff']),
+  kor: () => ore(25, ['#d8561e', '#ec7a30', '#f8a840', '#ffe080']),
+  bonkit: () => ore(26, ['#4ec888', '#36a868', '#80e4a8', '#d0ffe0']),
+  golge: () => ore(27, ['#5a3a8a', '#74559e', '#3e2a60', '#c8a0f0']),
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
@@ -587,11 +689,13 @@ const PROPS = {
   yatak_bas: () => bed('bas'), yatak_ayak: () => bed('ayak'), diken: spike, ray: rail,
   bitki: herb, filiz: () => sprout(0), fide: () => sprout(1), cali: berryBush, dallar: branches, crack1: () => crack(1), crack2: () => crack(2), crack3: () => crack(3),
   kristal_m: () => crystal('#9a6cc8', '#6e4c9a', '#c8a0ec'), kristal_b: () => crystal('#7cb4d8', '#4e84a8', '#c8e6f8'),
+  karli_cali: snowBerry, biberlik: pepperPlant, gece_mantarlari: nightShrooms, buz_sarkit: iceSpike, olu_agac: deadTree,
+  kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
   silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
-const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust']);
+const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav']);
 
 const cache = {};
 export function block(name) {
