@@ -4,6 +4,12 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.3.2 (Gün saati)
+
+- Üs ve arsa gerçek saate göre değişir: gündoğumu (06-08), gündüz (08-18), günbatımı (18-20), gece (20-06). Kızıl gökyüzü, yıldızlar, ay; gece kamp ateşi ve fenerler parlar.
+- Üsse her dönüşte gündoğumu/gündüzse day1 ya da day2, günbatımı/geceyse night1 ya da night2 rastgele çalar. Takas Tezgâhı'nda shop müziği çalar.
+- Müzik dosyaları web için 128 kbps'ye küçültüldü.
+
 ## Sürüm 0.3.1 (Müzik)
 
 - Karakter seçim ekranında menü müziği, her savaşta savaş müziği çalar (Eren'in parçaları, `assets/music/`). Profildeki ses ayarı müziği de kapatır.

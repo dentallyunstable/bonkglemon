@@ -600,8 +600,9 @@ export function openShop(w) {
       S.changed();
       sfx('coin');
       UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[id].icon)}">${UI.itemName(id)} aldın! (−${price} ${CURRENCY})`);
+      w.shopBusy = true;
       UI.closePanel();
-      w.tradeDone().then(() => { if (w.mode === 'base' && !UI.panelOpen()) openShop(w); });
+      w.tradeDone().then(() => { w.shopBusy = false; if (w.mode === 'base' && !UI.panelOpen()) openShop(w); else if (w.shopClosed) w.shopClosed(); });
     };
     const sell = (id, n) => {
       const got = S.removeItem(id, n);
@@ -611,7 +612,7 @@ export function openShop(w) {
       render();
     };
     render();
-  });
+  }, { onClose: () => { if (w.shopClosed) w.shopClosed(); } });
 }
 
 // ---------------------------------------------------------------- Kamp (0.3)

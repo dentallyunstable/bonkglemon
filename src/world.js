@@ -7,12 +7,12 @@ import {
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
-import { sfx, playMusic, stopMusic } from './audio.js';
+import { sfx, playMusic, stopMusic, currentMusic } from './audio.js';
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
-import { forestBackground, caveBackground, battleBackground, iconUrl, MINE_WALL, CABIN } from './art.js';
+import { TOD, todNow, forestBackground, caveBackground, battleBackground, iconUrl, MINE_WALL, CABIN } from './art.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp } from './panels.js';
 
 const PLAYER_HOME = 96;
@@ -52,6 +52,17 @@ export class WorldScene extends Phaser.Scene {
     this.mode = 'base';
     this.walkTok = 0;
     this.input.on('pointerdown', (ptr, over) => this.onTap(ptr, over));
+    this.tod = todNow();
+    this.glows = [];
+    if (!this.textures.exists('glow')) {
+      // ates ve fenerlerin gece isigi (yumusak daire)
+      const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
+      const ctx = cv.getContext('2d');
+      const gr = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+      gr.addColorStop(0, 'rgba(255,190,110,0.85)'); gr.addColorStop(0.45, 'rgba(255,150,70,0.3)'); gr.addColorStop(1, 'rgba(255,120,40,0)');
+      ctx.fillStyle = gr; ctx.fillRect(0, 0, 64, 64);
+      this.textures.addCanvas('glow', cv);
+    }
     this.keys = this.input.keyboard.addKeys('LEFT,RIGHT,A,D');
     this.buildHud();
     S.onChange(() => this.refreshHud());
@@ -83,6 +94,12 @@ export class WorldScene extends Phaser.Scene {
 
   update(time, dt) {
     this.pShadow.x = this.player.x;
+    // gunun saati: ustte (dis ve arsa) karakter de isiga gore boyanir
+    const outdoor = this.mode === 'base' || this.mode === 'plot';
+    const ptint = outdoor ? TOD[this.tod].tint : 0xffffff;
+    if (this.player.tintTopLeft !== ptint) { if (ptint === 0xffffff) this.player.clearTint(); else this.player.setTint(ptint); }
+    this.todTick = (this.todTick || 0) + dt;
+    if (this.todTick > 30000) { this.todTick = 0; if (outdoor && todNow() !== this.tod) this.applyTod(); }
     this.pShadow.setAlpha(this.inBattleView ? 0 : this.player.alpha);
     // uzun sure hareketsiz kalinca otur
     const cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
@@ -249,7 +266,8 @@ export class WorldScene extends Phaser.Scene {
   goBase(from) {
     this.mode = 'base';
     this.clearRoom();
-    this.bg.setTexture('bg_base');
+    this.tod = todNow();
+    this.bg.setTexture(this.todBg('bg_base'));
     const G = GROUND_Y;
     this.addObj(this.add.image(2, G + 1, 'cabin').setOrigin(0, 1).setDepth(3), {
       x: CABIN_DOOR_X, label: 'Evin', lx: CABIN_DOOR_X, ly: G - 120,
@@ -260,6 +278,7 @@ export class WorldScene extends Phaser.Scene {
     });
     const fire = this.add.sprite(164, G + 1, 'fire').setOrigin(0.5, 1).setDepth(4);
     fire.play('fire');
+    fire.noTint = true;
     this.addObj(fire, {
       x: 148, face: false, label: 'Kamp ateşi', ly: G - 30,
       act: () => {
@@ -290,6 +309,11 @@ export class WorldScene extends Phaser.Scene {
       { label: 'Depo', onClick: () => openDepo(this) },
     ]);
     this.refreshHud();
+    this.applyTod();
+    // ussun muzigi: her donuste (zindan, maden, bayilma, oyun acilisi) yeniden secilir;
+    // evden ya da arsadan gelince calan parca devam eder
+    const keep = (from === 'house' || from === 'plot') && this.baseTrack && currentMusic() === this.baseTrack;
+    if (!keep) this.pickBaseMusic();
     const fs = furnaceState();
     if (fs.ready > 0) UI.feed(`Fırında ${fs.ready} ${ITEMS[fs.out].name} hazır! Evine girip alabilirsin.`);
   }
@@ -367,6 +391,61 @@ export class WorldScene extends Phaser.Scene {
     if (!on && this.furnace.anims.isPlaying) { this.furnace.stop(); this.furnace.setFrame(0); }
   }
 
+  // ------------------------------------------------------------ gunun saati ve muzik
+  todBg(base) {
+    const key = `${base}_${this.tod}`;
+    if (!this.textures.exists(key)) this.textures.addCanvas(key, forestBackground(1, base === 'bg_plot' ? 3 : 0, true, GAME_W, this.tod));
+    return key;
+  }
+
+  // gokyuzu, nesnelerin isik rengi ve gece isiklari (ates, fener)
+  applyTod() {
+    for (const g of this.glows) g.destroy();
+    this.glows = [];
+    if (this.mode !== 'base' && this.mode !== 'plot') return;
+    this.tod = todNow();
+    this.bg.setTexture(this.todBg(this.mode === 'plot' ? 'bg_plot' : 'bg_base'));
+    const T = TOD[this.tod];
+    for (const o of this.roomObjs) {
+      if (!o.active || !o.setTint || o.noTint) continue;
+      if (T.tint === 0xffffff) o.clearTint(); else o.setTint(T.tint);
+    }
+    if (this.tod === 'gun') return;
+    const G = GROUND_Y;
+    const spots = [];
+    if (this.mode === 'base') spots.push([164, G - 8, 1.6], [MINE_X, G - 26, 0.9]);
+    else {
+      const g = this.plotGeom();
+      for (const [key, c] of Object.entries(S.save.plot.cells)) {
+        if (c.id !== 'fener') continue;
+        const [cc, rr] = key.split(',').map(Number);
+        if (cc < g.cols && rr < g.rows) spots.push([g.x0 + cc * 16 + 8, G - rr * 16 - 6, 1]);
+      }
+    }
+    const a = this.tod === 'gece' ? 0.75 : 0.4;
+    for (const [x, y, sc] of spots) {
+      const gl = this.add.image(x, y, 'glow').setDepth(7).setScale(sc).setAlpha(a).setBlendMode(Phaser.BlendModes.ADD);
+      this.glows.push(gl);
+      this.roomObjs.push(gl);
+      this.tweens.add({ targets: gl, alpha: a * 0.75, scale: sc * 1.06, duration: 900 + Math.random() * 400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+  }
+
+  pickBaseMusic() {
+    const night = this.tod === 'gunbatimi' || this.tod === 'gece';
+    const pool = night ? ['night1', 'night2'] : ['day1', 'day2'];
+    this.baseTrack = pick(pool);
+    playMusic(this.baseTrack, true);
+  }
+
+  // takas paneli kapaninca ussun muzigi kaldigi yerden devam eder
+  shopClosed() {
+    this.time.delayedCall(150, () => {
+      if (this.shopBusy || UI.panelOpen() || this.mode !== 'base') return;
+      if (this.baseTrack) playMusic(this.baseTrack, false);
+    });
+  }
+
   // ------------------------------------------------------------ arsa ve insa (0.3)
   // Arsa: usteki ayri ekran. Blok izgarasi zeminden yukari (sira 0 = zemin ustu).
   plotGeom() {
@@ -417,7 +496,8 @@ export class WorldScene extends Phaser.Scene {
   goPlot() {
     this.mode = 'plot';
     this.clearRoom();
-    this.bg.setTexture('bg_plot');
+    this.tod = todNow();
+    this.bg.setTexture(this.todBg('bg_plot'));
     const g = this.plotGeom();
     const G = GROUND_Y;
     // arsanin iki kenarinda direk
@@ -426,6 +506,7 @@ export class WorldScene extends Phaser.Scene {
     this.gardenSprites = {};
     this.drawPlot();
     this.refreshGarden();
+    this.applyTod();
     this.player.setFlipX(false);
     this.resetPlayer();
     this.idle();
@@ -726,6 +807,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ maden ocagi
   async enterMine(depth) {
     UI.closePanel();
+    if (!this.busy && this.mode === 'base') stopMusic();
     if (this.busy || this.mode !== 'base') return;
     this.busy = true;
     this.walkTok++;
@@ -974,6 +1056,7 @@ export class WorldScene extends Phaser.Scene {
     UI.closePanel();
     if (this.busy) return;
     this.busy = true;
+    stopMusic();
     this.walkTok++;
     UI.setActions([]);
     await moveTo(this.player, MINE_X, { speed: 95, anim: 'c_walk' });
@@ -1527,6 +1610,7 @@ export class WorldScene extends Phaser.Scene {
     await this.fade(true);
     S.endRun();
     this.goHouse(300); // yatakta uyanir
+    this.pickBaseMusic();
     await this.fade(false);
     // bayilmak bir basarisizlik: uste aglar (cry)
     await playAnim(this.player, 'c_cry', 1);
@@ -1545,6 +1629,7 @@ export class WorldScene extends Phaser.Scene {
     if (tok !== this.walkTok) return;
     this.player.setFlipX(false);
     this.idle();
+    playMusic('shop');
     openShop(this);
   }
 

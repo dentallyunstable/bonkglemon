@@ -77,7 +77,8 @@ export function unlockAudio() { if (enabled) ac(); }
 // ------------------------------------------------------------ muzik (Eren'in dosyalari)
 // menu: karakter secim ekrani, enemyfight: her savas. Dongu halinde, ses kapaliysa calmaz.
 // Tarayici ilk dokunustan once ses calmaya izin vermezse, ilk dokunusta baslar.
-const MUSIC = { menu: 'assets/music/menu.mp3', enemyfight: 'assets/music/enemyfight.mp3' };
+const MUSIC = {};
+for (const k of ['menu', 'enemyfight', 'shop', 'day1', 'day2', 'night1', 'night2']) MUSIC[k] = `assets/music/${k}.mp3`;
 const MUSIC_VOL = 0.45;
 const tracks = {};
 let want = null;     // su an calmasi gereken parca
@@ -114,12 +115,14 @@ function syncMusic() {
   fadeTo(a, MUSIC_VOL, 600);
 }
 
-export function playMusic(key) {
+// restart: parca bastan baslasin mi (false: kaldigi yerden devam)
+export function playMusic(key, restart = true) {
   if (want === key) { if (enabled && tracks[key] && tracks[key].paused) syncMusic(); return; }
   want = key;
-  if (key && tracks[key]) tracks[key].currentTime = 0;
+  if (key && tracks[key] && restart) tracks[key].currentTime = 0;
   syncMusic();
 }
+export function currentMusic() { return want; }
 
 export function stopMusic() { want = null; syncMusic(); }
 

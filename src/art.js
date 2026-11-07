@@ -38,24 +38,55 @@ function putScaled(p, name, x, y, s, fn = null) {
 
 // gokyuzu: blok yuksekliginde bantlar (yukaridan asagi acilir)
 const SKY_DAY = ['#7e9fb6', '#88a8bd', '#93b1c4', '#9ebacb', '#a9c2d1', '#b3c9d6', '#bccfda', '#c4d4dd', '#cad8e0', '#cfdbe2', '#d3dee4', '#d6e0e5', '#d8e1e6', '#dae2e7'];
-function skyColor(i, t) { return mix(hex(SKY_DAY[Math.min(i, SKY_DAY.length - 1)]), mul(hex('#1c1c3a'), 1 + i * 0.06), t); }
+// Gunun saati (Eren, 2026-11-07): ussun gokyuzu ve isigi gercek saate gore degisir.
+// stops: gokyuzu (ust, orta, ufuk), t: karanlik, warm: sahneye karisan sicak renk,
+// sun: gunes/ay yeri, tint: ustteki nesnelere ve karaktere uygulanan isik rengi
+export const TOD = {
+  gundogumu: { name: 'Gündoğumu', stops: ['#5a5c8c', '#b48aa4', '#f0b886'], t: 0.22, warm: ['#f0a070', 0.16], sun: 'left', tint: 0xffdcc8 },
+  gun: { name: 'Gündüz', stops: null, t: 0, warm: null, sun: 'high', tint: 0xffffff },
+  gunbatimi: { name: 'Günbatımı', stops: ['#3c3468', '#ac5c78', '#ec8a4e'], t: 0.32, warm: ['#e07040', 0.2], sun: 'right', tint: 0xffc4a4 },
+  gece: { name: 'Gece', stops: null, t: 0.85, warm: null, sun: 'moon', tint: 0x7c84b4 },
+};
+export function todNow(d = new Date()) {
+  const h = d.getHours() + d.getMinutes() / 60;
+  if (h >= 6 && h < 8) return 'gundogumu';
+  if (h >= 8 && h < 18) return 'gun';
+  if (h >= 18 && h < 20) return 'gunbatimi';
+  return 'gece';
+}
+function skyColor(i, t, stops = null) {
+  if (stops) {
+    const k = Math.min(1, i / 11);
+    const [a, b2, c] = stops.map(hex);
+    return k < 0.5 ? mix(a, b2, k * 2) : mix(b2, c, (k - 0.5) * 2);
+  }
+  return mix(hex(SKY_DAY[Math.min(i, SKY_DAY.length - 1)]), mul(hex('#1c1c3a'), 1 + i * 0.06), t);
+}
+const toHex = (c) => '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
 function paintSky(p, bottom, t, r, opts = {}) {
   const rows = Math.ceil(bottom / B) + 1;
   for (let i = 0; i < rows; i++) {
     const y0 = bottom - (rows - i) * B;
-    p.rect(0, Math.max(0, y0), p.w, B + Math.min(0, y0), pack(skyColor(i, t)));
+    p.rect(0, Math.max(0, y0), p.w, B + Math.min(0, y0), pack(skyColor(i, t, opts.stops)));
   }
-  const skyTop = pack(skyColor(0, t));
+  const skyTop = pack(skyColor(0, t, opts.stops));
   // gunes ya da ay + yildizlar
   const sx = 32 + Math.floor(r() * (p.w - 96) / B) * B;
-  if (t < 0.45) put(p, 'gunes', sx, 8);
+  if (opts.sun === 'left' || opts.sun === 'right') {
+    // ufka yakin, kizil gunes
+    put(p, 'gunes', opts.sun === 'left' ? 40 : p.w - 72, bottom - 64, fogFn('#f07848', 0.4));
+    if (opts.sun === 'right') {
+      const star = pack(mix(hex('#e8e6f0'), unpack(skyTop).slice(0, 3), 0.55));
+      for (let i = 0; i < 8; i++) p.set(Math.floor(r() * p.w), Math.floor(r() * 30), star);
+    }
+  } else if (t < 0.45) put(p, 'gunes', sx, 8);
   else {
     put(p, 'ay', sx, 8);
     const star = pack(mix(hex('#e8e6f0'), unpack(skyTop).slice(0, 3), 0.3));
     for (let i = 0; i < 24; i++) { const x = Math.floor(r() * p.w); const y = Math.floor(r() * (bottom * 0.6)); p.set(x, y, star); }
   }
   // bulutlar: duz blok siralari
-  const cf = chain(fogFn('#c8d4dc', 0.15), nightFn(t * 0.9));
+  const cf = chain(fogFn('#c8d4dc', 0.15), opts.warm ? fogFn(opts.warm[0], 0.45) : null, nightFn(t * 0.9));
   const n = opts.clouds ?? 3;
   for (let i = 0; i < n; i++) {
     const w = 2 + Math.floor(r() * 3);
@@ -105,13 +136,14 @@ function layer(p, fill, ol = 'dark', f = 0.55) {
 }
 
 // ------------------------------------------------------------------ orman (us + zindan odalari)
-export function forestBackground(floor, variant = 0, base = false, width = GAME_W) {
+export function forestBackground(floor, variant = 0, base = false, width = GAME_W, tod = null) {
   const r = rng(floor * 7919 + variant * 104729 + (base ? 77 : 0));
-  const t = base ? 0 : Math.min(1, (floor - 1) / 9) * 0.85;
-  const nf = nightFn(t);
+  const T = tod ? TOD[tod] : null;
+  const t = T ? T.t : base ? 0 : Math.min(1, (floor - 1) / 9) * 0.85;
+  const nf = T && T.warm ? chain(fogFn(T.warm[0], T.warm[1]), nightFn(t)) : nightFn(t);
   const p = new Pix(width, GAME_H);
-  paintSky(p, G - 2 * B, t, r);
-  const skyLow = '#' + unpack(pack(skyColor(9, t))).slice(0, 3).map((v) => v.toString(16).padStart(2, '0')).join('');
+  paintSky(p, G - 2 * B, t, r, T ? { stops: T.stops, sun: T.sun, warm: T.warm } : {});
+  const skyLow = toHex(skyColor(9, t, T && T.stops));
   // uzak tepeler (gok rengine karismis) ve uzak agaclar
   hillRow(p, r, G, 3, 5, fogFn(skyLow, 0.62), Math.floor(r() * B));
   layer(p, (L) => {
