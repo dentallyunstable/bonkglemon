@@ -353,7 +353,7 @@ export class WorldScene extends Phaser.Scene {
     });
     // Han: arkada harita, onde tezgah; Hanci Lale ikisinin arasinda durur
     this.addObj(this.add.image(INN_X, G + 1, 'inn_back').setOrigin(0, 1).setDepth(2));
-    const npc = this.add.sprite(NPC_X, G + 1, 'hanci', 0).setOrigin(0.5, 42 / 44).setDepth(3);
+    const npc = this.add.sprite(NPC_X, G - 4, 'hanci', 0).setOrigin(0.5, 1).setDepth(3); // ayaklari tezgahin arkasinda kalir
     npc.play('npc_durma');
     this.npc = npc;
     this.addObj(npc, { x: NPC_X - 30, face: false, label: 'Hancı Lale', ly: G - 62, act: () => this.talkNpc() });
