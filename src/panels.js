@@ -1,12 +1,12 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
 import { forgetLogin } from './login.js';
 import { iconUrl, hubMap, HUB_SPOTS } from './art.js';
 
-const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', yumurta: 'Yumurta' };
+const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', olta: 'Olta', yumurta: 'Yumurta' };
 
 function slotEl(s, label) {
   const d = UI.el('div', 'slot');
@@ -24,13 +24,22 @@ function statLines(it) {
   const out = [];
   if (it.power) out.push(`${it.wt === 'yay' ? 'Yay' : it.wt === 'yumruk' ? 'Yumruk' : 'Kılıç'} gücü +${it.power}`);
   if (it.luck) out.push(`Şans +${it.luck}`);
-  if (it.yem) out.push(it.special ? 'Özel yem: her nadirlik' : 'Basit yem: Sıradan Glemonlar');
+  if (it.yem) out.push(it.special ? 'Özel yem: her nadirlik' : it.yem === 'su' ? 'Basit yem: Nadir Su Glemonları' : 'Basit yem: Sıradan Glemonlar');
   if (it.def) out.push(`Savunma +${it.def}`);
   if (it.hp) out.push(`Can +${it.hp}`);
   if (it.spd) out.push(`Hız +${it.spd}`);
   if (it.pick) out.push(`Kazma gücü ${it.pick}`);
   if (it.heal) out.push(`Canın %${Math.round(it.heal * 100)}'ini doldurur`);
-  if (it.food) out.push('Savaşta yersen 3 tur saldırı +%10');
+  if (it.food && !it.strong) out.push('Savaşta yersen 3 tur saldırı +%10');
+  if (it.strong) out.push(`Savaşta yersen ${it.strong} tur saldırı +%30`);
+  if (it.rod) {
+    if (it.rod.box) out.push(`Yakalama kutusu +%${Math.round(it.rod.box * 100)}`);
+    if (it.rod.bite < 1) out.push('Balık daha çabuk ısırır');
+    if (it.rod.rare > 1) out.push('Nadir balık şansı artar');
+    if (it.rod.lava) out.push('Lav göllerinde tutar');
+  }
+  if (it.bait) out.push(it.bait === 'parlak' ? 'Yem: nadir ve efsane balık şansı' : 'Yem: balık daha çabuk ısırır');
+  if (it.fish) out.push('Balık');
   if (it.crit) out.push(`Kritik +%${Math.round(it.crit * 100)}`);
   if (it.onHit) out.push(`Vuruşların %${Math.round(it.onHit[1] * 100)} ihtimalle ${it.onHit[0] === 'donma' ? 'dondurur' : 'yakar'}`);
   if (it.fireproof) out.push('Yanma işlemez');
@@ -481,8 +490,33 @@ export function openAlbum(w, tab = 'glemon') {
       const seen = keys.filter((k) => al.seen[k]).length;
       const tabs = UI.el('div', 'choice-row');
       tabs.appendChild(UI.button(`Glemonlar (${seen}/${keys.length})`, () => { tab = 'glemon'; render(); }, tab === 'glemon' ? 'primary small' : 'small'));
+      const fc = S.save.fishing ? S.save.fishing.caught : {};
+      const fishN = Object.keys(FISH).filter((k) => fc[k]).length;
+      tabs.appendChild(UI.button(`Balıklar (${fishN}/${Object.keys(FISH).length})`, () => { tab = 'balik'; render(); }, tab === 'balik' ? 'primary small' : 'small'));
       tabs.appendChild(UI.button(`Kombo Defteri (${Object.keys(S.save.combos).length}/${Object.keys(COMBOS).length})`, () => { tab = 'kombo'; render(); }, tab === 'kombo' ? 'primary small' : 'small'));
       body.appendChild(tabs);
+      if (tab === 'balik') {
+        body.appendChild(UI.el('p', 'muted', 'Tuttuğun balıklar. Her suyun kendi balıkları var; ★ efsane balıklar çok nadirdir ve sadece elle tutulur.'));
+        for (const [wk, wd] of Object.entries(WATERS)) {
+          body.appendChild(UI.el('h3', '', wd.name + (wd.lava ? ' (Kor Olta)' : '')));
+          const grid = UI.el('div', 'album-grid');
+          for (const [k, f] of Object.entries(FISH)) {
+            if (f.water !== wk) continue;
+            const n = fc[k] || 0;
+            const c = UI.el('div', 'album-card' + (n ? '' : ' unseen'));
+            const im = UI.icon(ITEMS[k].icon, 'ico fish-ico');
+            if (!n) im.style.filter = 'brightness(0)';
+            c.appendChild(im);
+            const nm = UI.el('div', 'pn', n ? (f.legend ? '★ ' : '') + f.name : '???');
+            if (n) nm.style.color = RARITY[f.rarity].color;
+            c.appendChild(nm);
+            c.appendChild(UI.el('div', 'muted', n ? `${n} tutuldu` : `Balıkçılık ${f.lvl}`));
+            grid.appendChild(c);
+          }
+          body.appendChild(grid);
+        }
+        return;
+      }
       if (tab === 'kombo') {
         body.appendChild(UI.el('p', 'muted', 'Kombolar, durumları doğru sırayla birleştirince olur. İlk yaptığında buraya yazılır.'));
         for (const [k, c] of Object.entries(COMBOS)) {
@@ -499,6 +533,7 @@ export function openAlbum(w, tab = 'glemon') {
       body.appendChild(UI.el('div', 'muted', `Albüm %${Math.round((seen / keys.length) * 100)} · Evcilleştirilen tür: ${keys.filter((k) => al.tamed[k]).length} · Görülmeyenler siyah görünür.`));
       const groups = ZONES.filter((z) => z.open).map((z) => [z.name, [...ZONE_SPAWNS[z.key].map(([x]) => x), z.boss]]);
       groups.push(['Efsaneviler (yumurtadan)', Object.values(EGGS)]);
+      groups.push(['Su Glemonları (oltaya takılır)', WATER_GLEMONS.map(([k]) => k)]);
       for (const [z, list] of groups) {
         body.appendChild(UI.el('h3', '', z));
         const grid = UI.el('div', 'album-grid');

@@ -3,7 +3,7 @@
 // - Yakin nesnelerin (ev, sandik, tezgah...) etrafinda karakterdeki gibi 1 piksel koyu cizgi var.
 // - Uzaktaki tepeler ve agaclar ayni bloklardir, sadece gok rengine karisip soluklasir.
 // - Zindan katlari derinlestikce sahne aksama / geceye doner.
-import { GAME_W, GAME_H, GROUND_Y } from './data.js';
+import { GAME_W, GAME_H, GROUND_Y, FISH } from './data.js';
 import { rng, Pix, hex, mix, mul, pack, unpack, col, INK } from './pix.js';
 import { B, block, build } from './blocks.js';
 
@@ -539,6 +539,67 @@ function biomeArena(floor, zone) {
   return p.canvas();
 }
 
+// ------------------------------------------------------------------ gol (0.8.5)
+// Yandan gorunen gol: zemin sirasinin yerine su, iskele (ya da odada boydan boya kopru).
+// Su yuzeyi zeminden biraz asagida; aradaki seritte karsi kiyinin camuru gorunur.
+export const POND = { x0: 13 * B, x1: 22 * B, surf: G + 6, deck: G - 4, standX: 232, bobX: 300 };
+const WATER_TINT = {
+  us: null, orman: null, magara: ['#20344c', 0.4], col: ['#3aa8a0', 0.35], buz: ['#a8c8e0', 0.3],
+  kor: 'lav', golge: ['#2a1e48', 0.5],
+};
+export function pondOverlay(kind = 'us', bridge = false) {
+  const p = new Pix(GAME_W, GAME_H - G + B);
+  const tint = WATER_TINT[kind];
+  const lava = tint === 'lav';
+  const fn = tint && !lava ? fogFn(tint[0], tint[1]) : null;
+  const Y = B; // overlay G-B'den baslar
+  const { x0, x1 } = POND;
+  // kiyi: iki yanda egimli camur / kum
+  const bank = kind === 'col' ? 'kum' : kind === 'buz' ? 'kar' : kind === 'kor' ? 'bazalt' : kind === 'golge' ? 'golge_tas' : kind === 'magara' ? 'magara_zemin' : 'toprak';
+  for (let x = x0; x < x1; x += B) {
+    for (let j = 0; j < 3; j++) put(p, bank, x, Y + j * B, shadeFn(0.55));
+    put(p, lava ? 'lav' : 'su_ust', x, Y + 6, fn);
+    put(p, lava ? 'lav' : 'su', x, Y + 6 + B, fn);
+    put(p, lava ? 'lav' : 'su', x, Y + 6 + 2 * B, chain(fn, shadeFn(0.85)));
+  }
+  // lavda parlak kabarciklar
+  if (lava) for (let x = x0 + 4; x < x1; x += 22) { p.rect(x, Y + 6, 4, 1, hex('#ffd070')); p.rect(x + 9, Y + 12, 2, 2, hex('#ffb040')); }
+  // kenarlar: iki yanda yuvarlatilmis kiyi
+  for (const side of [0, 1]) {
+    const bx = side ? x1 - 3 : x0;
+    for (let y = Y + 6; y < Y + 6 + B * 3; y++) { const w = 2 + Math.floor((y - Y) / 7); for (let k = 0; k < w; k++) p.set(side ? bx + 2 - k : bx + k, y, hex(kind === 'col' ? '#a89060' : '#4a3e30')); }
+  }
+  // susler: saz ve nilufer (lavda yok)
+  if (!lava) {
+    put(p, kind === 'buz' ? 'karli_cali' : 'saz', x0 - 6, Y - B + 1, kind === 'buz' ? null : fn);
+    put(p, 'saz', x1 - 4, Y - B + 1, fn);
+    if (kind !== 'buz') { put(p, 'nilufer', x0 + 5 * B + 2, Y - 8, null); put(p, 'nilufer', x0 + 7 * B + 6, Y - 9, null); }
+  }
+  // iskele: kalas sirasi + direkler. Odada iki yana kadar uzar (kopru), ussun golunde yarim
+  const dx0 = x0 - 2 * B;
+  const dx1 = bridge ? x1 + 2 * B : x0 + 4 * B;
+  const deck = new Pix(GAME_W, p.h);
+  for (let x = dx0; x < dx1; x += 4) {
+    deck.rect(x, Y - 4, 4, 4, hex(x % 8 ? '#b88a5a' : '#a87a4a'));
+    deck.rect(x, Y - 4, 4, 1, hex('#d0a070'));
+    deck.set(x + 3, Y - 3, hex('#7a5232'));
+  }
+  for (let x = dx0 + 6; x < dx1; x += 3 * B) {
+    deck.rect(x, Y, 3, 26, hex('#7a5232')); deck.rect(x, Y, 1, 26, hex('#9a6a42'));
+  }
+  deck.outline('dark', 0.55);
+  p.draw(deck, 0, 0, deck.w);
+  return p.canvas();
+}
+// samandira: kirmizi ust, beyaz alt (6x8)
+export function bobber() {
+  const p = new Pix(6, 8);
+  p.rect(1, 1, 4, 3, hex('#e05a4a')); p.rect(2, 0, 2, 1, hex('#e05a4a')); p.set(2, 1, hex('#ff9a8a'));
+  p.rect(1, 4, 4, 2, hex('#f4f0e8')); p.rect(2, 6, 2, 1, hex('#f4f0e8'));
+  p.outline(INK);
+  return p.canvas();
+}
+
 // ------------------------------------------------------------------ us nesneleri
 // Ev: 5 blok genis kutuk-kalas duvar, iki cam, ortada kapi, basamakli kiremit cati.
 export const CABIN = { w: 7 * B + 2, door: 3 * B + B / 2 + 1 };
@@ -1014,6 +1075,30 @@ Object.assign(ICONS, {
   tilsim_yakut: TILSIM('#c8304a', '#ff9aa0'),
   tilsim_ay: TILSIM('#8a8ac8', '#fff0a0'),
 });
+// 0.8.5 balikcilik simgeleri
+const FISH_ICON = ['............', '............', '......FF....', '....BBBBF...', '..BBLLLBBF.F', '.BwkLBBBBBFF', '.BkkBBBBBBFF', '.BBBDDDBBBF.', '..DDDDDDDF.F', '....DDDF....', '............', '............'];
+const ROD_ICON = ['..........R.', '.........Rl.', '........R.l.', '.......R..l.', '......R...l.', '.....R....l.', '....R.....l.', '...r......l.', '..r......wb.', '.gg.......b.', 'gg..........', '............'];
+const CRACKER = ['............', '............', '...cccccc...', '..cCcCcCcc..', '.cCcPcCcCcc.', '.ccCcCcPcCc.', '.cCcCcCcCcc.', '..ccCcCcCc..', '...dddddd...', '............', '............', '............'];
+Object.assign(ICONS, {
+  olta_tahta: [ROD_ICON, { R: '#c48c54', r: '#8e5e32', g: '#6a4426', l: '#e8e4dc', w: '#ffffff', b: '#e8564a' }],
+  olta_bambu: [ROD_ICON, { R: '#c8c060', r: '#8a9a3a', g: '#5a6a2a', l: '#e8e4dc', w: '#ffffff', b: '#e8564a' }],
+  olta_demir: [ROD_ICON, { R: '#c8ccd6', r: '#8a8e9a', g: '#5a3e26', l: '#e8e4dc', w: '#ffffff', b: '#e8564a' }],
+  olta_kristal: [ROD_ICON, { R: '#a8dcf4', r: '#5aa8d0', g: '#e8c050', l: '#e8f8ff', w: '#ffffff', b: '#c08af0' }],
+  olta_kor: [ROD_ICON, { R: '#ffb050', r: '#d8561e', g: '#3e3638', l: '#ffe080', w: '#ffffff', b: '#ffd060' }],
+  solucan: [['............', '............', '............', '.......pp...', '......pPPp..', '..pp.pP..pk.', '.pPPpP...pp.', '.p..pp......', '............', '..ddddddddd.', '.ddddddddddd', '............'], { p: '#e88a9a', P: '#f8b8c0', k: '#100c14', d: '#7a5a38' }],
+  parlak_yem: [['............', '.....w......', '....wYw.....', '.....w......', '.......pp...', '......pYYp..', '..pp.pY..pk.', '.pYYpY...pp.', '.p..pp......', '..........w.', '.........wYw', '..........w.'], { p: '#d8a0e8', Y: '#fff0a0', k: '#100c14', w: '#ffffff' }],
+  gol_incisi: [['............', '............', '..ssssssss..', '.sSSSSSSSSs.', '.sSSSppSSSs.', '.sSSpPwpSSs.', '.sSSpPPpSSs.', '.sSSSppSSSs.', '..ssssssss..', '............', '............', '............'], { s: '#7a6a90', S: '#b8a8c8', p: '#f0d8e8', P: '#fff8f0', w: '#ffffff' }],
+  efsane_pul: like('pul', { S: '#c8902a', s: '#ffe080' }),
+  deniz_cami: like('kristal', { c: '#5ab8a8', C: '#a8f0e0', v: '#e8fff8', d: '#3a7a70' }),
+  izgara_balik: [['............', '............', '......FF....', '....BBBBF...', '..BBLdLdBF.F', '.BwkdBdBdBFF', '.BkkBdBdBBFF', '.BBBDDDBBBF.', '..DDDDDDDF.F', '.pppppppppp.', '..pppppppp..', '............'], { B: '#b8783a', L: '#e8b070', D: '#7a4a24', F: '#8a5a30', d: '#4a2e18', w: '#fff0d0', k: '#100c14', p: '#e8e4dc' }],
+  balik_corbasi: like('corba', { s: '#f4f4f8', b: '#5a8ab0', B: '#3a5a7a', c: '#f0d8a0', m: '#e88a6a' }),
+  balik_kraker: [CRACKER, { c: '#d8a860', C: '#f0d090', P: '#8ab4c8', d: '#a87a40' }],
+  inci_kraker: [CRACKER, { c: '#d8a860', C: '#f0d090', P: '#fff8f0', d: '#a87a40' }],
+});
+for (const [k, f] of Object.entries(FISH)) {
+  const [B, L, D, F] = f.col;
+  ICONS[`balik_${k}`] = [FISH_ICON, { B, L, D, F, w: '#ffffff', k: '#100c14' }];
+}
 // seviye esyalari: kilic, yay, kazma, kask, goguslik, bot (renk: ana, acik, koyu, ikinci)
 const TIER_COL = {
   kristal: ['#7cc0e0', '#d8f2fc', '#4a88b0', '#e8c050'],

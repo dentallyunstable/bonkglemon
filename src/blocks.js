@@ -613,6 +613,35 @@ function lava() {
   blobs(t, r, ['#ec7426', '#f49a34', '#c0441a'], 20, 1, 3); speckle(t, r, ['#ffd070'], 6);
   return soften(t, 0.5, 0.2);
 }
+// 0.8.5 gol: su (soluk mavi, yatay dalga cizgileri), yuzey (ustte acik dalga), nilufer, saz
+function water(seed = 62) {
+  const r = rng(seed); const t = T('#5a86a8');
+  blobs(t, r, ['#6290b2', '#527c9e', '#6a98b8'], 14, 1, 3);
+  soften(t, 0.5, 0.3);
+  for (const [x0, y0, n] of [[2, 4, 5], [9, 9, 5], [4, 13, 4]]) t.rect(x0, y0, n, 1, '#86b0cc');
+  return t;
+}
+function waterTop() {
+  const t = water(63);
+  t.rect(0, 0, B, 2, '#9cc4dc'); t.rect(0, 2, B, 1, '#7aa6c4');
+  for (const x of [1, 6, 11]) t.rect(x, 0, 3, 1, '#c4e0ee');
+  return t;
+}
+function lilyPad() {
+  const t = T(null);
+  t.rect(3, 13, 10, 2, '#6aa45a'); t.rect(4, 12, 8, 1, '#7cb468'); t.rect(4, 15, 8, 1, '#4e7e44');
+  t.rect(8, 12, 1, 3, '#4e7e44');
+  t.rect(4, 9, 3, 3, '#e8a4b8'); t.rect(5, 8, 1, 1, '#f4c8d4'); t.set(5, 10, '#f8e080');
+  return t;
+}
+function reeds() {
+  const t = T(null);
+  for (const [x, h, c] of [[3, 12, '#6a8a44'], [6, 15, '#7a9a4e'], [9, 11, '#5e7e3c'], [12, 14, '#6a8a44']]) {
+    t.rect(x, B - h, 1, h, c);
+    if (h > 12) { t.rect(x, B - h, 1, 3, '#8a6a3a'); t.rect(x - 1, B - h + 1, 1, 2, '#7a5a30'); }
+  }
+  return t;
+}
 function voidStone(seed = 59) {
   const r = rng(seed); const t = T(VOID[0]);
   blobs(t, r, VOID.slice(1, 4), 22, 1, 3); speckle(t, r, [VOID[4], '#7a5ab0'], 4);
@@ -678,6 +707,7 @@ const SOLID = {
   kor: () => ore(25, ['#d8561e', '#ec7a30', '#f8a840', '#ffe080']),
   bonkit: () => ore(26, ['#4ec888', '#36a868', '#80e4a8', '#d0ffe0']),
   golge: () => ore(27, ['#5a3a8a', '#74559e', '#3e2a60', '#c8a0f0']),
+  su: () => water(), su_ust: waterTop,
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
@@ -693,9 +723,10 @@ const PROPS = {
   kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
   silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
+  nilufer: lilyPad, saz: reeds,
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
-const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav']);
+const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav', 'su', 'su_ust']);
 
 const cache = {};
 export function block(name) {

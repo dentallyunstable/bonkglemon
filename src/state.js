@@ -30,7 +30,7 @@ function freshSave(char) {
     gold: 0,
     bag,
     depo: new Array(DEPO_SIZE).fill(null),
-    equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null, kazma: 'tahta_kazma' },
+    equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null, kazma: 'tahta_kazma', olta: 'tahta_olta' },
     stats: { kills: 0, deepest: 0, bossKills: 0, shiny: 0, deaths: 0, battles: 0, glemons: {}, playMs: 0, mined: 0, crafted: 0, gathered: 0, deepestMine: 1 },
     seen: {},                               // bir kez bulunan esyalar (tarif defteri icin)
     furnace: { rid: null, n: 0, t0: 0 },    // firindaki is: tarif, adet, baslama zamani
@@ -51,6 +51,8 @@ function freshSave(char) {
     waterUntil: 0,
     // 0.6 Hanci Lale'nin gorevleri
     quests: { list: [], done: 0, seq: 1 },
+    // 0.8.5 balikcilik: tur -> kac tane, secili yem
+    fishing: { caught: {}, best: {}, bait: 'yok', total: 0 },
   };
 }
 
@@ -87,6 +89,9 @@ export const S = {
       const owned = [...data.bag, ...data.depo].some((x) => x && ITEMS[x.id] && ITEMS[x.id].kind === 'kazma');
       data.equip.kazma = owned ? null : 'tahta_kazma';
     }
+    // 0.8.5: olta yuvasi; herkese bir Tahta Olta
+    if (!('olta' in data.equip)) data.equip.olta = 'tahta_olta';
+    if (!data.fishing) data.fishing = { caught: {}, best: {}, bait: 'yok', total: 0 };
     for (const x of [...data.bag, ...data.depo]) if (x) data.seen[x.id] = true;
     for (const id of Object.values(data.equip)) if (id) data.seen[id] = true;
     // bilinmeyen esya kimliklerini temizle (eski surumlerden kalma)
@@ -165,6 +170,10 @@ export const S = {
   pick() {
     const id = this.save.equip.kazma;
     return id ? ITEMS[id].pick : 0;
+  },
+  rod() {
+    const id = this.save.equip.olta;
+    return id ? ITEMS[id].rod : null;
   },
   spd() {
     return 100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0);

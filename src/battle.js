@@ -3,7 +3,7 @@
 // yanindaki evcil Glemon ve evcillestirme (0.4), odul ve dusurmeler.
 import {
   GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
-  typeMult, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES,
+  typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -26,7 +26,7 @@ export function calcDamage(atk, mult, def) {
   return Math.max(1, Math.round(d));
 }
 
-const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
+const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'mantar_corbasi', 'izgara_balik', 'balik_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
 const HEALS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'hurma', 'bogurtlen'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
@@ -35,6 +35,7 @@ const B = (a) => `c_b_${a}`;
 // Glemon turunun bolgesi (yemi bu bolgenin yemidir)
 const ZONE_OF_KEY = {};
 for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) ZONE_OF_KEY[k] = z;
+for (const [k] of WATER_GLEMONS) ZONE_OF_KEY[k] = 'su';
 const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0 });
 
 // ayri savas ekraninda (arena) Glemonlarin yerleri
@@ -812,6 +813,7 @@ export class Battle {
     floatText(this.px(), this.py(), `+${heal}`, 'heal');
     // yemek yiyince guclenir: normal yemek 3 tur +%10 saldiri, Altin Elma 5 tur +%30 saldiri ve savunma
     if (it.golden) { this.status.guc = 5; sfx('levelup'); floatText(this.px(), this.py() - 14, 'Altın güç!', 'perfect'); }
+    else if (it.strong) { this.status.guc = Math.max(this.status.guc, it.strong); floatText(this.px(), this.py() - 14, 'Balık gücü: saldırı +%30', 'info'); }
     else if (it.food) { this.status.tok = 3; floatText(this.px(), this.py() - 14, 'Tok: saldırı +%10', 'info'); }
     this.pose();
     this.renderMe();
@@ -862,7 +864,7 @@ export class Battle {
     const z = ZONE_OF_KEY[e.key];
     if (!z) return null;
     const [basic, special] = FOODS[z];
-    if (e.rarity === 'siradan' && S.countItem(basic) > 0) return basic;
+    if ((e.rarity === 'siradan' || (z === 'su' && e.rarity === 'nadir')) && S.countItem(basic) > 0) return basic;
     if (S.countItem(special) > 0) return special;
     return null;
   }

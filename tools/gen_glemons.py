@@ -885,6 +885,61 @@ def boss_bekci():
             'ts': 3, 'fly': True}
 
 
+# ---------------------------------------------------------------- 0.8.5 Su Glemonlari (balik tutarken)
+SPECIES.update({
+    'damlacik': {  # damla seklinde, icinde kabarcik olan su yavrusu
+        'pal': {'d': '#5aa8d0', 'D': '#a8dcf4', 'b': '#e8f8ff', 'o': '#2e6a90', 'k': '#100c14', 'w': '#ffffff',
+                'm': '#e87a8a', 'l': '#3a88b0'},
+        'map': [
+            "....dd....",
+            "...dDDd...",
+            "..dDDbdd..",
+            ".ddDbddd..",
+            ".dwkddwkd.",
+            "ddkkddkkdd",
+            "dddmddmddd",
+            "ddddooddd.",
+            ".ddddddddo",
+            "..dddddd..",
+        ],
+        'fx': 'wave', 'accent': '#a8dcf4',
+    },
+    'inci_istiridye': {  # kabugunun arasindan inci ve gozler gorunen istiridye
+        'pal': {'s': '#b8a8c8', 'S': '#e8dcf0', 'v': '#7a6a90', 'p': '#fff8f0', 'P': '#f0d8e8', 'r': '#e88a9a',
+                'k': '#100c14', 'w': '#ffffff'},
+        'map': [
+            "..ssssssss..",
+            ".sSSsSSsSSs.",
+            "sSSsSSsSSsSs",
+            "vssssssssssv",
+            ".rrwkrrwkrr.",
+            ".rrkkpPkkrr.",
+            "vsssspPssssv",
+            "sSSsSSsSSsSs",
+            ".vssssssssv.",
+        ],
+        'fx': 'slam', 'accent': '#fff8f0',
+    },
+    'gol_ejderi': {  # uzun boyunlu, yuzgec kulakli minik su ejderi (nadir)
+        'pal': {'g': '#4a9a98', 'G': '#8ad8c8', 'b': '#e0f4e8', 'f': '#5aa8d0', 'F': '#a8dcf4', 'o': '#2a5a5a',
+                'k': '#100c14', 'w': '#ffffff', 'l': '#2e7a78'},
+        'map': [
+            "f..f.........",
+            "Ffgf.........",
+            ".gggg........",
+            "gwkggg.......",
+            "gkkggg.......",
+            "oggggg..fF...",
+            ".bbggg.ggfF..",
+            "..bgggggggg..",
+            "..bbGGGGGgggf",
+            "...gggggggg.F",
+            "...l.l..l.l..",
+        ],
+        'fx': 'wave', 'fxcol': ('#e8f8ff', '#5aa8d0'), 'accent': '#8ad8c8',
+    },
+})
+
 SPECIES['agacbasi'] = boss_agacbasi()
 SPECIES['tas_golemi'] = boss_golem()
 SPECIES['firtina_cakali'] = boss_cakal()

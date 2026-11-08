@@ -41,6 +41,7 @@ export const SKILLS = [
   { key: 'toplama', name: 'Toplama', desc: 'Keşifte ve Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
   { key: 'uretim', name: 'Üretim', desc: 'Zanaat avlusundaki Masa, Fırın, Kazan ve Yem Tezgâhı\'nda üretince artar. Yeni tarifler açar.' },
   { key: 'insa', name: 'İnşa', desc: 'Arsana blok ve eşya koyunca artar. Yeni bloklar açar, arsan büyür (20, 40, 60).' },
+  { key: 'balikcilik', name: 'Balıkçılık', desc: 'Üs Göletinde ve Keşifteki göllerde balık tutunca artar. Yeni balıklar, oltalar ve batık sandıklar.' },
   { key: 'sans', name: 'Şans', desc: 'Patron yenince, sandık açınca ve nadir bir şey düşünce artar. Nadir düşme ve parlak Glemon şansı.' },
   { key: 'bag', name: 'Glemon Bağı', desc: 'Yanındaki Glemon savaşınca ve evcilleştirince artar. Daha zor Glemonları evcilleştirirsin, evcillerin güçlenir ve seviye sınırları artar (Bağ / 2).' },
 ];
@@ -326,6 +327,22 @@ export const GLEMONS = {
     name: 'Yıldız Balinası', from: "Yıldız Balinası'ndan", rarity: 'efsanevi', type: 'Gölge', egg: 'golge', fly: true,
     hp: 36, atk: 4.8, def: 5.4, spd: 95, special: { name: 'Yıldız Yağmuru', mult: 0.9, aoe: true, telegraph: true }, every: 3, drops: [],
   },
+  // ---------------------------------------------------------------- 0.8.5 Su Glemonlari (sadece balik tutarken oltaya takilir)
+  damlacik: {
+    name: 'Damlacık', from: "Damlacık'tan", rarity: 'nadir', type: 'Su', water: true,
+    hp: 18, atk: 3.4, def: 3, spd: 105, special: { name: 'Su Fıskiyesi', mult: 1.5, telegraph: true }, every: 3,
+    drops: [['deniz_cami', 0.25], ['solucan', 0.5]],
+  },
+  inci_istiridye: {
+    name: 'İnci İstiridye', from: "İnci İstiridye'den", rarity: 'nadir', type: 'Su', water: true,
+    hp: 22, atk: 3, def: 5, spd: 85, special: { name: 'Kabuğunu Kapat', shell: 2 }, every: 3,
+    drops: [['gol_incisi', 0.15], ['deniz_cami', 0.2]],
+  },
+  gol_ejderi: {
+    name: 'Göl Ejderi', from: "Göl Ejderi'nden", rarity: 'epik', type: 'Su', water: true,
+    hp: 26, atk: 4.4, def: 4, spd: 110, special: { name: 'Dalga Çarpması', mult: 1.2, aoe: true, telegraph: true }, every: 3,
+    drops: [['gol_incisi', 0.3], ['efsane_pul', 0.05]],
+  },
 };
 
 // Bolgeler ve icindeki Glemonlar (0.5). Her bolgenin 10 kati, 5. katta ara patron, 10. katta patron.
@@ -345,8 +362,8 @@ export const EGGS = {
 export const EGG_BATTLES = 100;
 // Tip tablosu: guclu oldugu tiplere 1.5 kat, onu yenen tiplere 0.67 kat hasar
 export const TYPE_STRONG = {
-  Orman: ['Taş', 'Kum'], Taş: ['Ateş', 'Buz'], Kum: ['Ateş', 'Gölge'],
-  Buz: ['Orman', 'Kum'], Ateş: ['Orman', 'Buz'], Gölge: ['Taş'],
+  Orman: ['Taş', 'Kum', 'Su'], Taş: ['Ateş', 'Buz'], Kum: ['Ateş', 'Gölge'],
+  Buz: ['Orman', 'Kum'], Ateş: ['Orman', 'Buz'], Gölge: ['Taş'], Su: ['Ateş', 'Kum'],
 };
 export function typeMult(att, def) {
   if (!att || !def) return 1;
@@ -378,6 +395,7 @@ export const FOODS = {
   buz: ['kar_kurabiyesi', 'aurora_sekeri'],
   kor: ['biber_kebabi', 'yakut_receli'],
   golge: ['gece_coregi', 'ay_pastasi'],
+  su: ['balik_kraker', 'inci_kraker'],
 };
 export const PET_MAX_LVL = 50;
 export const EVOLVE_AT = [15, 35];
@@ -428,7 +446,7 @@ export const SHINY_CHANCE = 1 / 500;
 export const floorMult = (floor) => 1 + 0.22 * (floor - 1);
 
 // ---------------------------------------------------------------- Esyalar
-// kind: malzeme | tuketim | silah | kask | gogus | bot | tilsim | kazma
+// kind: malzeme | tuketim | silah | kask | gogus | bot | tilsim | kazma | olta
 export const ITEMS = {
   // ---- dusen malzemeler
   dal: { name: 'Dal parçası', kind: 'malzeme', rarity: 'siradan', icon: 'dal', desc: 'Kütükçükten düşer, keşifte de toplanır. Tahta eşyaların ana malzemesi.' },
@@ -582,7 +600,86 @@ export const ITEMS = {
   aurora_tilsimi: { name: 'Aurora Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_aurora', hp: 30, desc: 'Can +30.' },
   yakut_tilsimi: { name: 'Yakut Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_yakut', crit: 0.08, luck: 8, desc: 'Kritik +%8, Şans +8.' },
   ay_tilsimi: { name: 'Ay Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_ay', spd: 25, desc: 'Hız +25.' },
+  // ---- 0.8.5 balikcilik: oltalar (box: yakalama kutusu buyur, bite: daha cabuk isirir, rare: nadir balik)
+  tahta_olta: { name: 'Tahta Olta', kind: 'olta', rarity: 'siradan', icon: 'olta_tahta', rod: { box: 0, bite: 1, rare: 1 }, desc: 'Herkesin ilk oltası.' },
+  bambu_olta: { name: 'Bambu Olta', kind: 'olta', rarity: 'siradan', icon: 'olta_bambu', rod: { box: 0.15, bite: 1, rare: 1 }, req: ['balikcilik', 20], desc: 'Yakalama kutusu %15 büyük.' },
+  demir_olta: { name: 'Demir Olta', kind: 'olta', rarity: 'siradan', icon: 'olta_demir', rod: { box: 0.25, bite: 0.8, rare: 1 }, req: ['balikcilik', 35], desc: 'Kutu %25 büyük, balık daha çabuk ısırır.' },
+  kristal_olta: { name: 'Kristal Olta', kind: 'olta', rarity: 'nadir', icon: 'olta_kristal', rod: { box: 0.35, bite: 0.8, rare: 1.5 }, req: ['balikcilik', 55], desc: 'Kutu %35 büyük, nadir balık şansı artar.' },
+  kor_olta: { name: 'Kor Olta', kind: 'olta', rarity: 'nadir', icon: 'olta_kor', rod: { box: 0.35, bite: 0.75, rare: 1.5, lava: true }, req: ['balikcilik', 70], desc: 'Yanmaz. Kor Diyarındaki lav göllerinde balık tutar.' },
+  // ---- 0.8.5 yemler (cantada varsa kullanilir; gol ekraninda hangisi secilir)
+  solucan: { name: 'Solucan', kind: 'malzeme', rarity: 'siradan', icon: 'solucan', bait: 'solucan', desc: 'Madende toprak kazarken çıkar. Yem: balık daha çabuk ısırır.' },
+  parlak_yem: { name: 'Parlak Yem', kind: 'malzeme', rarity: 'nadir', icon: 'parlak_yem', bait: 'parlak', desc: 'Simya Kazanında yapılır. Yem: nadir ve efsane balık şansı artar.' },
+  // ---- 0.8.5 sadece balikcilikla bulunanlar
+  gol_incisi: { name: 'Göl İncisi', kind: 'malzeme', rarity: 'epik', icon: 'gol_incisi', desc: 'Sadece batık sandıklarda (Balıkçılık 30+). İnci Tılsımı malzemesi.' },
+  efsane_pul: { name: 'Efsane Pul', kind: 'malzeme', rarity: 'efsanevi', icon: 'efsane_pul', desc: 'Sadece efsane balıklardan. Pullu Pelerin ve en iyi olta malzemesi.' },
+  deniz_cami: { name: 'Deniz Camı', kind: 'malzeme', rarity: 'nadir', icon: 'deniz_cami', desc: 'Sadece batık sandıklarda. Arsan için renkli cam blokları.' },
+  // ---- 0.8.5 balik yemekleri
+  izgara_balik: { name: 'Izgara Balık', kind: 'tuketim', rarity: 'siradan', icon: 'izgara_balik', heal: 0.35, food: true, strong: 3, anim: 'eat', desc: 'Canının %35\'ini doldurur. Savaşta yersen 3 tur saldırın %30 artar.' },
+  balik_corbasi: { name: 'Balık Çorbası', kind: 'tuketim', rarity: 'nadir', icon: 'balik_corbasi', heal: 0.5, food: true, warm: true, anim: 'eat', desc: 'Canının %50\'sini doldurur ve soğuğu 30 dakika engeller.' },
+  balik_kraker: { name: 'Balık Kraker', kind: 'malzeme', rarity: 'siradan', icon: 'balik_kraker', yem: 'su', desc: 'Su Glemonlarının sevdiği yem. Sadece nadir Su Glemonlarını evcilleştirir.' },
+  inci_kraker: { name: 'İncili Kraker', kind: 'malzeme', rarity: 'nadir', icon: 'inci_kraker', yem: 'su', special: true, desc: 'Özel yem: bütün Su Glemonlarını evcilleştirir.' },
 };
+
+// ---------------------------------------------------------------- Balikcilik (0.8.5)
+// Her suyun kendi balıklari var. lvl: gereken Balikcilik, diff: ne kadar kivrak (1-5),
+// legend: efsane balik (elle tutulur, ozel hareket), col: simge renkleri [govde, acik, koyu, yuzgec]
+export const WATERS = {
+  us: { name: 'Üs Göleti' },
+  orman: { name: 'Orman Gölü' },
+  magara: { name: 'Yeraltı Gölü' },
+  col: { name: 'Vaha' },
+  buz: { name: 'Buz Deliği' },
+  kor: { name: 'Lav Gölü', lava: true },
+  golge: { name: 'Gölge Kuyusu' },
+};
+export const FISH = {
+  pulcuk: { name: 'Pulcuk', water: 'us', lvl: 1, diff: 1, w: 50, rarity: 'siradan', col: ['#8ab4c8', '#d0e8f0', '#4a7890', '#e8a050'] },
+  cizgili_sazan: { name: 'Çizgili Sazan', water: 'us', lvl: 4, diff: 1.4, w: 35, rarity: 'siradan', col: ['#c8a050', '#f0d890', '#7a5a28', '#a86a30'] },
+  camur_yayini: { name: 'Çamur Yayını', water: 'us', lvl: 10, diff: 1.8, w: 25, rarity: 'siradan', col: ['#7a6a50', '#b0a080', '#4a3e2e', '#5a4a38'] },
+  altin_pulcuk: { name: 'Altın Pulcuk', water: 'us', lvl: 25, diff: 2.8, w: 6, rarity: 'nadir', col: ['#f0c040', '#fff0a0', '#b08020', '#f08030'] },
+  yaprak_baligi: { name: 'Yaprak Balığı', water: 'orman', lvl: 8, diff: 1.6, w: 45, rarity: 'siradan', col: ['#74b452', '#c8f0a0', '#3e7a30', '#a8d878'] },
+  yosunlu_turna: { name: 'Yosunlu Turna', water: 'orman', lvl: 15, diff: 2.2, w: 30, rarity: 'siradan', col: ['#5a8a5a', '#a0c890', '#2e5a34', '#8a6a3a'] },
+  dere_alabaligi: { name: 'Dere Alabalığı', water: 'orman', lvl: 20, diff: 2.6, w: 18, rarity: 'nadir', col: ['#b8a8c8', '#f0e0f0', '#6a5a7a', '#e87a8a'] },
+  kok_baligi: { name: 'Kadim Kökbalığı', water: 'orman', lvl: 30, diff: 3.6, legend: 'dive', rarity: 'efsanevi', col: ['#8a5a32', '#c8a070', '#4a2e18', '#7cc25a'] },
+  kor_balik: { name: 'Mağara Körbalığı', water: 'magara', lvl: 22, diff: 2.4, w: 45, rarity: 'siradan', col: ['#e8d8d0', '#ffffff', '#a89890', '#f0b0b0'] },
+  kristal_karides: { name: 'Kristal Karides', water: 'magara', lvl: 28, diff: 2.9, w: 30, rarity: 'siradan', col: ['#a8d4ec', '#e8f8ff', '#5a8ab0', '#c08af0'] },
+  yanki_yilanbaligi: { name: 'Yankı Yılanbalığı', water: 'magara', lvl: 32, diff: 3.2, w: 16, rarity: 'nadir', col: ['#5a5a7a', '#9a9ab8', '#2e2e44', '#9a6cc8'] },
+  ametist_mersin: { name: 'Ametist Mersin', water: 'magara', lvl: 45, diff: 4, legend: 'dart', rarity: 'efsanevi', col: ['#9a6cc8', '#e0c8ff', '#5a3a8a', '#7af0e0'] },
+  vaha_alabaligi: { name: 'Vaha Alabalığı', water: 'col', lvl: 32, diff: 3, w: 45, rarity: 'siradan', col: ['#e8b060', '#ffe0a0', '#a87030', '#5aa8a0'] },
+  kum_kedibaligi: { name: 'Kum Kedibalığı', water: 'col', lvl: 36, diff: 3.3, w: 30, rarity: 'siradan', col: ['#d8c090', '#f8ecc8', '#9a8050', '#7a5a38'] },
+  serap_baligi: { name: 'Serap Balığı', water: 'col', lvl: 40, diff: 3.6, w: 16, rarity: 'nadir', col: ['#f0a0c8', '#fff0f8', '#b06a90', '#ffe080'] },
+  gunes_turnasi: { name: 'Güneş Turnası', water: 'col', lvl: 55, diff: 4.3, legend: 'dart', rarity: 'efsanevi', col: ['#ffb030', '#fff0a0', '#c86a10', '#e8401a'] },
+  buz_morinasi: { name: 'Buz Morinası', water: 'buz', lvl: 42, diff: 3.4, w: 45, rarity: 'siradan', col: ['#c8d8e8', '#f4fbff', '#7a90a8', '#9cc8e8'] },
+  kar_somonu: { name: 'Kar Somonu', water: 'buz', lvl: 46, diff: 3.7, w: 30, rarity: 'siradan', col: ['#f0a080', '#ffe0d0', '#b06048', '#e4ebf2'] },
+  kuzey_ringasi: { name: 'Kuzey Ringası', water: 'buz', lvl: 50, diff: 4, w: 16, rarity: 'nadir', col: ['#7ae0c8', '#e0fff8', '#3a8a8a', '#c08af0'] },
+  aurora_mersini: { name: 'Aurora Mersini', water: 'buz', lvl: 65, diff: 4.6, legend: 'dive', rarity: 'efsanevi', col: ['#7ae0c8', '#f0d0ff', '#4a6a90', '#c08af0'] },
+  lav_kefali: { name: 'Lav Kefali', water: 'kor', lvl: 70, diff: 4, w: 45, rarity: 'siradan', col: ['#e0602a', '#ffb040', '#8a3014', '#ffe080'] },
+  kul_yayini: { name: 'Kül Yayını', water: 'kor', lvl: 73, diff: 4.2, w: 30, rarity: 'siradan', col: ['#6a6268', '#a89ca4', '#3e3638', '#f07a2a'] },
+  magma_yengeci: { name: 'Magma Yengeci', water: 'kor', lvl: 76, diff: 4.5, w: 16, rarity: 'nadir', col: ['#c8301e', '#f07a3a', '#6a1a10', '#ffd060'] },
+  ejder_baligi: { name: 'Ateş Ejder Balığı', water: 'kor', lvl: 85, diff: 5, legend: 'dart', rarity: 'efsanevi', col: ['#e8401a', '#ffd060', '#8a1a10', '#c8304a'] },
+  golge_yilanbaligi: { name: 'Gölge Yılanbalığı', water: 'golge', lvl: 62, diff: 3.9, w: 45, rarity: 'siradan', col: ['#4a3a6a', '#8a6ac0', '#2a2040', '#7af0e0'] },
+  fener_baligi: { name: 'Fener Balığı', water: 'golge', lvl: 68, diff: 4.2, w: 30, rarity: 'siradan', col: ['#3a4a6a', '#6a8ab0', '#1e2a40', '#fff0a0'] },
+  bosluk_vatozu: { name: 'Boşluk Vatozu', water: 'golge', lvl: 74, diff: 4.5, w: 16, rarity: 'nadir', col: ['#2a2040', '#5a4a8a', '#140e20', '#c8a0f0'] },
+  ay_baligi: { name: 'Dolunay Balığı', water: 'golge', lvl: 90, diff: 5, legend: 'dive', rarity: 'efsanevi', col: ['#e8e8f8', '#ffffff', '#8a8ac8', '#fff0a0'] },
+};
+export const fishXp = (f) => Math.round((20 + f.lvl * 5 + f.lvl * f.lvl * 0.06) * (f.legend ? 5 : f.rarity === 'nadir' ? 1.6 : 1));
+export const FISHING = {
+  legendChance: 0.015,   // uygun seviyedeysen her atista efsane balik
+  chestChance: 0.06,     // batik sandik
+  glemonChance: 0.025,   // su Glemonu (Balikcilik 15+)
+  autoChance: 0.6,       // otomatikte yakalama
+  biteMs: [2000, 8000],
+  hookMs: 800,
+};
+// Su Glemonlari sadece balik tutarken cikar
+export const WATER_GLEMONS = [['damlacik', 50], ['inci_istiridye', 35], ['gol_ejderi', 15]];
+for (const [k, f] of Object.entries(FISH)) {
+  const w = WATERS[f.water].name;
+  ITEMS[k] = {
+    name: f.name, kind: 'malzeme', rarity: f.rarity, icon: `balik_${k}`, fish: true,
+    desc: f.legend ? `Efsane balık! ${w} (Balıkçılık ${f.lvl}). Tutunca Efsane Pul da verir.` : `${w} balığı (Balıkçılık ${f.lvl}). Fırında pişer ya da satılır.`,
+  };
+}
 
 // 0.8 ekipman seviyeleri: Kristal, Kor, Bonkit, Golge (kilic, yay, kazma, kask, goguslik, bot)
 export const TIERS = {
@@ -613,7 +710,7 @@ export const SETS = {
 };
 
 export const SLOTS = [
-  ['silah', 'Silah'], ['kask', 'Kask'], ['gogus', 'Göğüslük'], ['bot', 'Bot'], ['tilsim', 'Tılsım'], ['kazma', 'Kazma'],
+  ['silah', 'Silah'], ['kask', 'Kask'], ['gogus', 'Göğüslük'], ['bot', 'Bot'], ['tilsim', 'Tılsım'], ['kazma', 'Kazma'], ['olta', 'Olta'],
 ];
 
 export const BAG_SIZE = 20;
@@ -632,7 +729,7 @@ export const ZONE_CHEST = {
 };
 
 // Kat odalari
-export const ROOM_WEIGHTS = [['savas', 52], ['sandik', 13], ['tuzak', 11], ['uyuyan', 10], ['kamp', 8], ['maden', 8]];
+export const ROOM_WEIGHTS = [['savas', 52], ['sandik', 13], ['tuzak', 11], ['uyuyan', 10], ['kamp', 8], ['maden', 8], ['gol', 9]];
 // savastan sonra odada toplanacak bir sey cikma ihtimali
 export const GATHER_CHANCE = 0.4;
 
@@ -806,6 +903,19 @@ export const RECIPES = [
   { out: 'aurora_tilsimi', mats: { aurora_boynuzu: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 34, xp: 500 },
   { out: 'yakut_tilsimi', mats: { yakut: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 46, xp: 650 },
   { out: 'ay_tilsimi', mats: { ay_tozu: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 56, xp: 800 },
+  // 0.8.5 balikcilik (sona eklenir)
+  { out: 'tahta_olta', mats: { dal: 4, sifali_ot: 1 }, station: 'masa', lvl: 1, xp: 40 },
+  { out: 'bambu_olta', mats: { dal: 8, yarasa_zari: 2 }, station: 'masa', lvl: 8, xp: 120 },
+  { out: 'demir_olta', mats: { demir_kulcesi: 3, yarasa_zari: 2 }, station: 'masa', lvl: 14, xp: 200 },
+  { out: 'kristal_olta', mats: { saf_kristal: 3, kar_tuyu: 2 }, station: 'masa', lvl: 32, xp: 400 },
+  { out: 'kor_olta', mats: { kor_kulcesi: 3, kivilcim: 2 }, station: 'masa', lvl: 44, xp: 600 },
+  { out: 'parlak_yem', n: 3, mats: { solucan: 3, ham_kristal: 1 }, station: 'kazan', lvl: 10, xp: 60 },
+  { out: 'izgara_balik', mats: { pulcuk: 2, komur: 1 }, station: 'firin', lvl: 2, xp: 30 },
+  { out: 'izgara_balik', n: 2, mats: { yaprak_baligi: 2, komur: 1 }, station: 'firin', lvl: 10, xp: 50 },
+  { out: 'balik_corbasi', mats: { camur_yayini: 1, mantar: 1, sifali_ot: 1 }, station: 'firin', lvl: 12, xp: 70 },
+  { out: 'balik_corbasi', n: 2, mats: { buz_morinasi: 1, kar_cilegi: 1, sifali_ot: 1 }, station: 'firin', lvl: 30, xp: 110 },
+  { out: 'balik_kraker', mats: { cizgili_sazan: 1, kum: 1 }, station: 'yem', lvl: 10, xp: 50 },
+  { out: 'inci_kraker', mats: { cizgili_sazan: 1, gol_incisi: 1 }, station: 'yem', lvl: 25, xp: 160 },
 ];
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -817,6 +927,7 @@ export const SHOP = [
   { id: 'sifali_ot', price: 8 },
   { id: 'komur', price: 6 },
   { id: 'ot_tohumu', price: 12 },
+  { id: 'solucan', price: 4 },
   { id: 'bogurtlen_tohumu', price: 15 },
   { id: 'orman_turtasi', price: 25 },
   { id: 'tahta_yay', price: 60 },
@@ -835,7 +946,10 @@ export const SELL = {
   golge_ozu: 8, gece_postu: 8, ay_tozu: 260, kar_cilegi: 4, ates_biberi: 5, gece_mantari: 6,
   altin_cevheri: 8, altin_kulcesi: 20, saf_kristal: 14, kor_tasi: 18, kor_kulcesi: 40, bonkit: 200, bonkit_kulcesi: 420,
   golge_tasi: 30, golge_kulcesi: 70, kar_kurabiyesi: 10, biber_kebabi: 12, gece_coregi: 14,
+  solucan: 1, parlak_yem: 5, gol_incisi: 150, deniz_cami: 25, efsane_pul: 300, izgara_balik: 10, balik_corbasi: 18, balik_kraker: 6,
 };
+// baliklar: seviyesiyle ve nadirligiyle artar
+for (const [k, f] of Object.entries(FISH)) SELL[k] = Math.round((2 + f.lvl * 0.6) * (f.legend ? 8 : f.rarity === 'nadir' ? 2 : 1));
 
 // ---------------------------------------------------------------- Us ve insa (0.3)
 // Arsa: usteki ayri bir ekran, yandan gorunen blok izgarasi. Her esya bir bloga karsilik gelir.

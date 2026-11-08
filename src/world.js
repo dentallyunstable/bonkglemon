@@ -5,7 +5,9 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
+  FISH, WATERS, fishXp,
 } from './data.js';
+import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx, playMusic, stopMusic, currentMusic } from './audio.js';
@@ -13,7 +15,7 @@ import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
-import { TOD, todNow, forestBackground, caveBackground, battleBackground, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL } from './art.js';
+import { TOD, todNow, forestBackground, caveBackground, battleBackground, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan } from './panels.js';
 
 const PLAYER_HOME = 96;
@@ -152,7 +154,7 @@ export class WorldScene extends Phaser.Scene {
   update(time, dt) {
     this.pShadow.x = this.player.x;
     // gunun saati: ustte (dis ve arsa) karakter de isiga gore boyanir
-    const outdoor = this.mode === 'base' || this.mode === 'plot';
+    const outdoor = this.mode === 'base' || this.mode === 'plot' || this.mode === 'pond';
     const ptint = outdoor ? TOD[this.tod].tint : 0xffffff;
     if (this.player.tintTopLeft !== ptint) { if (ptint === 0xffffff) this.player.clearTint(); else this.player.setTint(ptint); }
     this.todTick = (this.todTick || 0) + dt;
@@ -370,6 +372,7 @@ export class WorldScene extends Phaser.Scene {
     UI.setActions([
       { label: 'Arsa', cls: 'blue', onClick: () => this.enterPlot() },
       { label: 'Maden', cls: 'blue', onClick: () => this.enterMine(S.save.mine.depth) },
+      { label: 'Göl', cls: 'blue', onClick: () => this.enterPond() },
     ]);
     if (this.follower) { this.follower.x = this.player.x - 26; }
     this.refreshHud();
@@ -400,7 +403,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ gunun saati ve muzik
   todBg(base) {
     const key = `${base}_${this.tod}`;
-    if (!this.textures.exists(key)) this.textures.addCanvas(key, forestBackground(1, base === 'bg_plot' ? 3 : 0, true, GAME_W, this.tod));
+    if (!this.textures.exists(key)) this.textures.addCanvas(key, forestBackground(1, base === 'bg_plot' ? 3 : base === 'bg_pond' ? 5 : 0, true, GAME_W, this.tod));
     return key;
   }
 
@@ -408,9 +411,9 @@ export class WorldScene extends Phaser.Scene {
   applyTod() {
     for (const g of this.glows) g.destroy();
     this.glows = [];
-    if (this.mode !== 'base' && this.mode !== 'plot') return;
+    if (this.mode !== 'base' && this.mode !== 'plot' && this.mode !== 'pond') return;
     this.tod = todNow();
-    this.bg.setTexture(this.todBg(this.mode === 'plot' ? 'bg_plot' : 'bg_base'));
+    this.bg.setTexture(this.todBg(this.mode === 'plot' ? 'bg_plot' : this.mode === 'pond' ? 'bg_pond' : 'bg_base'));
     const T = TOD[this.tod];
     for (const o of this.roomObjs) {
       if (!o.active || !o.setTint || o.noTint) continue;
@@ -420,6 +423,7 @@ export class WorldScene extends Phaser.Scene {
     const G = GROUND_Y;
     const spots = [];
     if (this.mode === 'base') spots.push([FIRE_X, G - 8, 1.6], [MINE_X, G - 26, 0.9], [32, G - 40, 0.6], [128, G - 40, 0.6], [INN_X + 68, G - 40, 0.7]);
+    else if (this.mode === 'pond') spots.push([POND.standX - 40, G - 30, 0.8]);
     else {
       const g = this.plotGeom();
       for (const [key, c] of Object.entries(S.save.plot.cells)) {
@@ -811,6 +815,169 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ maden ocagi
+  // ------------------------------------------------------------ gol (0.8.5)
+  // Ussun arkasindaki kucuk gol: iskelenin ucunda balik tutulur.
+  async enterPond() {
+    UI.closePanel();
+    if (this.busy || this.mode !== 'base') return;
+    this.busy = true;
+    this.walkTok++;
+    UI.setActions([]);
+    this.player.setFlipX(true);
+    await moveTo(this.player, -12, { speed: 190, anim: 'c_sprint' });
+    await this.fade(true);
+    this.goPond();
+    this.player.x = -12;
+    await this.fade(false);
+    await moveTo(this.player, POND.standX, { speed: 95, anim: 'c_walk' });
+    this.player.y = POND.deck + 1;
+    this.idle();
+    this.busy = false;
+    this.pondActions();
+    if (!S.save.fishing.total) UI.feed('Üs Göleti! "Olta at" de, şamandıra batınca dokun, sonra yeşil kutuyla balığı yakala.');
+  }
+
+  goPond() {
+    this.mode = 'pond';
+    this.clearRoom();
+    this.tod = todNow();
+    this.bg.setTexture(this.todBg('bg_pond'));
+    this.addPond('us', false);
+    this.applyTod();
+    this.player.setFlipX(false);
+    this.resetPlayer();
+    this.idle();
+    UI.setLocation('Üs Göleti');
+  }
+
+  // gol cizimi ve balik tutma noktasi (us ya da Kesif odasi)
+  addPond(water, bridge) {
+    if (!this.textures.exists('bobber')) this.textures.addCanvas('bobber', bobber());
+    const key = `pond_${water}_${bridge ? 1 : 0}`;
+    if (!this.textures.exists(key)) this.textures.addCanvas(key, pondOverlay(water, bridge));
+    this.addObj(this.add.image(0, GROUND_Y - 16, key).setOrigin(0, 0).setDepth(3));
+    this.fishSpot = { water, bobX: POND.bobX, surfY: POND.surf, standX: POND.standX };
+  }
+
+  pondActions() {
+    UI.setActions([
+      { label: 'Olta at', cls: 'primary', onClick: () => this.cast() },
+      { label: baitLabel(), cls: 'blue', onClick: () => { cycleBait(); this.pondActions(); } },
+      { label: 'Üsse dön', onClick: () => this.leavePond() },
+    ]);
+  }
+
+  async leavePond() {
+    if (this.busy || this.mode !== 'pond') return;
+    this.busy = true;
+    UI.setActions([]);
+    this.player.y = GROUND_Y;
+    this.player.setFlipX(false);
+    await moveTo(this.player, GAME_W + 12, { speed: 190, anim: 'c_sprint' });
+    await this.fade(true);
+    this.goBase('pond');
+    this.player.x = 12;
+    await this.fade(false);
+    this.busy = false;
+  }
+
+  // bir atis: balik, sandik ya da su Glemonu
+  async cast() {
+    if (this.busy || !this.fishSpot) return;
+    const room = this.mode === 'dungeon' ? this.rooms[this.roomIdx] : null;
+    const spot = this.fishSpot;
+    if (WATERS[spot.water].lava && !(S.rod() && S.rod().lava)) {
+      UI.feed('Lav gölü! Burada sadece Kor Olta ile balık tutabilirsin (Balıkçılık 70).');
+      this.sulk();
+      return;
+    }
+    if (!S.save.equip.olta) { UI.feed('Oltan yok! Çantandan bir olta kuşan ya da Üretim Masasında yap.'); this.sulk(); return; }
+    if (S.bagFreeSlots() === 0) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+    this.busy = true;
+    UI.setActions([]);
+    if (Math.abs(this.player.x - spot.standX) > 2) {
+      this.player.y = GROUND_Y;
+      await moveTo(this.player, spot.standX, { speed: 95, anim: 'c_walk' });
+    }
+    this.player.y = POND.deck + 1;
+    const out = await castOnce(this);
+    if (room && room.type === 'gol' && !(out && out.nofish)) room.casts--;
+    let ups = [];
+    if (out && out.fish) {
+      const f = FISH[out.fish];
+      const xp = Math.round(fishXp(f) * (out.manual ? 1.2 : 1));
+      const fs = S.save.fishing;
+      const first = !fs.caught[out.fish];
+      fs.caught[out.fish] = (fs.caught[out.fish] || 0) + 1;
+      fs.total = (fs.total || 0) + 1;
+      S.save.stats.fished = fs.total;
+      this.giveDrop(out.fish, 1, 'Tuttun:', true);
+      if (f.legend) {
+        UI.banner('EFSANE BALIK!', f.name, 2600, 'gold');
+        this.giveDrop('efsane_pul', 1 + (Math.random() < 0.4 ? 1 : 0), 'Pulları parlıyor:', true);
+      } else if (first) UI.feed(`Yeni balık: ${f.name}! Albümdeki Balıklar sayfasına yazıldı.`);
+      UI.floatText(this.player.x, POND.deck - 46, `+${xp} Balıkçılık XP`, 'good');
+      ups = S.addXp({ balikcilik: xp });
+      await this.playPool('sevinc', 900);
+    } else if (out && out.chest) {
+      const c = chestLoot(spot.water);
+      sfx('rare');
+      UI.banner('Batık sandık!', 'Oltana bir sandık takıldı', 1800, 'gold');
+      S.addGold(c.gold);
+      UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Batık sandık! +${c.gold} ${CURRENCY}`, 'gold');
+      for (const [id, n] of c.loot) this.giveDrop(id, n, 'Sandıktan:', true);
+      ups = S.addXp({ balikcilik: 40 + S.level('balikcilik') * 4 });
+      await this.playPool('sevinc', 900);
+    } else if (out && out.glemon) {
+      ups = S.addXp({ balikcilik: 30 + S.level('balikcilik') * 3 });
+      S.changed();
+      for (const u of ups) await this.levelUp(u);
+      await this.waterFight(out.glemon, room);
+      return;
+    }
+    S.changed();
+    for (const u of ups) await this.levelUp(u);
+    this.player.y = POND.deck + 1;
+    this.idle();
+    this.busy = false;
+    if (this.mode === 'pond') this.pondActions();
+    else this.refreshRoomActions();
+  }
+
+  // oltaya Glemon takildi: savas (kaybedersen sadece canin azalir, tur bozulmaz)
+  async waterFight(key, room) {
+    const G = GLEMONS[key];
+    sfx('warn');
+    UI.banner('Oltaya bir Glemon takıldı!', G.name, 1800, 'gold');
+    this.cameras.main.shake(300, 0.008);
+    await wait(this, 900);
+    const floor = this.mode === 'dungeon' ? this.floor : Math.max(1, Math.min(30, Math.round(S.level('balikcilik') / 1.6)));
+    const saved = this.floor;
+    this.floor = floor;
+    const stage = Math.random() < 0.15 ? 1 : 0;
+    this.battle = new Battle(this, [{ key, stage, shiny: Math.random() < S.shinyChance() }], { ...this.battleOpts(room || {}), floor });
+    this.player.y = GROUND_Y;
+    await this.enterBattleView();
+    const res = await this.battle.start();
+    this.battle = null;
+    if (this.inBattleView) await this.exitBattleView(true);
+    this.floor = saved;
+    if (this.mode === 'pond' || room) {
+      this.player.x = this.fishSpot.standX;
+      this.player.y = POND.deck + 1;
+    }
+    if (res === 'lose') {
+      if (this.mode === 'dungeon') { this.onDeath(); return; }
+      S.hp = Math.max(1, Math.round(S.maxHp() * 0.3));
+      UI.feed(`${G.name} seni yendi ve suya geri daldı. Biraz dinlen.`);
+      S.changed();
+      playAnim(this.player, 'c_cry', 1).then(() => this.idle());
+    }
+    this.busy = false;
+    if (this.mode === 'pond') this.pondActions();
+    else this.refreshRoomActions();
+  }
+
   async enterMine(depth) {
     UI.closePanel();
     if (!this.busy && this.mode === 'base') stopMusic();
@@ -1004,6 +1171,8 @@ export class WorldScene extends Phaser.Scene {
       if (left === 0) UI.floatText(b.spr.x, b.spr.y - 6, `+1 ${ITEMS[ore.drop].name}`, 'info');
       else UI.feed(`Çanta dolu! ${ITEMS[ore.drop].name} sığmadı.`);
     }
+    // 0.8.5: topraktan solucan cikar (balik yemi)
+    if (kind === 'toprak' && Math.random() < 0.35 && S.addItem('solucan', 1) === 0) UI.floatText(b.spr.x, b.spr.y - 14, '+1 Solucan', 'info');
     if (kind === 'define') {
       const gold = 20 + Math.floor(Math.random() * 30 * depth);
       S.addGold(gold);
@@ -1376,6 +1545,10 @@ export class WorldScene extends Phaser.Scene {
       case 'merdiven':
         room.obj = this.addObj(this.add.image(300, G, 'stairs').setOrigin(0.5, 0).setDepth(2));
         break;
+      case 'gol':
+        this.addPond(this.zone().key, true);
+        room.casts = room.casts ?? 3;
+        break;
       case 'maden': {
         if (!room.vein) {
           const zk = this.zone().key;
@@ -1424,12 +1597,19 @@ export class WorldScene extends Phaser.Scene {
     const room = this.rooms[this.roomIdx];
     if (!room || this.mode !== 'dungeon') return;
     const back = { label: 'Üsse dön', onClick: () => this.returnBase() };
-    const next = { label: 'İlerle →', cls: room.type === 'sandik' || room.type === 'kamp' || room.type === 'maden' ? '' : 'primary', onClick: () => this.nextRoom() };
+    const next = { label: 'İlerle →', cls: ['sandik', 'kamp', 'maden', 'gol'].includes(room.type) ? '' : 'primary', onClick: () => this.nextRoom() };
     const g = this.gatherAction(room);
     if (room.type === 'sandik') {
       UI.setActions([room.opened ? null : { label: 'Sandığı aç', cls: 'primary', onClick: () => this.openChest(room) }, next, g, back]);
     } else if (room.type === 'kamp') {
       UI.setActions([room.rested ? null : { label: 'Ateşte dinlen (+%30 can)', cls: 'primary', onClick: () => this.rest(room) }, next, g, back]);
+    } else if (room.type === 'gol') {
+      const lava = WATERS[this.fishSpot.water].lava;
+      UI.setActions([
+        room.casts > 0 ? { label: `Olta at (${room.casts})`, cls: 'primary', onClick: () => this.cast() } : null,
+        room.casts > 0 && !lava ? { label: baitLabel(), cls: 'blue', onClick: () => { cycleBait(); this.refreshRoomActions(); } } : null,
+        next, back,
+      ]);
     } else if (room.type === 'maden') {
       const left = (room.blocks || []).filter((b) => b.kind);
       UI.setActions([left.length ? { label: `Kaz (${left.length})`, cls: 'primary', onClick: () => this.onBlock(left[left.length - 1]) } : null, next, g, back]);
@@ -1492,6 +1672,13 @@ export class WorldScene extends Phaser.Scene {
         room.cleared = true;
         this.refreshRoomActions();
         break;
+      case 'gol': {
+        room.cleared = true;
+        const w = WATERS[this.zone().key];
+        UI.feed(w.lava ? `${w.name}! Kor Olta ile lavda balık tutabilirsin (3 atış).` : `${w.name}! Köprüden 3 kez olta atabilirsin.`);
+        this.refreshRoomActions();
+        break;
+      }
       case 'maden':
         room.cleared = true;
         UI.feed('Maden damarı! Bloklara dokunup kazabilirsin.');
@@ -1522,6 +1709,8 @@ export class WorldScene extends Phaser.Scene {
     this.busy = true;
     UI.setActions([]);
     this.player.setFlipX(false);
+    const room = this.rooms[this.roomIdx];
+    if (room && room.type === 'gol') this.player.y = POND.deck + 1;
     await moveTo(this.player, GAME_W + 24, { speed: 170, anim: 'c_run' });
     this.enterRoom(this.roomIdx + 1);
   }
