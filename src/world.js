@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  FISH, WATERS, fishXp,
+  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -459,7 +459,8 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ arsa ve insa (0.3)
   // Arsa: usteki ayri ekran. Blok izgarasi zeminden yukari (sira 0 = zemin ustu).
   plotGeom() {
-    const { cols, rows } = plotSize(S.level('insa'));
+    const { cols, rows: r0 } = plotSize(S.level('insa'));
+    const rows = r0 + (S.has('mimar') ? 1 : 0);
     const x0 = Math.floor((GAME_W - cols * 16) / 32) * 16;
     return { cols, rows, x0 };
   }
@@ -686,7 +687,8 @@ export class WorldScene extends Phaser.Scene {
     if (cell.r === 1 && cells[`${cell.c},0`] && cells[`${cell.c},0`].id === 'tarla') return 'Tarlanın üstü bitki için boş kalmalı.';
     if (id === 'tarla') {
       const n = Object.values(cells).filter((x) => x.id === 'tarla').length;
-      if (n >= MAX_TARLA(S.level('insa'))) return `En fazla ${MAX_TARLA(S.level('insa'))} tarla koyabilirsin (İnşa seviyesiyle artar).`;
+      const mx = MAX_TARLA(S.level('insa')) + (S.has('mimar') ? 4 : 0);
+      if (n >= mx) return `En fazla ${mx} tarla koyabilirsin (İnşa seviyesiyle artar).`;
       if (cells[`${cell.c},1`]) return 'Tarlanın üstü boş olmalı.';
     }
     return null;
@@ -1017,7 +1019,7 @@ export class WorldScene extends Phaser.Scene {
 
   buildWall(depth) {
     const W = MINE_WALL;
-    const weights = oreWeights(depth);
+    const weights = oreWeights(depth).map(([k, w]) => [k, ['toprak', 'kum', 'tas', 'komur'].includes(k) ? w : w * S.perk('damar_bulucu', 1.3, 1)]);
     const grid = [];
     for (let r = 0; r < MINE_ROWS; r++) {
       const row = [];
@@ -1088,6 +1090,11 @@ export class WorldScene extends Phaser.Scene {
 
   async changeDepth(d) {
     if (this.busy) return;
+    if (d > 0 && this.mineDepth + d > DEEP_LIMIT && !S.perk('derin_kazi')) {
+      UI.feed(`Derinlik ${DEEP_LIMIT}'ten aşağısı çok sert. Yetenek ağacındaki Derin Kazı yeteneği gerekli.`);
+      this.sulk();
+      return;
+    }
     this.busy = true;
     UI.setActions([]);
     sfx('stairs');
@@ -1134,7 +1141,7 @@ export class WorldScene extends Phaser.Scene {
     if (Math.abs(p.x - standX) > 2) await moveTo(p, standX, { speed: 110, anim: 'c_walk' });
     p.setFlipX(false);
     const depth = this.mode === 'mine' ? this.mineDepth : 1;
-    const need = Math.max(1, Math.ceil((ORES[b.kind].hard + (this.mode === 'mine' ? mineHardBonus(depth) : 0)) / S.pick()));
+    const need = Math.max(1, Math.ceil((ORES[b.kind].hard + (this.mode === 'mine' ? mineHardBonus(depth) : 0)) / S.pick()) - (S.has('hizli_kazma') ? 1 : 0));
     while (b.hits < need) {
       const swing = playAnim(p, 'c_mine', 1.3);
       await wait(this, 230);
@@ -1189,7 +1196,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   chips(x, y, kind, n) {
-    const tint = { toprak: 0xa07150, kum: 0xe6cd88, tas: 0x9e9aa6, komur: 0x3a3642, demir: 0xe0a882, define: 0xffd04d, altin: 0xf0c850, kristal: 0xa8d8f0, kor: 0xf08a3a, bonkit: 0x80e4a8, golge: 0x8a6ac0 }[kind] || 0x9e9aa6;
+    const tint = { toprak: 0xa07150, kum: 0xe6cd88, tas: 0x9e9aa6, komur: 0x3a3642, demir: 0xe0a882, define: 0xffd04d, altin: 0xf0c850, kristal: 0xa8d8f0, kor: 0xf08a3a, bonkit: 0x80e4a8, golge: 0x8a6ac0, yildiz: 0xf4f4ff, cekirdek: 0xe05aa0 }[kind] || 0x9e9aa6;
     for (let i = 0; i < n; i++) {
       const c = this.add.image(x, y, 'chip').setDepth(12).setTint(tint);
       this.tweens.add({
@@ -1476,7 +1483,7 @@ export class WorldScene extends Phaser.Scene {
   battleOpts(room) { return { floor: this.floor, dark: this.unlit(room), cold: this.cold(), burn: this.burning() }; }
 
   async eggHatched(h) {
-    if (h.progress) { UI.feed(`${h.name} çatırdıyor… (${h.progress}/${EGG_BATTLES} savaş)`); return; }
+    if (h.progress) { UI.feed(`${h.name} çatırdıyor… (${h.progress}/${S.eggNeed()} savaş)`); return; }
     if (h.full) { UI.feed(`${h.name} çatlamaya hazır ama Ahır dolu! Ahırda yer aç.`); return; }
     const g = GLEMONS[h.key];
     UI.banner('Yumurta çatladı!', `${h.pet.shiny ? 'Parlak ' : ''}${g.name} doğdu!`, 3000, 'gold');
@@ -1577,6 +1584,8 @@ export class WorldScene extends Phaser.Scene {
     if (room.node === undefined) {
       const ok = ['savas', 'uyuyan', 'sandik', 'kamp', 'maden', 'arapatron'].includes(room.type);
       room.node = ok && Math.random() < GATHER_CHANCE ? weighted(ZONE_GATHER[this.zone().key]) : null;
+      // 0.8.5: gece (gercek saat) Ay otu da cikar
+      if (room.node && !this.inZindan() && todNow() === 'gece' && Math.random() < AY_OTU_CHANCE) room.node = 'ay_otu';
       room.nodeX = 146 + Math.floor(Math.random() * 40);
     }
     if (room.node && !room.gathered) {
@@ -1886,6 +1895,7 @@ export class WorldScene extends Phaser.Scene {
     if (Math.random() < 0.6) this.giveDrop(f > 15 && Math.random() < 0.4 ? 'orta_iksir' : 'iksir_k', 1, 'Sandıktan');
     if (Math.random() < 0.18 * S.dropMult()) this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, 'Sandıktan');
     if (Math.random() < 0.4) this.giveDrop(pick(zc.mats), 1 + Math.floor(Math.random() * 3), 'Sandıktan');
+    if (S.has('hazine_avcisi')) this.giveDrop(pick(zc.mats), 1, 'Hazine Avcısı:');
     const lx = S.addXp({ sans: 10 * f });
     for (const u of lx) await this.levelUp(u);
     if (Math.random() < 0.03 + 0.004 * f) this.giveDrop('altin_elma', 1, 'Sandıktan');

@@ -532,3 +532,10 @@ html, body {
   position: absolute; left: 38%; top: 34%; transform: translateX(-50%); white-space: nowrap;
   font-size: calc(7 * var(--u)); color: #fff; text-shadow: 0 calc(1 * var(--u)) 0 #000; pointer-events: none;
 }
+
+/* 0.8.5 yetenek agaci */
+.tree-row { display: flex; gap: calc(4 * var(--u)); margin-bottom: calc(4 * var(--u)); }
+.tree-card { flex: 1; padding: calc(4 * var(--u)); border: calc(1 * var(--u)) solid #3a3448; border-radius: calc(3 * var(--u)); background: rgba(255, 255, 255, 0.04); }
+.tree-card.picked { border-color: #ffd04d; background: rgba(255, 208, 77, 0.12); }
+.tree-card.off { opacity: 0.45; }
+.tree-card .button, .tree-card button { margin-top: calc(3 * var(--u)); }

@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.8.0';
+export const VERSION = '0.8.5';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -617,6 +617,18 @@ export const ITEMS = {
   izgara_balik: { name: 'Izgara Balık', kind: 'tuketim', rarity: 'siradan', icon: 'izgara_balik', heal: 0.35, food: true, strong: 3, anim: 'eat', desc: 'Canının %35\'ini doldurur. Savaşta yersen 3 tur saldırın %30 artar.' },
   balik_corbasi: { name: 'Balık Çorbası', kind: 'tuketim', rarity: 'nadir', icon: 'balik_corbasi', heal: 0.5, food: true, warm: true, anim: 'eat', desc: 'Canının %50\'sini doldurur ve soğuğu 30 dakika engeller.' },
   balik_kraker: { name: 'Balık Kraker', kind: 'malzeme', rarity: 'siradan', icon: 'balik_kraker', yem: 'su', desc: 'Su Glemonlarının sevdiği yem. Sadece nadir Su Glemonlarını evcilleştirir.' },
+  // ---- 0.8.5 sadece tek beceriyle bulunan malzemeler ve onlardan yapilanlar
+  yildiz_demiri: { name: 'Yıldız Demiri', kind: 'malzeme', rarity: 'epik', icon: 'yildiz_demiri', desc: 'Sadece madende Derinlik 12 ve altında (Madencilik 70). Örste eşya yükseltir.' },
+  cekirdek_kristali: { name: 'Çekirdek Kristali', kind: 'malzeme', rarity: 'efsanevi', icon: 'cekirdek_kristali', desc: 'Sadece madende Derinlik 16 ve altında (Derin Kazı yeteneği, Madencilik 80).' },
+  ay_otu: { name: 'Ay otu', kind: 'malzeme', rarity: 'nadir', icon: 'ay_otu', desc: 'Sadece gece (gerçek saat) Keşifte toplanır. Ay İksiri malzemesi.' },
+  usta_damgasi: { name: 'Usta Damgası', kind: 'malzeme', rarity: 'epik', icon: 'usta_damgasi', desc: 'Üretim 75+ iken her üretimde %2 ihtimalle çıkar. Örste eşyayı +4 Usta yapar.' },
+  inci_tilsimi: { name: 'İnci Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_inci', dodge: 0.15, def: 4, desc: 'Kaçınma düğmesi %15 daha uzun kalır.' },
+  pullu_pelerin: { name: 'Pullu Pelerin', kind: 'tilsim', rarity: 'efsanevi', icon: 'pelerin_pullu', def: 10, hp: 25, spd: 15, dodge: 0.08, req: ['savunma', 60], desc: 'Efsane balık pullarından. Her şeyden biraz.' },
+  efsane_olta: { name: 'Efsane Olta', kind: 'olta', rarity: 'efsanevi', icon: 'olta_efsane', rod: { box: 0.5, bite: 0.65, rare: 2, lava: true }, req: ['balikcilik', 85], desc: 'Oyunun en iyi oltası. Lavda da tutar.' },
+  cekirdek_kazma: { name: 'Çekirdek Kazma', kind: 'kazma', rarity: 'efsanevi', icon: 'kazma_cekirdek', pick: 34, req: ['madencilik', 85], desc: 'Oyunun en güçlü kazması.' },
+  sifirlama_tasi: { name: 'Sıfırlama Taşı', kind: 'malzeme', rarity: 'epik', icon: 'sifirlama_tasi', desc: 'Hancı Lale\'ye verirsen yetenek ağacını bedavaya sıfırlar.' },
+  ay_iksiri: { name: 'Ay İksiri', kind: 'tuketim', rarity: 'epik', icon: 'ay_iksiri', ward: 3, battleOnly: true, anim: 'drinkpotion', desc: 'Savaşta içersen sonraki 3 saldırıdan hiç hasar almazsın.' },
+  renkli_cam: { name: 'Renkli Cam', kind: 'malzeme', rarity: 'nadir', icon: 'renkli_cam', desc: 'İnşa bloğu: deniz camından yeşil-mavi pencere.' },
   inci_kraker: { name: 'İncili Kraker', kind: 'malzeme', rarity: 'nadir', icon: 'inci_kraker', yem: 'su', special: true, desc: 'Özel yem: bütün Su Glemonlarını evcilleştirir.' },
 };
 
@@ -758,7 +770,11 @@ export const ORES = {
   kor: { name: 'Kor taşı', hard: 30, xp: 260, req: 50, drop: 'kor_tasi' },
   bonkit: { name: 'Bonkit', hard: 44, xp: 700, req: 65, drop: 'bonkit' },
   golge: { name: 'Gölge taşı', hard: 64, xp: 420, req: 80, drop: 'golge_tasi' },
+  // 0.8.5 sadece en derinde: Yildiz Demiri (Derinlik 12+), Cekirdek Kristali (Derinlik 16+, Derin Kazi yetenegi)
+  yildiz: { name: 'Yıldız Demiri', hard: 52, xp: 600, req: 70, drop: 'yildiz_demiri' },
+  cekirdek: { name: 'Çekirdek Kristali', hard: 70, xp: 950, req: 80, drop: 'cekirdek_kristali' },
 };
+export const DEEP_LIMIT = 15; // Derin Kazi yetenegi olmadan inilebilen en derin kat
 export const BONKIT_CHANCE = 0.005;
 export const zoneOf = (floor) => ZONES.find((z) => floor >= z.floors[0] && floor <= z.floors[1]) || ZONES[0];
 export const MINE_COLS = 8;
@@ -775,6 +791,8 @@ export function oreWeights(depth) {
   if (depth >= 5) w.push(['kristal', Math.min(10, 3 + (depth - 5) * 2)]);
   if (depth >= 7) w.push(['kor', Math.min(9, 3 + (depth - 7) * 2)]);
   if (depth >= 9) w.push(['golge', Math.min(8, 2 + (depth - 9) * 2)]);
+  if (depth >= 12) w.push(['yildiz', Math.min(7, 2 + (depth - 12))]);
+  if (depth > DEEP_LIMIT) w.push(['cekirdek', Math.min(5, 2 + (depth - 16))]);
   return w;
 }
 export const mineXpMult = (depth) => Math.min(1.5, 1 + 0.05 * (depth - 1));
@@ -792,7 +810,9 @@ export const GATHER = {
   ates_biberi: { name: 'Ateş biberi', node: 'pepper', xp: 34 },
   kul: { name: 'Kül', node: 'sand', xp: 20 },
   gece_mantari: { name: 'Gece mantarı', node: 'nightshroom', xp: 38 },
+  ay_otu: { name: 'Ay otu', node: 'moonherb', xp: 70 },
 };
+export const AY_OTU_CHANCE = 0.3; // gece (gercek saat) toplanacak bitkinin Ay otu olma ihtimali
 // bolgeye gore toplanabilirler [esya, agirlik]
 export const ZONE_GATHER = {
   orman: [['sifali_ot', 40], ['bogurtlen', 35], ['dal', 25]],
@@ -916,6 +936,13 @@ export const RECIPES = [
   { out: 'balik_corbasi', n: 2, mats: { buz_morinasi: 1, kar_cilegi: 1, sifali_ot: 1 }, station: 'firin', lvl: 30, xp: 110 },
   { out: 'balik_kraker', mats: { cizgili_sazan: 1, kum: 1 }, station: 'yem', lvl: 10, xp: 50 },
   { out: 'inci_kraker', mats: { cizgili_sazan: 1, gol_incisi: 1 }, station: 'yem', lvl: 25, xp: 160 },
+  { out: 'inci_tilsimi', mats: { gol_incisi: 3, altin_kulcesi: 2 }, station: 'masa', lvl: 40, xp: 700 },
+  { out: 'pullu_pelerin', mats: { efsane_pul: 4, golge_ozu: 4, gece_postu: 2 }, station: 'masa', lvl: 65, xp: 1400 },
+  { out: 'efsane_olta', mats: { efsane_pul: 3, yildiz_demiri: 2, kor_olta: 1 }, station: 'masa', lvl: 70, xp: 1600 },
+  { out: 'cekirdek_kazma', mats: { cekirdek_kristali: 3, yildiz_demiri: 3, dal: 2 }, station: 'masa', lvl: 75, xp: 1800 },
+  { out: 'sifirlama_tasi', mats: { cekirdek_kristali: 1, altin_kulcesi: 2 }, station: 'masa', lvl: 60, xp: 500 },
+  { out: 'ay_iksiri', mats: { ay_otu: 2, bal: 1, bos_sise: 1 }, station: 'kazan', lvl: 35, xp: 220 },
+  { out: 'renkli_cam', n: 4, mats: { deniz_cami: 1, cam: 2 }, station: 'masa', lvl: 15, xp: 40 },
 ];
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -946,6 +973,7 @@ export const SELL = {
   golge_ozu: 8, gece_postu: 8, ay_tozu: 260, kar_cilegi: 4, ates_biberi: 5, gece_mantari: 6,
   altin_cevheri: 8, altin_kulcesi: 20, saf_kristal: 14, kor_tasi: 18, kor_kulcesi: 40, bonkit: 200, bonkit_kulcesi: 420,
   golge_tasi: 30, golge_kulcesi: 70, kar_kurabiyesi: 10, biber_kebabi: 12, gece_coregi: 14,
+  yildiz_demiri: 120, cekirdek_kristali: 400, ay_otu: 30, usta_damgasi: 150, renkli_cam: 6,
   solucan: 1, parlak_yem: 5, gol_incisi: 150, deniz_cami: 25, efsane_pul: 300, izgara_balik: 10, balik_corbasi: 18, balik_kraker: 6,
 };
 // baliklar: seviyesiyle ve nadirligiyle artar
@@ -969,6 +997,7 @@ export const BUILD = {
   yaprak_blogu: { tex: 'yaprak', lvl: 10, xp: 10, pts: 2 },
   fener: { tex: 'fener', lvl: 12, xp: 40, pts: 6 },
   cam: { tex: 'cam', lvl: 12, xp: 14, pts: 3 },
+  renkli_cam: { tex: 'renkli_cam', lvl: 15, xp: 20, pts: 4 },
 };
 export const BUILD_ORDER = Object.keys(BUILD);
 // Arsa boyu Insa seviyesiyle buyur (tasarim belgesi 16x8 -> 32x12; ekrana sigsin diye 24x10'a kadar)
@@ -1001,4 +1030,44 @@ export const QUESTS = {
   species: { name: (n, k) => `${n} ${GLEMONS[k].name} yen`, stat: (s, k) => (s.stats.glemons || {})[k] || 0, amt: [4, 8, 14], skill: 'saldiri' },
 };
 export const QUEST_SLOTS = 3;
+
+// ---------------------------------------------------------------- Yetenek agaci (0.8.5)
+// 4 dal. Bir dalin becerilerinde her 10 seviye o dala 1 puan verir. Her katta 2 yetenekten
+// birini secersin. Kat maliyeti: 5, 7, 6 puan (2. kat icin 5, 3. kat icin 12 puan harcamis olmalisin).
+export const TREE_COST = [5, 7, 6];
+export const TREE = {
+  savas: {
+    name: 'Savaş', skills: ['saldiri', 'savunma', 'can', 'okculuk'],
+    tiers: [
+      [{ key: 'keskin_kilic', name: 'Keskin Kılıç', desc: 'Kılıç ve yumruk gücü +%8' }, { key: 'kartal_gozu', name: 'Kartal Gözü', desc: 'Yay gücü +%8' }],
+      [{ key: 'refleks', name: 'Refleks', desc: 'Kaçınma düğmesi %20 uzun kalır, otomatik savaşta %25 kaçınırsın' }, { key: 'demir_deri', name: 'Demir Deri', desc: 'Aldığın hasar -%10' }],
+      [{ key: 'ofke', name: 'Öfke', desc: 'Canın %30\'un altındayken kritik +%20' }, { key: 'karsi_darbe', name: 'Karşı Darbe', desc: 'Kusursuz kaçışın karşı darbesi 2 kat' }],
+    ],
+  },
+  toplayici: {
+    name: 'Toplayıcı', skills: ['madencilik', 'toplama', 'balikcilik'],
+    tiers: [
+      [{ key: 'hizli_kazma', name: 'Hızlı Kazma', desc: 'Bloklar 1 vuruş erken kırılır' }, { key: 'sabirli_olta', name: 'Sabırlı Olta', desc: 'Balık %30 daha çabuk ısırır' }],
+      [{ key: 'damar_bulucu', name: 'Damar Bulucu', desc: 'Değerli cevher şansı +%30' }, { key: 'genis_ag', name: 'Geniş Ağ', desc: 'Balık yakalama kutusu +%20' }],
+      [{ key: 'derin_kazi', name: 'Derin Kazı', desc: 'Madende Derinlik 15\'ten aşağı inebilirsin (Çekirdek Kristali)' }, { key: 'efsane_avcisi', name: 'Efsane Avcısı', desc: 'Efsane balık şansı 2 kat' }],
+    ],
+  },
+  zanaat: {
+    name: 'Zanaat', skills: ['uretim', 'insa'],
+    tiers: [
+      [{ key: 'tutumlu', name: 'Tutumlu', desc: '%10 ihtimalle malzemeler gitmez' }, { key: 'sicak_firin', name: 'Sıcak Fırın', desc: 'Fırın %30 hızlı pişirir' }],
+      [{ key: 'cifte_uretim', name: 'Çifte Üretim', desc: '%8 ihtimalle 2 tane çıkar' }, { key: 'usta_insa', name: 'Usta İnşa', desc: 'Üs Puanı +%25' }],
+      [{ key: 'usta_isi', name: 'Usta İşi', desc: 'Üretilebilen silah, zırh ve aletler +%5 güçlü' }, { key: 'mimar', name: 'Mimar', desc: 'Arsan 1 sıra yükselir, 4 tarla fazla' }],
+    ],
+  },
+  glemon: {
+    name: 'Glemon', skills: ['bag', 'sans'],
+    tiers: [
+      [{ key: 'yem_ustasi', name: 'Yem Ustası', desc: 'Evcilleştirme şansı +%15' }, { key: 'sansli_dogan', name: 'Şanslı Doğan', desc: 'Şans +8' }],
+      [{ key: 'sadik_dost', name: 'Sadık Dost', desc: 'Evcilinin saldırısı +%15' }, { key: 'parlak_goz', name: 'Parlak Göz', desc: 'Parlak Glemon şansı 1,5 kat' }],
+      [{ key: 'yumurta_bakicisi', name: 'Yumurta Bakıcısı', desc: 'Yumurtalar 60 savaşta çatlar' }, { key: 'hazine_avcisi', name: 'Hazine Avcısı', desc: 'Sandıklardan 1 eşya fazla çıkar' }],
+    ],
+  },
+};
+export const respecCost = (spent) => 100 + spent * 40;
 export const QUEST_REROLL = 15;

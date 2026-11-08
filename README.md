@@ -4,6 +4,16 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.8.5 (Su ve Yetenek)
+
+- **Yeni kaçınma:** Glemon saldırmadan önce ekranın rastgele bir yerinde "KAÇ!" düğmesi çıkar, halka bitmeden bas. Patronlarda bazen arka arkaya 2 düğme. Halkanın ilk yarısında basarsan **Kusursuz kaçış** ve küçük bir karşı darbe. Düğmenin dışına basmak ıska.
+- **Balıkçılık (yeni beceri):** Üs Göleti (üstte "Göl" düğmesi) ve Keşifteki göl odaları (her bölgede; Kor Diyarında lav gölü). Karakter tahta oltayla iskelede balık tutar. Olta at, şamandıra batınca dokun, sonra basılı tutarak yeşil kutuyla balığı yakala.
+- 22 balık + her bölgede bir efsane balık, 6 olta (Tahta, Bambu, Demir, Kristal, Kor, Efsane), yemler (Solucan, Parlak Yem), batık sandıklar ve oltaya takılan 3 Su Glemonu (Damlacık, İnci İstiridye, Göl Ejderi). Albümde Balıklar sayfası.
+- Balık yemekleri: Izgara Balık, Balık Çorbası; Su Glemonları için Balık Kraker.
+- **Sadece tek beceriyle bulunanlar:** Göl İncisi, Efsane Pul, Deniz Camı (balık), Yıldız Demiri ve Çekirdek Kristali (en derin maden), Ay otu (sadece gece toplanır), Usta Damgası (Üretim 75+).
+- **Örs:** Üretim Masasından açılır. Kuşandığın silah, zırh ya da kazmayı Yıldız Demiriyle +3'e, Usta Damgasıyla +4'e yükselt. Her artı %8, asla başarısız olmaz.
+- **Yetenek ağacı:** 4 dal (Savaş, Toplayıcı, Zanaat, Glemon). Becerilerde her 10 seviye 1 puan; her katta 2 yetenekten birini seç. Hancı Lale sıfırlar.
+
 ## Sürüm 0.8.0 (Dünya tamam)
 
 - **3 yeni Keşif bölgesi:** Donmuş Zirve (Kat 31-40), Kor Diyarı (41-50) ve Gölge Boşluğu (51-60). Her biri kendi arka planı, savaş arenası ve 5 yeni Glemonuyla.

@@ -642,6 +642,13 @@ function reeds() {
   }
   return t;
 }
+function moonHerb() {
+  const t = T(null);
+  t.rect(7, 7, 1, 9, '#5a8a7a');
+  for (const [x, y] of [[4, 10], [9, 9], [5, 13], [9, 12]]) { t.rect(x, y, 3, 1, '#6aa08a'); }
+  for (const [x, y] of [[6, 2], [3, 5], [10, 4]]) { t.rect(x, y, 3, 3, '#c8d8ff'); t.set(x + 1, y + 1, '#ffffff'); t.set(x + 1, y + 3, '#7a8ac0'); }
+  return t;
+}
 function voidStone(seed = 59) {
   const r = rng(seed); const t = T(VOID[0]);
   blobs(t, r, VOID.slice(1, 4), 22, 1, 3); speckle(t, r, [VOID[4], '#7a5ab0'], 4);
@@ -707,7 +714,9 @@ const SOLID = {
   kor: () => ore(25, ['#d8561e', '#ec7a30', '#f8a840', '#ffe080']),
   bonkit: () => ore(26, ['#4ec888', '#36a868', '#80e4a8', '#d0ffe0']),
   golge: () => ore(27, ['#5a3a8a', '#74559e', '#3e2a60', '#c8a0f0']),
-  su: () => water(), su_ust: waterTop,
+  su: () => water(), su_ust: waterTop, renkli_cam: () => tintTo(glass(), '#5ab8a8', 0.4),
+  yildiz: () => ore(28, ['#d8dce8', '#b8bccc', '#fff6c0', '#ffffff']),
+  cekirdek: () => ore(29, ['#e05aa0', '#b03a7a', '#ffa8d8', '#fff0f8']),
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
@@ -723,7 +732,7 @@ const PROPS = {
   kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
   silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
-  nilufer: lilyPad, saz: reeds,
+  nilufer: lilyPad, saz: reeds, ay_otu: moonHerb,
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav', 'su', 'su_ust']);

@@ -849,7 +849,7 @@ export function caveBackground(depth = 1) {
 }
 
 // Cevher bloklari (16x16): toprak, kum, tas, komur, demir, define + 3 catlak
-export const ORE_FRAMES = ['toprak', 'kum', 'tas', 'komur', 'demir', 'define', 'crack1', 'crack2', 'crack3', 'altin', 'kristal', 'kor', 'bonkit', 'golge'];
+export const ORE_FRAMES = ['toprak', 'kum', 'tas', 'komur', 'demir', 'define', 'crack1', 'crack2', 'crack3', 'altin', 'kristal', 'kor', 'bonkit', 'golge', 'yildiz', 'cekirdek'];
 export function oreSheet() {
   const out = new Pix(B * ORE_FRAMES.length, B);
   ORE_FRAMES.forEach((k, i) => out.draw(block(k), i * B, 0, B));
@@ -878,7 +878,7 @@ export function boomArt() {
 }
 
 // ------------------------------------------------------------------ toplanabilirler
-const NODE_BLOCK = { herb: 'bitki', berry: 'cali', branch: 'dallar', shroom: 'mantarlar', palm: 'hurmalik', sand: 'kum_yigini', snowberry: 'karli_cali', pepper: 'biberlik', nightshroom: 'gece_mantarlari' };
+const NODE_BLOCK = { moonherb: 'ay_otu', herb: 'bitki', berry: 'cali', branch: 'dallar', shroom: 'mantarlar', palm: 'hurmalik', sand: 'kum_yigini', snowberry: 'karli_cali', pepper: 'biberlik', nightshroom: 'gece_mantarlari' };
 export function gatherNode(kind) {
   return build(['x'], { x: NODE_BLOCK[kind] || 'dallar' }).canvas();
 }
@@ -1094,6 +1094,16 @@ Object.assign(ICONS, {
   balik_corbasi: like('corba', { s: '#f4f4f8', b: '#5a8ab0', B: '#3a5a7a', c: '#f0d8a0', m: '#e88a6a' }),
   balik_kraker: [CRACKER, { c: '#d8a860', C: '#f0d090', P: '#8ab4c8', d: '#a87a40' }],
   inci_kraker: [CRACKER, { c: '#d8a860', C: '#f0d090', P: '#fff8f0', d: '#a87a40' }],
+  yildiz_demiri: like('kulce', { L: '#ffffff', w: '#e8ecf4', M: '#b8bccc', m: '#7a7e90' }),
+  cekirdek_kristali: like('kristal', { c: '#e05aa0', C: '#ffa8d8', v: '#fff0f8', d: '#6a2a50' }),
+  ay_otu: like('ot', { w: '#c8d8ff', y: '#ffffff', g: '#6aa08a', G: '#4a7a6a' }),
+  usta_damgasi: like('tilsim_skarabe', { s: '#c8b8a0', o: '#7a5a3a', Y: '#e8c050', y: '#fff0a0' }),
+  tilsim_inci: TILSIM('#f0d8e8', '#ffffff'),
+  pelerin_pullu: like('gogus_yosun', { m: '#c8902a', M: '#ffe080', y: '#7ae0c8', d: '#7a5418' }),
+  olta_efsane: [ROD_ICON, { R: '#ffe080', r: '#c8902a', g: '#7ae0c8', l: '#fff8e0', w: '#ffffff', b: '#7ae0c8' }],
+  kazma_cekirdek: [null, { H: '#ffa8d8', D: '#e05aa0', h: '#5a3e26' }],
+  sifirlama_tasi: like('cekirdek', { s: '#5a4a6a', S: '#7a6a8a', p: '#e05aa0', P: '#ffa8d8', v: '#ffffff' }),
+  ay_iksiri: like('iksir', { c: '#c99a6a', k: '#dcecf4', g: '#a8d0e2', R: '#c8d8ff', r: '#7a8ac0', w: '#ffffff' }),
 });
 for (const [k, f] of Object.entries(FISH)) {
   const [B, L, D, F] = f.col;
@@ -1124,7 +1134,7 @@ const CHESTPLATE = ['............', '.mmm....mmm.', '.mMMmmmmMMm.', '.mMMMMMMMMm
 // golgelendirilip (sol ust acik, sag alt koyu) ve renkleri biraz soldurulup cizilir.
 const ICON_BLOCKS = {
   tas: 'tas', kum: 'kum', kalas: 'kalas', tugla: 'tugla', cam: 'cam', cimen: 'cimen', demir_cevheri: 'demir',
-  kutuk: 'kutuk', kaldirim: 'kaldirim', kiremit: 'kiremit', yaprak_blok: 'yaprak', tarla: 'tarla',
+  kutuk: 'kutuk', kaldirim: 'kaldirim', kiremit: 'kiremit', yaprak_blok: 'yaprak', tarla: 'tarla', renkli_cam: 'renkli_cam',
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
 const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt' };

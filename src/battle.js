@@ -26,7 +26,7 @@ export function calcDamage(atk, mult, def) {
   return Math.max(1, Math.round(d));
 }
 
-const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'mantar_corbasi', 'izgara_balik', 'balik_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
+const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'ay_iksiri', 'mantar_corbasi', 'izgara_balik', 'balik_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
 const HEALS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'hurma', 'bogurtlen'];
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
@@ -434,6 +434,7 @@ export class Battle {
     if (this.status.karanlik > 0) parts.push(`Karanlık ${this.status.karanlik}`);
     if (this.status.tok > 0) parts.push(`Tok ${this.status.tok}`);
     if (this.status.guc > 0) parts.push(`Altın güç ${this.status.guc}`);
+    if (this.status.ay > 0) parts.push(`Ay kalkanı ${this.status.ay}`);
     if (this.status.savun) parts.push('Savunmada');
     if (this.firstStrike) parts.push('Pusu hazır');
     this.statusEl.textContent = parts.join(' · ');
@@ -807,6 +808,13 @@ export class Battle {
     if (it.anim === 'goldenapple') await playAnim(p, B('goldenapple'), 1.6);
     else if (it.anim === 'eat') await playAnim(p, B('eat'), 1.8);
     else await playAnim(p, B('drinkpotion'), 3.2);
+    if (it.ward) {
+      this.status.ay = it.ward;
+      sfx('levelup');
+      floatText(this.px(), this.py() - 14, 'Ay kalkanı!', 'perfect');
+      this.pose(); this.renderMe(); this.renderStatus(); S.changed(); this.endPlayerTurn();
+      return;
+    }
     const heal = Math.round(S.maxHp() * it.heal);
     S.hp = Math.min(S.maxHp(), S.hp + heal);
     sfx('heal');
@@ -901,7 +909,7 @@ export class Battle {
     crumb.destroy();
     floatText(e.sprite.x, this.topY(e), `${ITEMS[food].name}!`, 'info');
     await playAnim(e.sprite, e.k('saldiri'), 0.8);
-    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004);
+    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004) * S.perk('yem_ustasi', 1.15, 1);
     if (ITEMS[food].special && e.rarity === 'siradan') ch *= 1.3;
     const ok = Math.random() < ch;
     if (!ok) {
@@ -1047,6 +1055,14 @@ export class Battle {
   }
 
   damagePlayer(d, anim = true) {
+    // Ay Iksiri: sonraki saldirilardan hasar yok
+    if (this.status.ay > 0 && d > 0) {
+      this.status.ay--;
+      floatText(this.px(), this.py(), 'Ay kalkanı!', 'good');
+      this.renderStatus();
+      return;
+    }
+    if (S.has('demir_deri')) d = Math.max(1, Math.round(d * 0.9));
     S.hp = Math.max(0, S.hp - d);
     const p = this.w.player;
     floatText(this.px(), this.py(), `-${d}`, 'hurt');
@@ -1129,7 +1145,10 @@ export class Battle {
         // sure: siradan 0,9 sn, nadir/epik 0,75 sn, patron 0,6 sn (bazen 2 dugme)
         const ms = (d.boss ? 600 : e.rarity === 'siradan' ? 900 : 750) * (1 + (S.dodgeBonus ? S.dodgeBonus() : 0));
         dodged = await dodgePrompt(ms, d.boss && Math.random() < 0.4 ? 2 : 1);
-      } else await wait(this.scene, 550);
+      } else {
+        await wait(this.scene, 550);
+        if (!onPet && S.has('refleks') && Math.random() < 0.25) dodged = true;
+      }
     }
     if (this.over) return;
     const missed = e.st.karanlik > 0 && Math.random() < 0.25;

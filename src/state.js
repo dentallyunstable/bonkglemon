@@ -1,7 +1,9 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES } from './data.js';
+
+const CRAFTABLE = new Set(RECIPES.map((r) => r.out));
 
 const SAVE_PREFIX = 'bonkglemon.save.';
 const DEPO_SIZE = 40;
@@ -53,6 +55,8 @@ function freshSave(char) {
     quests: { list: [], done: 0, seq: 1 },
     // 0.8.5 balikcilik: tur -> kac tane, secili yem
     fishing: { caught: {}, best: {}, bait: 'yok', total: 0 },
+    upg: {},            // Ors yukseltmeleri: esya turu -> +1..+4
+    perks: {},          // yetenek agaci: dal -> [kat0, kat1, kat2] secilen yetenek sirasi (0/1) ya da null
   };
 }
 
@@ -92,6 +96,8 @@ export const S = {
     // 0.8.5: olta yuvasi; herkese bir Tahta Olta
     if (!('olta' in data.equip)) data.equip.olta = 'tahta_olta';
     if (!data.fishing) data.fishing = { caught: {}, best: {}, bait: 'yok', total: 0 };
+    if (!data.upg) data.upg = {};
+    if (!data.perks) data.perks = {};
     for (const x of [...data.bag, ...data.depo]) if (x) data.seen[x.id] = true;
     for (const id of Object.values(data.equip)) if (id) data.seen[id] = true;
     // bilinmeyen esya kimliklerini temizle (eski surumlerden kalma)
@@ -131,10 +137,45 @@ export const S = {
     return ups;
   },
 
+  // ------------------------------------------------ yetenek agaci (0.8.5)
+  treePoints(branch) { return Math.floor(TREE[branch].skills.reduce((t, k) => t + this.level(k), 0) / 10); },
+  treeSpent(branch) { return (this.save.perks[branch] || []).reduce((t, v, i) => t + (v == null ? 0 : TREE_COST[i]), 0); },
+  has(key) {
+    for (const [b, def] of Object.entries(TREE)) {
+      const sel = this.save.perks[b];
+      if (!sel) continue;
+      for (let i = 0; i < 3; i++) if (sel[i] != null && def.tiers[i][sel[i]].key === key) return true;
+    }
+    return false;
+  },
+  perk(key, val = true, def = false) { return this.has(key) ? val : def; },
+  canPick(branch, tier) {
+    const sel = this.save.perks[branch] || [];
+    if (sel[tier] != null) return false;
+    for (let i = 0; i < tier; i++) if (sel[i] == null) return false;
+    return this.treePoints(branch) - this.treeSpent(branch) >= TREE_COST[tier];
+  },
+  pickPerk(branch, tier, idx) {
+    if (!this.canPick(branch, tier)) return false;
+    const sel = this.save.perks[branch] || [null, null, null];
+    sel[tier] = idx;
+    this.save.perks[branch] = sel;
+    this.hp = Math.min(this.hp, this.maxHp());
+    this.changed();
+    return true;
+  },
+  eggNeed() { return this.has('yumurta_bakicisi') ? 60 : EGG_BATTLES; },
+  counterMult() { return this.has('karsi_darbe') ? 2 : 1; },
+
   // ------------------------------------------------ statlar
   gear() {
     return Object.values(this.save.equip).filter(Boolean).map((id) => ITEMS[id]);
   },
+  // Ors (0.8.5): her arti %8 guc; esya turune islenir
+  upg(id) { return (this.save.upg && this.save.upg[id]) || 0; },
+  upMult(id) { return 1 + 0.08 * this.upg(id) + (CRAFTABLE.has(id) && this.has('usta_isi') ? 0.05 : 0); },
+  gearStat(key) { return Object.values(this.save.equip).filter(Boolean).reduce((t, id) => t + (ITEMS[id][key] || 0) * (key === 'def' ? this.upMult(id) : 1), 0); },
+  dodgeBonus() { return this.gear().reduce((t, it) => t + (it.dodge || 0), 0) + this.perk('refleks', 0.2, 0); },
   activeSets() {
     const counts = {};
     for (const it of this.gear()) if (it.set) counts[it.set] = (counts[it.set] || 0) + 1;
@@ -154,22 +195,28 @@ export const S = {
   },
   atkSkill() { return WEAPON_SKILL[this.weaponType()]; },
   atk() {
-    const w = this.save.equip.silah ? ITEMS[this.save.equip.silah].power : 0;
+    const wt = this.weaponType();
+    const m = wt === 'yay' ? this.perk('kartal_gozu', 1.08, 1) : this.perk('keskin_kilic', 1.08, 1);
+    return Math.round(this.atkBase() * m);
+  },
+  atkBase() {
+    const id = this.save.equip.silah;
+    const w = id ? Math.round(ITEMS[id].power * this.upMult(id)) : 0;
     return this.level(this.atkSkill()) + w;
   },
   // Sans: nadir dusme ve parlak Glemon (seviye + tilsim)
-  luck() { return this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0); },
+  luck() { return this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0) + this.perk('sansli_dogan', 8, 0); },
   dropMult() { return 1 + this.luck() * 0.006; },
-  shinyChance() { return 1 / Math.max(200, 500 - this.luck() * 2.5); },
+  shinyChance() { return this.perk('parlak_goz', 1.5, 1) / Math.max(200, 500 - this.luck() * 2.5); },
   bagSize() { return BAG_SIZE + (this.save.bagBonus || 0); },
   def() {
-    const base = this.level('savunma') + this.gear().reduce((t, it) => t + (it.def || 0), 0);
+    const base = this.level('savunma') + this.gearStat('def');
     const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0);
     return Math.round(base * (1 + pct));
   },
   pick() {
     const id = this.save.equip.kazma;
-    return id ? ITEMS[id].pick : 0;
+    return id ? ITEMS[id].pick * this.upMult(id) : 0;
   },
   rod() {
     const id = this.save.equip.olta;
@@ -178,7 +225,7 @@ export const S = {
   spd() {
     return 100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0);
   },
-  crit() { return 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0); },
+  crit() { return (this.hp < this.maxHp() * 0.3 ? this.perk('ofke', 0.2, 0) : 0) + 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0); },
   // 0.8: Kor seti / Magma Goguslugu yanmaz, Golge seti / Bekci Pelerini karanlikta gorur
   fireproof() { return this.gear().some((it) => it.fireproof) || this.activeSets().some((st) => st.fireproof); },
   darkproof() { return this.gear().some((it) => it.darkproof) || this.activeSets().some((st) => st.darkproof); },
@@ -187,8 +234,9 @@ export const S = {
     const out = [];
     this.save.bag.forEach((s, i) => {
       if (!s || !ITEMS[s.id] || !ITEMS[s.id].egg) return;
-      s.p = Math.min(EGG_BATTLES, (s.p || 0) + 1);
-      if (s.p < EGG_BATTLES) { if (s.p % 25 === 0) out.push({ progress: s.p, name: ITEMS[s.id].name }); return; }
+      const need = this.eggNeed();
+      s.p = Math.min(need, (s.p || 0) + 1);
+      if (s.p < need) { if (s.p % 25 === 0) out.push({ progress: s.p, name: ITEMS[s.id].name }); return; }
       const key = EGGS[ITEMS[s.id].egg];
       const pet = this.addPet(key, 0, Math.random() < 0.05, 1);
       if (!pet) { if (!s.full) { s.full = true; out.push({ full: true, name: ITEMS[s.id].name }); } return; }
@@ -396,7 +444,7 @@ export const S = {
 
   // ------------------------------------------------ us (0.3)
   baseScore() {
-    return Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0);
+    return Math.round(Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0) * this.perk('usta_insa', 1.25, 1));
   },
   placedCount() {
     return Object.values(this.save.plot.cells).filter((c) => !c.top).length;
@@ -413,7 +461,7 @@ export const S = {
     const bond = 1 + this.level('bag') * 0.005;
     return {
       maxHp: Math.round(d.hp * m * (p.shiny ? 1.1 : 1)),
-      atk: d.atk * m * bond * (p.shiny ? 1.1 : 1),
+      atk: d.atk * m * bond * (p.shiny ? 1.1 : 1) * this.perk('sadik_dost', 1.15, 1),
       def: d.def * m * 0.6,
       spd: d.spd,
     };
