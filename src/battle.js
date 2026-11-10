@@ -19,7 +19,7 @@ const GRADE = {
   zayif: { mult: 0.8, text: 'Zayıf', cls: 'weak', sfx: 'weak' },
 };
 const WEAPON_ANIM = { kilic: 'stab', yay: 'bowshot', yumruk: 'punch' };
-const PET_POS = { x: 150, y: 158, scale: 1.7 };
+const PET_POS = { x: 136, y: GROUND_Y + 24, scale: 1.6 };
 
 export function calcDamage(atk, mult, def) {
   const d = atk * mult * (100 / (100 + def)) * (0.9 + Math.random() * 0.2);
@@ -31,7 +31,7 @@ const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'ay_iksiri', 'mant
 const HEALS = BATTLE_ITEMS.filter((id) => ITEMS[id] && ITEMS[id].heal && !ITEMS[id].golden).sort((a, b) => ITEMS[a].heal - ITEMS[b].heal);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
-export const BPOS = { x: 62, y: GROUND_Y + 56, scale: 3.1 };
+export const BPOS = { x: 70, y: GROUND_Y + 34, scale: 2 }; // 0.8.9: daha kucuk, on tumsegin ustunde
 const B = (a) => `c_b_${a}`;
 // Glemon turunun bolgesi (yemi bu bolgenin yemidir)
 const ZONE_OF_KEY = {};
@@ -302,7 +302,7 @@ export class Battle {
 
   // oyuncunun yazilari icin konum (karakter ekranin altinda, buyuk duruyor)
   px() { return this.w.player.x + 6; }
-  py() { return GROUND_Y - 22; }
+  py() { return BPOS.y - 60; }
   pose() { if (!this.lostDone) this.w.player.play(B('idlesway'), true); }
   atkMult() { return 1 + (this.status.tok > 0 ? 0.1 : 0) + (this.status.guc > 0 ? 0.3 : 0); }
   defMult() { return (this.status.savun ? 2 : 1) * (this.status.guc > 0 ? 1.3 : 1); }
@@ -315,6 +315,24 @@ export class Battle {
   }
   back(p, ms = 180) {
     return new Promise((res) => this.scene.tweens.add({ targets: p, x: BPOS.x, y: BPOS.y, scale: BPOS.scale, duration: ms, ease: 'Quad.easeOut', onComplete: res }));
+  }
+
+  // 0.8.9: vurusta etrafa sacilan kucuk yildizlar ve ayak dibinde toz
+  burst(x, y, n) {
+    if (!this.scene.textures.exists('hitstar')) return;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.6;
+      const r = 16 + Math.random() * 12;
+      const s = this.scene.add.image(x, y, 'hitstar').setDepth(13).setScale(0.6 + Math.random() * 0.6);
+      this.scene.tweens.add({ targets: s, x: x + Math.cos(a) * r, y: y + Math.sin(a) * r - 4, alpha: 0, angle: 90, scale: 0.3, duration: 380 + Math.random() * 160, ease: 'Quad.easeOut', onComplete: () => s.destroy() });
+    }
+  }
+  dust(x, y) {
+    if (!this.scene.textures.exists('dust')) return;
+    for (const dx of [-1, 1]) {
+      const d = this.scene.add.image(x + dx * 10, y - 2, 'dust').setDepth(11).setFlipX(dx < 0).setAlpha(0.9);
+      this.scene.tweens.add({ targets: d, x: x + dx * 26, y: y - 6, alpha: 0, scale: 1.6, duration: 420, ease: 'Quad.easeOut', onComplete: () => d.destroy() });
+    }
   }
 
   sparkle(e) {
@@ -991,8 +1009,10 @@ export class Battle {
     if (crit) floatText(e.sprite.x + 14, top - 2, 'Kritik!', 'perfect');
     sfx(crit ? 'crit' : 'hit');
     if (grade && GRADE[grade].sfx) sfx(GRADE[grade].sfx);
-    if (crit || grade === 'mukemmel') this.scene.cameras.main.shake(110, 0.008);
+    if ((crit || grade === 'mukemmel') && S.save.settings.shake !== false) this.scene.cameras.main.shake(110, 0.008);
     const sl = this.scene.add.image(e.sprite.x, top + e.meta.bodyH * e.scale * 0.5, 'slash').setDepth(12).setRotation(Math.random() * 1.2 - 0.6);
+    this.burst(e.sprite.x, top + e.meta.bodyH * e.scale * 0.5, crit || grade === 'mukemmel' ? 7 : 4);
+    this.dust(e.sprite.x, this.gy);
     this.scene.tweens.add({ targets: sl, alpha: 0, scale: 1.4, duration: 260, onComplete: () => sl.destroy() });
     this.applyDamage(e, dmg, crit || grade === 'mukemmel');
     if (e.alive && ab && ab.status) this.giveEnemyStatus(e, ab.status);
@@ -1182,7 +1202,7 @@ export class Battle {
     e.sprite.setDepth(15);
     e.sprite.play(e.k('yurume'));
     const tx = onPet ? PET_POS.x + 30 : 150;
-    const ty = onPet ? PET_POS.y + 6 : this.gy + 46;
+    const ty = onPet ? PET_POS.y + 6 : BPOS.y - 14;
     await new Promise((res) => this.scene.tweens.add({
       targets: e.sprite, x: tx, y: ty, scale: e.scale * (onPet ? 1.1 : 1.4), duration: 260, ease: 'Quad.easeIn', onComplete: res,
     }));

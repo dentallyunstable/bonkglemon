@@ -27,7 +27,7 @@ function speckle(t, r, tones, n) {
   return t;
 }
 // dolu bloklarin kenar golgesi
-function bevel(t, up = 1.08, down = 0.8) {
+function bevel(t, up = 1.06, down = 0.86) { // 0.8.9: blok sinirlari daha yumusak
   for (let x = 0; x < B; x++) {
     const a = t.get(x, 0); if (a >>> 24) t.set(x, 0, pack(mul(unpack(a).slice(0, 3), up)));
     const b = t.get(x, B - 1); if (b >>> 24) t.set(x, B - 1, pack(mul(unpack(b).slice(0, 3), down)));
@@ -757,7 +757,7 @@ export function build(rows, key, opts = {}) {
     if (ch === '.' || !key[ch]) return;
     p.draw(block(key[ch]), 1 + i * B, 1 + j * B, B, opts.fn || null);
   }));
-  if (opts.ol !== false) p.outline(opts.ol || '#16121a');
+  if (opts.ol !== false) p.outline(opts.ol || 'dark', 0.42); // 0.8.9: yumusak cizgi
   return p;
 }
 export { shade };

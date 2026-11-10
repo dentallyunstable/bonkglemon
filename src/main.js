@@ -9,6 +9,7 @@ import { WorldScene } from './world.js';
 import * as ART from './art.js';
 import { block, BLOCK_NAMES } from './blocks.js';
 import { Pix } from './pix.js';
+import { initGear, refreshGear } from './gear.js';
 
 const LOOPING = new Set(['idle', 'idlesway', 'walk', 'run', 'sprint', 'ninjadash', 'ninjarun', 'sneakwalk', 'blockwalk', 'sit',
   'sneakspam', 'walkin', 'fish_idle', 'fish_reel', 'b_idlesway', 'b_ninjarun', 'b_run']);
@@ -23,6 +24,9 @@ class BootScene extends Phaser.Scene {
     // butun karakter kareleri tek atlasta; her karenin pivotu ayak ortasi
     this.load.spritesheet('hanci', 'assets/npc/hanci.png', { frameWidth: BOOT.npc.w, frameHeight: BOOT.npc.h });
     this.load.atlas('char', `assets/chars/${char}/atlas.png`, `assets/chars/${char}/atlas.json`);
+    // 0.8.9: ekipmanin karakter ustunde gorunmesi icin parca haritasi
+    this.load.image('charparts', `assets/chars/${char}/parts.png`);
+    this.load.json('charatlas', `assets/chars/${char}/atlas.json`);
     // 0.4: her Glemon ve evrim asamasi tek resim: ust sira normal, alt sira parlak
     for (const [k, m] of Object.entries(gmeta)) {
       m.stages.forEach((st, s) => this.load.spritesheet(`gs_${k}_${s}`, `assets/glemons/${k}/${s}.png`, { frameWidth: st.w, frameHeight: st.h }));
@@ -31,6 +35,8 @@ class BootScene extends Phaser.Scene {
 
   create() {
     const { charMeta, gmeta } = BOOT;
+    try { initGear(this, this.cache.json.get('charatlas')); } catch (e) { console.error('gear', e); }
+    S.onChange(refreshGear);
     for (const [a, m] of Object.entries(charMeta.anims)) {
       makeAnimFrames(this, `c_${a}`, 'char', m.frames, m.durations, LOOPING.has(a) ? -1 : 0);
     }
@@ -69,6 +75,8 @@ class BootScene extends Phaser.Scene {
     tex('spikes', ART.spikes());
     tex('stairs', ART.stairsDown());
     tex('slash', ART.slash());
+    tex('hitstar', ART.hitStar());
+    tex('dust', ART.dustPuff());
     tex('shadow', ART.shadow());
     // yan yana karelerden olusan dokular
     const strip = (key, art, names) => {
@@ -79,6 +87,8 @@ class BootScene extends Phaser.Scene {
     };
     const loop = (key, tex, frames, rate) => this.anims.create({ key, frames: frames.map((i) => ({ key: tex, frame: i })), frameRate: rate, repeat: -1 });
     strip('fire', ART.campfire());
+    strip('gate', ART.eventGate());
+    loop('gate', 'gate', [0, 1, 2, 3], 5);
     loop('fire', 'fire', [0, 1, 2], 7);
     // 0.2: uretim istasyonlari, maden ocagi, toplama (0.6: ev kalkti, istasyonlar dışarıda)
     tex('workbench', ART.workbench());

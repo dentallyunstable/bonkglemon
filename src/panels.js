@@ -1,4 +1,5 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
+import { gearPreview } from './gear.js';
 import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
@@ -115,7 +116,15 @@ export function openBag(w) {
       const st = UI.el('div', 'stats-box');
       const sets = S.activeSets().filter((x) => x.hp || x.defPct || x.crit || x.fireproof || x.darkproof).map((x) => x.bonus).join(', ');
       st.innerHTML = `<b>Can</b> ${S.hp}/${S.maxHp()} &nbsp; <b>Saldırı</b> ${S.atk()} &nbsp; <b>Savunma</b> ${S.def()}<br><b>Hız</b> ${S.spd()} &nbsp; <b>Kritik</b> %${Math.round(S.crit() * 100)} &nbsp; <b>Kazma</b> ${S.pick()}${sets ? `<br><b>Set</b> ${sets}` : ''}`;
-      right.appendChild(st);
+      // 0.8.9: giydigin anda ustunde gorursun
+      const pv = gearPreview('idle/0');
+      if (pv) {
+        const top = UI.el('div', 'bag-top');
+        pv.className = 'gear-preview';
+        top.appendChild(pv);
+        top.appendChild(st);
+        right.appendChild(top);
+      } else right.appendChild(st);
 
       let id = null;
       const btns = [];
@@ -449,6 +458,12 @@ export function openProfile(w) {
       row.appendChild(UI.button(S.save.settings.sound ? 'Ses: açık' : 'Ses: kapalı', () => {
         S.save.settings.sound = !S.save.settings.sound;
         setSound(S.save.settings.sound);
+        S.persist();
+        render();
+      }, 'small blue'));
+      // 0.8.9: vurus sarsintisi kapatilabilir
+      row.appendChild(UI.button(S.save.settings.shake === false ? 'Sarsıntı: kapalı' : 'Sarsıntı: açık', () => {
+        S.save.settings.shake = S.save.settings.shake === false;
         S.persist();
         render();
       }, 'small blue'));
@@ -1101,6 +1116,31 @@ export function openZindan(w) {
     const row = UI.el('div', 'choice-row');
     row.appendChild(UI.button('Kat 1\'den başla', () => w.enterZindan(1), 'primary'));
     for (let f = 11; f <= best; f += 10) row.appendChild(UI.button(`Kat ${f}`, () => w.enterZindan(f), 'small'));
+    body.appendChild(row);
+  });
+}
+
+// 0.8.9 Etkinlik Kapisi (Eren'in fikri, 2026-11-10): sureli etkinlikler burada acilacak (0.9)
+export function openEventGate(w) {
+  UI.openPanel('Etkinlik Kapısı', (body) => {
+    body.appendChild(UI.el('p', 'choice-text', 'Kapının ardında ışık dönüyor ama henüz kimse geçemiyor.'));
+    const list = UI.el('div', 'event-list');
+    for (const [t, d] of [
+      ['Günün Zindanı', '24 saat açık, her gün başka kural: sadece ateş Glemonları, çift altın, hep karanlık katlar.'],
+      ['Hafta sonu etkinliği', 'Cuma-Pazar: patron koşusu ya da balık turnuvası.'],
+      ['Dolunay Gecesi ve Gezgin Tüccar', 'Geldiklerinde ilk burada duyurulur.'],
+    ]) {
+      const row = UI.el('div', 'zone');
+      const tx = UI.el('div');
+      tx.appendChild(UI.el('div', 'zn', t));
+      tx.appendChild(UI.el('div', 'zf', d));
+      row.appendChild(tx);
+      list.appendChild(row);
+    }
+    body.appendChild(list);
+    body.appendChild(UI.el('p', 'muted', 'İlk etkinlikler 0.9 Hedefler güncellemesiyle açılıyor. Maden, Keşif ve Zindan için Hancı Lale\'ye dokun.'));
+    const row = UI.el('div', 'choice-row');
+    row.appendChild(UI.button('Hancı Lale', () => openHanci(w), 'green'));
     body.appendChild(row);
   });
 }

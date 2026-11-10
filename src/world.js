@@ -15,8 +15,8 @@ import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
-import { TOD, todNow, forestBackground, caveBackground, battleBackground, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan } from './panels.js';
+import { TOD, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate } from './panels.js';
 
 const PLAYER_HOME = 96;
 const MINE_X = 330;
@@ -44,6 +44,8 @@ export class WorldScene extends Phaser.Scene {
   init(data) { this.gmeta = data.gmeta; this.charMeta = data.charMeta; }
 
   create() {
+    // 0.8.9: ekran sarsintisi Profil'den kapatilabilir
+    { const cam = this.cameras.main; const orig = cam.shake.bind(cam); cam.shake = (...a) => (S.save.settings.shake === false ? cam : orig(...a)); }
     this.playerHomeX = PLAYER_HOME;
     this.coinUrl = iconUrl('cimen');
     this.bg = this.add.image(0, 0, 'bg_base').setOrigin(0).setDepth(0);
@@ -235,6 +237,15 @@ export class WorldScene extends Phaser.Scene {
     playAnim(p, 'c_sulk', 1).then(() => playAnim(p, 'c_sulk', 1)).then(() => { if (p.anims.currentAnim && p.anims.currentAnim.key === 'c_sulk') this.idle(); });
   }
 
+  // 0.8.9: Maden, Kesif ve Zindana yola cikis: karakter ussun sagindan yurur gider
+  async travelOut() {
+    this.player.setFlipX(false);
+    await moveTo(this.player, GAME_W + 18, { speed: 120, anim: 'c_walk' });
+    sfx('stairs');
+    await this.fade(true);
+    this.resetPlayer();
+  }
+
   // Bir yere girerken kisa sure arkadan yurur (iceri giriyormus gibi)
   async walkIn(dy = -4) {
     const p = this.player;
@@ -251,11 +262,22 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ ust bilgi
   buildHud() {
     UI.show('#hud', true);
-    const btns = UI.$('#hud-btns');
-    btns.innerHTML = '';
-    btns.appendChild(UI.button('Çanta', () => openBag(this), 'small'));
-    btns.appendChild(UI.button('Beceriler', () => openSkills(this), 'small'));
-    btns.appendChild(UI.button('Profil', () => openProfile(this), 'small'));
+    // 0.8.9: kisayollar ekranin altinda, her zaman ayni yerde (savasta gizlenir)
+    UI.$('#hud-btns').innerHTML = '';
+    const dock = UI.$('#dock');
+    dock.innerHTML = '';
+    const item = (ico, label, fn) => {
+      const b = UI.button('', fn, 'dock-btn');
+      b.appendChild(UI.icon(ico, 'ico'));
+      b.appendChild(UI.el('span', 'lbl', label));
+      dock.appendChild(b);
+      return b;
+    };
+    item('dock_canta', 'Çanta', () => openBag(this));
+    item('dock_beceri', 'Beceriler', () => openSkills(this));
+    this.questBtn = item('dock_gorev', 'Görevler', () => openQuests(this));
+    item('dock_album', 'Albüm', () => openAlbum(this));
+    item('dock_profil', 'Profil', () => openProfile(this));
     this.refreshHud();
   }
 
@@ -388,21 +410,19 @@ export class WorldScene extends Phaser.Scene {
     this.npc = npc;
     this.addObj(npc, { x: NPC_X - 30, face: false, label: 'Hancı Lale', ly: G - 62, act: () => this.talkNpc() });
     this.addObj(this.add.image(INN_X, G + 1, 'inn_counter').setOrigin(0, 1).setDepth(5));
-    this.addObj(this.add.image(MINE_X, G + 1, 'mine').setOrigin(0.5, 1).setDepth(3), {
-      x: MINE_X, label: 'Zindan', ly: G - 92, act: () => openZindan(this),
-    });
+    // 0.8.9: eski maden girisi kalkti; yerine Etkinlik Kapisi (gidis yolu artik Hanci Lale'den)
+    const gate = this.add.sprite(MINE_X, G + 1, 'gate', 0).setOrigin(0.5, 1).setDepth(3);
+    gate.play('gate');
+    this.addObj(gate, { x: MINE_X - 30, face: true, label: 'Etkinlik Kapısı', ly: G - 86, act: () => openEventGate(this) });
     this.refreshFurnace();
     if (!S.run) S.hp = S.maxHp(); // us guvenli yer: her donuste can dolar
     this.player.setFlipX(false);
-    this.player.x = from === 'dungeon' ? MINE_X : from === 'death' ? FIRE_X - 22 : from === 'plot' ? GAME_W - 16 : FIRE_X - 18;
+    this.player.x = from === 'dungeon' ? GAME_W - 16 : from === 'death' ? FIRE_X - 22 : from === 'plot' ? GAME_W - 16 : FIRE_X - 18;
     this.resetPlayer();
     this.idle();
     UI.setLocation('Üs');
-    UI.setActions([
-      { label: 'Arsa', cls: 'blue', onClick: () => this.enterPlot() },
-      { label: 'Maden', cls: 'blue', onClick: () => this.enterMine(S.save.mine.depth) },
-      { label: 'Göl', cls: 'blue', onClick: () => this.enterPond() },
-    ]);
+    // 0.8.9: usse eylem dugmesi yok; her yere Hanci Lale'den gidilir, alttaki cubuk kisayollari tutar
+    UI.setActions([]);
     if (this.follower) { this.follower.x = this.player.x - 26; }
     this.refreshHud();
     this.applyTod();
@@ -1016,10 +1036,7 @@ export class WorldScene extends Phaser.Scene {
     this.busy = true;
     this.walkTok++;
     UI.setActions([]);
-    await moveTo(this.player, MINE_X, { speed: 95, anim: 'c_walk' });
-    sfx('stairs');
-    this.fade(true);
-    await this.walkIn();
+    await this.travelOut();
     this.goMine(depth || S.save.mine.depth || 1);
     await this.fade(false);
     this.busy = false;
@@ -1282,10 +1299,7 @@ export class WorldScene extends Phaser.Scene {
     stopMusic();
     this.walkTok++;
     UI.setActions([]);
-    await moveTo(this.player, MINE_X, { speed: 95, anim: 'c_walk' });
-    sfx('stairs');
-    this.fade(true);
-    await this.walkIn();
+    await this.travelOut();
     S.startRun(floor);
     S.hp = S.maxHp();
     this.mode = 'dungeon';
@@ -1311,10 +1325,7 @@ export class WorldScene extends Phaser.Scene {
     stopMusic();
     this.walkTok++;
     UI.setActions([]);
-    await moveTo(this.player, MINE_X, { speed: 95, anim: 'c_walk' });
-    sfx('stairs');
-    this.fade(true);
-    await this.walkIn();
+    await this.travelOut();
     S.startRun(level);
     S.run.zindan = true;
     S.run.zseed = Math.floor(Math.random() * 3);
@@ -1799,16 +1810,19 @@ export class WorldScene extends Phaser.Scene {
   async enterBattleView() {
     if (this.inBattleView) return;
     this.inBattleView = true;
+    UI.$('#ui').classList.add('fighting');
     S.setFight(true);
-    playMusic('enemyfight');
+    // 0.8.9: patron savaslarinda Eren'in boss muzigi
+    const bossFight = !!(this.battle && this.battle.enemies.some((e) => e.data.boss));
+    playMusic(bossFight ? 'boss' : 'enemyfight');
     const cam = this.cameras.main;
     cam.flash(120, 255, 255, 255);
     await wait(this, 120);
     await this.fade(true);
     this.roomBg = this.bg.texture.key;
-    const zk = this.inZindan() ? 'magara' : this.zone().key;
-    const key = `arena_${zk}_${this.floor || 1}`;
-    this.bgTex(key, () => battleBackground(this.floor || 1, zk));
+    // 0.8.9: savas odanin kendi manzarasinda, iki cimen tumsegi ustunde gecer
+    const key = `stage_${this.roomBg}`;
+    this.bgTex(key, () => battleStage(this.textures.get(this.roomBg).getSourceImage()));
     this.bg.setTexture(key);
     this.hiddenObjs = this.roomObjs.filter((o) => o.visible);
     for (const o of this.hiddenObjs) o.setVisible(false);
@@ -1830,6 +1844,7 @@ export class WorldScene extends Phaser.Scene {
     stopMusic();
     if (show) await this.fade(true);
     this.inBattleView = false;
+    UI.$('#ui').classList.remove('fighting');
     const p = this.player;
     if (this.roomBg) this.bg.setTexture(this.roomBg);
     for (const o of this.hiddenObjs || []) if (o.active) o.setVisible(true);

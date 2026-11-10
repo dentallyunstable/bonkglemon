@@ -81,10 +81,10 @@ export function sfx(name) {
 export function unlockAudio() { if (enabled) ac(); }
 
 // ------------------------------------------------------------ muzik (Eren'in dosyalari)
-// menu: karakter secim ekrani, enemyfight: her savas. Dongu halinde, ses kapaliysa calmaz.
+// menu: karakter secim ekrani, enemyfight: her savas, boss: patron savaslari (Eren, 0.8.9). Dongu halinde, ses kapaliysa calmaz.
 // Tarayici ilk dokunustan once ses calmaya izin vermezse, ilk dokunusta baslar.
 const MUSIC = {};
-for (const k of ['menu', 'enemyfight', 'shop', 'day1', 'day2', 'night1', 'night2']) MUSIC[k] = `assets/music/${k}.mp3`;
+for (const k of ['menu', 'enemyfight', 'boss', 'shop', 'day1', 'day2', 'night1', 'night2']) MUSIC[k] = `assets/music/${k}.mp3`;
 const MUSIC_VOL = 0.45;
 const tracks = {};
 let want = null;     // su an calmasi gereken parca

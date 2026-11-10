@@ -10,7 +10,8 @@ import { B, block, build } from './blocks.js';
 export { rng, hex, INK };
 
 const G = GROUND_Y;
-const OL = '#16121a';
+// 0.8.9: dis cizgi siyah degil, nesnenin kendi renginin koyusu (Glemonlardaki gibi yumusak)
+const OL = 'dark';
 const NIGHT = '#141428';
 
 // renk donusumleri
@@ -211,7 +212,7 @@ export function forestBackground(floor, variant = 0, base = false, width = GAME_
 // Kamera oyuncunun sirtindan bakar. Ufuk yukarida, zemin blok izgarasi perspektifle
 // bize dogru buyur (uzak bloklar kucuk, yakin bloklar buyuk). Glemonlar ortadaki
 // uzak cimende, oyuncu sol altta.
-export const ARENA = { horizon: 92, enemyY: 140, nearY: 206 };
+export const ARENA = { horizon: 92, enemyY: G - 29, nearY: 206 }; // 0.8.9: Glemonlar ortadaki tumsekte
 export function battleBackground(floor = 1, zone = 'orman') {
   if (zone === 'magara') return caveArena(floor);
   if (zone === 'col') return desertArena(floor);
@@ -648,7 +649,7 @@ export function workshopYard() {
   at('zirh_ust', 0, 2); at('zirh_alt', 0, 3);
   at('silahlik_ust', 2, 2); at('silahlik_alt', 2, 3);
   at('ors', 4, 3); at('varil', 6, 3);
-  p.outline('#16121a');
+  p.outline(OL);
   return p.canvas();
 }
 
@@ -662,7 +663,7 @@ export function innBack() {
   for (const k of [1, 2, 3]) { p.draw(block('direk'), 1 - 7, 1 + k * B, B); p.draw(block('direk'), 1 + (INN.cols - 1) * B + 7, 1 + k * B, B); }
   p.draw(block('harita_sol'), 1 + B, 1 + B + 4, B); p.draw(block('harita_sag'), 1 + 2 * B, 1 + B + 4, B);
   p.draw(block('fener'), 1 + 4 * B - 4, 1 + B, B);
-  p.outline('#16121a');
+  p.outline(OL);
   return p.canvas();
 }
 export function innCounter() {
@@ -670,7 +671,7 @@ export function innCounter() {
   for (let c = 0; c < INN.cols; c++) p.draw(block('kalas'), 1 + c * B, 1 + B + 4, B);
   p.rect(1, 1 + B + 4, INN.cols * B, 2, '#c4966a');
   p.draw(block('kupalar'), 1, 1 + 4, B);
-  p.outline('#16121a');
+  p.outline(OL);
   return p.canvas();
 }
 
@@ -1186,4 +1187,153 @@ export function iconUrl(name) {
   }
   iconCache[name] = p.canvas().toDataURL();
   return iconCache[name];
+}
+
+// 0.8.9: giyilen esyanin karakter ustundeki renkleri (koyu, orta, acik, parlak)
+const hexToRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const shadeRgb = (c, f) => c.map((v) => Math.max(0, Math.min(255, Math.round(f >= 1 ? v + (255 - v) * (f - 1) : v * f))));
+export function gearRamp(icon) {
+  const def = ICONS[icon];
+  if (!def || !def[1]) return null;
+  const p = def[1];
+  const g = (k) => (p[k] ? hexToRgb(p[k]) : null);
+  let d, m, l;
+  if (icon.startsWith('kilic')) { d = g('P') || g('B'); m = g('B'); l = g('W'); }
+  else if (icon.startsWith('kazma')) { m = g('D'); l = g('H'); d = shadeRgb(m, 0.72); }
+  else if (icon.startsWith('yay')) { m = g('B'); l = g('W'); d = shadeRgb(m, 0.75); }
+  else { d = g('d'); m = g('m'); l = g('M'); }
+  if (!m || !l) return null;
+  if (!d) d = shadeRgb(m, 0.72);
+  const h = p.y && !icon.startsWith('gogus_magma') ? hexToRgb(p.y) : shadeRgb(l, 1.35);
+  return [d, m, l, h].map((c) => shadeRgb(c, 0.97));
+}
+
+// 0.8.9 Etkinlik Kapisi (Eren, 2026-11-10): ussun sagindaki eski maden girisinin yerinde.
+// Tas tugla kemer, ortasinda donen yumusak isik. 4 kare: kapi + 4 dalga evresi.
+export const GATE = { w: 4 * B + 2, h: 5 * B + 2 };
+export function eventGate() {
+  const frames = 4;
+  const out = new Pix(GATE.w * frames, GATE.h);
+  const swirl = ['#3a2a5e', '#5a3a8a', '#8a5ac8', '#b88af0', '#e0c8ff', '#fff4fc'];
+  for (let f = 0; f < frames; f++) {
+    const p = new Pix(GATE.w, GATE.h);
+    // donen isik (kemerin ici: 2 blok genis, 3.5 blok yuksek)
+    const x0 = 1 + B, y0 = 1 + B + 4, w = 2 * B, h = 3 * B + 12;
+    const cx = x0 + w / 2 - 0.5, cy = y0 + h / 2;
+    for (let y = y0; y < y0 + h; y++) {
+      for (let x = x0; x < x0 + w; x++) {
+        const dx = (x - cx) / (w / 2), dy = (y - cy) / (h / 2);
+        const r = Math.sqrt(dx * dx + dy * dy);
+        const a = Math.atan2(dy, dx);
+        const v = (r * 3.2 - a / Math.PI + f / frames) % 1;
+        let k = Math.floor((1 - r) * 4 + (v < 0.5 ? 1 : 0));
+        k = Math.max(0, Math.min(swirl.length - 1, k));
+        p.set(x, y, col(swirl[k]));
+      }
+    }
+    // kemer: yanlarda tas duvar sutunlari, ustte tugla ve ortada yildiz
+    const light = shadeFn(1.18);
+    for (let k = 1; k <= 4; k++) { put(p, 'tas_duvar', 1, 1 + k * B, light); put(p, 'tas_duvar', 1 + 3 * B, 1 + k * B, light); }
+    for (let c = 0; c < 4; c++) put(p, 'tugla', 1 + c * B, 1);
+    put(p, 'renkli_cam', 1 + B + 8, 1);
+    // kemerin ic kosesi yuvarlak
+    for (const [x, y] of [[x0, y0], [x0 + 1, y0], [x0, y0 + 1], [x0 + w - 1, y0], [x0 + w - 2, y0], [x0 + w - 1, y0 + 1]]) p.set(x, y, col('#6a6674'));
+    p.outline(OL);
+    out.draw(p, f * GATE.w, 0, GATE.w);
+  }
+  return { canvas: out.canvas(), fw: GATE.w, fh: GATE.h };
+}
+
+// 0.8.9 alt kisayol cubugu simgeleri
+Object.assign(ICONS, {
+  dock_canta: [['............', '....dddd....', '...d....d...', '..BBBBBBBB..', '.BbbbbbbbbB.', '.BbbbYYbbbB.', '.BbbbYYbbbB.', '.BbbbbbbbbB.', '.BbbbbbbbbB.', '.BbbbbbbbbB.', '..BBBBBBBB..', '............'],
+    { b: '#c08a52', B: '#86522a', d: '#68401f', Y: '#ffd04d' }],
+  dock_beceri: [['.....gg.....', '....gGGg....', '...gGGGGg...', '..gGGGGGGg..', '.gggGGGGggg.', '....gGGg....', '....gGGg....', '....gGGg....', '....gGGg....', '....gggg....', '............', '............'],
+    { g: '#3c8a3a', G: '#8ad86a' }],
+  dock_gorev: [['............', '.ddddddddd..', 'dWWWWWWWWWd.', '.dWkkkkkWd..', '.dWWWWWWWd..', '.dWkkkkWWd..', '.dWWWWWWWd..', '.dWkkkkkWd..', '.dWWWWWWWd..', 'dWWWWWWWWWd.', '.ddddddddd..', '............'],
+    { W: '#f4e4bc', d: '#b0864a', k: '#8a6a4a' }],
+  dock_album: [['............', '.GGGGGGGGG..', '.GggggggggG.', '.GgWWWWWggG.', '.GgWYYYWggG.', '.GgWWWWWggG.', '.GggggggggG.', '.GggggggggG.', '.GggggggggG.', '.GGGGGGGGGG.', '.wwwwwwwwww.', '............'],
+    { G: '#2a6a8a', g: '#4a9ac0', W: '#f4e4bc', Y: '#ff9ab4', w: '#e8e0d0' }],
+  dock_profil: [['....HHHH....', '...HHHHHH...', '..HHHHHHHH..', '..HsssssHH..', '..sksssks...', '..ssssssss..', '...sspss....', '....ssss....', '..CCCCCCCC..', '.CCCCCCCCCC.', '.CCCCCCCCCC.', '............'],
+    { H: '#6e4a3a', s: '#f0be98', k: '#2a1f1a', p: '#e8867a', C: '#4a8a4a' }],
+  dock_harita: [['............', '.YYY.YYY.YY.', 'YyyyYyyyYyyY', 'YyryYyyyYyyY', 'YyyyYyryYyyY', 'YyyyYyyyYryY', 'YyryYyyyYyyY', 'YyyyYyyyYyyY', 'YyyyYyryYyyY', 'YyyyYyyyYyyY', '.YYY.YYY.YY.', '............'],
+    { Y: '#b0864a', y: '#f4e4bc', r: '#d8564a' }],
+});
+
+// 0.8.9 yeni savas sahnesi (Eren, 2026-11-10: perspektifli arka planlar kotu duruyordu).
+// Savas, o an bulundugun odanin yumusak blok manzarasinin onunde gecer. Kamera yine
+// karakterin sirtinda; Glemonlar odanin zemininde bir cimen tumsegi ustunde, karakter
+// on tarafta (sol alt) kendi tumseginde durur. Renkler odanin zemininden alinir.
+export const STAGE = { enemy: { x: 262, y: G - 27, rx: 96, ry: 11 }, me: { x: 70, y: GAME_H + 2, rx: 78, ry: 16 } };
+export function battleStage(src) {
+  const cv = document.createElement('canvas');
+  cv.width = GAME_W; cv.height = GAME_H;
+  const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(src, 0, 0, GAME_W, GAME_H);
+  const img = cx.getImageData(0, 0, GAME_W, GAME_H);
+  const d = img.data;
+  const at = (x, y) => { const i = (Math.max(0, Math.min(GAME_H - 1, y)) * GAME_W + Math.max(0, Math.min(GAME_W - 1, x))) * 4; return [d[i], d[i + 1], d[i + 2]]; };
+  const avg = (pts) => pts.reduce((a, c) => a.map((v, k) => v + c[k] / pts.length), [0, 0, 0]).map(Math.round);
+  // zeminin ust (cimen) ve yan (toprak) rengi
+  const top = avg([40, 120, 200, 280, 340].map((x) => at(x, G + 1)));
+  const side = avg([40, 120, 200, 280, 340].map((x) => at(x, G + 9)));
+  const lum = (c) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  // on taraf hafif karanlik: goz Glemonlara ve karaktere gitsin
+  for (let y = G + 4; y < GAME_H; y++) {
+    const f = 0.86 - ((y - G) / (GAME_H - G)) * 0.12;
+    for (let x = 0; x < GAME_W; x++) { const i = (y * GAME_W + x) * 4; d[i] *= f; d[i + 1] *= f; d[i + 2] *= f; }
+  }
+  const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  const mound = (m, thick) => {
+    const topC = lum(top) > 40 ? top : [110, 150, 80];
+    const light = topC.map((v) => Math.min(255, Math.round(v * 1.18 + 14)));
+    const dark = topC.map((v) => Math.round(v * 0.82));
+    const sideC = (lum(side) > 20 ? side : [110, 80, 60]).map((v) => Math.round(v * 0.92));
+    const sideD = sideC.map((v) => Math.round(v * 0.72));
+    for (let y = Math.floor(m.y - m.ry - 1); y <= m.y + m.ry + thick + 1; y++) {
+      if (y < 0 || y >= GAME_H) continue;
+      for (let x = Math.floor(m.x - m.rx - 1); x <= m.x + m.rx + 1; x++) {
+        if (x < 0 || x >= GAME_W) continue;
+        const dx = (x - m.x) / m.rx;
+        const inTop = dx * dx + ((y - m.y) / m.ry) ** 2 <= 1;
+        const inSide = !inTop && dx * dx + ((y - m.y - thick) / m.ry) ** 2 <= 1 && y >= m.y;
+        let c = null;
+        if (inTop) {
+          const ny = (y - m.y) / m.ry;
+          const edge = dx * dx + ny * ny > 0.82;
+          c = ny < -0.55 || (edge && ny < 0) ? light : edge ? dark : topC;
+          if (!edge && hash(x, y) < 0.08) c = dark;
+          if (!edge && hash(x + 7, y) < 0.05) c = light;
+        } else if (inSide) {
+          c = (y - m.y) > thick * 0.6 + m.ry * Math.sqrt(Math.max(0, 1 - dx * dx)) * 0.9 ? sideD : sideC;
+          if (hash(x, y + 3) < 0.07) c = sideD;
+        }
+        if (!c) {
+          // 1 piksel yumusak dis cizgi
+          const near = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => {
+            const ex = (x + a - m.x) / m.rx;
+            return ex * ex + ((y + b - m.y) / m.ry) ** 2 <= 1 || (y + b >= m.y && ex * ex + ((y + b - m.y - thick) / m.ry) ** 2 <= 1);
+          });
+          if (near) c = d.slice((y * GAME_W + x) * 4, (y * GAME_W + x) * 4 + 3).map((v) => Math.round(v * 0.45 + 22 * 0.55));
+        }
+        if (c) { const i = (y * GAME_W + x) * 4; d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; }
+      }
+    }
+  };
+  mound(STAGE.enemy, 9);
+  mound(STAGE.me, 10);
+  cx.putImageData(img, 0, 0);
+  return cv;
+}
+
+// 0.8.9 vurus efektleri: kucuk yildiz ve toz bulutu
+export function hitStar() {
+  const p = new Pix(7, 7);
+  p.map(['...Y...', '...W...', '.YWWWY.', 'YWWWWWY', '.YWWWY.', '...W...', '...Y...'], { Y: '#ffd04d', W: '#fff8d8' });
+  return p.canvas();
+}
+export function dustPuff() {
+  const p = new Pix(8, 6);
+  p.map(['..aaa...', '.abbba..', 'abbbbbaa', 'abbbbbba', '.aabbaa.', '........'], { a: '#c8bca8', b: '#ece4d4' });
+  return p.canvas();
 }
