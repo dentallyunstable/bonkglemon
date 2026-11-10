@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
+  RANCH, ranchDropOf, SECRETS, stormNow, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -16,7 +16,8 @@ import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
 import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest } from './panels.js';
+import { ranchReady, collectRanch, ranchLeft, heartsText, petDisplayName, shinyMastery } from './pets.js';
 import { ShaftMixin } from './shaft.js';
 import { GroveMixin } from './grove.js';
 import { refreshGoals, readyCount, goalTick, fullMoon, merchantHere, todayRule, PUL, clockOk, dayNum, weekNum, addPul, titleOf } from './goals.js';
@@ -100,45 +101,86 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ yanindaki Glemon (0.4)
   // Savas disinda karakterin arkasindan yurur; ustte ona dokununca Ahir acilir.
   makeFollower() {
-    if (this.follower) { this.follower.destroy(); this.followerShadow.destroy(); this.follower = null; }
-    const p = S.activePet();
-    if (!p) return;
-    const meta = this.gmeta[p.key].stages[p.stage];
-    const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
-    const f = this.add.sprite(this.player.x - 24, GROUND_Y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
-      .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(9).setScale(p.stage === 2 ? 0.8 : 1);
-    f.play(k('durma'));
-    f.k = k;
-    f.pet = p;
-    f.setInteractive({ useHandCursor: true });
-    f.on('pointerdown', () => { if (!this.busy && !UI.panelOpen() && WALK_MODES.includes(this.mode)) openAhir(this); });
-    this.follower = f;
-    this.followerShadow = this.add.image(f.x, GROUND_Y + 1, 'shadow').setDepth(8).setScale((meta.bodyW * f.scale) / 18, 1);
+    for (const f of this.followers || []) { f.destroy(); f.shadow.destroy(); }
+    this.followers = [];
+    S.teamPets().forEach((p, i) => {
+      const meta = this.gmeta[p.key].stages[p.stage];
+      const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
+      const f = this.add.sprite(this.player.x - 24 - i * 22, GROUND_Y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
+        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(9 - i * 0.1).setScale(p.stage === 2 ? 0.8 : 1);
+      f.play(k('durma'));
+      f.k = k;
+      f.pet = p;
+      f.slot = i;
+      f.setInteractive({ useHandCursor: true });
+      f.on('pointerdown', () => { if (!this.busy && !UI.panelOpen() && WALK_MODES.includes(this.mode)) openAhir(this); });
+      f.shadow = this.add.image(f.x, GROUND_Y + 1, 'shadow').setDepth(8).setScale((meta.bodyW * f.scale) / 18, 1);
+      this.attachAcc(f, p, meta);
+      this.followers.push(f);
+    });
   }
+  get follower() { return (this.followers && this.followers[0]) || null; }
+  placeFollowers(x) { (this.followers || []).forEach((f, i) => { f.x = x - i * 22; }); }
 
   updateFollower(dt) {
-    const f = this.follower;
-    if (!f) return;
-    const hide = this.mode === 'mine' || this.inBattleView || this.player.alpha < 0.5 || this.player.y > GROUND_Y + 8 || (S.run && S.run.petDown);
-    f.setVisible(!hide);
-    this.followerShadow.setVisible(!hide);
-    if (hide) return;
-    const p = this.player;
-    const side = p.flipX ? 1 : -1;
-    const tx = p.x + side * 26;
-    const dx = tx - f.x;
-    const moving = Math.abs(dx) > 3;
-    if (moving) {
-      const sp = Math.min(Math.abs(dx), (Math.abs(dx) > 60 ? 200 : 90) * dt / 1000);
-      f.x += Math.sign(dx) * sp;
-      f.setFlipX(dx > 0);
-      if (f.anims.currentAnim.key !== f.k('yurume')) f.play(f.k('yurume'));
-    } else if (f.anims.currentAnim.key !== f.k('durma')) {
-      f.play(f.k('durma'));
-      f.setFlipX(!p.flipX);
+    for (const f of this.followers || []) {
+      const rp = S.run && S.run.pets && S.run.pets[f.pet.id];
+      const hide = this.mode === 'mine' || this.inBattleView || this.player.alpha < 0.5 || this.player.y > GROUND_Y + 8 || (rp && rp.down);
+      f.setVisible(!hide);
+      f.shadow.setVisible(!hide);
+      if (hide) continue;
+      const p = this.player;
+      const side = p.flipX ? 1 : -1;
+      const tx = p.x + side * (26 + f.slot * 22);
+      const dx = tx - f.x;
+      const moving = Math.abs(dx) > 3;
+      if (moving) {
+        const sp = Math.min(Math.abs(dx), (Math.abs(dx) > 60 ? 200 : 90) * dt / 1000);
+        f.x += Math.sign(dx) * sp;
+        f.setFlipX(dx > 0);
+        if (f.anims.currentAnim.key !== f.k('yurume')) f.play(f.k('yurume'));
+      } else if (f.anims.currentAnim.key !== f.k('durma')) {
+        f.play(f.k('durma'));
+        f.setFlipX(!p.flipX);
+      }
+      f.y = GROUND_Y;
+      f.shadow.x = f.x;
     }
-    f.y = GROUND_Y;
-    this.followerShadow.x = f.x;
+    this.syncAccs();
+  }
+
+  // 0.12 Glemon aksesuari: govdeye kucuk bir bant (tasma, atki, kurdele, can)
+  attachAcc(sprite, p, meta) {
+    if (!p.acc || !ITEMS[p.acc]) return;
+    const id = p.acc;
+    const key = `acc_${id}`;
+    if (!this.textures.exists(key)) {
+      const c = ITEMS[id].col;
+      const px = new Pix(8, 4);
+      if (id === 'kristal_can') { px.rect(0, 0, 8, 1, '#6a5a3a'); px.rect(2, 1, 4, 2, c); px.rect(3, 3, 2, 1, '#b08a30'); px.set(2, 1, 0); px.set(5, 1, 0); }
+      else if (id === 'tuylu_atki') { px.rect(0, 0, 8, 2, c); px.rect(0, 0, 8, 1, '#8ab8f0'); px.rect(5, 2, 2, 2, c); }
+      else if (id === 'kivilcim_kurdele') { px.rect(0, 1, 8, 1, c); px.rect(2, 0, 2, 3, '#ffd060'); px.rect(4, 0, 2, 3, c); }
+      else { px.rect(0, 0, 8, 2, c); px.rect(3, 2, 2, 2, '#ffd060'); }
+      const out = new Pix(10, 6).draw(px, 1, 1);
+      out.outline(INK);
+      this.textures.addCanvas(key, out.canvas());
+    }
+    const img = this.add.image(sprite.x, sprite.y, key).setOrigin(0.5, 0.5);
+    // gozlerin biraz alti: govdenin ust %45'i
+    img.host = sprite; img.fy = meta.ay - meta.bodyH * 0.4; img.fx = meta.bodyW * 0.12;
+    this.accs = this.accs || [];
+    this.accs.push(img);
+  }
+  syncAccs() {
+    if (!this.accs) return;
+    this.accs = this.accs.filter((a) => {
+      const h = a.host;
+      if (!h.active) { a.destroy(); return false; }
+      const sx = h.scaleX; const sy = h.scaleY;
+      a.setPosition(h.x + (h.flipX ? a.fx : -a.fx) * sx, h.y - a.fy * sy).setScale(sx, sy).setFlipX(h.flipX)
+        .setDepth(h.depth + 0.05).setVisible(h.visible).setAlpha(h.alpha);
+      return true;
+    });
   }
 
   async petEvolved(evo) {
@@ -237,6 +279,7 @@ export class WorldScene extends Phaser.Scene {
       if (l._near !== near) { l._near = near; l.classList.toggle('near', near); }
     }
     this.updateFollower(dt);
+    this.updateRanch(dt);
     // uzun sure hareketsiz kalinca otur
     const cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
     if ((cur === 'c_idle' || cur === 'c_idlesway') && !this.busy && !this.battle && !UI.panelOpen()) {
@@ -392,6 +435,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ yurume
   onTap(ptr, over) {
     if (this.mode === 'mine') { this.shTap(ptr); return; }
+    if (this.mode === 'plot' && !this.building && over && over.some((o) => o.ranchPet)) return;
     if (this.mode === 'plot' && !this.busy && !UI.panelOpen() && this.plotTap(ptr)) return;
     if (over && over.length) return;
     if (!this.canWalk() || this.busy || UI.panelOpen()) return;
@@ -434,7 +478,7 @@ export class WorldScene extends Phaser.Scene {
 
   clearRoom() {
     if (this.battle) { this.battle.destroy(); this.battle = null; }
-    for (const o of this.roomObjs) o.destroy();
+    for (const o of this.roomObjs) { this.tweens.killTweensOf(o); o.destroy(); }
     this.roomObjs = [];
     for (const l of this.labels) l.remove();
     this.labels = [];
@@ -523,7 +567,7 @@ export class WorldScene extends Phaser.Scene {
     UI.setLocation('Üs');
     // 0.8.9: usse eylem dugmesi yok; her yere Hanci Lale'den gidilir, alttaki cubuk kisayollari tutar
     UI.setActions([]);
-    if (this.follower) { this.follower.x = this.player.x - 26; }
+    this.placeFollowers(this.player.x - 26);
     this.refreshHud();
     this.applyTod();
     // ussun muzigi: her donuste (zindan, maden, bayilma, oyun acilisi) yeniden secilir;
@@ -681,12 +725,85 @@ export class WorldScene extends Phaser.Scene {
     this.buildLayer = this.buildLayer || 'on';
     this.drawPlot();
     this.refreshGarden();
+    this.spawnRanch();
     this.applyTod();
     this.player.setFlipX(false);
     this.resetPlayer();
     this.idle();
     this.plotActions();
     this.refreshHud();
+  }
+
+  // ------------------------------------------------------------ 0.12 Yasayan Ahir
+  // Yaninda olmayan evcil Glemonlar arsada dolasir; malzemesi hazir olanin ustunde "!" var.
+  spawnRanch() {
+    this.ranch = [];
+    const team = new Set(S.teamPets().map((p) => p.id));
+    const g = this.plotGeom();
+    const list = S.save.pets.filter((p) => !team.has(p.id)).sort((a, b) => (ranchReady(b) ? 1 : 0) - (ranchReady(a) ? 1 : 0)).slice(0, RANCH.wander);
+    for (const p of list) {
+      const meta = this.gmeta[p.key].stages[p.stage];
+      const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
+      const x = g.x0 + 8 + Math.random() * (g.cols * 16 - 16);
+      const sp = this.add.sprite(x, GROUND_Y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
+        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(7).setScale(p.stage === 2 ? 0.8 : 1).setFlipX(Math.random() < 0.5);
+      sp.play(k('durma'));
+      const sh = this.add.image(x, GROUND_Y + 1, 'shadow').setDepth(6.9).setScale((meta.bodyW * sp.scale) / 18, 1);
+      const mark = this.add.text(x, GROUND_Y - meta.ay * sp.scale - 4, '!', { fontFamily: 'Nunito', fontStyle: '800', fontSize: '11px', color: '#ffd04d', stroke: '#16121a', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(7.5);
+      const r = { p, sp, sh, mark, k, meta, tx: x, wait: 1000 + Math.random() * 4000 };
+      sp.ranchPet = true;
+      sp.setInteractive({ useHandCursor: true });
+      sp.on('pointerdown', () => this.ranchTap(r));
+      this.attachAcc(sp, p, meta);
+      this.roomObjs.push(sp, sh, mark);
+      this.ranch.push(r);
+    }
+  }
+
+  updateRanch(dt) {
+    if (this.mode !== 'plot' || !this.ranch) return;
+    const g = this.plotGeom();
+    const now = Date.now();
+    for (const r of this.ranch) {
+      if (!r.sp.active) continue;
+      const dx = r.tx - r.sp.x;
+      if (Math.abs(dx) > 1) {
+        r.sp.x += Math.sign(dx) * Math.min(Math.abs(dx), 22 * dt / 1000);
+        r.sp.setFlipX(dx > 0);
+        if (r.sp.anims.currentAnim.key !== r.k('yurume')) r.sp.play(r.k('yurume'));
+      } else {
+        if (r.sp.anims.currentAnim.key !== r.k('durma')) r.sp.play(r.k('durma'));
+        r.wait -= dt;
+        if (r.wait <= 0) {
+          r.wait = 2000 + Math.random() * 5000;
+          r.tx = Phaser.Math.Clamp(r.sp.x + (Math.random() - 0.5) * 140, g.x0 + 8, g.x0 + g.cols * 16 - 8);
+        }
+      }
+      r.sh.x = r.sp.x;
+      r.mark.x = r.sp.x;
+      r.mark.setVisible(ranchReady(r.p, now));
+    }
+  }
+
+  ranchTap(r) {
+    if (this.busy || this.building || UI.panelOpen()) return;
+    const top = GROUND_Y - r.meta.ay * r.sp.scale;
+    const got = collectRanch(r.p);
+    if (got) {
+      this.giveDrop(got.id, got.n, `${petDisplayName(r.p)} bıraktı:`, true);
+      r.mark.setVisible(false);
+      S.changed();
+    } else {
+      const m = Math.ceil(ranchLeft(r.p) / 60000);
+      UI.floatText(r.sp.x, top - 14, `${petDisplayName(r.p)} · ${heartsText(r.p)}`, 'info');
+      UI.feed(`${petDisplayName(r.p)} mutlu görünüyor. Bir sonraki ${ITEMS[ranchDropOf(r.p.key)].name}: ${m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`}.`);
+    }
+    for (let i = 0; i < 3; i++) {
+      const h = this.add.text(r.sp.x + (Math.random() - 0.5) * 14, top, '♥', { fontFamily: 'Nunito', fontSize: '9px', color: '#ff7a9a' }).setDepth(8);
+      this.tweens.add({ targets: h, y: h.y - 16, alpha: 0, duration: 800, delay: i * 120, onComplete: () => h.destroy() });
+    }
+    r.sp.play(r.k('saldiri'));
+    r.wait = 1500;
   }
 
   plotActions() {
@@ -848,6 +965,7 @@ export class WorldScene extends Phaser.Scene {
     if (f === 'tabela') { this.editSign(o, cell); return; }
     if (f === 'yatak') await this.sleepInBed();
     if (f === 'kovan') await this.useHive(o, cell);
+    if (f === 'kulucka') openNest(this);
   }
 
   editSign(o, cell) {
@@ -1288,9 +1406,25 @@ export class WorldScene extends Phaser.Scene {
     this.resetPlayer();
     this.idle();
     UI.setLocation('Üs Göleti');
+    // 0.12 firtina: yagmur ve koyu gok; gizli Yildirim Yilanbaligi oltaya takilabilir
+    if (stormNow()) this.makeRain();
   }
 
   // gol cizimi ve balik tutma noktasi (us ya da Kesif odasi)
+  makeRain() {
+    const dim = this.add.rectangle(0, 0, GAME_W, GROUND_Y + 40, 0x1a2030, 0.35).setOrigin(0).setDepth(2.5);
+    this.addObj(dim);
+    for (let i = 0; i < 46; i++) {
+      const d = this.add.rectangle(Math.random() * GAME_W, Math.random() * GROUND_Y, 1, 5, 0xb8c8e8, 0.7).setDepth(30);
+      this.addObj(d);
+      this.tweens.add({ targets: d, y: GROUND_Y + 30, x: d.x - 10, duration: 500 + Math.random() * 300, repeat: -1, delay: Math.random() * 600, onRepeat: () => { d.y = -6; d.x = Math.random() * (GAME_W + 20); } });
+    }
+    if (this.rainEv) this.rainEv.remove();
+    this.rainEv = this.time.addEvent({ delay: 4500, loop: true, callback: () => { if (this.mode !== 'pond') { this.rainEv.remove(); this.rainEv = null; return; } if (Math.random() < 0.4) { this.cameras.main.flash(120, 220, 230, 255); sfx('warn'); } } });
+    if (!S.save.flags.storm012) { S.save.flags.storm012 = 1; UI.feed('Fırtına var! Böyle havalarda gölde gizemli bir Glemon dolaşıyormuş…'); }
+    else UI.feed('Fırtına! Göl dalgalı.');
+  }
+
   addPond(water, bridge) {
     if (!this.textures.exists('bobber')) this.textures.addCanvas('bobber', bobber());
     const key = `pond_${water}_${bridge ? 1 : 0}`;
@@ -1394,8 +1528,8 @@ export class WorldScene extends Phaser.Scene {
     const floor = this.mode === 'dungeon' ? this.floor : Math.max(1, Math.min(30, Math.round(S.level('balikcilik') / 1.6)));
     const saved = this.floor;
     this.floor = floor;
-    const stage = Math.random() < 0.15 ? 1 : 0;
-    this.battle = new Battle(this, [{ key, stage, shiny: Math.random() < S.shinyChance() }], { ...this.battleOpts(room || {}), floor });
+    const stage = GLEMONS[key].secret ? 0 : Math.random() < 0.15 ? 1 : 0;
+    this.battle = new Battle(this, [{ key, stage, shiny: Math.random() < S.shinyChance() * shinyMastery(key) }], { ...this.battleOpts(room || {}), floor });
     this.player.y = GROUND_Y;
     await this.enterBattleView();
     const res = await this.battle.start();
@@ -1707,8 +1841,10 @@ export class WorldScene extends Phaser.Scene {
       const r = Math.random();
       const stage = rule === 'dev' ? 2 : r < usta ? 2 : r < usta + genc ? 1 : 0;
       // 0.9 Dolunay Gecesi: her bolgede nadiren Dolunay Tavsani
-      const key = moon && Math.random() < 0.06 ? 'ay_tavsani' : night && Math.random() < NIGHT.chance ? weighted(NIGHT_SPAWNS[this.zone().key]) : weighted(table);
-      return { key, shiny: Math.random() < S.shinyChance() * (rule === 'parlak' ? 3 : 1), stage, ...extra };
+      let key = moon && Math.random() < 0.06 ? 'ay_tavsani' : night && Math.random() < NIGHT.chance ? weighted(NIGHT_SPAWNS[this.zone().key]) : weighted(table);
+      // 0.12 gizli tur: dolunay gecesi Keşifte Hilal Ejderi
+      if (moon && this.mode === 'dungeon' && !this.inZindan() && Math.random() < SECRETS.moon[1]) key = SECRETS.moon[0];
+      return { key, shiny: Math.random() < S.shinyChance() * (rule === 'parlak' ? 3 : 1) * shinyMastery(key), stage: GLEMONS[key].secret ? 0 : stage, ...extra };
     });
   }
 
@@ -1765,7 +1901,7 @@ export class WorldScene extends Phaser.Scene {
     this.bg.setTexture(key);
     this.player.setFlipX(false);
     this.player.x = -20;
-    if (this.follower) this.follower.x = -48;
+    this.placeFollowers(-48);
     this.resetPlayer();
     this.prepareRoom(room);
     this.darkness(room);

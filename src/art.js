@@ -1178,6 +1178,23 @@ ICONS.yanmis_yemek = like('corba', { s: '#8a8a8a', b: '#4a4040', B: '#2a2424', c
   for (const [id, , , , , , [base, pal]] of KITCHEN) ICONS[id] = pal ? like(base, pal) : ICONS[base];
 }
 
+// 0.12 Yasayan Ahir malzemeleri ve Glemon aksesuarlari
+Object.assign(ICONS, {
+  yumusak_yun: [['............', '............', '....wwww....', '..wwWWwwww..', '.wWWwwwWWww.', '.wwwwdwwwwd.', '.wWwwwwWwwd.', '.wwwdwwwwdd.', '..wwwwwwdd..', '....dddd....', '............', '............'], { w: '#ece6dc', W: '#ffffff', d: '#c8beb0' }],
+  parlak_tuy: [['............', '.........yY.', '........yYy.', '.......yYy..', '......yYy...', '.....yYy....', '....yYy.....', '...yYy......', '..yYy.......', '..ss........', '.s..........', '............'], { y: '#8ac8e0', Y: '#e0f4ff', s: '#7a6a5a' }],
+  kivilcim_tozu: [['............', '.....y......', '....yYy..o..', '.....y..oYo.', '..o......o..', '.oYo..y.....', '..o..yYy....', '......y..y..', '...ddddddYd.', '..dDDDDDDDd.', '...dddddddd.', '............'], { y: '#ffd060', Y: '#fff0a0', o: '#f05a2a', d: '#7a4a3a', D: '#a86a4a' }],
+  glemon_sumugu: [['............', '............', '.....gg.....', '....gGGg....', '...gGwGGg...', '..gGGGGGgg..', '..gGGGGGGg..', '.ggGGGGGGgg.', '.gggggggggg.', '..g..gg..g..', '............', '............'], { g: '#6a5a9a', G: '#a08ad0', w: '#f0e8ff' }],
+  kristal_tozu: [['............', '......C.....', '.....cCc....', '..C...c..c..', '.cCc.....Cc.', '..c...C.....', '.....cCc....', '......c.....', '..dddddddd..', '.dDDDDDDDDd.', '..dddddddd..', '............'], { c: '#9a6cc8', C: '#e4c8ff', d: '#6a6a7a', D: '#8a8a9a' }],
+  altin_kum: [['............', '............', '.....y......', '....yYy.....', '...yyYyy....', '..yyyyyyy...', '.yyYyyyYyy..', '.yyyyYyyyyy.', 'yyyyyyyyyyyy', '.dddddddddd.', '............', '............'], { y: '#e8c050', Y: '#fff0a0', d: '#b08a30' }],
+  yun_tasma: [['............', '............', '...rrrrrr...', '..r......r..', '.r........r.', '.r........r.', '..r......r..', '...rrrrrr...', '.....yy.....', '.....yy.....', '............', '............'], { r: '#d84a4a', y: '#ffd060' }],
+  tuylu_atki: [['............', '..bbbbbbbb..', '.bBBBBBBBBb.', '.bbbbbbbbbb.', '.......bb...', '.......bBb..', '.......bBb..', '.......bbb..', '.......b.b..', '............', '............', '............'], { b: '#4a8ad8', B: '#8ab8f0' }],
+  kivilcim_kurdele: [['............', '............', '..oo....oo..', '.oOOo..oOOo.', '.oOOOooOOOo.', '..ooOyyOoo..', '..ooOyyOoo..', '.oOOOooOOOo.', '.oOOo..oOOo.', '..oo....oo..', '............', '............'], { o: '#c85a1a', O: '#f07a2a', y: '#ffd060' }],
+  kristal_can: [['.....bb.....', '....b..b....', '....yyyy....', '...yYYyyy...', '...yYyyyy...', '..yYyyyyyy..', '..yyyyyyyy..', '.yyyyyyyyyy.', '.dddddddddd.', '.....dd.....', '............', '............'], { y: '#ffd060', Y: '#fff4c0', d: '#b08a30', b: '#6a5a3a' }],
+  glemon_sekeri: [['............', '............', '..w......w..', '.wpw....wpw.', '..wppppppw..', '...pPPpPp...', '...pPpPPp...', '..wppppppw..', '.wpw....wpw.', '..w......w..', '............', '............'], { p: '#f08ab0', P: '#ffd0e0', w: '#f4ecd8' }],
+  sumuk_yemi: [['............', '............', '....gggg....', '...gGGGGg...', '..gGbGGbGg..', '..gGGGGGGg..', '..gGbGGGbg..', '...gGGGGg...', '....gggg....', '............', '............', '............'], { g: '#6a5a9a', G: '#a08ad0', b: '#5a2a6a' }],
+  glemon_yumurtasi: [EGG, { o: '#b8a070', Y: '#f4ecd8', w: '#ffffff', s: '#ec96a4' }],
+});
+
 const CHESTPLATE = ['............', '.mmm....mmm.', '.mMMmmmmMMm.', '.mMMMMMMMMm.', '..mMMyMMMm..', '..mMMMMMMm..', '..mMMMMMMm..', '..mMMMMMMm..', '..mmmmmmmm..', '..dddddddd..', '............', '............'];
 
 
@@ -1193,7 +1210,7 @@ const ICON_BLOCKS = {
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
 const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener', merdiven: 'merdiven', mesale: 'mesale',
-  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan', kovan: 'kovan' };
+  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan', kovan: 'kovan', kulucka: 'kulucka' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);

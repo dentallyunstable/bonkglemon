@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES, TOK, TASTY_BONUS } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES, TOK, TASTY_BONUS, TRAITS, RANCH, BOND, TEAM, passiveOf } from './data.js';
 
 const CRAFTABLE = new Set(RECIPES.map((r) => r.out));
 
@@ -47,8 +47,11 @@ function freshSave(char) {
     // 0.4 evcil Glemonlar: { id, key, stage, shiny, lvl, xp, t }
     pets: [],
     pet: null,          // yanindaki Glemon'un id'si
+    pet2: null,         // 0.12: ikinci yoldas (Glemon Bagi 50)
     petSeq: 1,
-    album: { seen: {}, shiny: {}, tamed: {} },
+    album: { seen: {}, shiny: {}, tamed: {}, drops: {} },
+    // 0.12: Ahir yumurta sepeti, kulucka yuvalari, tamamlanan bolgeler
+    eggs: [], nest: [null, null, null], zoneDone: {},
     combos: {},
     // 0.5
     bagBonus: 0,
@@ -133,6 +136,17 @@ export const S = {
     data.pets = (data.pets || []).filter((p) => p && GLEMONS[p.key] && !GLEMONS[p.key].boss);
     for (const p of data.pets) { p.stage = Math.max(0, Math.min(2, p.stage | 0)); p.lvl = Math.max(1, Math.min(PET_MAX_LVL, p.lvl | 0)); if (!(p.xp >= 0)) p.xp = petXpFor(p.lvl); }
     if (data.pet && !data.pets.some((p) => p.id === data.pet)) data.pet = null;
+    // 0.12: eski Glemonlara rastgele huy, bag kalbi ve ahir zamanlayicisi
+    const tk = Object.keys(TRAITS);
+    for (const p of data.pets) {
+      if (!TRAITS[p.huy]) p.huy = tk[Math.floor(Math.random() * tk.length)];
+      if (!(p.kalp >= 0)) p.kalp = 0;
+      if (!p.rt) p.rt = Date.now() - RANCH.ms;
+      if (p.acc && (!ITEMS[p.acc] || ITEMS[p.acc].kind !== 'aksesuar')) p.acc = null;
+    }
+    if (data.pet2 && (data.pet2 === data.pet || !data.pets.some((p) => p.id === data.pet2))) data.pet2 = null;
+    data.album.drops = data.album.drops || {};
+    if (!Array.isArray(data.nest) || data.nest.length !== 3) data.nest = [null, null, null];
     for (const [k, c] of Object.entries(data.plot.cells)) if (!c || !BUILD[c.id]) delete data.plot.cells[k];
     for (const k of Object.keys(data.plot.garden)) if (!data.plot.cells[k] || data.plot.cells[k].id !== 'tarla') delete data.plot.garden[k];
     if (data.furnace.rid != null && !RECIPES[data.furnace.rid]) data.furnace = { rid: null, n: 0, t0: 0 };
@@ -558,29 +572,55 @@ export const S = {
   ahirSize() { return ahirSize(this.level('insa')); },
   petCap() { return petCap(this.level('bag')); },
   petName(p) { return (p.shiny ? 'Parlak ' : '') + GLEMONS[p.key].name; },
-  petStats(p) {
+  petStats(p, team = null) {
     const d = GLEMONS[p.key];
     const m = petStatMult(p.lvl, p.stage);
     const bond = 1 + this.level('bag') * 0.005;
+    const tr = TRAITS[p.huy] || {};
+    const ps = passiveOf(p.key) || {};
+    const ac = (p.acc && ITEMS[p.acc] && ITEMS[p.acc].acc) || {};
+    const heart = 1 + this.hearts(p) * BOND.stat;
+    const sy = 1 + (team ? team.sync : 0);
+    const f = (k) => 1 + (tr[k] || 0) + (ps[k] || 0) + (ac[k] || 0);
+    const sh = p.shiny ? 1.1 : 1;
     return {
-      maxHp: Math.round(d.hp * m * (p.shiny ? 1.1 : 1)),
-      atk: d.atk * m * bond * (p.shiny ? 1.1 : 1) * this.perk('sadik_dost', 1.15, 1),
-      def: d.def * m * 0.6,
-      spd: d.spd,
+      maxHp: Math.round(d.hp * m * sh * f('hp') * heart * sy),
+      atk: d.atk * m * bond * sh * this.perk('sadik_dost', 1.15, 1) * f('atk') * heart * sy,
+      def: d.def * m * 0.6 * f('def') * heart * sy,
+      spd: Math.round(d.spd * f('spd')),
     };
   },
-  addPet(key, stage, shiny, lvl) {
+  // 0.12 bag kalbi: 100 puan = 1 kalp (en fazla 5)
+  hearts(p) { return Math.min(BOND.max, Math.floor((p.kalp || 0) / BOND.per)); },
+  addBond(p, n) {
+    const before = this.hearts(p);
+    p.kalp = Math.min(BOND.max * BOND.per, (p.kalp || 0) + Math.round(n));
+    return this.hearts(p) > before ? this.hearts(p) : 0;
+  },
+  // savasa giren yoldaslar (1 ya da Bag 50'de 2)
+  teamPets() {
+    const a = this.activePet();
+    const b = this.level('bag') >= TEAM.bag2 ? this.save.pets.find((p) => p.id === this.save.pet2 && p.id !== this.save.pet) : null;
+    return [a, b].filter(Boolean);
+  },
+  addPet(key, stage, shiny, lvl, huy = null) {
     if (this.save.pets.length >= this.ahirSize()) return null;
-    const p = { id: this.save.petSeq++, key, stage, shiny: !!shiny, lvl: Math.max(1, lvl), xp: petXpFor(Math.max(1, lvl)), t: Date.now() };
+    const tk = Object.keys(TRAITS);
+    const p = { id: this.save.petSeq++, key, stage, shiny: !!shiny, lvl: Math.max(1, lvl), xp: petXpFor(Math.max(1, lvl)), t: Date.now(),
+      huy: TRAITS[huy] ? huy : tk[Math.floor(Math.random() * tk.length)], kalp: 0, rt: Date.now(), acc: null };
     this.save.pets.push(p);
     this.save.album.tamed[key] = true;
+    this.save.album.seen[key] = true;
     if (shiny) this.save.album.shiny[key] = true;
     if (!this.save.pet) this.save.pet = p.id;
     return p;
   },
   releasePet(id) {
-    this.save.pets = this.save.pets.filter((p) => p.id !== id);
+    const p = this.save.pets.find((x) => x.id === id);
+    if (p && p.acc) this.addItem(p.acc, 1);
+    this.save.pets = this.save.pets.filter((x) => x.id !== id);
     if (this.save.pet === id) this.save.pet = null;
+    if (this.save.pet2 === id) this.save.pet2 = null;
   },
   // XP ekler; seviye sinirinda (Bag / 2) birikir. { up: yeni seviye ya da 0, evolved: yeni asama ya da -1 }
   petAddXp(p, xp) {

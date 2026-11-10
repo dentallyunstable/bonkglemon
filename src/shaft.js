@@ -3,7 +3,7 @@
 // merdivenle tirmanir, bosluga duser. Her 10 satirda yeni katman; derinlerde karanlik,
 // lav, su, cakil, magara cepleri (Glemon), fosil, antik sandik ve jeotlar var.
 import {
-  GAME_W, ITEMS, ORES, ZONES, ZONE_SPAWNS, GLEMONS, CURRENCY, SHAFT, LAYERS, layerOf, oreDepthOf,
+  SECRETS, GAME_W, ITEMS, ORES, ZONES, ZONE_SPAWNS, GLEMONS, CURRENCY, SHAFT, LAYERS, layerOf, oreDepthOf,
   oreWeights, mineXpMult, mineHardBonus, FOSSILS, GEODE_GEMS,
 } from './data.js';
 import { S } from './state.js';
@@ -231,6 +231,8 @@ export const ShaftMixin = {
   caveGlemon(cv, r) {
     const z = layerOf(r).zone;
     const tab = ZONE_SPAWNS[z];
+    // 0.12 gizli tur: 50. siranin altinda nadiren Kadim Kostebek
+    if (r >= SECRETS.deep[2] && rnd(this.sv().seed, cv.id, 31, 7) < SECRETS.deep[1]) return SECRETS.deep[0];
     return tab ? wpick(tab, rnd(this.sv().seed, cv.id, 9, 17)) : null;
   },
 
@@ -688,6 +690,7 @@ export const ShaftMixin = {
     this.floor = floor; this.zz = zone;
     const specs = this.enemySpecs(Math.random() < 0.35 ? 2 : 1);
     specs[0].key = key;
+    if (GLEMONS[key].secret) specs[0].stage = 0;
     const cam = this.cameras.main;
     this.shClearRows();
     cam.scrollY = 0;

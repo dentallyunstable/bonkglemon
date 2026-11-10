@@ -1,6 +1,6 @@
 // Balikcilik (0.8.5): olta at, samandira batinca dokun, sonra yakalama cubugu.
 // Dunya sahnesi (world.js) gol ekranini ve gol odalarini kurar, burasi bir atisi oynatir.
-import { FISH, FISHING, WATERS, WATER_GLEMONS, ITEMS, fishXp, ZONE_CHEST } from './data.js';
+import { FISH, FISHING, WATERS, WATER_GLEMONS, ITEMS, fishXp, ZONE_CHEST, SECRETS, stormNow } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
@@ -65,7 +65,12 @@ function roll(water, bait, auto) {
   const legend = all.find(([, f]) => f.legend && f.lvl <= lvl);
   const r = Math.random();
   if (r < FISHING.chestChance) return { chest: true };
-  if (lvl >= 15 && r < FISHING.chestChance + FISHING.glemonChance) return { glemon: weighted(WATER_GLEMONS) };
+  // 0.12 firtinada Us Goletinde Glemon daha sik takilir, gizli Yildirim Yilanbaligi da cikar
+  const storm = water === 'us' && stormNow();
+  if (lvl >= 15 && r < FISHING.chestChance + FISHING.glemonChance * (storm ? 1.6 : 1)) {
+    if (storm && Math.random() < SECRETS.storm[1]) return { glemon: SECRETS.storm[0] };
+    return { glemon: weighted(WATER_GLEMONS) };
+  }
   const lmult = (bait === 'parlak' ? 2 : 1) * rod.rare * (S.perk ? S.perk('efsane_avcisi', 2, 1) : 1);
   if (legend && !auto && Math.random() < FISHING.legendChance * lmult) return { fish: legend[0] };
   if (!ok.length) return { fish: null };

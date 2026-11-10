@@ -896,7 +896,21 @@ function beehive() {
   return t;
 }
 
+// 0.12 Kulucka Yuvasi: hasir yuva, icinde benekli yumurtalar, ustunde sicak isik
+function nest() {
+  const t = T(null);
+  t.rect(4, 15, 1, 1, '#4a3420'); t.rect(11, 15, 1, 1, '#4a3420');
+  t.rect(2, 11, 12, 4, '#b8904a'); t.rect(1, 12, 14, 2, '#b8904a');
+  for (let x = 2; x < 14; x += 2) { t.set(x, 11, '#d8b468'); t.set(x + 1, 13, '#8a6a34'); }
+  t.rect(1, 14, 14, 1, '#8a6a34');
+  t.rect(4, 7, 3, 5, '#f4ecd8'); t.rect(3, 8, 5, 3, '#f4ecd8'); t.set(4, 8, '#ec96a4'); t.set(6, 10, '#ec96a4'); t.set(4, 7, '#ffffff');
+  t.rect(9, 8, 3, 4, '#e8dcf0'); t.rect(8, 9, 5, 2, '#e8dcf0'); t.set(10, 9, '#8ad8ff'); t.set(11, 10, '#8ad8ff'); t.set(9, 8, '#ffffff');
+  t.rect(7, 2, 2, 2, '#ffd060'); t.set(6, 3, '#f0a040'); t.set(9, 3, '#f0a040'); t.set(7, 4, '#f0a040'); t.set(8, 1, '#fff0a0');
+  return t;
+}
+
 const PROPS = {
+  kulucka: nest,
   kiremit_sol: () => roofStair('sol'), kiremit_sag: () => roofStair('sag'), tente: awning,
   sandik: () => chest(false), sandik_acik: () => chest(true),
   ates0: () => fire(0), ates1: () => fire(1), ates2: () => fire(2),

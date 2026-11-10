@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.11.0';
+export const VERSION = '0.12.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -1458,3 +1458,164 @@ export function masteryOf(kills) {
 }
 export const respecCost = (spent) => 100 + spent * 40;
 export const QUEST_REROLL = 15;
+
+// ================================================================ 0.12 Glemon Derinligi
+// 20 yeni tur (her bolgeye 3, suya 2) ve 3 gizli tur
+const G12 = (name, from, rarity, type, hp, atk, def, spd, special, drops, extra = {}) => ({ name, from, rarity, type, hp, atk, def, spd, special, every: 3, drops, ...extra });
+Object.assign(GLEMONS, {
+  pamukcuk: G12('Pamukçuk', "Pamukçuk'tan", 'siradan', 'Orman', 14, 2.6, 3, 80, { name: 'Pamuk Kalkanı', shell: 2 }, [['pamuk', 0.3], ['dal', 0.2]]),
+  tirtilcik: G12('Tırtılcık', "Tırtılcık'tan", 'siradan', 'Orman', 12, 2.8, 2, 90, { name: 'İpek Ağı', mult: 0.8, status: ['sersem', 1], telegraph: true }, [['sifali_ot', 0.3], ['yaprak_kanadi', 0.02]]),
+  mese_baykusu: G12('Meşe Baykuşu', "Meşe Baykuşu'ndan", 'nadir', 'Orman', 16, 3.8, 3, 110, { name: 'Gece Bakışı', mult: 1.5, telegraph: true }, [['dal', 0.4], ['yaprak_kanadi', 0.06]], { fly: true }),
+  sarkitcik: G12('Sarkıtçık', "Sarkıtçık'tan", 'siradan', 'Taş', 14, 3.3, 4, 75, { name: 'Sarkıt Düşür', mult: 1.6, telegraph: true }, [['tas', 0.5], ['ham_kristal', 0.06]]),
+  kaya_kostebek: G12('Kaya Köstebeği', "Kaya Köstebeği'nden", 'siradan', 'Taş', 15, 3, 3.5, 85, { name: 'Tünel Saldırısı', mult: 1.5, telegraph: true }, [['komur', 0.3], ['demir_cevheri', 0.1]]),
+  fener_semenderi: G12('Fener Semenderi', "Fener Semenderi'nden", 'nadir', 'Taş', 17, 3.9, 3, 105, { name: 'Işık Patlaması', mult: 1.0, status: ['karanlik', 2], telegraph: true }, [['ham_kristal', 0.3], ['ametist', 0.02]]),
+  kum_tilkisi: G12('Kum Tilkisi', "Kum Tilkisi'nden", 'siradan', 'Kum', 12, 3.2, 2, 125, { name: 'Kum Kazma', mult: 1.4, telegraph: true }, [['pul', 0.2], ['hurma', 0.2]]),
+  devecik: G12('Devecik', "Devecik'ten", 'siradan', 'Kum', 17, 2.8, 3, 75, { name: 'Tükürük', mult: 0.9, status: ['sersem', 1], telegraph: true }, [['kaktus_suyu', 0.3], ['hurma', 0.15]]),
+  serap_kelebegi: G12('Serap Kelebeği', "Serap Kelebeği'nden", 'nadir', 'Kum', 15, 3.8, 2.5, 120, { name: 'Serap', mult: 0.7, status: ['karanlik', 3], telegraph: true, aoe: true }, [['pul', 0.3], ['altin_kanat', 0.01]], { fly: true }),
+  fokcuk: G12('Fokçuk', "Fokçuk'tan", 'siradan', 'Buz', 17, 2.8, 3.5, 80, { name: 'Kartopu', mult: 1.2, status: ['donma', 1], telegraph: true }, [['buz_kristali', 0.3], ['kar_tuyu', 0.1]]),
+  kar_gelincigi: G12('Kar Gelinciği', "Kar Gelinciği'nden", 'siradan', 'Buz', 11, 3.3, 1.5, 135, { name: 'Hızlı Isırık', mult: 1.5, telegraph: true }, [['kiragi_postu', 0.3]]),
+  buz_kirpisi: G12('Buz Kirpisi', "Buz Kirpisi'nden", 'nadir', 'Buz', 18, 3.6, 5, 90, { name: 'Buz Dikenleri', reflect: 2 }, [['buz_kristali', 0.5], ['kar_tuyu', 0.2]]),
+  lav_kurbagasi: G12('Lav Kurbağası', "Lav Kurbağası'ndan", 'siradan', 'Ateş', 14, 3, 2.5, 100, { name: 'Lav Dili', mult: 1.0, status: ['yanma', 3], telegraph: true }, [['kor_pulu', 0.3], ['kul', 0.2]]),
+  kivilcim_civciv: G12('Kıvılcım Civcivi', "Kıvılcım Civcivi'nden", 'siradan', 'Ateş', 11, 3.2, 1.5, 120, { name: 'Kıvılcım Gagası', mult: 1.4, telegraph: true }, [['kivilcim', 0.3]]),
+  obsidyen_kertenkele: G12('Obsidyen Kertenkelesi', "Obsidyen Kertenkelesi'nden", 'nadir', 'Ateş', 18, 3.8, 5, 90, { name: 'Obsidyen Kabuk', shell: 2 }, [['kor_pulu', 0.4], ['yakut', 0.02]]),
+  murekkepcik: G12('Mürekkepçik', "Mürekkepçik'ten", 'siradan', 'Gölge', 13, 2.8, 2, 95, { name: 'Mürekkep Sıçratma', mult: 0.8, status: ['karanlik', 3], telegraph: true }, [['golge_ozu', 0.3]]),
+  fener_hayaleti: G12('Fener Hayaleti', "Fener Hayaleti'nden", 'siradan', 'Gölge', 12, 3.3, 1.5, 110, { name: 'Ruh Feneri', mult: 1.4, telegraph: true }, [['golge_ozu', 0.3], ['ay_tozu', 0.03]], { fly: true }),
+  kara_kuzgun: G12('Kara Kuzgun', "Kara Kuzgun'dan", 'nadir', 'Gölge', 16, 4, 2.5, 125, { name: 'Kuzgun Dalışı', mult: 1.7, telegraph: true }, [['gece_postu', 0.3], ['ay_tozu', 0.06]], { fly: true }),
+  nilufer_kurbagasi: G12('Nilüfer Kurbağası', "Nilüfer Kurbağası'ndan", 'nadir', 'Su', 20, 3.2, 3.5, 100, { name: 'Nilüfer Şifası', heal: 0.2 }, [['deniz_cami', 0.2], ['solucan', 0.5]], { water: true }),
+  kirpi_baligi: G12('Kirpi Balığı', "Kirpi Balığı'ndan", 'nadir', 'Su', 21, 3.2, 5, 85, { name: 'Şişip Diken', reflect: 2 }, [['deniz_cami', 0.3], ['gol_incisi', 0.08]], { water: true }),
+  // gizli turler
+  hilal_ejderi: G12('Hilal Ejderi', "Hilal Ejderi'nden", 'epik', 'Ay', 28, 4.6, 4.4, 115, { name: 'Hilal Nefesi', mult: 1.2, status: ['sersem', 1], aoe: true, telegraph: true }, [['ay_tozu', 0.4], ['ay_otu', 0.5]], { fly: true, secret: 'Dolunay gecesi Keşifte, çok nadir' }),
+  kadim_kostebek: G12('Kadim Köstebek', "Kadim Köstebek'ten", 'epik', 'Taş', 32, 4.6, 6, 80, { name: 'Kristal Deprem', mult: 1.3, aoe: true, telegraph: true }, [['ametist', 0.3], ['saf_kristal', 0.2]], { secret: 'Maden kuyusunda 50. sıranın altında, çok nadir' }),
+  yildirim_baligi: G12('Yıldırım Yılanbalığı', "Yıldırım Yılanbalığı'ndan", 'epik', 'Su', 26, 5, 3.6, 125, { name: 'Şimşek Çarpması', mult: 1.2, status: ['sersem', 2], telegraph: true }, [['efsane_pul', 0.1], ['gol_incisi', 0.3]], { water: true, secret: 'Fırtınada balık tutarken' }),
+});
+for (const k of ['kadim_kostebek', 'yildirim_baligi', 'hilal_ejderi']) if (!ITEMS[GLEMONS[k].drops[1][0]]) GLEMONS[k].drops.pop();
+ZONE_SPAWNS.orman.push(['pamukcuk', 0.12], ['tirtilcik', 0.12], ['mese_baykusu', 0.06]);
+ZONE_SPAWNS.magara.push(['sarkitcik', 0.12], ['kaya_kostebek', 0.12], ['fener_semenderi', 0.06]);
+ZONE_SPAWNS.col.push(['kum_tilkisi', 0.12], ['devecik', 0.12], ['serap_kelebegi', 0.06]);
+ZONE_SPAWNS.buz.push(['fokcuk', 0.12], ['kar_gelincigi', 0.12], ['buz_kirpisi', 0.06]);
+ZONE_SPAWNS.kor.push(['lav_kurbagasi', 0.12], ['kivilcim_civciv', 0.12], ['obsidyen_kertenkele', 0.06]);
+ZONE_SPAWNS.golge.push(['murekkepcik', 0.12], ['fener_hayaleti', 0.12], ['kara_kuzgun', 0.06]);
+WATER_GLEMONS.push(['nilufer_kurbagasi', 30], ['kirpi_baligi', 25]);
+// gizli turlerin evcillestirme yemi hangi bolgeden
+export const SECRET_HOME = { hilal_ejderi: 'golge', kadim_kostebek: 'magara', yildirim_baligi: 'su' };
+export const SECRETS = { moon: ['hilal_ejderi', 0.025], deep: ['kadim_kostebek', 0.04, 50], storm: ['yildirim_baligi', 0.12] };
+// Firtina: gercek saate gore gunde birkac saat (her 5 saatten biri), sadece Us Goletinde
+export function stormNow(d = new Date()) {
+  if (typeof window !== 'undefined' && window.__storm !== undefined) return !!window.__storm;
+  const h = Math.floor(d.getTime() / 3600000);
+  return ((h * 2654435761) >>> 0) % 5 === 0;
+}
+
+// ---------------------------------------------------------------- huy (her evcil Glemon rastgele birini alir)
+export const TRAITS = {
+  cesur: { name: 'Cesur', desc: 'Saldırı +%12', atk: 0.12 },
+  sakin: { name: 'Sakin', desc: 'Savunma +%15', def: 0.15 },
+  dayanikli: { name: 'Dayanıklı', desc: 'Can +%15', hp: 0.15 },
+  hizli: { name: 'Hızlı', desc: 'Hız +%12', spd: 0.12 },
+  obur: { name: 'Obur', desc: 'Sevdiği yemekten 2 kat bağ', food: 2 },
+  neseli: { name: 'Neşeli', desc: 'Savaşlardan 2 kat bağ', fight: 2 },
+  sansli: { name: 'Şanslı', desc: 'Savaşta eşya düşme şansı +%8', luck: 0.08 },
+};
+
+// ---------------------------------------------------------------- pasif yetenekler
+export const PASSIVES = {
+  orman_ruhu: { name: 'Şifalı Ruh', desc: 'Her sırasında canını %3 doldurur', regen: 0.03 },
+  sert_kabuk: { name: 'Sert Kabuk', desc: 'Kendi savunması +%25', def: 0.25 },
+  keskin_dis: { name: 'Keskin Diş', desc: 'Kendi saldırısı +%20', atk: 0.2 },
+  hizli_ayak: { name: 'Çevik', desc: 'Hızı +%20, savaşa önde başlar', spd: 0.2, first: true },
+  zehir: { name: 'Zehirli Dokunuş', desc: 'Normal saldırısı %30 ihtimalle zehirler', onHit: ['zehir', 4, 0.3] },
+  ates: { name: 'Kor Dokunuş', desc: 'Normal saldırısı %30 ihtimalle yakar', onHit: ['yanma', 3, 0.3] },
+  buz: { name: 'Soğuk Dokunuş', desc: 'Normal saldırısı %20 ihtimalle dondurur', onHit: ['donma', 1, 0.2] },
+  sersem: { name: 'Sersemletici', desc: 'Normal saldırısı %25 ihtimalle sersemletir', onHit: ['sersem', 1, 0.25] },
+  karanlik: { name: 'Göz Alıcı', desc: 'Normal saldırısı %30 ihtimalle kör eder', onHit: ['karanlik', 2, 0.3] },
+  cesaret: { name: 'Cesaret Verir', desc: 'Senin saldırın +%8', pAtk: 0.08 },
+  koruyucu: { name: 'Koruyucu', desc: 'Senin savunman +%10, saldırıları sık üstüne alır', pDef: 0.1, guard: true },
+  ugurlu: { name: 'Uğurlu', desc: 'Savaşta eşya düşme şansı +%15', luck: 0.15 },
+  altin_burun: { name: 'Altın Burun', desc: `Savaşlardan +%25 ${CURRENCY}`, gold: 0.25 },
+  bilge: { name: 'Bilge', desc: 'Savaş XP\'si +%8', xp: 0.08 },
+  keskin_goz: { name: 'Keskin Göz', desc: 'Senin kritik şansın +%5', crit: 0.05 },
+  kaygan: { name: 'Kaygan', desc: 'Saldırıların %20\'sinden kaçar', dodge: 0.2 },
+  dikenli: { name: 'Dikenli', desc: 'Kendine vurana hasarın %30\'unu geri yansıtır', thorns: 0.3 },
+  can_emici: { name: 'Can Emici', desc: 'Vurduğunun %20\'si kadar iyileşir', lifesteal: 0.2 },
+  buyuk_yurek: { name: 'Büyük Yürek', desc: 'Kendi canı +%30', hp: 0.3 },
+  ay_isigi: { name: 'Ay Işığı', desc: 'Canını %4 doldurur, kritik şansın +%3', regen: 0.04, crit: 0.03 },
+  efsane: { name: 'Efsane Gücü', desc: 'Kendi saldırısı +%15, senin saldırın +%8', atk: 0.15, pAtk: 0.08 },
+};
+// tur -> [pasif, sevdigi yemek]
+export const SPECIES_INFO = {
+  kutukcuk: ['buyuk_yurek', 'bogurtlen'], patlakmantar: ['zehir', 'mantar'], dikentavsan: ['hizli_ayak', 'havuc'], yaprakbocek: ['keskin_goz', 'bal'], yosunbaba: ['orman_ruhu', 'bogurtlen_turtasi'],
+  micir: ['sert_kabuk', 'kizarmis_patates'], taskabuk: ['koruyucu', 'mantar'], pirpir: ['sersem', 'bal'], kristalbocek: ['buz', 'madenci_guveci'], ametist_kirpi: ['dikenli', 'ekmek'],
+  kumkiskic: ['zehir', 'hurma'], kaktus_bekcisi: ['dikenli', 'kaktus_suyu'], toz_kertenkelesi: ['karanlik', 'misir_patlagi'], sargicik: ['ates', 'kumpir'], altin_skarabe: ['altin_burun', 'bal'],
+  kar_penguen: ['keskin_dis', 'izgara_balik'], kiragi_tilki: ['buz', 'kar_cilegi'], buzcuk: ['sert_kabuk', 'sicak_corba'], kar_baykusu: ['kaygan', 'kar_cilekli_pasta'], aurora_geyigi: ['orman_ruhu', 'kar_cilegi'],
+  kor_semender: ['ates', 'ates_biberi'], kivilcim_yarasa: ['hizli_ayak', 'acili_guvec'], magma_salyangoz: ['dikenli', 'kizarmis_patates'], kul_koc: ['keskin_dis', 'biber_dolmasi'], yakut_ejder: ['cesaret', 'acili_guvec'],
+  fisilti: ['kaygan', 'gece_mantari'], gece_pisi: ['keskin_goz', 'izgara_balik'], bosluk_kurdu: ['can_emici', 'gece_corbasi'], gozmantar: ['karanlik', 'gece_mantari'], ay_guvesi: ['ugurlu', 'ay_otu'],
+  isilbocek: ['bilge', 'bal'], parilmantar: ['orman_ruhu', 'gece_mantari'], gece_kelebegi: ['sersem', 'ay_otu'], ruya_kuzusu: ['ay_isigi', 'ay_otu_cayi'], ay_tavsani: ['ugurlu', 'ay_otu'],
+  cicek_aslani: ['efsane', 'bogurtlen_turtasi'], kristal_yilan: ['efsane', 'madenci_guveci'], gunes_kusu: ['efsane', 'kabak_tatlisi'], kuzey_kurdu: ['efsane', 'kar_cilekli_pasta'], anka_yavrusu: ['efsane', 'biber_dolmasi'], yildiz_balinasi: ['efsane', 'ay_otu_cayi'],
+  damlacik: ['bilge', 'balikci_coregi'], inci_istiridye: ['ugurlu', 'izgara_balik'], gol_ejderi: ['cesaret', 'firin_alabalik'],
+  pamukcuk: ['koruyucu', 'pamuk'], tirtilcik: ['sersem', 'sifali_ot'], mese_baykusu: ['bilge', 'bogurtlen'],
+  sarkitcik: ['keskin_dis', 'ekmek'], kaya_kostebek: ['altin_burun', 'havuc'], fener_semenderi: ['karanlik', 'madenci_guveci'],
+  kum_tilkisi: ['hizli_ayak', 'hurma'], devecik: ['buyuk_yurek', 'kaktus_suyu'], serap_kelebegi: ['kaygan', 'misir_patlagi'],
+  fokcuk: ['buyuk_yurek', 'izgara_balik'], kar_gelincigi: ['keskin_goz', 'kar_cilegi'], buz_kirpisi: ['dikenli', 'sicak_corba'],
+  lav_kurbagasi: ['ates', 'ates_biberi'], kivilcim_civciv: ['cesaret', 'misir_patlagi'], obsidyen_kertenkele: ['sert_kabuk', 'acili_guvec'],
+  murekkepcik: ['karanlik', 'gece_corbasi'], fener_hayaleti: ['bilge', 'ay_otu_cayi'], kara_kuzgun: ['ugurlu', 'gece_mantari'],
+  nilufer_kurbagasi: ['orman_ruhu', 'balikci_coregi'], kirpi_baligi: ['dikenli', 'izgara_balik'],
+  hilal_ejderi: ['ay_isigi', 'ay_otu_cayi'], kadim_kostebek: ['efsane', 'madenci_guveci'], yildirim_baligi: ['efsane', 'firin_alabalik'],
+};
+export const passiveOf = (key) => PASSIVES[(SPECIES_INFO[key] || [])[0]] || null;
+export const favOf = (key) => (SPECIES_INFO[key] || [])[1] || 'bogurtlen';
+
+// ---------------------------------------------------------------- bag kalbi (0-5)
+// 100 puan = 1 kalp. Birlikte savasmak ve sevdigi yemek doldurur. Her kalp statlara +%2,
+// 5 kalpte ozel "Kalp Bagi" hareketi ve isim verme hakki.
+export const BOND = { per: 100, max: 5, fight: 4, fav: 40, treat: 30, stat: 0.02, feedMs: 20 * 3600000 };
+// Ikili takim: Glemon Bagi 50'de ikinci yuva. Ayni bolgeden ikisi: +%10 statlar
+export const TEAM = { bag2: 50, sameHome: 0.1 };
+
+// ---------------------------------------------------------------- Yasayan Ahir
+// Her evcil Glemon 20 saatte bir turune gore malzeme birakir
+export const RANCH = { ms: 20 * 3600000, wander: 8 };
+export const RANCH_DROP = { Orman: 'yumusak_yun', Buz: 'yumusak_yun', Ay: 'yumusak_yun', Taş: 'kristal_tozu', Kum: 'altin_kum', Ateş: 'kivilcim_tozu', Gölge: 'glemon_sumugu', Su: 'glemon_sumugu' };
+export const ranchDropOf = (key) => (GLEMONS[key].fly ? 'parlak_tuy' : RANCH_DROP[GLEMONS[key].type] || 'yumusak_yun');
+// Ciftlestirme ve kulucka
+export const NEST = { slots: 3, basket: 6, bredMs: 3 * 3600000, legendBattles: 80, breedCd: 20 * 3600000, shinyBase: 0.02, shinyParent: 0.1, traitKeep: 0.6 };
+Object.assign(ITEMS, {
+  yumusak_yun: { name: 'Yumuşak yün', kind: 'malzeme', rarity: 'siradan', icon: 'yumusak_yun', desc: 'Orman, Buz ve Ay Glemonları Ahırda bırakır. Tasma, atkı ve Kuluçka Yuvası malzemesi.' },
+  parlak_tuy: { name: 'Parlak tüy', kind: 'malzeme', rarity: 'nadir', icon: 'parlak_tuy', desc: 'Uçan Glemonlar Ahırda bırakır. Tüylü Atkı malzemesi.' },
+  kivilcim_tozu: { name: 'Kıvılcım tozu', kind: 'malzeme', rarity: 'nadir', icon: 'kivilcim_tozu', desc: 'Ateş Glemonları Ahırda bırakır. Kıvılcım Kurdelesi malzemesi.' },
+  glemon_sumugu: { name: 'Glemon sümüğü', kind: 'malzeme', rarity: 'siradan', icon: 'glemon_sumugu', desc: 'Gölge ve Su Glemonları Ahırda bırakır. Yapışkan Yem malzemesi. Iyy!' },
+  kristal_tozu: { name: 'Kristal tozu', kind: 'malzeme', rarity: 'nadir', icon: 'kristal_tozu', desc: 'Taş Glemonları Ahırda bırakır. Kristal Çan malzemesi.' },
+  altin_kum: { name: 'Altın kum', kind: 'malzeme', rarity: 'siradan', icon: 'altin_kum', desc: 'Kum Glemonları Ahırda bırakır. Glemon Şekeri malzemesi.' },
+  yun_tasma: { name: 'Yün Tasma', kind: 'aksesuar', rarity: 'siradan', icon: 'yun_tasma', acc: { def: 0.15 }, col: '#d84a4a', desc: 'Glemon aksesuarı (Ahırdan tak). Savunma +%15.' },
+  tuylu_atki: { name: 'Tüylü Atkı', kind: 'aksesuar', rarity: 'nadir', icon: 'tuylu_atki', acc: { hp: 0.15 }, col: '#4a8ad8', desc: 'Glemon aksesuarı (Ahırdan tak). Can +%15.' },
+  kivilcim_kurdele: { name: 'Kıvılcım Kurdelesi', kind: 'aksesuar', rarity: 'nadir', icon: 'kivilcim_kurdele', acc: { atk: 0.12 }, col: '#f07a2a', desc: 'Glemon aksesuarı (Ahırdan tak). Saldırı +%12.' },
+  kristal_can: { name: 'Kristal Çan', kind: 'aksesuar', rarity: 'epik', icon: 'kristal_can', acc: { xp: 0.25, bond: 0.25 }, col: '#ffd060', desc: 'Glemon aksesuarı (Ahırdan tak). Glemon XP\'si +%25, savaştan bağ +%25.' },
+  glemon_sekeri: { name: 'Glemon Şekeri', kind: 'malzeme', rarity: 'nadir', icon: 'glemon_sekeri', treat: true, desc: 'Ahırda herhangi bir Glemon\'a ver: +30 bağ. Sevdiği yemek değilse de sever.' },
+  sumuk_yemi: { name: 'Yapışkan Yem', kind: 'malzeme', rarity: 'siradan', icon: 'sumuk_yemi', anyFood: true, desc: 'Her bölgenin Sıradan Glemonları yer. Yemin yoksa savaşta bu kullanılır.' },
+  kulucka: { name: 'Kuluçka Yuvası', kind: 'malzeme', rarity: 'nadir', icon: 'kulucka', desc: 'Mobilya: arsana koy. İçine aynı anda 3 yumurta koyarsın; efsanevi yumurtalar 80 savaşta, Ahır yumurtaları 3 saatte çatlar.' },
+});
+Object.assign(SELL, { yumusak_yun: 4, parlak_tuy: 10, kivilcim_tozu: 10, glemon_sumugu: 3, kristal_tozu: 10, altin_kum: 5 });
+BUILD.kulucka = { tex: 'kulucka', lvl: 5, xp: 60, pts: 10, prop: true, func: 'kulucka' };
+RECIPES.push(
+  { out: 'yun_tasma', mats: { yumusak_yun: 3, dal: 2 }, station: 'yem', lvl: 10, xp: 80 },
+  { out: 'tuylu_atki', mats: { parlak_tuy: 2, yumusak_yun: 2 }, station: 'yem', lvl: 18, xp: 120 },
+  { out: 'kivilcim_kurdele', mats: { kivilcim_tozu: 3, pamuk: 1 }, station: 'yem', lvl: 25, xp: 150 },
+  { out: 'kristal_can', mats: { kristal_tozu: 3, demir_kulcesi: 1 }, station: 'yem', lvl: 30, xp: 180 },
+  { out: 'glemon_sekeri', mats: { altin_kum: 1, bal: 1 }, station: 'yem', lvl: 5, xp: 40 },
+  { out: 'sumuk_yemi', mats: { glemon_sumugu: 2, bogurtlen: 1 }, station: 'yem', lvl: 3, xp: 30 },
+  { out: 'kulucka', mats: { tahta_kalas: 4, dal: 4, yumusak_yun: 2 }, station: 'masa', lvl: 5, xp: 80 },
+);
+// yeni kombolar (ikili takim ve Glemon yetenekleriyle)
+Object.assign(COMBOS, {
+  buhar_patlamasi: { name: 'Buhar Patlaması', how: 'Donmuş hedefi yak ya da yananı dondur', result: 'Büyük hasar ve sersemletme', hint: 'Ateş ile buz bir araya gelirse…' },
+  ikili_saldiri: { name: 'İkili Saldırı', how: 'İki Glemonun ★ yeteneği arka arkaya', result: 'İkinci yetenek 2 kat güçlü', hint: 'İki dost aynı anda…' },
+  dost_kalkani: { name: 'Dost Kalkanı', how: 'Canın %30 altındayken Glemonun kalkan yeteneği', result: 'Seni de korur ve iyileştirir', hint: 'Zor anda kabuğa çekilen dost…' },
+  zehirli_diken: { name: 'Zehirli Diken', how: 'Zehirli düşman dikenli Glemona vurursa', result: 'Diken 3 kat yansıtır', hint: 'Zehir ve diken…' },
+  kum_firtinasi: { name: 'Kum Fırtınası', how: 'Kör düşmanlara Glemonun alan yeteneği', result: 'Hepsi sersemler', hint: 'Göremeyenlere fırtına…' },
+  golge_pencesi: { name: 'Gölge Pençesi', how: 'Gölge Glemonu sersem düşmana vurursa', result: 'Kritik ve 2 kat hasar', hint: 'Gölge, sersemleri sever…' },
+  kalp_bagi: { name: 'Kalp Bağı', how: '5 kalpli Glemonun yeteneği MÜKEMMEL vuruşundan hemen sonra', result: '2,5 kat hasar ve iyileşme', hint: 'Gerçek dostluk ve kusursuz zamanlama…' },
+});
+// 4. ustalik kademesi: o turun parlak cikma sansi 2 kat
+MASTERY.push([2500, 0.15]);
+// Bolge tamamlama: bir bolgenin butun turlerini evcillestirince kalici bonus
+export const ZONE_DONE = { dmg: 0.05, xp: 0.05, pul: 20 };
+BUILD_ORDER.push('kulucka');

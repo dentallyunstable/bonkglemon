@@ -810,3 +810,28 @@ html, body {
 .belt-btn { display: inline-flex; align-items: center; gap: calc(1.5 * var(--u)); padding: calc(1.5 * var(--u)) calc(3 * var(--u)); }
 .belt-btn .ico { width: calc(11 * var(--u)); height: calc(11 * var(--u)); image-rendering: pixelated; }
 .hud-tok { margin-left: calc(4 * var(--u)); color: #ffd890; }
+
+/* 0.12 Glemon Derinligi */
+.target.tame-ch {
+  pointer-events: none; animation: none; font-size: var(--fs-s); color: #ff9ab4; white-space: nowrap;
+  background: rgba(14, 10, 20, 0.75); border-radius: calc(2 * var(--u)); padding: calc(1 * var(--u)) calc(3 * var(--u));
+}
+.ebar.pbar2 { width: calc(30 * var(--u)); }
+.pet-card .hearts, .hearts { color: #ff7a9a; letter-spacing: calc(0.5 * var(--u)); }
+.pet-card .rdy { position: absolute; top: 0; right: calc(2 * var(--u)); color: var(--gold); font-weight: 800; }
+.pet-card { position: relative; }
+.pet-card.active2 { box-shadow: 0 0 0 calc(1 * var(--u)) #8ad8ff inset; }
+.trait { display: inline-block; background: rgba(255, 154, 180, 0.18); color: #ffc8d6; border-radius: calc(2 * var(--u)); padding: 0 calc(3 * var(--u)); margin-right: calc(2 * var(--u)); }
+.passive { color: #c8e6ff; }
+.nest-row { display: flex; gap: calc(4 * var(--u)); flex-wrap: wrap; margin: calc(3 * var(--u)) 0; }
+.nest-slot { flex: 1 1 calc(80 * var(--u)); min-width: calc(80 * var(--u)); background: rgba(255, 255, 255, 0.06); border-radius: calc(3 * var(--u)); padding: calc(3 * var(--u)); text-align: center; }
+.nest-slot .bar { margin: calc(2 * var(--u)) 0; }
+.sp-page { display: grid; grid-template-columns: auto 1fr; gap: calc(4 * var(--u)) calc(8 * var(--u)); align-items: start; }
+.sp-page .lbl { color: var(--muted, #b8b0c8); white-space: nowrap; }
+.mastery-bar { display: flex; gap: calc(2 * var(--u)); }
+.mastery-bar span { flex: 1; height: calc(4 * var(--u)); border-radius: calc(2 * var(--u)); background: rgba(255, 255, 255, 0.12); }
+.mastery-bar span.on { background: var(--gold); }
+.zone-rw { display: flex; flex-wrap: wrap; gap: calc(3 * var(--u)); margin: calc(3 * var(--u)) 0; }
+.album-card { cursor: pointer; }
+.nest-slot .ico { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
+.name-input { font: inherit; font-size: var(--fs-s); padding: calc(1 * var(--u)) calc(3 * var(--u)); border-radius: calc(2 * var(--u)); border: 0; max-width: calc(70 * var(--u)); }

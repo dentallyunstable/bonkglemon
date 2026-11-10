@@ -2,7 +2,7 @@
 // durumlar (Zehir, Yanma, Sersem, Donma, Karanlik), silah yetenekleri ve kombolar (0.5),
 // yanindaki evcil Glemon ve evcillestirme (0.4), odul ve dusurmeler.
 import {
-  GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
+  passiveOf, SECRET_HOME, GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
   typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
 } from './data.js';
 import { S } from './state.js';
@@ -10,6 +10,7 @@ import { ARENA } from './art.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner, icon } from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
+import { teamInfo, teamAura, petDisplayName, fightBond, recordDrop, tickNest, zoneBonus, homeOf } from './pets.js';
 
 const RMULT = { siradan: 1, nadir: 1.6, epik: 2.5, efsanevi: 15 };
 const ATB_RATE = 1.0; // Hiz 100 -> cubuk 1 saniyede dolar
@@ -19,7 +20,7 @@ const GRADE = {
   zayif: { mult: 0.8, text: 'Zayıf', cls: 'weak', sfx: 'weak' },
 };
 const WEAPON_ANIM = { kilic: 'stab', yay: 'bowshot', yumruk: 'punch' };
-const PET_POS = { x: 136, y: GROUND_Y + 24, scale: 1.6 };
+const PET_POS = [{ x: 136, y: GROUND_Y + 24, scale: 1.6 }, { x: 184, y: GROUND_Y + 13, scale: 1.35 }];
 
 export function calcDamage(atk, mult, def) {
   const d = atk * mult * (100 / (100 + def)) * (0.9 + Math.random() * 0.2);
@@ -39,7 +40,7 @@ const B = (a) => `c_b_${a}`;
 const ZONE_OF_KEY = {};
 for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) ZONE_OF_KEY[k] = z;
 for (const [k] of WATER_GLEMONS) ZONE_OF_KEY[k] = 'su';
-Object.assign(ZONE_OF_KEY, NIGHT_HOME);
+Object.assign(ZONE_OF_KEY, NIGHT_HOME, SECRET_HOME);
 const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0 });
 
 // ayri savas ekraninda (arena) Glemonlarin yerleri
@@ -86,7 +87,9 @@ export class Battle {
     this.firstStrike = !!opts.ambush;
     this.gy = GROUND_Y;   // Glemonlarin durdugu zemin (arenada uzak meydan)
     this.arena = false;
-    this.pet = null;
+    this.pets = [];
+    this.pTurns = 0;
+    this.aura = teamAura(S.teamPets().filter((p) => !(S.run && S.run.pets && S.run.pets[p.id] && S.run.pets[p.id].down)));
     specs.forEach((s, i) => this.addEnemy(s, slotX(specs.length, i, opts.boss)));
     if (opts.surprised) for (const e of this.enemies) e.atb = 100;
   }
@@ -153,35 +156,46 @@ export class Battle {
     this.makePet();
   }
 
-  // -------------------------------------------------------------- evcil Glemon (0.4)
+  // -------------------------------------------------------------- evcil Glemonlar (0.4, 0.12: iki yoldas)
+  get pet() { return this.pets.find((t) => t.alive) || null; }
   makePet() {
-    const p = S.activePet();
-    if (!p || (S.run && S.run.petDown) || this.pet) return;
-    const meta = this.w.gmeta[p.key].stages[p.stage];
-    const st = S.petStats(p);
-    const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
-    const sc = PET_POS.scale * (p.stage === 2 ? 0.85 : 1);
-    const sprite = this.scene.add.sprite(PET_POS.x, PET_POS.y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
-      .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(18).setScale(sc).setFlipX(true);
-    sprite.play(k('durma'));
-    const shadow = this.scene.add.image(PET_POS.x, PET_POS.y + 1, 'shadow').setDepth(17).setScale((meta.bodyW * sc) / 18, sc * 0.8);
-    const hp = S.run && S.run.petHp != null ? Math.min(S.run.petHp, st.maxHp) : st.maxHp;
-    this.pet = {
-      p, meta, sprite, shadow, k, scale: sc, data: GLEMONS[p.key], name: S.petName(p),
-      maxHp: st.maxHp, hp, atk: st.atk, def: st.def, spd: st.spd,
-      atb: Math.random() * 40, acts: 0, alive: hp > 0, charged: false, queued: false,
-      taunt: 0, shell: 0, reflect: 0, fought: false,
-    };
-    if (!this.pet.alive) { sprite.destroy(); shadow.destroy(); this.pet = null; }
+    if (this.pets.length) return;
+    const list = S.teamPets();
+    const team = teamInfo(list);
+    const runPets = S.run ? (S.run.pets = S.run.pets || {}) : null;
+    list.forEach((p, i) => {
+      const rp = runPets && runPets[p.id];
+      if (rp && rp.down) return;
+      const pos = PET_POS[i];
+      const meta = this.w.gmeta[p.key].stages[p.stage];
+      const st = S.petStats(p, team);
+      const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
+      const sc = pos.scale * (p.stage === 2 ? 0.85 : 1);
+      const sprite = this.scene.add.sprite(pos.x, pos.y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
+        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(18 - i).setScale(sc).setFlipX(true);
+      sprite.play(k('durma'));
+      const shadow = this.scene.add.image(pos.x, pos.y + 1, 'shadow').setDepth(17 - i).setScale((meta.bodyW * sc) / 18, sc * 0.8);
+      const hp = rp && rp.hp != null ? Math.min(rp.hp, st.maxHp) : st.maxHp;
+      const ps = passiveOf(p.key) || {};
+      const t = {
+        p, i, pos, meta, sprite, shadow, k, scale: sc, data: GLEMONS[p.key], name: petDisplayName(p), ps,
+        maxHp: st.maxHp, hp, atk: st.atk, def: st.def, spd: st.spd,
+        atb: ps.first ? 100 : Math.random() * 40, acts: 0, alive: hp > 0, charged: false, queued: false,
+        taunt: 0, shell: 0, reflect: 0, fought: false, hearts: S.hearts(p),
+      };
+      if (!t.alive) { sprite.destroy(); shadow.destroy(); return; }
+      if (this.w.attachAcc) this.w.attachAcc(sprite, p, meta);
+      this.pets.push(t);
+    });
+    if (team.label && this.pets.length > 1) this.teamLabel = team.label;
   }
 
-  petTop() { const t = this.pet; return t.sprite.y - t.meta.ay * t.scale; }
+  petTop(t = this.pet) { return t.sprite.y - t.meta.ay * t.scale; }
 
-  makePetBar() {
-    const t = this.pet;
-    if (!t) return;
-    const wrap = el('div', 'ebar pbar');
-    const nm = el('div', 'nm', `${t.name} Sv.${t.p.lvl}`);
+  makePetBar(t) {
+    if (!t) { for (const x of this.pets) if (x.alive) this.makePetBar(x); return; }
+    const wrap = el('div', 'ebar pbar' + (t.i ? ' pbar2' : ''));
+    const nm = el('div', 'nm', `${t.name} Sv.${t.p.lvl}${t.hearts ? ' ' + '♥'.repeat(t.hearts) : ''}`);
     wrap.appendChild(nm);
     const hp = el('div', 'bar'); const hf = el('div', 'fill'); hp.appendChild(hf);
     const atb = el('div', 'bar atb'); const af = el('div', 'fill'); atb.appendChild(af);
@@ -190,20 +204,20 @@ export class Battle {
       if (!t.charged || !t.alive) return;
       t.queued = true;
       sfx('click');
-      floatText(t.sprite.x, this.petTop() - 6, 'Hazır!', 'good');
-      this.renderPet();
+      floatText(t.sprite.x, this.petTop(t) - 6, 'Hazır!', 'good');
+      this.renderPet(t);
     }, 'small purple pet-sp');
     wrap.appendChild(sp);
-    wrap.style.left = `${(PET_POS.x / 384) * 100}%`;
-    wrap.style.top = `${((this.petTop() - 2) / 216) * 100}%`;
+    wrap.style.left = `${(t.pos.x / 384) * 100}%`;
+    wrap.style.top = `${((this.petTop(t) - 2) / 216) * 100}%`;
     $('#bars').appendChild(wrap);
     t.ui = { wrap, hf, af, sp };
-    this.renderPet();
+    this.renderPet(t);
   }
 
-  renderPet() {
-    const t = this.pet;
-    if (!t || !t.ui) return;
+  renderPet(t) {
+    if (!t) { for (const x of this.pets) this.renderPet(x); return; }
+    if (!t.ui) return;
     t.ui.hf.style.width = `${Math.max(0, t.hp / t.maxHp) * 100}%`;
     t.ui.af.style.width = `${t.atb}%`;
     const show = t.alive && t.charged && !S.save.settings.auto;
@@ -212,8 +226,7 @@ export class Battle {
   }
 
   // yanindaki Glemon'un sirasi: normal saldiri ya da ozel yetenek
-  async petTurn() {
-    const t = this.pet;
+  async petTurn(t) {
     this.busy = true;
     t.atb = 0;
     t.acts++;
@@ -222,84 +235,119 @@ export class Battle {
     if (t.shell > 0) t.shell--;
     if (t.reflect > 0) t.reflect--;
     if (t.acts % 3 === 0) t.charged = true;
+    // 0.12 pasif: sifali ruh / ay isigi
+    if (t.ps.regen && S.hp > 0 && S.hp < S.maxHp()) {
+      const h = Math.max(1, Math.round(S.maxHp() * t.ps.regen));
+      S.hp = Math.min(S.maxHp(), S.hp + h);
+      floatText(this.px(), this.py() + 6, `+${h}`, 'heal');
+      this.renderMe();
+    }
     const sp = t.data.special;
     const useSp = t.charged && sp && (t.queued || S.save.settings.auto);
-    this.renderPet();
+    this.renderPet(t);
     const alive = this.alive();
     if (!alive.length) { this.endEnemyTurn(); return; }
     const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
     if (useSp) {
       t.charged = false; t.queued = false;
-      floatText(t.sprite.x, this.petTop() - 10, sp.name, 'info');
+      floatText(t.sprite.x, this.petTop(t) - 10, sp.name, 'info');
+      // 0.12 kombolar: Ikili Saldiri (iki yetenek arka arkaya), Kalp Bagi (5 kalp + MUKEMMEL)
+      let boost = 1;
+      if (this.lastPetSp && this.lastPetSp.i !== t.i && this.lastPetSp.turn === this.pTurns) { boost *= 2; this.combo('ikili_saldiri'); }
+      this.lastPetSp = { i: t.i, turn: this.pTurns };
+      let heartCombo = false;
+      if (t.hearts >= 5 && !t.heartUsed && this.perfectTurn === this.pTurns) { boost *= 2.5; t.heartUsed = true; heartCombo = true; this.combo('kalp_bagi'); }
       if (sp.heal) {
         await playAnim(t.sprite, t.k('saldiri'), 1);
-        const h = Math.round(S.maxHp() * 0.2);
+        const h = Math.round(S.maxHp() * 0.2 * boost);
         S.hp = Math.min(S.maxHp(), S.hp + h);
         t.hp = Math.min(t.maxHp, t.hp + Math.round(t.maxHp * 0.2));
         floatText(this.px(), this.py(), `+${h}`, 'heal');
         sfx('heal');
         this.renderMe();
-      } else if (sp.shell) {
+      } else if (sp.shell || sp.reflect) {
         await playAnim(t.sprite, t.k('saldiri'), 1);
-        t.shell = 3; t.taunt = 3;
-        floatText(t.sprite.x, this.petTop() - 20, 'Glemonlar ona saldıracak!', 'info');
-      } else if (sp.reflect) {
-        await playAnim(t.sprite, t.k('saldiri'), 1);
-        t.reflect = 3; t.taunt = 2;
-        floatText(t.sprite.x, this.petTop() - 20, 'Dikenler hazır!', 'info');
+        if (sp.shell) { t.shell = 3; t.taunt = 3; floatText(t.sprite.x, this.petTop(t) - 20, 'Glemonlar ona saldıracak!', 'info'); }
+        else { t.reflect = 3; t.taunt = 2; floatText(t.sprite.x, this.petTop(t) - 20, 'Dikenler hazır!', 'info'); }
+        if (S.hp < S.maxHp() * 0.3) {
+          this.combo('dost_kalkani');
+          const h = Math.round(S.maxHp() * 0.15);
+          S.hp = Math.min(S.maxHp(), S.hp + h);
+          this.status.ay = Math.max(this.status.ay || 0, 1);
+          floatText(this.px(), this.py(), `+${h}`, 'heal');
+          this.renderMe(); this.renderStatus();
+        }
       } else {
-        if (sp.luck) { this.luckBonus = 1.3; floatText(t.sprite.x, this.petTop() - 20, 'Şans arttı!', 'perfect'); }
-        await this.petStrike(target, sp.mult || 1.4, sp.status);
+        if (sp.luck) { this.luckBonus = 1.3; floatText(t.sprite.x, this.petTop(t) - 20, 'Şans arttı!', 'perfect'); }
+        if (sp.aoe) {
+          const blind = alive.filter((e) => e.st.karanlik > 0).length;
+          if (blind >= 2) {
+            this.combo('kum_firtinasi');
+            for (const e of alive) { e.st.sersem = Math.max(e.st.sersem, 2); this.renderEnemy(e); }
+          }
+          await this.petStrike(t, alive, (sp.mult || 1) * 0.8 * boost, sp.status);
+        } else await this.petStrike(t, [target], (sp.mult || 1.4) * boost, sp.status);
+      }
+      if (heartCombo) {
+        const h = Math.round(S.maxHp() * 0.15);
+        S.hp = Math.min(S.maxHp(), S.hp + h);
+        floatText(this.px(), this.py() - 8, `+${h}`, 'heal');
+        this.renderMe();
       }
     } else {
-      await this.petStrike(target, 1, null);
+      const oh = t.ps.onHit;
+      await this.petStrike(t, [target], 1, oh && Math.random() < oh[2] ? [oh[0], oh[1]] : null);
     }
-    t.sprite.play(t.k('durma'));
-    this.renderPet();
+    if (t.sprite.active) t.sprite.play(t.k('durma'));
+    this.renderPet(t);
     this.endEnemyTurn();
   }
 
-  async petStrike(e, mult, status) {
-    const t = this.pet;
-    const tm = typeMult(t.data.type, e.type);
+  async petStrike(t, targets, mult, status) {
+    const first = targets[0];
     t.sprite.setDepth(16);
     t.sprite.play(t.k('yurume'));
-    await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: e.sprite.x - 34, y: this.gy + 8, scale: t.scale * 0.8, duration: 240, ease: 'Quad.easeIn', onComplete: res }));
+    await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: first.sprite.x - 34, y: this.gy + 8, scale: t.scale * 0.8, duration: 240, ease: 'Quad.easeIn', onComplete: res }));
     const atk = playAnim(t.sprite, t.k('saldiri'), 1.6);
     await wait(this.scene, 200);
-    if (e.alive) {
-      const dmg = calcDamage(t.atk * tm, mult, this.eDef(e));
+    for (const e of targets) {
+      if (!e.alive) continue;
+      const tm = typeMult(t.data.type, e.type);
+      let m = mult;
+      // Golge Pencesi: Golge Glemonu sersem dusmana
+      if (t.data.type === 'Gölge' && e.st.sersem > 0) { m *= 2; this.combo('golge_pencesi'); floatText(e.sprite.x + 14, this.topY(e) - 2, 'Kritik!', 'perfect'); }
+      const dmg = calcDamage(t.atk * tm, m, this.eDef(e));
       this.applyDamage(e, dmg, false);
       if (tm > 1) floatText(e.sprite.x, this.topY(e) - 10, 'Etkili!', 'good');
       else if (tm < 1) floatText(e.sprite.x, this.topY(e) - 10, 'Etkisiz…', 'weak');
       if (status && e.alive) this.giveEnemyStatus(e, status);
-      if (e.alive && e.st.reflect > 0) this.damagePet(Math.max(1, Math.round(dmg * 0.3)), 'Diken!');
+      if (t.ps.lifesteal) t.hp = Math.min(t.maxHp, t.hp + Math.max(1, Math.round(dmg * t.ps.lifesteal)));
+      if (e.alive && e.st.reflect > 0) this.damagePet(t, Math.max(1, Math.round(dmg * 0.3)), 'Diken!');
     }
     await atk;
     if (t.sprite.active) {
       t.sprite.play(t.k('yurume'));
-      await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: PET_POS.x, y: PET_POS.y, scale: t.scale, duration: 260, ease: 'Quad.easeOut', onComplete: res }));
-      t.sprite.setDepth(18);
+      await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: t.pos.x, y: t.pos.y, scale: t.scale, duration: 260, ease: 'Quad.easeOut', onComplete: res }));
+      t.sprite.setDepth(18 - t.i);
     }
   }
 
-  damagePet(d, label = null) {
-    const t = this.pet;
+  damagePet(t, d, label = null) {
     if (!t || !t.alive) return;
     t.hp = Math.max(0, t.hp - d);
-    floatText(t.sprite.x, this.petTop(), label ? `${label} -${d}` : `-${d}`, 'hurt');
-    if (S.run) S.run.petHp = t.hp;
+    floatText(t.sprite.x, this.petTop(t), label ? `${label} -${d}` : `-${d}`, 'hurt');
+    this.savePetHp();
     if (t.hp <= 0) {
       t.alive = false;
-      if (S.run) S.run.petDown = true;
+      this.savePetHp();
       feed(`${t.name} bayıldı! Üsse dönünce iyileşir.`);
-      floatText(t.sprite.x, this.petTop() - 12, 'Bayıldı!', 'warn');
+      floatText(t.sprite.x, this.petTop(t) - 12, 'Bayıldı!', 'warn');
       t.sprite.play(t.k('hasar'));
       this.scene.tweens.add({ targets: [t.sprite, t.shadow], alpha: 0, duration: 600, delay: 200 });
       if (t.ui) { t.ui.wrap.remove(); t.ui = null; }
     } else {
       playAnim(t.sprite, t.k('hasar'), 1).then(() => { if (t.alive && t.sprite.active) t.sprite.play(t.k('durma')); });
-      this.renderPet();
+      this.renderPet(t);
     }
   }
 
@@ -307,8 +355,8 @@ export class Battle {
   px() { return this.w.player.x + 6; }
   py() { return BPOS.y - 60; }
   pose() { if (!this.lostDone) this.w.player.play(B('idlesway'), true); }
-  atkMult() { return 1 + (this.status.tok > 0 ? 0.1 : 0) + (this.status.guc > 0 ? 0.3 : 0); }
-  defMult() { return (this.status.savun ? 2 : 1) * (this.status.guc > 0 ? 1.3 : 1); }
+  atkMult() { return 1 + (this.status.tok > 0 ? 0.1 : 0) + (this.status.guc > 0 ? 0.3 : 0) + this.aura.pAtk; }
+  defMult() { return (this.status.savun ? 2 : 1) * (this.status.guc > 0 ? 1.3 : 1) * (1 + this.aura.pDef); }
 
   // oyuncu one atilir ve geri doner
   lunge(p, dx, dy, ms) {
@@ -369,6 +417,7 @@ export class Battle {
     $('#actions').classList.add('hidden');
     $('#battle').classList.remove('hidden');
     if (this.status.karanlik > 0) feed('Karanlıkta savaşıyorsun: vuruşların bazen boşa gidecek. (Fener taşı!)');
+    if (this.teamLabel) feed(`Takım uyumu! ${this.teamLabel}`);
     if (this.opts.cold) feed('Üşüyorsun: bu savaşta yavaşsın. (Sıcak Çorba: Fırın)');
     if (this.status.yanma > 0 && this.opts.burn) feed('Lav sıcağı seni yaktı! (Ateş Direnci İksiri: Simya Kazanı)');
     return new Promise((res) => {
@@ -443,7 +492,7 @@ export class Battle {
       this.atbBar.classList.toggle('ready', this.pAtb >= 100);
     }
     for (const e of this.enemies) if (e.alive) this.renderEnemy(e);
-    if (this.pet && this.pet.alive) this.renderPet();
+    this.renderPet();
   }
 
   renderStatus() {
@@ -494,11 +543,11 @@ export class Battle {
     const k = (ATB_RATE * Math.min(dt, 60)) / 1000;
     this.pAtb = Math.min(100, this.pAtb + S.spd() * k * (this.status.sersem > 0 ? 0.5 : 1) * (this.opts.cold ? 0.7 : 1));
     for (const e of this.alive()) e.atb = Math.min(100, e.atb + e.spd * k * (e.st.sersem > 0 ? 0.5 : 1));
-    const t = this.pet;
-    if (t && t.alive) t.atb = Math.min(100, t.atb + t.spd * k);
+    for (const t of this.pets) if (t.alive) t.atb = Math.min(100, t.atb + t.spd * k);
     this.renderAtb();
     if (this.pAtb >= 100) { this.playerTurn(); return; }
-    if (t && t.alive && t.atb >= 100) { this.petTurn(); return; }
+    const pt = this.pets.find((t) => t.alive && t.atb >= 100);
+    if (pt) { this.petTurn(pt); return; }
     const ready = this.alive().find((e) => e.atb >= 100);
     if (ready) this.enemyTurn(ready);
   }
@@ -511,6 +560,7 @@ export class Battle {
   // -------------------------------------------------------------- oyuncu sirasi
   async playerTurn() {
     this.busy = true;
+    this.pTurns++;
     this.status.savun = false;
     const p = this.w.player;
     if (this.status.zehir > 0) {
@@ -810,7 +860,7 @@ export class Battle {
     for (let h = 0; h < hits; h++) {
       for (const e of targets) {
         if (!e.alive) continue;
-        const crit = Math.random() < S.crit();
+        const crit = Math.random() < S.crit() + this.aura.crit;
         this.hitEnemy(e, S.atk() * this.atkMult(), mult, crit, h === 0 && e === targets[0] ? grade : null, ab);
       }
       if (hits > 1 && h < hits - 1) {
@@ -927,13 +977,36 @@ export class Battle {
     const [basic, special] = FOODS[z];
     if ((e.rarity === 'siradan' || (z === 'su' && e.rarity === 'nadir')) && S.countItem(basic) > 0) return basic;
     if (S.countItem(special) > 0) return special;
+    // 0.12 Yapiskan Yem: her bolgenin Siradan Glemonlari yer
+    if (e.rarity === 'siradan' && S.countItem('sumuk_yemi') > 0) return 'sumuk_yemi';
     return null;
+  }
+
+  // 0.12: evcillestirme sansi (ekranda da gorunur)
+  tameChance(e, food) {
+    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004) * S.perk('yem_ustasi', 1.15, 1);
+    if (food && ITEMS[food].special && e.rarity === 'siradan') ch *= 1.3;
+    return Math.min(1, ch);
+  }
+  showTameChances(list) {
+    for (const e of list) {
+      const z = ZONE_OF_KEY[e.key];
+      const need = TAME.bagReq[e.data.rarity] + TAME.stageBag[e.stage];
+      const food = z ? this.foodFor(e) : null;
+      const txt = !z ? 'evcilleşmez' : S.level('bag') < need ? `Bağ ${need} gerek` : !food ? 'yem yok' : `♥ %${Math.round(this.tameChance(e, food) * 100)}${e.sleeping ? ' (uyuyor)' : ''}`;
+      const t = el('div', 'target tame-ch', txt);
+      t.style.left = `${(e.sprite.x / 384) * 100}%`;
+      t.style.top = `${((this.topY(e) - 26) / 216) * 100}%`;
+      $('#bars').appendChild(t);
+    }
   }
 
   async onFeed() {
     if (this.phase !== 'menu') return;
     const list = this.tameables();
-    const e = await this.chooseTarget(list, 'Kime yem vereceksin?');
+    this.showTameChances(list);
+    const e = await this.chooseTarget(list, 'Kime yem vereceksin? (♥ evcilleşme şansı)');
+    this.removeMarkers();
     if (e === 'auto' || this.over) return;
     if (!e) { this.showMenu(); return; }
     const z = ZONE_OF_KEY[e.key];
@@ -963,8 +1036,8 @@ export class Battle {
     crumb.destroy();
     floatText(e.sprite.x, this.topY(e), `${ITEMS[food].name}!`, 'info');
     await playAnim(e.sprite, e.k('saldiri'), 0.8);
-    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004) * S.perk('yem_ustasi', 1.15, 1);
-    if (ITEMS[food].special && e.rarity === 'siradan') ch *= 1.3;
+    const ch = this.tameChance(e, food);
+    floatText(e.sprite.x, this.topY(e) - 24, `♥ %${Math.round(ch * 100)}`, 'info');
     const ok = Math.random() < ch;
     if (!ok) {
       floatText(e.sprite.x, this.topY(e) - 12, 'Yemi yedi ama gelmedi…', 'weak');
@@ -1000,6 +1073,16 @@ export class Battle {
 
   // -------------------------------------------------------------- hasar
   giveEnemyStatus(e, [st, turns]) {
+    // 0.12 Buhar Patlamasi: donmus hedefi yakmak ya da yanani dondurmak
+    if ((st === 'yanma' && e.st.donma > 0) || (st === 'donma' && e.st.yanma > 0)) {
+      e.st.donma = 0; e.st.yanma = 0;
+      this.combo('buhar_patlamasi');
+      this.boom(e.sprite.x, this.gy - 26, 1.4);
+      const best = Math.max(S.atk() * this.atkMult(), ...this.pets.filter((t) => t.alive).map((t) => t.atk));
+      this.applyDamage(e, calcDamage(best, 2.2, this.eDef(e)), true);
+      for (const o of this.alive()) { o.st.sersem = Math.max(o.st.sersem, 1); this.renderEnemy(o); }
+      return;
+    }
     e.st[st] = Math.max(e.st[st], turns);
     floatText(e.sprite.x, this.topY(e) - 14, STATUS_NAMES[st] + '!', 'info');
     this.renderEnemy(e);
@@ -1015,6 +1098,8 @@ export class Battle {
     let m = mult * (crit ? 1.5 : 1);
     // tur ustaligi: cok yendigin ture daha sert vurursun
     m *= 1 + masteryOf((S.save.stats.glemons || {})[e.key] || 0).bonus;
+    // 0.12 bolge tamamlama bonusu
+    { const zb = zoneBonus(this.zone.key); if (zb) m *= 1 + zb.dmg; }
     // ucan Glemonlar: kilic ve yumruk yari hasar, yay tam
     if (e.fly && this.wt !== 'yay') {
       m *= 0.5;
@@ -1032,6 +1117,7 @@ export class Battle {
     const def = ab && ab.pierce ? 0 : this.eDef(e);
     const dmg = calcDamage(atk, m, def);
     if (grade) floatText(e.sprite.x, top - 8, GRADE[grade].text, GRADE[grade].cls);
+    if (grade === 'mukemmel') this.perfectTurn = this.pTurns;
     if (crit) floatText(e.sprite.x + 14, top - 2, 'Kritik!', 'perfect');
     sfx(crit ? 'crit' : 'hit');
     if (grade && GRADE[grade].sfx) sfx(GRADE[grade].sfx);
@@ -1098,6 +1184,7 @@ export class Battle {
     if (this.opts.night) gold = Math.round(gold * NIGHT.reward);
     if (e.data.boss) gold = 150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50);
     if (S.run && S.run.goldX) gold = Math.round(gold * S.run.goldX); // 0.9 Altin Gunu
+    gold = Math.round(gold * (1 + this.aura.gold));
     S.addGold(gold);
     this.gold += gold;
     const st = S.save.stats;
@@ -1121,10 +1208,11 @@ export class Battle {
     }
     const manual = this.manualActs >= this.autoActs;
     for (const [id, ch] of e.data.drops) {
-      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + 0.3 * e.stage) * (this.opts.night ? NIGHT.reward : 1);
+      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + this.aura.luck) * (1 + 0.3 * e.stage) * (this.opts.night ? NIGHT.reward : 1);
       if (ch >= 1) c = 1;
       if (Math.random() < Math.min(1, c)) {
         this.w.giveDrop(id, 1, e.from);
+        recordDrop(e.key, id);
         if (ITEMS[id].rarity !== 'siradan' && ch < 1) this.luckXp += 20 * Math.pow(this.floor, 0.8) * (RMULT[ITEMS[id].rarity] || 1);
       }
     }
@@ -1206,9 +1294,16 @@ export class Battle {
       return;
     }
     const p = this.w.player;
-    const t = this.pet;
-    // hedef: yanindaki Glemon bazen (ya da kabuguna cekildiyse hep) saldiriyi uzerine alir
-    const onPet = !act.aoe && t && t.alive && (t.taunt > 0 || Math.random() < 0.3);
+    // hedef: yanindaki Glemonlar bazen (ya da kabuguna cekildiyse hep) saldiriyi uzerine alir
+    const live = this.pets.filter((x) => x.alive);
+    const taunter = live.find((x) => x.taunt > 0);
+    let t = taunter || null;
+    if (!t && live.length) {
+      const guard = live.find((x) => x.ps.guard);
+      const ch = (live.length > 1 ? 0.4 : 0.3) + (guard ? 0.15 : 0);
+      if (Math.random() < ch) t = guard && Math.random() < 0.6 ? guard : live[Math.floor(Math.random() * live.length)];
+    }
+    const onPet = !act.aoe && !!t;
     let dodged = false;
     if (act.telegraph) {
       const top = this.topY(e);
@@ -1232,20 +1327,28 @@ export class Battle {
     // Glemon kameraya (oyuncuya) ya da yanindaki Glemon'a dogru atilir
     e.sprite.setDepth(15);
     e.sprite.play(e.k('yurume'));
-    const tx = onPet ? PET_POS.x + 30 : 150;
-    const ty = onPet ? PET_POS.y + 6 : BPOS.y - 14;
+    const tx = onPet ? t.pos.x + 30 : 150;
+    const ty = onPet ? t.pos.y + 6 : BPOS.y - 14;
     await new Promise((res) => this.scene.tweens.add({
       targets: e.sprite, x: tx, y: ty, scale: e.scale * (onPet ? 1.1 : 1.4), duration: 260, ease: 'Quad.easeIn', onComplete: res,
     }));
     const atkAnim = playAnim(e.sprite, e.k('saldiri'), 1.6);
     await wait(this.scene, 300 / 1.6);
     if (missed) {
-      floatText(onPet ? t.sprite.x : this.px(), onPet ? this.petTop() : this.py() - 10, 'Iskaladı!', 'good');
+      floatText(onPet ? t.sprite.x : this.px(), onPet ? this.petTop(t) : this.py() - 10, 'Iskaladı!', 'good');
+    } else if (onPet && t.ps.dodge && Math.random() < t.ps.dodge) {
+      floatText(t.sprite.x, this.petTop(t) - 6, 'Kaçtı!', 'good');
+      sfx('dodge');
     } else if (onPet) {
       const tm = typeMult(e.type, t.data.type);
       const dmg = calcDamage(e.atk * tm, act.mult || 1, t.def * (t.shell > 0 ? 2 : 1));
-      this.damagePet(dmg);
-      if (t.reflect > 0 && e.alive) this.applyDamage(e, Math.max(1, Math.round(dmg * 0.5)), false);
+      this.damagePet(t, dmg);
+      const refl = (t.reflect > 0 ? 0.5 : 0) + (t.ps.thorns || 0);
+      if (refl > 0 && e.alive) {
+        let m = refl;
+        if (e.st.zehir > 0) { m *= 3; this.combo('zehirli_diken'); }
+        this.applyDamage(e, Math.max(1, Math.round(dmg * m)), false);
+      }
     } else if (dodged) {
       sfx('dodge');
       floatText(this.px(), this.py() - 10, dodged === 'kusursuz' ? 'Kusursuz kaçış!' : 'Kaçındın!', dodged === 'kusursuz' ? 'perfect' : 'good');
@@ -1277,7 +1380,7 @@ export class Battle {
         this.renderStatus();
       }
       // alan saldirisi yanindaki Glemon'a da vurur
-      if (act.aoe && t && t.alive) this.damagePet(calcDamage(e.atk * typeMult(e.type, t.data.type), (act.mult || 1) * 0.7, t.def));
+      if (act.aoe) for (const x of this.pets) if (x.alive) this.damagePet(x, calcDamage(e.atk * typeMult(e.type, x.data.type), (act.mult || 1) * 0.7, x.def));
     }
     await atkAnim;
     if (S.hp <= 0) { await this.lose(); if (this.over) return; }
@@ -1329,8 +1432,9 @@ export class Battle {
 
   // -------------------------------------------------------------- bitis
   savePetHp() {
-    const t = this.pet;
-    if (t && S.run) { S.run.petHp = t.hp; if (!t.alive) S.run.petDown = true; }
+    if (!S.run) return;
+    S.run.pets = S.run.pets || {};
+    for (const t of this.pets) S.run.pets[t.p.id] = { hp: t.hp, down: !t.alive };
   }
 
   async win() {
@@ -1341,17 +1445,21 @@ export class Battle {
     await wait(this.scene, 350);
     sfx('win');
     const manual = this.manualActs > 0 && this.manualActs >= this.autoActs;
-    const xm = (manual ? 1.2 : 1) * ((S.run && S.run.xpX) || 1); // 0.9 Devler Gunu: 2 kat
+    const zb = zoneBonus(this.zone.key);
+    const xm = (manual ? 1.2 : 1) * ((S.run && S.run.xpX) || 1) * (1 + this.aura.xp + (zb ? zb.xp : 0)); // 0.9 Devler Gunu: 2 kat
     const skill = WEAPON_SKILL[this.wt];
     const gains = { [skill]: this.killXp * 0.7 * xm, can: this.killXp * 0.3 * xm, savunma: this.defXp, sans: this.luckXp };
-    const t = this.pet;
     let petMsg = '';
-    let evo = null;
-    if (t && t.fought) {
-      this.bagXp += this.killXp * 0.35 * xm;
-      const res = S.petAddXp(t.p, this.killXp * 0.6 * xm);
-      if (res.up) petMsg = ` · ${t.name} Sv.${res.up}!`;
-      if (res.evolved > 0) evo = { name: GLEMONS[t.p.key].name, stage: res.evolved };
+    const evos = [];
+    for (const t of this.pets) {
+      if (!t.fought) continue;
+      const ac = (t.p.acc && ITEMS[t.p.acc] && ITEMS[t.p.acc].acc) || {};
+      this.bagXp += this.killXp * 0.35 * xm / this.pets.length;
+      const res = S.petAddXp(t.p, this.killXp * 0.6 * xm * (1 + (ac.xp || 0)));
+      if (res.up) petMsg += ` · ${t.name} Sv.${res.up}!`;
+      if (res.evolved > 0) evos.push({ name: GLEMONS[t.p.key].name, stage: res.evolved });
+      const hu = fightBond(t.p);
+      if (hu) petMsg += ` · <span style="color:#ff9ab4">${t.name} ${'♥'.repeat(hu)}</span>`;
     }
     gains.bag = this.bagXp;
     const ups = S.addXp(gains);
@@ -1359,6 +1467,7 @@ export class Battle {
     // 0.9 gizli basarim: canin %5 ya da altindayken kazanmak
     if (S.hp > 0 && S.hp <= S.maxHp() * 0.05) S.save.flags.kil_payi = true;
     const hatched = S.tickEggs();
+    tickNest();
     const r = (x) => Math.round(x);
     const skName = skill === 'okculuk' ? 'Okçuluk' : 'Saldırı';
     const extra = [];
@@ -1368,7 +1477,7 @@ export class Battle {
     if (this.gold > 0) { feed(`<img class="ico-inline" src="${this.w.coinUrl}">+${this.gold} ${CURRENCY}`); sfx('coin'); }
     this.cleanup(false);
     await this.w.exitBattleView();
-    if (evo) await this.w.petEvolved(evo);
+    for (const evo of evos) await this.w.petEvolved(evo);
     for (const h of hatched) await this.w.eggHatched(h);
     // seviye atladiysa levelup, atlamadiysa rastgele bir sevinme animasyonu
     if (ups.length) for (const up of ups) await this.w.levelUp(up);
@@ -1417,8 +1526,7 @@ export class Battle {
     $('#bars').innerHTML = '';
     $('#overlay').className = '';
     $('#overlay').innerHTML = '';
-    if (this.pet) {
-      const t = this.pet;
+    for (const t of this.pets) {
       if (t.sprite.active) t.sprite.destroy();
       if (t.shadow.active) t.shadow.destroy();
       t.ui = null;

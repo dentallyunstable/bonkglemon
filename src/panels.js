@@ -1,7 +1,8 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY } from './data.js';
+import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
@@ -13,7 +14,7 @@ import {
   merchantHere, merchantNext, merchantStock, weekNum, tourCount, FISH_TOUR, FISH_TOUR_PUL, dayNum,
 } from './goals.js';
 
-const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', olta: 'Olta', yumurta: 'Yumurta', pelerin: 'Pelerin', alet: 'Alet' };
+const KIND = { aksesuar: 'Glemon aksesuarı', malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', olta: 'Olta', yumurta: 'Yumurta', pelerin: 'Pelerin', alet: 'Alet' };
 
 function slotEl(s, label) {
   const d = UI.el('div', 'slot');
@@ -650,24 +651,46 @@ export function openMap(w) {
   }, { wide: true });
 }
 
-// ------------------------------------------------------------ Ahir (0.4)
-// Evcil Glemonlar: yanina al, serbest birak, seviye ve evrim. Yanda Yem Tezgahi ve Albüm.
+// ------------------------------------------------------------ Ahir (0.4, 0.12 Yasayan Ahir)
+// Evcil Glemonlar: yanina al (Bag 50'de iki tane), huy, pasif, bag kalbi, sevdigi yemek, aksesuar,
+// gunluk malzeme, ciftlestirme ve yumurtalar.
 function petLine(p) {
   const st = S.petStats(p);
   return `Sv. ${p.lvl} · ${STAGES[p.stage]} · Can ${st.maxHp} · Saldırı ${Math.round(st.atk)} · Hız ${st.spd}`;
 }
+function fmtMs(ms) {
+  const m = Math.ceil(ms / 60000);
+  return m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`;
+}
+function collectAllRanch(w) {
+  const got = {};
+  for (const p of S.save.pets) {
+    const r = PETS.collectRanch(p);
+    if (r) got[r.id] = (got[r.id] || 0) + r.n;
+  }
+  for (const [id, n] of Object.entries(got)) w.giveDrop(id, n, 'Ahırdan', true);
+  if (!Object.keys(got).length) UI.feed('Henüz hazır malzeme yok.');
+  S.changed();
+}
 
-export function openAhir(w) {
+export function openAhir(w, tab = 'glemon') {
   let sel = S.save.pet || (S.save.pets[0] && S.save.pets[0].id) || null;
   let confirm = false;
+  let pickA = null; let pickB = null;
   UI.openPanel(`Ahır · ${S.save.pets.length}/${S.ahirSize()}`, (body) => {
     const render = () => {
       body.innerHTML = '';
       const top = UI.el('div', 'choice-row');
-      top.appendChild(UI.button('Yem Tezgâhı', () => openStation(w, 'yem'), 'small green'));
+      for (const [k, label] of [['glemon', 'Glemonlar'], ['cift', 'Çiftleştir'], ['yumurta', `Yumurtalar (${S.save.eggs.length})`]]) {
+        top.appendChild(UI.button(label, () => { tab = k; confirm = false; render(); }, tab === k ? 'primary small' : 'small'));
+      }
+      const rc = PETS.readyCount();
+      if (rc) top.appendChild(UI.button(`Malzemeleri topla (${rc})`, () => { collectAllRanch(w); render(); }, 'green small'));
+      top.appendChild(UI.button('Yem Tezgâhı', () => openStation(w, 'yem'), 'small'));
       top.appendChild(UI.button('Albüm', () => openAlbum(w), 'small blue'));
-      top.appendChild(UI.button('Kombo Defteri', () => openAlbum(w, 'kombo'), 'small purple'));
       body.appendChild(top);
+      if (tab === 'cift') { renderBreed(); return; }
+      if (tab === 'yumurta') { renderEggs(); return; }
       if (!S.save.pets.length) {
         body.appendChild(UI.el('p', 'choice-text', 'Ahırın boş. Keşifte ya da Zindanda bir Glemon\'un canı %25\'in altına inince savaşta "Yem ver" ile evcilleştirebilirsin.'));
         body.appendChild(UI.el('p', 'muted', 'Her bölgenin yemi farklı: Orman için Orman Turtası (Böğürtlen + Şifalı ot). Yemleri Yem Tezgâhı\'nda yaparsın, Hancı Lale de Orman Turtası satar. Nadir ve Epik Glemonlar özel yem ister ve Glemon Bağı becerisi gerektirir.'));
@@ -676,63 +699,299 @@ export function openAhir(w) {
       const lay = UI.el('div', 'ahir');
       const grid = UI.el('div', 'pet-grid');
       for (const p of S.save.pets) {
-        const c = UI.el('div', 'pet-card' + (p.id === sel ? ' sel' : '') + (p.id === S.save.pet ? ' active' : ''));
+        const c = UI.el('div', 'pet-card' + (p.id === sel ? ' sel' : '') + (p.id === S.save.pet ? ' active' : '') + (p.id === S.save.pet2 ? ' active2' : ''));
         c.appendChild(UI.glemonImg(w.gmeta, p.key, p.stage, p.shiny, { w: 34, h: 30 }));
-        c.appendChild(UI.el('div', 'pn', `${p.id === S.save.pet ? '★ ' : ''}${S.petName(p)}`));
-        c.appendChild(UI.el('div', 'muted', `Sv. ${p.lvl}`));
+        const mark = p.id === S.save.pet ? '★ ' : p.id === S.save.pet2 && S.level('bag') >= TEAM.bag2 ? '☆ ' : '';
+        c.appendChild(UI.el('div', 'pn', `${mark}${PETS.petDisplayName(p)}`));
+        c.appendChild(UI.el('div', 'muted', `Sv. ${p.lvl} `));
+        c.appendChild(UI.el('div', 'hearts', PETS.heartsText(p)));
+        if (PETS.ranchReady(p)) c.appendChild(UI.el('div', 'rdy', '!'));
         c.addEventListener('click', () => { sfx('click'); sel = p.id; confirm = false; render(); });
         grid.appendChild(c);
       }
       lay.appendChild(grid);
       const p = S.save.pets.find((x) => x.id === sel);
       const box = UI.el('div', 'detail');
-      if (p) {
-        const d = GLEMONS[p.key];
-        const nm = UI.el('div', 'nm', S.petName(p));
-        nm.style.color = RARITY[d.rarity].color;
-        box.appendChild(nm);
-        box.appendChild(UI.glemonImg(w.gmeta, p.key, p.stage, p.shiny, { w: 70, h: 56 }));
-        box.appendChild(UI.el('div', 'muted', `${RARITY[d.rarity].name} · ${d.type} tipi${d.fly ? ' · uçar' : ''}`));
-        box.appendChild(UI.el('div', '', petLine(p)));
-        if (d.special) box.appendChild(UI.el('div', '', `Yetenek: ${d.special.name}`));
-        const cap = S.petCap();
-        const a = petXpFor(p.lvl); const b = petXpFor(p.lvl + 1);
-        const bar = UI.el('div', 'bar xp');
-        const f = UI.el('div', 'fill');
-        f.style.width = p.lvl >= cap ? '100%' : `${Math.min(100, ((p.xp - a) / (b - a)) * 100)}%`;
-        bar.appendChild(f);
-        bar.appendChild(UI.el('span', '', p.lvl >= cap ? `Sınır: Sv. ${cap} (Bağ ${S.level('bag')})` : `${p.xp - a} / ${b - a} XP`));
-        box.appendChild(bar);
-        const next = p.stage < 2 ? `${STAGES[p.stage + 1]} evrimi: Sv. ${EVOLVE_AT[p.stage]}` : 'En son evrimde (Usta)';
-        box.appendChild(UI.el('div', 'muted', `${next}. Seviye sınırı Glemon Bağı'nın yarısı (şu an ${cap}).`));
-        const row = UI.el('div', 'row');
-        if (p.id !== S.save.pet) {
-          row.appendChild(UI.button('Yanıma al', () => { S.save.pet = p.id; S.changed(); w.makeFollower(); sfx('chest'); render(); }, 'primary small'));
-        } else {
-          row.appendChild(UI.button('Ahırda bırak', () => { S.save.pet = null; S.changed(); w.makeFollower(); render(); }, 'small'));
-        }
-        row.appendChild(UI.button(confirm ? 'Emin misin?' : 'Serbest bırak', () => {
-          if (!confirm) { confirm = true; render(); return; }
-          S.releasePet(p.id); S.changed(); w.makeFollower(); sel = S.save.pet; confirm = false;
-          UI.feed(`${S.petName(p)} doğaya döndü. Hoşça kal!`);
-          render();
-        }, 'small close'));
-        box.appendChild(row);
-      }
+      if (p) renderPet(box, p);
       lay.appendChild(box);
       body.appendChild(lay);
-      body.appendChild(UI.el('p', 'muted', `Ahır ${S.ahirSize()} yer (İnşa seviyenle 30'a kadar büyür). Yanındaki Glemon keşifte ve zindanda seninle savaşır, bayılırsa üsse dönünce iyileşir.`));
+      const two = S.level('bag') >= TEAM.bag2;
+      body.appendChild(UI.el('p', 'muted', `Ahır ${S.ahirSize()} yer (İnşa seviyenle 30'a kadar büyür). ★ yanındaki Glemon${two ? ', ☆ ikinci yoldaşın' : `. Glemon Bağı ${TEAM.bag2}'de yanına 2. Glemon alırsın`}. Yanında olmayanlar arsanda dolaşır ve günde bir malzeme bırakır (!).`));
+    };
+
+    const renderPet = (box, p) => {
+      const d = GLEMONS[p.key];
+      const nm = UI.el('div', 'nm', PETS.petDisplayName(p));
+      nm.style.color = RARITY[d.rarity].color;
+      box.appendChild(nm);
+      if (p.nick) box.appendChild(UI.el('div', 'muted', S.petName(p)));
+      box.appendChild(UI.glemonImg(w.gmeta, p.key, p.stage, p.shiny, { w: 70, h: 56 }));
+      box.appendChild(UI.el('div', 'muted', `${RARITY[d.rarity].name} · ${d.type} tipi${d.fly ? ' · uçar' : ''}`));
+      const tr = TRAITS[p.huy];
+      const trl = UI.el('div', '');
+      if (tr) { trl.appendChild(UI.el('span', 'trait', `Huy: ${tr.name}`)); trl.appendChild(UI.el('span', 'muted', tr.desc)); }
+      box.appendChild(trl);
+      box.appendChild(UI.el('div', '', petLine(p)));
+      const ps = passiveOf(p.key);
+      if (ps) box.appendChild(UI.el('div', 'passive', `Pasif: ${ps.name} · ${ps.desc}`));
+      if (d.special) box.appendChild(UI.el('div', 'passive', `★ Aktif: ${d.special.name} (savaşta 3 sırada bir)`));
+      // bag kalbi
+      const h = S.hearts(p);
+      const hb = UI.el('div', '');
+      hb.appendChild(UI.el('span', 'hearts', PETS.heartsText(p)));
+      hb.appendChild(UI.el('span', 'muted', h >= BOND.max ? ' Kalp Bağı açık! (MÜKEMMEL vuruştan sonra ★ yeteneği)' : ` ${(p.kalp || 0) % BOND.per}/${BOND.per} · her kalp statlar +%2`));
+      box.appendChild(hb);
+      const fav = favOf(p.key);
+      const favN = S.countItem(fav);
+      const fr = UI.el('div', 'row');
+      const canFav = PETS.canFeedFav(p);
+      fr.appendChild(UI.el('span', 'muted', `Sevdiği yemek: ${ITEMS[fav].name} (${favN})`));
+      const fb = UI.button(canFav ? 'Yedir' : 'Bugün yedi', () => {
+        const r = PETS.feedPet(p, fav);
+        UI.feed(r.ok ? `<span style="color:#ff9ab4">♥ ${PETS.petDisplayName(p)} ${ITEMS[fav].name} yedi: ${r.msg}</span>` : r.msg);
+        if (r.ok) { sfx(r.up ? 'levelup' : 'heal'); S.changed(); }
+        render();
+      }, 'small green');
+      fb.disabled = !favN || !canFav || h >= BOND.max;
+      fr.appendChild(fb);
+      if (S.countItem('glemon_sekeri')) {
+        fr.appendChild(UI.button(`Şeker ver (${S.countItem('glemon_sekeri')})`, () => {
+          const r = PETS.feedPet(p, 'glemon_sekeri');
+          UI.feed(r.ok ? `<span style="color:#ff9ab4">♥ ${PETS.petDisplayName(p)} şekeri çok sevdi: ${r.msg}</span>` : r.msg);
+          if (r.ok) { sfx('heal'); S.changed(); }
+          render();
+        }, 'small'));
+      }
+      box.appendChild(fr);
+      // aksesuar
+      const ar = UI.el('div', 'row');
+      ar.appendChild(UI.el('span', 'muted', `Aksesuar: ${p.acc ? ITEMS[p.acc].name + ' (' + ITEMS[p.acc].desc.split('. ').slice(1).join('. ') + ')' : 'yok'}`));
+      const owned = Object.keys(ITEMS).filter((id) => ITEMS[id].kind === 'aksesuar' && S.countItem(id) > 0);
+      for (const id of owned) ar.appendChild(UI.button(`Tak: ${ITEMS[id].name}`, () => { PETS.equipAcc(p, id); sfx('chest'); S.changed(); w.makeFollower(); render(); }, 'small'));
+      if (p.acc) ar.appendChild(UI.button('Çıkar', () => { PETS.equipAcc(p, null); S.changed(); w.makeFollower(); render(); }, 'small'));
+      if (!p.acc && !owned.length) ar.appendChild(UI.el('span', 'muted', ' · Yem Tezgâhında tasma, atkı, kurdele ve çan yapılır.'));
+      box.appendChild(ar);
+      // isim (5 kalp)
+      if (h >= BOND.max) {
+        const nr = UI.el('div', 'row');
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.maxLength = 12; inp.placeholder = 'Yeni isim'; inp.value = p.nick || '';
+        inp.className = 'name-input';
+        nr.appendChild(inp);
+        nr.appendChild(UI.button('İsim ver', () => {
+          const v = inp.value.replace(/[<>&"]/g, '').trim().slice(0, 12);
+          p.nick = v || null; S.changed(); w.makeFollower(); sfx('chest'); render();
+        }, 'small purple'));
+        box.appendChild(nr);
+      }
+      // ahir malzemesi
+      const drop = ranchDropOf(p.key);
+      const isTeam = S.teamPets().some((x) => x.id === p.id);
+      box.appendChild(UI.el('div', 'muted', PETS.ranchReady(p) ? `Bıraktığı: ${ITEMS[drop].name} ×${PETS.ranchAmount(p)} hazır!` : `Bıraktığı: ${ITEMS[drop].name} · ${fmtMs(PETS.ranchLeft(p))} sonra${isTeam ? ' (yanındayken de birikir)' : ''}`));
+      const cap = S.petCap();
+      const a = petXpFor(p.lvl); const b = petXpFor(p.lvl + 1);
+      const bar = UI.el('div', 'bar xp');
+      const f = UI.el('div', 'fill');
+      f.style.width = p.lvl >= cap ? '100%' : `${Math.min(100, ((p.xp - a) / (b - a)) * 100)}%`;
+      bar.appendChild(f);
+      bar.appendChild(UI.el('span', '', p.lvl >= cap ? `Sınır: Sv. ${cap} (Bağ ${S.level('bag')})` : `${p.xp - a} / ${b - a} XP`));
+      box.appendChild(bar);
+      const next = p.stage < 2 ? `${STAGES[p.stage + 1]} evrimi: Sv. ${EVOLVE_AT[p.stage]}` : 'En son evrimde (Usta): yumurta bırakabilir';
+      box.appendChild(UI.el('div', 'muted', `${next}. Seviye sınırı Glemon Bağı'nın yarısı (şu an ${cap}).`));
+      const row = UI.el('div', 'row');
+      if (p.id === S.save.pet) {
+        row.appendChild(UI.button('Ahırda bırak', () => { S.save.pet = S.save.pet2 || null; S.save.pet2 = null; S.changed(); w.makeFollower(); render(); }, 'small'));
+      } else if (p.id === S.save.pet2) {
+        row.appendChild(UI.button('Ahırda bırak', () => { S.save.pet2 = null; S.changed(); w.makeFollower(); render(); }, 'small'));
+      } else {
+        row.appendChild(UI.button('Yanıma al', () => { if (S.save.pet2 === p.id) S.save.pet2 = null; S.save.pet = p.id; S.changed(); w.makeFollower(); sfx('chest'); render(); }, 'primary small'));
+        if (S.level('bag') >= TEAM.bag2 && S.save.pet) {
+          row.appendChild(UI.button('2. yoldaş yap', () => { S.save.pet2 = p.id; S.changed(); w.makeFollower(); sfx('chest'); render(); }, 'small blue'));
+        }
+      }
+      row.appendChild(UI.button(confirm ? 'Emin misin?' : 'Serbest bırak', () => {
+        if (!confirm) { confirm = true; render(); return; }
+        S.releasePet(p.id); S.changed(); w.makeFollower(); sel = S.save.pet; confirm = false;
+        UI.feed(`${PETS.petDisplayName(p)} doğaya döndü. Hoşça kal!`);
+        render();
+      }, 'small close'));
+      box.appendChild(row);
+    };
+
+    const renderBreed = () => {
+      body.appendChild(UI.el('p', 'muted', 'İki Usta Glemon (Sv. 35) aynı tipten ya da aynı bölgedense yumurta bırakır. Yavru anne babadan birinin türünü alır, %60 ihtimalle huyunu da. Parlak bir ebeveyn parlak yavru şansını artırır. Her Glemon günde bir kez.'));
+      const ustas = S.save.pets.filter((p) => p.stage === 2 && !GLEMONS[p.key].egg);
+      if (ustas.length < 2) { body.appendChild(UI.el('p', 'choice-text', 'En az iki Usta Glemon gerekli. Glemonların Sv. 35\'te Usta olur.')); return; }
+      const grid = UI.el('div', 'pet-grid');
+      for (const p of ustas) {
+        const c = UI.el('div', 'pet-card' + (p.id === pickA || p.id === pickB ? ' sel' : ''));
+        c.appendChild(UI.glemonImg(w.gmeta, p.key, p.stage, p.shiny, { w: 34, h: 30 }));
+        c.appendChild(UI.el('div', 'pn', PETS.petDisplayName(p)));
+        c.appendChild(UI.el('div', 'muted', `${GLEMONS[p.key].type}${PETS.breedReady(p) ? '' : ' · yorgun'}`));
+        c.addEventListener('click', () => {
+          sfx('click');
+          if (pickA === p.id) pickA = null; else if (pickB === p.id) pickB = null;
+          else if (!pickA) pickA = p.id; else pickB = p.id;
+          render();
+        });
+        grid.appendChild(c);
+      }
+      body.appendChild(grid);
+      const A = S.save.pets.find((x) => x.id === pickA); const B = S.save.pets.find((x) => x.id === pickB);
+      const why = PETS.breedWhy(A, B);
+      body.appendChild(UI.el('p', why ? 'muted' : 'choice-text', why || `${PETS.petDisplayName(A)} ve ${PETS.petDisplayName(B)} uyumlu!`));
+      const bb = UI.button('Yumurta bırakmalarını bekle', () => {
+        const r = PETS.breed(A, B);
+        if (!r.ok) { UI.feed(r.msg); return; }
+        sfx('levelup');
+        UI.banner('Bir yumurta!', `${GLEMONS[r.egg.key].name} yumurtası sepete kondu`, 2200, 'gold');
+        UI.feed(`<span style="color:#ff9ab4">♥ ${PETS.petDisplayName(A)} ve ${PETS.petDisplayName(B)} bir yumurta bıraktı! Kuluçka Yuvasına koyunca 3 saatte çatlar.</span>`, 'gold');
+        pickA = pickB = null;
+        S.changed();
+        render();
+      }, 'primary');
+      bb.disabled = !!why;
+      body.appendChild(bb);
+    };
+
+    const renderEggs = () => {
+      body.appendChild(UI.el('p', 'muted', `Yumurta sepeti ${S.save.eggs.length}/${NEST.basket}. Yumurtalar Kuluçka Yuvasında çatlar (arsana koyduğun mobilya, aynı anda 3 yumurta).`));
+      const list = UI.el('div', 'album-grid');
+      for (const e of S.save.eggs) {
+        const c = UI.el('div', 'album-card');
+        c.appendChild(UI.icon('glemon_yumurtasi'));
+        c.appendChild(UI.el('div', 'pn', `${GLEMONS[e.key].name} yumurtası`));
+        c.appendChild(UI.el('div', 'muted', e.huy ? `Huy: ${TRAITS[e.huy].name}` : 'Huy: sürpriz'));
+        list.appendChild(c);
+      }
+      if (S.save.eggs.length) body.appendChild(list);
+      const n = PETS.nestReadyCount();
+      if (PETS.hasNest()) body.appendChild(UI.button(`Kuluçka Yuvasını aç${n ? ` (${n} hazır!)` : ''}`, () => openNest(w), 'primary'));
+      else body.appendChild(UI.el('p', 'choice-text', 'Henüz Kuluçka Yuvan yok. Üretim Masasında yap (4 Kalas, 4 Dal, 2 Yumuşak yün) ve arsana koy.'));
     };
     render();
   }, { wide: true });
 }
 
-// ------------------------------------------------------------ Albüm ve Kombo Defteri (0.4 / 0.5)
+// ------------------------------------------------------------ Kuluçka Yuvasi (0.12)
+export function openNest(w) {
+  UI.openPanel('Kuluçka Yuvası', (body) => {
+    const render = () => {
+      if (!body.isConnected) { clearInterval(iv); return; }
+      body.innerHTML = '';
+      body.appendChild(UI.el('p', 'muted', `3 yuva. Ahır yumurtaları 3 saatte, efsanevi yumurtalar ${PETS.nestNeed()} savaşta çatlar (çantada ${S.eggNeed()}).`));
+      const row = UI.el('div', 'nest-row');
+      S.save.nest.forEach((e, slot) => {
+        const c = UI.el('div', 'nest-slot');
+        if (!e) {
+          c.appendChild(UI.el('div', 'pn', 'Boş yuva'));
+          S.save.eggs.forEach((x, i) => c.appendChild(UI.button(`Koy: ${GLEMONS[x.key].name}`, () => { PETS.putBasketEgg(slot, i); sfx('chest'); S.changed(); render(); }, 'small')));
+          S.save.bag.forEach((x, i) => { if (x && ITEMS[x.id] && ITEMS[x.id].egg) c.appendChild(UI.button(`Koy: ${ITEMS[x.id].name}`, () => { PETS.putBagEgg(slot, i); sfx('chest'); S.changed(); render(); }, 'small purple')); });
+          if (!S.save.eggs.length && !S.save.bag.some((x) => x && ITEMS[x.id] && ITEMS[x.id].egg)) c.appendChild(UI.el('div', 'muted', 'Koyacak yumurta yok.'));
+        } else {
+          const g = GLEMONS[e.key];
+          c.appendChild(UI.icon(e.legend ? ITEMS[e.item].icon : 'glemon_yumurtasi'));
+          c.appendChild(UI.el('div', 'pn', e.legend ? ITEMS[e.item].name : `${g.name} yumurtası`));
+          const pr = PETS.nestProgress(e);
+          const bar = UI.el('div', 'bar xp'); const f = UI.el('div', 'fill'); f.style.width = `${pr * 100}%`; bar.appendChild(f);
+          bar.appendChild(UI.el('span', '', pr >= 1 ? 'Hazır!' : PETS.nestLeftText(e)));
+          c.appendChild(bar);
+          if (pr >= 1) c.appendChild(UI.button('Çatlat!', () => {
+            const r = PETS.hatch(slot);
+            if (!r.ok) { UI.feed(r.msg || 'Olmadı.'); return; }
+            const nm = `${r.pet.shiny ? 'Parlak ' : ''}${GLEMONS[r.pet.key].name}`;
+            sfx('rare');
+            UI.banner('Yumurta çatladı!', `${nm} doğdu!`, 2600, 'gold');
+            UI.feed(`<span style="color:#ffd04d">★ ${nm} doğdu! Huyu: ${TRAITS[r.pet.huy].name}. Ahırına gitti.</span>`, 'gold');
+            if (w.celebrate) w.celebrate();
+            w.makeFollower();
+            S.changed();
+            render();
+          }, 'green small'));
+        }
+        row.appendChild(c);
+      });
+      body.appendChild(row);
+    };
+    const iv = setInterval(render, 5000);
+    render();
+  }, { wide: true });
+}
+
+// ------------------------------------------------------------ Albüm ve Kombo Defteri (0.4 / 0.5 / 0.12 Albüm 2.0)
+const STRONG_VS = (t) => TYPE_STRONG[t] || [];
+const WEAK_VS = (t) => Object.keys(TYPE_STRONG).filter((x) => (TYPE_STRONG[x] || []).includes(t));
+function habitat(k) {
+  const d = GLEMONS[k];
+  if (d.secret) return d.secret;
+  if (d.egg) return `${PETS.ZONE_LABEL[d.egg]} patronunun efsanevi yumurtasından`;
+  if (d.water) return 'Balık tutarken oltaya takılır (Balıkçılık 15)';
+  if (d.moon) return 'Dolunay Gecesi her bölgede';
+  if (d.night) return `Sadece gece Keşifte (çoğu ${PETS.ZONE_LABEL[NIGHT_HOME[k]]})`;
+  if (d.boss) return 'Bölge patronu';
+  const z = PETS.homeOf(k);
+  return z ? `${PETS.ZONE_LABEL[z]} (Keşif, Zindan ve madende o katmanda)` : '?';
+}
+function speciesPage(w, body, k, back) {
+  const d = GLEMONS[k];
+  const al = S.save.album;
+  const seen = !!al.seen[k];
+  const bar = UI.el('div', 'choice-row');
+  bar.appendChild(UI.button('← Albüm', back, 'small'));
+  body.appendChild(bar);
+  if (!seen) {
+    body.appendChild(UI.glemonImg(w.gmeta, k, 0, false, { w: 70, h: 56 }, true));
+    body.appendChild(UI.el('h3', '', '???'));
+    body.appendChild(UI.el('p', 'muted', d.secret ? `Gizli tür. İpucu: ${d.secret}.` : `Henüz görmedin. ${d.boss ? 'Bir bölge patronu.' : `Yaşadığı yer: ${habitat(k)}.`}`));
+    return;
+  }
+  const nm = UI.el('h3', '', d.name);
+  nm.style.color = RARITY[d.rarity].color;
+  body.appendChild(nm);
+  const imgs = UI.el('div', 'choice-row');
+  for (let st = 0; st < (d.boss ? 1 : 3); st++) imgs.appendChild(UI.glemonImg(w.gmeta, k, st, false, { w: 56, h: 46 }));
+  if (al.shiny[k]) imgs.appendChild(UI.glemonImg(w.gmeta, k, 0, true, { w: 56, h: 46 }));
+  body.appendChild(imgs);
+  const g = UI.el('div', 'sp-page');
+  const row = (l, v) => { g.appendChild(UI.el('div', 'lbl', l)); g.appendChild(UI.el('div', '', v)); };
+  row('Tür', `${RARITY[d.rarity].name} · ${d.type} tipi${d.fly ? ' · uçar' : ''}`);
+  row('Yaşadığı yer', habitat(k));
+  const sv = STRONG_VS(d.type); const wv = WEAK_VS(d.type);
+  row('Güçlü olduğu', sv.length ? sv.join(', ') : '-');
+  row('Zayıf olduğu', wv.length ? wv.join(', ') : '-');
+  if (d.special) row('Aktif yetenek', d.special.name);
+  const ps = passiveOf(k);
+  if (ps) row('Pasif yetenek', `${ps.name}: ${ps.desc}`);
+  if (!d.boss) row('Sevdiği yemek', ITEMS[favOf(k)].name);
+  if (!d.boss && !d.egg) {
+    const home = SECRET_HOME[k] || PETS.homeOf(k);
+    const need = TAME.bagReq[d.rarity];
+    const foods = FOODS[home];
+    row('Evcilleştirme', foods ? `Glemon Bağı ${need}+ · ${d.rarity === 'siradan' || (home === 'su' && d.rarity === 'nadir') ? `${ITEMS[foods[0]].name} ya da ${ITEMS[foods[1]].name}` : ITEMS[foods[1]].name}` : 'Evcilleşmez');
+  }
+  if (!d.boss) row('Ahırda bıraktığı', ITEMS[ranchDropOf(k)].name);
+  const dl = (al.drops || {})[k] || {};
+  if (d.drops && d.drops.length) row('Düşürdükleri', d.drops.map(([id]) => (dl[id] ? ITEMS[id].name : '???')).join(', '));
+  row('Durum', [al.tamed[k] ? '♥ evcilleştirdin' : 'evcil değil', al.shiny[k] ? '✦ parlağını gördün' : ''].filter(Boolean).join(' · '));
+  body.appendChild(g);
+  if (!d.boss && !d.egg) {
+    const kills = (S.save.stats.glemons || {})[k] || 0;
+    const ms = masteryOf(kills);
+    body.appendChild(UI.el('h3', '', `Ustalık ${'★'.repeat(ms.lvl)}${'☆'.repeat(MASTERY.length - ms.lvl)}`));
+    const mb = UI.el('div', 'mastery-bar');
+    for (let i = 0; i < MASTERY.length; i++) mb.appendChild(UI.el('span', i < ms.lvl ? 'on' : ''));
+    body.appendChild(mb);
+    body.appendChild(UI.el('p', 'muted', `${kills} yenildi${ms.next ? ` · sonraki kademe: ${ms.next}` : ' · tamamlandı!'}. Kademeler: 50 (+%5 hasar), 250 (+%10), 1000 (+%15), 2500 (bu türün parlak çıkma şansı 2 kat).`));
+  }
+}
+
 export function openAlbum(w, tab = 'glemon') {
   const keys = Object.keys(GLEMONS);
+  let page = null;
   UI.openPanel('Albüm', (body) => {
     const render = () => {
       body.innerHTML = '';
+      if (page) { speciesPage(w, body, page, () => { page = null; render(); }); return; }
       const al = S.save.album;
       const seen = keys.filter((k) => al.seen[k]).length;
       const tabs = UI.el('div', 'choice-row');
@@ -785,7 +1044,7 @@ export function openAlbum(w, tab = 'glemon') {
         return;
       }
       if (tab === 'kombo') {
-        body.appendChild(UI.el('p', 'muted', 'Kombolar, durumları doğru sırayla birleştirince olur. İlk yaptığında buraya yazılır.'));
+        body.appendChild(UI.el('p', 'muted', 'Kombolar, durumları ve Glemon yeteneklerini doğru sırayla birleştirince olur. İlk yaptığında buraya yazılır.'));
         for (const [k, c] of Object.entries(COMBOS)) {
           const n = S.save.combos[k];
           const row = UI.el('div', 'zone' + (n ? '' : ' locked'));
@@ -797,7 +1056,7 @@ export function openAlbum(w, tab = 'glemon') {
         }
         return;
       }
-      body.appendChild(UI.el('div', 'muted', `Albüm %${Math.round((seen / keys.length) * 100)} · Evcilleştirilen tür: ${keys.filter((k) => al.tamed[k]).length} · Görülmeyenler siyah görünür.`));
+      body.appendChild(UI.el('div', 'muted', `Albüm %${Math.round((seen / keys.length) * 100)} · Evcilleştirilen tür: ${keys.filter((k) => al.tamed[k]).length} · Bir türe dokun: sayfası açılır.`));
       // 0.9: albumu doldurdukca odul (%25, %50, %75, %100)
       const pct = albumPct();
       const rw = UI.el('div', 'album-rw');
@@ -819,11 +1078,32 @@ export function openAlbum(w, tab = 'glemon') {
         else rw.appendChild(UI.el('span', 'rw-lock', label));
       }
       body.appendChild(rw);
+      // 0.12 bolge tamamlama: bolgenin butun turlerini evcillestir
+      body.appendChild(UI.el('h3', '', 'Bölge tamamlama'));
+      const zr = UI.el('div', 'zone-rw');
+      for (const z of PETS.ZONE_KEYS) {
+        const t = PETS.zoneTamed(z);
+        const label = `${PETS.ZONE_LABEL[z]} ${t.n}/${t.of}`;
+        if (S.save.zoneDone[z]) zr.appendChild(UI.el('span', 'rw-got', `✓ ${label}`));
+        else if (t.n >= t.of) zr.appendChild(UI.button(`Al · ${label}`, () => {
+          S.save.zoneDone[z] = true;
+          addPul(ZONE_DONE.pul);
+          sfx('levelup');
+          UI.banner(`${PETS.ZONE_LABEL[z]} tamam!`, 'O bölgede hasar ve XP +%5', 2400, 'gold');
+          UI.feed(`<span style="color:#ffd04d">★ ${PETS.ZONE_LABEL[z]} bölgesinin bütün Glemonlarını evcilleştirdin! O bölgede kalıcı +%5 hasar ve +%5 XP, ${ZONE_DONE.pul} ${PUL}.</span>`, 'gold');
+          S.changed();
+          render();
+        }, 'green tiny'));
+        else zr.appendChild(UI.el('span', 'rw-lock', label));
+      }
+      body.appendChild(zr);
+      body.appendChild(UI.el('p', 'muted', 'Bir bölgenin bütün türlerini evcilleştirince o bölgede kalıcı +%5 hasar ve +%5 XP.'));
       const groups = ZONES.filter((z) => z.open).map((z) => [z.name, [...ZONE_SPAWNS[z.key].map(([x]) => x), z.boss]]);
       groups.push(['Efsaneviler (yumurtadan)', Object.values(EGGS)]);
       groups.push(['Su Glemonları (oltaya takılır)', WATER_GLEMONS.map(([k]) => k)]);
       groups.push(['Dolunay Gecesi', ['ay_tavsani']]);
       groups.push(['Gece Glemonları (sadece gece Keşifte)', Object.keys(NIGHT_HOME)]);
+      groups.push(['Gizli Türler', Object.keys(SECRET_HOME)]);
       for (const [z, list] of groups) {
         body.appendChild(UI.el('h3', '', z));
         const grid = UI.el('div', 'album-grid');
@@ -838,19 +1118,19 @@ export function openAlbum(w, tab = 'glemon') {
           if (al.tamed[k]) marks.push('♥');
           if (al.shiny[k]) marks.push('✦');
           const kills = (S.save.stats.glemons || {})[k] || 0;
-          c.appendChild(UI.el('div', 'muted', al.seen[k] ? (d.egg ? marks.join(' ') || 'Efsanevi' : `${marks.join(' ')} ${kills} yenildi`) : d.boss ? 'Patron' : d.egg ? 'Yumurta' : RARITY[d.rarity].name));
+          c.appendChild(UI.el('div', 'muted', al.seen[k] ? (d.egg ? marks.join(' ') || 'Efsanevi' : `${marks.join(' ')} ${kills} yenildi`) : d.secret ? 'Gizli' : d.boss ? 'Patron' : d.egg ? 'Yumurta' : RARITY[d.rarity].name));
           const ms = masteryOf(kills);
           if (al.seen[k] && !d.egg && !d.boss) {
-            const me = UI.el('div', 'muted', ms.lvl ? `${'★'.repeat(ms.lvl)} hasar +%${Math.round(ms.bonus * 100)}` : `Ustalık: ${kills}/${ms.next}`);
+            const me = UI.el('div', 'muted', ms.lvl ? `${'★'.repeat(ms.lvl)}` : `Ustalık: ${kills}/${ms.next}`);
             if (ms.lvl) me.style.color = '#ffd04d';
             c.appendChild(me);
           }
-          c.title = al.seen[k] ? `${d.name} · ${d.type} tipi${d.special ? ' · ' + d.special.name : ''}${ms.next ? ` · sonraki ustalık: ${ms.next} yenme` : ''}` : '';
+          c.addEventListener('click', () => { sfx('click'); page = k; render(); body.scrollTop = 0; });
           grid.appendChild(c);
         }
         body.appendChild(grid);
       }
-      body.appendChild(UI.el('p', 'muted', '♥ evcilleştirdin · ✦ parlak versiyonunu gördün · ★ ustalık: bir türü 50, 250 ve 1000 kez yenince o türe hasarın %5, %10, %15 artar'));
+      body.appendChild(UI.el('p', 'muted', '♥ evcilleştirdin · ✦ parlak versiyonunu gördün · ★ ustalık kademesi (sayfasında ayrıntı)'));
     };
     render();
   }, { wide: true });
