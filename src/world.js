@@ -168,6 +168,9 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(time, dt) {
+    // 0.10.1: ussun disinda alt kisayollar kucuk ve profil kartinin altinda
+    const away = this.mode !== 'base';
+    if (away !== this._away) { this._away = away; UI.$('#ui').classList.toggle('away', away); }
     this.pShadow.x = this.player.x;
     // gunun saati: ustte (dis ve arsa) karakter de isiga gore boyanir
     const outdoor = this.mode === 'base' || this.mode === 'plot' || this.mode === 'pond' || this.mode === 'koru';

@@ -588,7 +588,9 @@ html, body {
   --ink-dim: #d4c2a4;
 }
 #ui { font-family: 'Nunito', 'Pixelify Sans', ui-sans-serif, sans-serif; font-weight: 700; }
-.panel-title, #banner, .float, .logo, .ebar .nm, #loc, .bubble.zzz, .timing .lbl, .dodge, .version { font-family: 'Pixelify Sans', 'Nunito', monospace; }
+/* 0.10.1 (Eren): oyunun her yerinde tek yazi tipi, Nunito. Basliklar kalin (800). */
+#ui, #login, .panel-title, #banner, .float, .logo, .ebar .nm, #loc, .bubble.zzz, .timing .lbl, .dodge, .version { font-family: 'Nunito', ui-sans-serif, sans-serif; }
+.panel-title, #banner, .logo, #loc, .float, .ebar .nm { font-weight: 800; }
 
 /* ---- dugmeler: yuvarlak, yumusak golgeli, basinca icine gomulur */
 .btn {
@@ -758,3 +760,18 @@ html, body {
 /* canta: 8 ekipman yuvasi iki sutunda */
 .equip-col { display: grid; grid-template-columns: repeat(2, auto); align-content: start; }
 .event-list .zone.event { justify-content: space-between; }
+
+/* ================= 0.10.1 (Eren): daha kucuk profil karti; ussun disinda kucuk kisayollar kartin altinda ================= */
+.hud-card { min-width: calc(70 * var(--u)); padding: calc(2 * var(--u)) calc(4 * var(--u)) calc(2.5 * var(--u)); }
+#hud-me { font-size: var(--fs-s); }
+#hud-me .bar { height: calc(5 * var(--u)); margin-top: calc(1.5 * var(--u)); }
+#hud-me .bar span { line-height: calc(5 * var(--u)); font-size: calc(5.4 * var(--u)); }
+#hud-me .hud-row.small { margin-top: calc(0.5 * var(--u)); }
+#feed { top: calc(30 * var(--u)); }
+#ui.away #dock { top: calc(32 * var(--u)); bottom: auto; gap: calc(1.5 * var(--u)); }
+#ui.away .btn.dock-btn { width: calc(14 * var(--u)); height: calc(14 * var(--u)); padding: 0 0 calc(1.5 * var(--u)); border-radius: calc(3 * var(--u)); }
+#ui.away .dock-btn .ico { width: calc(9 * var(--u)); height: calc(9 * var(--u)); }
+#ui.away .dock-btn .lbl { display: none; }
+#ui.away .dock-badge { min-width: calc(6 * var(--u)); height: calc(6 * var(--u)); line-height: calc(6 * var(--u)); font-size: calc(5 * var(--u)); top: calc(-1.5 * var(--u)); right: calc(-1.5 * var(--u)); }
+#ui.away #feed { top: calc(49 * var(--u)); }
+#ui.away:not(.fighting) #actions { left: 0; }

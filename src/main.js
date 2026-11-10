@@ -26,8 +26,9 @@ class BootScene extends Phaser.Scene {
     this.load.spritesheet('tuccar', 'assets/npc/tuccar.png', { frameWidth: BOOT.npc.w, frameHeight: BOOT.npc.h }); // 0.9 Gezgin Tuccar
     this.load.atlas('char', `assets/chars/${char}/atlas.png`, `assets/chars/${char}/atlas.json`);
     // 0.8.9: ekipmanin karakter ustunde gorunmesi icin parca haritasi
-    this.load.image('charparts', `assets/chars/${char}/parts.png`);
-    this.load.json('charatlas', `assets/chars/${char}/atlas.json`);
+    this.load.image('chargear', `assets/chars/${char}/gear.png`);
+    this.load.image('chargearcape', `assets/chars/${char}/cape.png`);
+    this.load.json('chargearjson', `assets/chars/${char}/gear.json`);
     // 0.4: her Glemon ve evrim asamasi tek resim: ust sira normal, alt sira parlak
     for (const [k, m] of Object.entries(gmeta)) {
       m.stages.forEach((st, s) => this.load.spritesheet(`gs_${k}_${s}`, `assets/glemons/${k}/${s}.png`, { frameWidth: st.w, frameHeight: st.h }));
@@ -36,7 +37,7 @@ class BootScene extends Phaser.Scene {
 
   create() {
     const { charMeta, gmeta } = BOOT;
-    try { initGear(this, this.cache.json.get('charatlas')); } catch (e) { console.error('gear', e); }
+    try { initGear(this, this.cache.json.get('chargearjson')); } catch (e) { console.error('gear', e); }
     S.onChange(refreshGear);
     for (const [a, m] of Object.entries(charMeta.anims)) {
       makeAnimFrames(this, `c_${a}`, 'char', m.frames, m.durations, LOOPING.has(a) ? -1 : 0);
