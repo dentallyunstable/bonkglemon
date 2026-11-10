@@ -48,7 +48,10 @@ export const TOD = {
   gunbatimi: { name: 'Günbatımı', stops: ['#3c3468', '#ac5c78', '#ec8a4e'], t: 0.32, warm: ['#e07040', 0.2], sun: 'right', tint: 0xffc4a4 },
   gece: { name: 'Gece', stops: null, t: 0.85, warm: null, sun: 'moon', tint: 0x7c84b4 },
 };
+// 0.10.5: yatakta gece uyuyunca sabaha (08:00) kadar gunduz sayilir
+export const TOD_SKIP = { until: 0 };
 export function todNow(d = new Date()) {
+  if (d.getTime() < TOD_SKIP.until) return 'gun';
   const h = d.getHours() + d.getMinutes() / 60;
   if (h >= 6 && h < 8) return 'gundogumu';
   if (h >= 8 && h < 18) return 'gun';
@@ -1165,9 +1168,11 @@ const ICON_BLOCKS = {
   ay_tasi: 'ay_tasi', altin_tugla: 'altin_tugla', pembe_yaprak: 'pembe_yaprak',
   hus_kutuk: 'hus_kutuk', cam_kutuk: 'cam_kutuk', kiraz_kutuk: 'kiraz_kutuk', hus_kalas: 'hus_kalas', cam_kalas: 'cam_kalas', kiraz_kalas: 'kiraz_kalas',
   toprak_blok: 'toprak', cimen_blok: 'cimen', cakil_blok: 'cakil',
+  pencere: 'pencere', somine: 'somine', raf: 'raf', hus_yaprak: 'hus_yaprak', cam_yaprak: 'cam_yaprak', tezgah: 'tezgah', firin0: 'firin0',
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
-const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener', merdiven: 'merdiven', mesale: 'mesale' };
+const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener', merdiven: 'merdiven', mesale: 'mesale',
+  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);

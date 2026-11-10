@@ -233,6 +233,8 @@ export const TITLES = [
   { k: 'koleksiyoncu', n: 'Koleksiyoncu', req: 'Albümü %100 doldur', ok: () => Object.keys(S.save.album.seen).length >= glemonN() },
   { k: 'ay_cocugu', n: 'Ay Çocuğu', req: 'Dolunay Tavşanı ile karşılaş', ok: () => !!S.save.album.seen.ay_tavsani },
   { k: 'basarim', n: 'Başarım Avcısı', req: '300 başarım puanı', ok: () => achPoints() >= 300 },
+  { k: 'yapici', n: 'Usta Yapıcı', req: 'Üs Puanı 250', ok: () => (S.save.plot.bestScore || 0) >= 250 },
+  { k: 'buyuk_mimar', n: 'Büyük Mimar', req: 'Üs Puanı 1000', ok: () => (S.save.plot.bestScore || 0) >= 1000 },
   { k: 'efsane', n: 'Efsane', req: 'Bir beceride 99', ok: () => SKILLS.some((s) => S.level(s.key) >= 99) },
 ];
 export function titleOf() { return TITLES.find((t) => t.k === S.save.title) || null; }

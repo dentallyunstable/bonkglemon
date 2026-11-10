@@ -243,7 +243,7 @@ function $battleVisible() {
 
 // ------------------------------------------------------------ depo
 export function openDepo(w) {
-  if (w.mode !== 'base') { UI.feed('Depo sadece üste.'); return; }
+  if (w.mode !== 'base' && w.mode !== 'plot') { UI.feed('Depo sadece üste.'); return; }
   UI.openPanel('Depo', (body) => {
     const render = () => {
       body.innerHTML = '';
@@ -841,7 +841,9 @@ function collectFurnace(w) {
 
 const recipeId = (r) => RECIPES.indexOf(r);
 const furnaceIdle = (f) => f.rid === null || f.rid === undefined || f.n <= 0;
-const unlocked = (r) => !!S.save.seen[Object.keys(r.mats)[0]];
+// 0.10.5: bazi mobilya tarifleri Us Puani ile acilir (en yuksek puana gore)
+const usLocked = (r) => r.us && (S.save.plot.bestScore || 0) < r.us;
+const unlocked = (r) => !!S.save.seen[Object.keys(r.mats)[0]] && !usLocked(r);
 const canMake = (r, n = 1) => Object.entries(r.mats).every(([id, k]) => S.countItem(id) >= k * n);
 function maxMake(r) {
   return Math.min(...Object.entries(r.mats).map(([id, k]) => Math.floor(S.countItem(id) / k)));
@@ -867,7 +869,8 @@ export function openStation(w, station) {
           row.classList.add('locked');
           row.appendChild(UI.el('span', 'q', '?'));
           row.appendChild(UI.el('span', 'nm', '???'));
-          row.title = `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`;
+          row.title = usLocked(r) ? `Üs Puanı ${r.us} olunca açılır` : `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`;
+          if (usLocked(r)) { row.lastChild.textContent = `Üs Puanı ${r.us}`; }
         } else {
           row.appendChild(UI.icon(it.icon));
           const nm = UI.el('span', 'nm', it.name);
@@ -918,7 +921,7 @@ function recipeDetail(w, station, r, render) {
   if (!r) { box.appendChild(UI.el('div', 'muted', 'Henüz açılmış tarif yok. Malzeme buldukça tarifler açılır.')); return box; }
   if (!unlocked(r)) {
     box.appendChild(UI.el('div', 'nm', '???'));
-    box.appendChild(UI.el('div', 'muted', `Bu tarif, ${ITEMS[Object.keys(r.mats)[0]].name} ilk kez bulunca açılır.`));
+    box.appendChild(UI.el('div', 'muted', usLocked(r) ? `Bu tarif, arsanın Üs Puanı ${r.us} olunca açılır. Arsana blok koydukça puan artar.` : `Bu tarif, ${ITEMS[Object.keys(r.mats)[0]].name} ilk kez bulunca açılır.`));
     return box;
   }
   const it = ITEMS[r.out];
@@ -1498,3 +1501,21 @@ export function openMerchant(w) {
   }, { wide: true });
 }
 
+
+// 0.10.5 Kupa Rafi: yenilen bolge patronlarinin gunlugu
+export function openTrophies(w) {
+  UI.openPanel('Kupa Rafı', (body) => {
+    const st = S.save.stats;
+    body.appendChild(UI.el('div', 'muted', `Yendiğin bölge patronları · toplam ${st.bossKills || 0} patron zaferi`));
+    const grid = UI.el('div', 'trophies');
+    for (const z of ZONES) {
+      const n = st.glemons[z.boss] || 0;
+      const c = UI.el('div', 'trophy' + (n ? '' : ' none'));
+      c.appendChild(UI.glemonImg(w.gmeta, z.boss, 0, false, { w: 40, h: 34 }, !n));
+      c.appendChild(UI.el('b', '', n ? GLEMONS[z.boss].name : '???'));
+      c.appendChild(UI.el('span', 'muted', n ? `${z.name} · ${n} kez` : `${z.name} patronu`));
+      grid.appendChild(c);
+    }
+    body.appendChild(grid);
+  });
+}

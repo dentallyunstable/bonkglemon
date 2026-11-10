@@ -775,3 +775,13 @@ html, body {
 #ui.away .dock-badge { min-width: calc(6 * var(--u)); height: calc(6 * var(--u)); line-height: calc(6 * var(--u)); font-size: calc(5 * var(--u)); top: calc(-1.5 * var(--u)); right: calc(-1.5 * var(--u)); }
 #ui.away #feed { top: calc(49 * var(--u)); }
 #ui.away:not(.fighting) #actions { left: 0; }
+
+/* ---- 0.10.5 Insa: kayan blok cubugu, tabela, kupa rafi */
+.build-scroll { display: flex; gap: calc(3 * var(--u)); overflow-x: auto; max-width: calc(250 * var(--u)); padding: calc(1.5 * var(--u)); scrollbar-width: thin; }
+.build-scroll .build-btn { flex: none; }
+#actions:has(.build-scroll) { flex-wrap: nowrap; align-items: center; gap: calc(3 * var(--u)); }
+.objlabel.sign { font-size: calc(6 * var(--u)); padding: calc(0.3 * var(--u)) calc(2 * var(--u)) calc(0.6 * var(--u)); transform: translate(-50%, -100%); white-space: nowrap; }
+.sign-input { width: 100%; font: inherit; font-size: var(--fs-m); padding: calc(3 * var(--u)); margin: calc(3 * var(--u)) 0; border-radius: calc(3 * var(--u)); border: calc(1 * var(--u)) solid var(--wood-dark); background: var(--cream); color: var(--ink-brown); box-sizing: border-box; }
+.trophies { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(4 * var(--u)); margin-top: calc(4 * var(--u)); }
+.trophy { display: flex; flex-direction: column; align-items: center; gap: calc(1 * var(--u)); padding: calc(4 * var(--u)); border-radius: calc(4 * var(--u)); background: rgba(240, 208, 128, 0.12); box-shadow: inset 0 0 0 calc(1 * var(--u)) rgba(240, 208, 128, 0.45); text-align: center; }
+.trophy.none { opacity: 0.55; background: rgba(0, 0, 0, 0.15); box-shadow: none; }

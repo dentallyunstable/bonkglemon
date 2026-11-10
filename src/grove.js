@@ -141,6 +141,9 @@ export const GroveMixin = {
     const out = [[t.log, logs], ['dal', 1 + Math.floor(Math.random() * 2)]];
     if (Math.random() < 0.85) out.push([t.sap, 1 + (Math.random() < 0.25 ? 1 : 0)]);
     if (pl.k === 'mese' && Math.random() < 0.2) out.push(['bogurtlen', 1]);
+    // 0.10.5: yapraklar da insa blogu olarak duser
+    const leaf = { mese: 'yaprak_blogu', hus: 'hus_yaprak_blok', cam: 'cam_yaprak_blok', kiraz: 'pembe_yaprak' }[pl.k];
+    if (leaf) out.push([leaf, 1 + Math.floor(Math.random() * 3)]);
     let y = GROUND_Y - 50;
     for (const [id, n] of out) {
       const left = S.addItem(id, n);

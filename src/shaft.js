@@ -121,7 +121,6 @@ export const ShaftMixin = {
     this.sh = { rows: new Map(), lights: [] };
     const v = this.sv();
     if (!this.standOk(v.pr, v.pc)) { v.pr = -1; v.pc = 5; }
-    this.bg.setScrollFactor(0);
     this.shLayerBg(true);
     // yuzeyde orman (kuyu ustundeki gokyuzu)
     const sky = this.add.image(0, SH.TOP - 178, this.todBg('bg_base')).setOrigin(0).setDepth(1);
@@ -164,7 +163,7 @@ export const ShaftMixin = {
     this.pShadow.y = p.y + 1;
   },
   shCamY() { return Math.max(0, this.shFeet(this.sv().pr) - 140); },
-  shFloat(x, y, text, cls) { UI.floatText(x, y - this.cameras.main.scrollY, text, cls); },
+  shFloat(x, y, text, cls) { UI.floatText(x, y, text, cls); },
 
   // gorunen satirlari ciz (kaydirildikca eklenir/silinir)
   shRender(full = false) {
@@ -317,7 +316,6 @@ export const ShaftMixin = {
   shExit() {
     this.shClearRows();
     this.cameras.main.scrollY = 0;
-    this.bg.setScrollFactor(1);
     this.player.setScale(1);
     this.shDark = null;
     this.sh = null;

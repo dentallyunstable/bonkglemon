@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.10.1';
+export const VERSION = '0.10.5';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -743,6 +743,35 @@ Object.assign(ITEMS, {
   cakil_blok: { name: 'Çakıl Bloğu', kind: 'malzeme', rarity: 'siradan', icon: 'cakil_blok', desc: 'İnşa bloğu (İpek kazmayla gelir).' },
 });
 
+Object.assign(ITEMS, {
+  // 0.10.5 Insa: yeni bloklar ve mobilyalar
+  tas_yarim: { name: 'Yarım Taş', kind: 'malzeme', rarity: 'siradan', icon: 'tas_yarim', desc: 'İnşa: yarım boy taş blok (basamak, kenar).' },
+  kalas_yarim: { name: 'Yarım Kalas', kind: 'malzeme', rarity: 'siradan', icon: 'kalas_yarim', desc: 'İnşa: yarım boy kalas.' },
+  tas_basamak: { name: 'Taş Basamak', kind: 'malzeme', rarity: 'siradan', icon: 'tas_basamak', desc: 'İnşa: merdiven basamağı.' },
+  kalas_basamak: { name: 'Kalas Basamak', kind: 'malzeme', rarity: 'siradan', icon: 'kalas_basamak', desc: 'İnşa: tahta basamak.' },
+  pencere: { name: 'Pencere', kind: 'malzeme', rarity: 'siradan', icon: 'pencere', desc: 'İnşa: perdeli ahşap pencere.' },
+  hali_kirmizi: { name: 'Kırmızı Halı', kind: 'malzeme', rarity: 'siradan', icon: 'hali_k', desc: 'İnşa: yere serilen halı.' },
+  hali_mavi: { name: 'Mavi Halı', kind: 'malzeme', rarity: 'siradan', icon: 'hali_m', desc: 'İnşa: yere serilen halı.' },
+  yatak: { name: 'Yatak', kind: 'malzeme', rarity: 'siradan', icon: 'yatak_bas', desc: 'Mobilya (2 blok): dokun, uyu. Canın dolar; akşam ya da geceyse sabaha kadar uyursun.' },
+  ahsap_masa: { name: 'Ahşap Masa', kind: 'malzeme', rarity: 'siradan', icon: 'masa_m', desc: 'Mobilya: masa.' },
+  sandalye: { name: 'Sandalye', kind: 'malzeme', rarity: 'siradan', icon: 'sandalye', desc: 'Mobilya: sandalye.' },
+  kitaplik: { name: 'Kitaplık', kind: 'malzeme', rarity: 'siradan', icon: 'raf', desc: 'Mobilya: kitap ve kavanoz rafı.' },
+  somine: { name: 'Şömine', kind: 'malzeme', rarity: 'siradan', icon: 'somine', desc: 'Mobilya: geceleri ışık saçar.' },
+  saksi: { name: 'Çiçek Saksısı', kind: 'malzeme', rarity: 'siradan', icon: 'saksi', desc: 'Süs: pembe çiçekli saksı.' },
+  tabela_blok: { name: 'Tabela', kind: 'malzeme', rarity: 'siradan', icon: 'tabela', desc: 'Mobilya: dokun, üstüne yazı yaz.' },
+  bayrak_kirmizi: { name: 'Kırmızı Bayrak', kind: 'malzeme', rarity: 'siradan', icon: 'bayrak_k', desc: 'Süs: direkli bayrak.' },
+  bayrak_mavi: { name: 'Mavi Bayrak', kind: 'malzeme', rarity: 'siradan', icon: 'bayrak_m', desc: 'Süs: direkli bayrak.' },
+  depo_sandigi: { name: 'Depo Sandığı', kind: 'malzeme', rarity: 'siradan', icon: 'sandik', desc: 'Mobilya: arsana koyunca Depo 10 yer büyür (en fazla 4 sandık). Dokununca Depo açılır.' },
+  kupa_rafi: { name: 'Kupa Rafı', kind: 'malzeme', rarity: 'siradan', icon: 'kupa_rafi', desc: 'Mobilya: dokununca yendiğin patronların günlüğünü gösterir.' },
+  glemon_heykeli: { name: 'Glemon Heykeli', kind: 'malzeme', rarity: 'siradan', icon: 'heykel', desc: 'Süs: taç giymiş taş Glemon. Üs Puanı 1000 ödülü.' },
+  hus_yaprak_blok: { name: 'Huş Yaprağı', kind: 'malzeme', rarity: 'siradan', icon: 'hus_yaprak', desc: 'İnşa bloğu: açık yeşil yaprak. Koruda huş ağacından düşer.' },
+  cam_yaprak_blok: { name: 'Çam Yaprağı', kind: 'malzeme', rarity: 'siradan', icon: 'cam_yaprak', desc: 'İnşa bloğu: koyu yeşil yaprak. Koruda çam ağacından düşer.' },
+  tasinir_masa: { name: 'Taşınır Üretim Masası', kind: 'malzeme', rarity: 'siradan', icon: 'tezgah', desc: 'Arsana koy: evinde de üretim yaparsın.' },
+  tasinir_firin: { name: 'Taşınır Fırın', kind: 'malzeme', rarity: 'siradan', icon: 'firin0', desc: 'Arsana koy: avludaki fırının aynısı (aynı ateş).' },
+  tasinir_kazan: { name: 'Taşınır Simya Kazanı', kind: 'malzeme', rarity: 'siradan', icon: 'kazan0', desc: 'Arsana koy: evinde iksir yaparsın.' },
+  varil: { name: 'Varil', kind: 'malzeme', rarity: 'siradan', icon: 'varil', desc: 'Süs: ahşap varil.' },
+  kalkan_duvar: { name: 'Duvar Kalkanı', kind: 'malzeme', rarity: 'siradan', icon: 'kalkan', desc: 'Süs: duvara asılan kalkan.' },
+});
 // Su Glemonlari sadece balik tutarken cikar
 export const WATER_GLEMONS = [['damlacik', 50], ['inci_istiridye', 35], ['gol_ejderi', 15]];
 for (const [k, f] of Object.entries(FISH)) {
@@ -1060,6 +1089,31 @@ export const RECIPES = [
   { out: 'hus_kalas', n: 4, mats: { hus_kutuk: 1 }, station: 'masa', lvl: 5, xp: 10 },
   { out: 'cam_kalas', n: 4, mats: { cam_kutuk: 1 }, station: 'masa', lvl: 10, xp: 12 },
   { out: 'kiraz_kalas', n: 4, mats: { kiraz_kutuk: 1 }, station: 'masa', lvl: 15, xp: 16 },
+  // 0.10.5 Insa (us: bu Us Puanina ulasinca acilir)
+  { out: 'tas_yarim', n: 2, mats: { tas: 1 }, station: 'masa', lvl: 1, xp: 4 },
+  { out: 'kalas_yarim', n: 2, mats: { tahta_kalas: 1 }, station: 'masa', lvl: 1, xp: 4 },
+  { out: 'tas_basamak', n: 4, mats: { tas: 3 }, station: 'masa', lvl: 3, xp: 10 },
+  { out: 'kalas_basamak', n: 4, mats: { tahta_kalas: 3 }, station: 'masa', lvl: 3, xp: 10 },
+  { out: 'pencere', n: 2, mats: { tahta_kalas: 2, cam: 2 }, station: 'masa', lvl: 6, xp: 30 },
+  { out: 'hali_kirmizi', n: 2, mats: { bogurtlen: 2, dal: 2 }, station: 'masa', lvl: 4, xp: 20 },
+  { out: 'yatak', mats: { tahta_kalas: 3, sifali_ot: 4 }, station: 'masa', lvl: 5, xp: 50 },
+  { out: 'ahsap_masa', mats: { tahta_kalas: 4 }, station: 'masa', lvl: 3, xp: 25 },
+  { out: 'sandalye', n: 2, mats: { tahta_kalas: 2, dal: 2 }, station: 'masa', lvl: 3, xp: 20 },
+  { out: 'tabela_blok', n: 2, mats: { tahta_kalas: 2, dal: 1 }, station: 'masa', lvl: 2, xp: 15 },
+  { out: 'depo_sandigi', mats: { tahta_kalas: 6, demir_kulcesi: 1 }, station: 'masa', lvl: 6, xp: 60 },
+  { out: 'tasinir_masa', mats: { tahta_kalas: 6, demir_kulcesi: 2 }, station: 'masa', lvl: 5, xp: 60 },
+  { out: 'tasinir_firin', mats: { tas: 12, komur: 2 }, station: 'masa', lvl: 5, xp: 60 },
+  { out: 'tasinir_kazan', mats: { demir_kulcesi: 4, tas: 2 }, station: 'masa', lvl: 10, xp: 80 },
+  { out: 'saksi', n: 2, mats: { tas: 1, sifali_ot: 1 }, station: 'masa', lvl: 2, xp: 12, us: 100 },
+  { out: 'bayrak_kirmizi', mats: { dal: 2, bogurtlen: 1 }, station: 'masa', lvl: 4, xp: 15, us: 100 },
+  { out: 'bayrak_mavi', mats: { dal: 2, sifali_ot: 1 }, station: 'masa', lvl: 4, xp: 15, us: 100 },
+  { out: 'somine', mats: { tas: 8, komur: 3 }, station: 'masa', lvl: 10, xp: 80, us: 250 },
+  { out: 'kupa_rafi', mats: { tahta_kalas: 3, altin_kulcesi: 1 }, station: 'masa', lvl: 12, xp: 90, us: 250 },
+  { out: 'hali_mavi', n: 2, mats: { sifali_ot: 2, dal: 2 }, station: 'masa', lvl: 4, xp: 20, us: 250 },
+  { out: 'kitaplik', mats: { tahta_kalas: 4, dal: 2 }, station: 'masa', lvl: 8, xp: 40, us: 500 },
+  { out: 'kalkan_duvar', mats: { tahta_kalas: 2, demir_kulcesi: 1 }, station: 'masa', lvl: 6, xp: 30, us: 500 },
+  { out: 'varil', mats: { tahta_kalas: 3 }, station: 'masa', lvl: 2, xp: 15, us: 500 },
+  { out: 'glemon_heykeli', mats: { tas: 10, altin_kulcesi: 2 }, station: 'masa', lvl: 15, xp: 200, us: 1000 },
 ];
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -1114,14 +1168,14 @@ export const BUILD = {
   kutuk: { tex: 'kutuk', lvl: 1, xp: 14, pts: 2 },
   kum: { tex: 'kum', lvl: 1, xp: 4, pts: 1 },
   tas: { tex: 'tas', lvl: 1, xp: 4, pts: 1 },
-  cit: { tex: 'cit', lvl: 2, xp: 10, pts: 2 },
+  cit: { tex: 'cit', lvl: 2, xp: 10, pts: 2, prop: true },
   kaldirim: { tex: 'kaldirim', lvl: 3, xp: 8, pts: 2 },
   tarla: { tex: 'tarla', lvl: 3, xp: 25, pts: 4, ground: true, furn: true },
   tas_tugla: { tex: 'tugla', lvl: 5, xp: 16, pts: 3 },
-  ahsap_kapi: { tex: 'kapi_alt', top: 'kapi_ust', lvl: 6, xp: 30, pts: 5, tall: true },
+  ahsap_kapi: { tex: 'kapi_alt', top: 'kapi_ust', lvl: 6, xp: 30, pts: 5, tall: true, func: 'kapi' },
   kiremit: { tex: 'kiremit', lvl: 8, xp: 16, pts: 3, shapes: ['kiremit', 'kiremit_sol', 'kiremit_sag'] },
   yaprak_blogu: { tex: 'yaprak', lvl: 10, xp: 10, pts: 2 },
-  fener: { tex: 'fener', lvl: 12, xp: 40, pts: 6 },
+  fener: { tex: 'fener', lvl: 12, xp: 40, pts: 6, prop: true, glow: 1 },
   cam: { tex: 'cam', lvl: 12, xp: 14, pts: 3 },
   renkli_cam: { tex: 'renkli_cam', lvl: 15, xp: 20, pts: 4 },
   // 0.10 agac ve maden bloklari
@@ -1138,15 +1192,53 @@ export const BUILD = {
   ay_tasi: { tex: 'ay_tasi', lvl: 5, xp: 20, pts: 5 },
   altin_tugla: { tex: 'altin_tugla', lvl: 5, xp: 20, pts: 5 },
   pembe_yaprak: { tex: 'pembe_yaprak', lvl: 5, xp: 16, pts: 4 },
-  mavi_fener: { tex: 'mavi_fener', lvl: 5, xp: 40, pts: 8 },
+  mavi_fener: { tex: 'mavi_fener', lvl: 5, xp: 40, pts: 8, prop: true, glow: 1 },
+  // 0.10.5 Insa (prop: saydam suslu esya, arka duvara konmaz; func: dokununca ise yarar)
+  merdiven: { tex: 'merdiven', lvl: 1, xp: 6, pts: 1, prop: true },
+  mesale: { tex: 'mesale', lvl: 1, xp: 8, pts: 2, prop: true, glow: 0.6 },
+  tas_yarim: { tex: 'tas_yarim', lvl: 2, xp: 4, pts: 1, prop: true },
+  kalas_yarim: { tex: 'kalas_yarim', lvl: 2, xp: 6, pts: 1, prop: true },
+  tas_basamak: { tex: 'tas_basamak', lvl: 3, xp: 6, pts: 1, prop: true },
+  kalas_basamak: { tex: 'kalas_basamak', lvl: 3, xp: 8, pts: 2, prop: true },
+  pencere: { tex: 'pencere', lvl: 6, xp: 18, pts: 4 },
+  hali_kirmizi: { tex: 'hali_k', lvl: 4, xp: 10, pts: 3, prop: true },
+  hali_mavi: { tex: 'hali_m', lvl: 4, xp: 10, pts: 3, prop: true },
+  yatak: { tex: 'yatak_bas', wide: 'yatak_ayak', lvl: 5, xp: 40, pts: 10, prop: true, func: 'yatak' },
+  ahsap_masa: { tex: 'masa_m', lvl: 3, xp: 20, pts: 5, prop: true },
+  sandalye: { tex: 'sandalye', lvl: 3, xp: 12, pts: 3, prop: true },
+  kitaplik: { tex: 'raf', lvl: 8, xp: 25, pts: 8 },
+  somine: { tex: 'somine', lvl: 10, xp: 40, pts: 12, glow: 1 },
+  saksi: { tex: 'saksi', lvl: 2, xp: 10, pts: 4, prop: true },
+  tabela_blok: { tex: 'tabela', lvl: 2, xp: 10, pts: 3, prop: true, func: 'tabela' },
+  bayrak_kirmizi: { tex: 'bayrak_k', lvl: 4, xp: 14, pts: 5, prop: true },
+  bayrak_mavi: { tex: 'bayrak_m', lvl: 4, xp: 14, pts: 5, prop: true },
+  depo_sandigi: { tex: 'sandik', lvl: 6, xp: 30, pts: 6, prop: true, func: 'sandik' },
+  kupa_rafi: { tex: 'kupa_rafi', lvl: 12, xp: 50, pts: 15, prop: true, func: 'kupa' },
+  glemon_heykeli: { tex: 'heykel', lvl: 15, xp: 120, pts: 40, prop: true },
+  hus_yaprak_blok: { tex: 'hus_yaprak', lvl: 1, xp: 8, pts: 2 },
+  cam_yaprak_blok: { tex: 'cam_yaprak', lvl: 1, xp: 8, pts: 2 },
+  tasinir_masa: { tex: 'tezgah', lvl: 5, xp: 40, pts: 8, func: 'masa' },
+  tasinir_firin: { tex: 'firin0', lvl: 5, xp: 40, pts: 8, func: 'firin' },
+  tasinir_kazan: { tex: 'kazan0', lvl: 10, xp: 50, pts: 8, prop: true, func: 'kazan' },
+  varil: { tex: 'varil', lvl: 2, xp: 10, pts: 3, prop: true },
+  kalkan_duvar: { tex: 'kalkan', lvl: 6, xp: 16, pts: 5, prop: true },
 };
 export const BUILD_ORDER = Object.keys(BUILD);
 // Arsa boyu Insa seviyesiyle buyur (tasarim belgesi 16x8 -> 32x12; ekrana sigsin diye 24x10'a kadar)
+// 0.10.5: arsa 64 blok genis ve kayar; yuksekligi Insa seviyesiyle buyur
+export const PLOT_COLS = 64;
 export function plotSize(insaLvl) {
-  const cols = insaLvl >= 40 ? 24 : insaLvl >= 20 ? 20 : 16;
+  const cols = PLOT_COLS;
   const rows = insaLvl >= 60 ? 10 : insaLvl >= 40 ? 9 : 8;
   return { cols, rows };
 }
+// 0.10.5 Us Puani odulleri: en yuksek Us Puanina gore tarifler acilir (recipe.us) ve unvan
+export const BASE_REWARDS = [
+  { pts: 100, items: ['saksi', 'bayrak_kirmizi', 'bayrak_mavi'], pul: 5 },
+  { pts: 250, items: ['somine', 'kupa_rafi', 'hali_mavi'], pul: 10, title: 'yapici' },
+  { pts: 500, items: ['kitaplik', 'kalkan_duvar', 'varil'], pul: 15 },
+  { pts: 1000, items: ['glemon_heykeli'], pul: 25, title: 'buyuk_mimar' },
+];
 export const MAX_TARLA = (insaLvl) => Math.min(16, 4 + Math.floor(insaLvl / 10) * 2);
 // Bahce: tohum -> urun
 export const SEEDS = {

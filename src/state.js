@@ -40,7 +40,7 @@ function freshSave(char) {
     droplog: [],
     settings: { sound: true, auto: false },
     // 0.3 Us: arsa hucreleri "sutun,sira" -> { id, shape? }, bahce "sutun" -> { seed, t0 }
-    plot: { cells: {}, garden: {}, best: 0 },
+    plot: { cells: {}, garden: {}, best: 0, back: {}, kinds: {}, rw: {}, bestScore: 0 },
     lastSeen: Date.now(),
     // 0.4 evcil Glemonlar: { id, key, stage, shiny, lvl, xp, t }
     pets: [],
@@ -115,6 +115,13 @@ export const S = {
     if (!data.fishing) data.fishing = { caught: {}, best: {}, bait: 'yok', total: 0 };
     if (!data.upg) data.upg = {};
     if (!data.perks) data.perks = {};
+    // 0.10.5 Insa: arka duvar katmani, ilk kez konan blok turleri, odul basamaklari, depo sandiklari
+    data.plot.back = data.plot.back || {};
+    data.plot.kinds = data.plot.kinds || {};
+    data.plot.rw = data.plot.rw || {};
+    data.plot.bestScore = data.plot.bestScore || 0;
+    { const chests = Object.values(data.plot.cells).filter((c) => c && c.id === 'depo_sandigi').length;
+      while (data.depo.length < DEPO_SIZE + 10 * Math.min(4, chests)) data.depo.push(null); }
     for (const x of [...data.bag, ...data.depo]) if (x) data.seen[x.id] = true;
     for (const id of Object.values(data.equip)) if (id) data.seen[id] = true;
     // bilinmeyen esya kimliklerini temizle (eski surumlerden kalma)
@@ -502,10 +509,14 @@ export const S = {
 
   // ------------------------------------------------ us (0.3)
   baseScore() {
-    return Math.round(Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0) * this.perk('usta_insa', 1.25, 1));
+    const front = Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top || c.part ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0);
+    // 0.10.5: arka duvar bloklari yarim puan
+    const back = Object.values(this.save.plot.back || {}).reduce((t, c) => t + (BUILD[c.id] ? BUILD[c.id].pts / 2 : 0), 0);
+    return Math.round((front + back) * this.perk('usta_insa', 1.25, 1));
   },
+  depoSize() { return DEPO_SIZE + 10 * Math.min(4, Object.values(this.save.plot.cells).filter((c) => c.id === 'depo_sandigi').length); },
   placedCount() {
-    return Object.values(this.save.plot.cells).filter((c) => !c.top).length;
+    return Object.values(this.save.plot.cells).filter((c) => !c.top && !c.part).length + Object.keys(this.save.plot.back || {}).length;
   },
 
   // ------------------------------------------------ evcil Glemonlar (0.4)

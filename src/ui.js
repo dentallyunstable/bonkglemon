@@ -26,13 +26,15 @@ export function escapeHtml(s) {
 const ui = () => $('#ui');
 
 // oyun koordinatini (384x216) ekran yuzdesine cevir
+// 0.10.5: kamera kayinca (arsa, maden) dunya koordinatli yazilar ekranda dogru yerde dursun
+export const view = { x: 0, y: 0 };
 export const pctX = (x) => (x / GAME_W) * 100 + '%';
 export const pctY = (y) => (y / GAME_H) * 100 + '%';
 
 // ------------------------------------------------------------ yazilar
 export function floatText(x, y, text, cls = '') {
   const e = el('div', 'float ' + cls, text);
-  e.style.left = pctX(x); e.style.top = pctY(y);
+  e.style.left = pctX(x - view.x); e.style.top = pctY(y - view.y);
   $('#floats').appendChild(e);
   setTimeout(() => e.remove(), 1100);
 }
@@ -40,7 +42,7 @@ export function floatText(x, y, text, cls = '') {
 export function bubble(x, y, html, ms = 2600, cls = '') {
   const e = el('div', 'bubble ' + cls);
   e.innerHTML = html;
-  e.style.left = pctX(x); e.style.top = pctY(y);
+  e.style.left = pctX(x - view.x); e.style.top = pctY(y - view.y);
   $('#floats').appendChild(e);
   setTimeout(() => e.classList.add('fade'), ms - 400);
   setTimeout(() => e.remove(), ms);

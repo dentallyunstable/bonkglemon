@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE,
+  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -15,8 +15,8 @@ import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
-import { TOD, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant } from './panels.js';
+import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies } from './panels.js';
 import { ShaftMixin } from './shaft.js';
 import { GroveMixin } from './grove.js';
 import { refreshGoals, readyCount, goalTick, fullMoon, merchantHere, todayRule, PUL, clockOk, dayNum, weekNum, addPul, titleOf } from './goals.js';
@@ -51,7 +51,8 @@ export class WorldScene extends Phaser.Scene {
     { const cam = this.cameras.main; const orig = cam.shake.bind(cam); cam.shake = (...a) => (S.save.settings.shake === false ? cam : orig(...a)); }
     this.playerHomeX = PLAYER_HOME;
     this.coinUrl = iconUrl('cimen');
-    this.bg = this.add.image(0, 0, 'bg_base').setOrigin(0).setDepth(0);
+    this.bg = this.add.image(0, 0, 'bg_base').setOrigin(0).setDepth(0).setScrollFactor(0);
+    TOD_SKIP.until = S.save.dayUntil || 0;
     this.roomObjs = [];
     this.labels = [];
     this.pShadow = this.add.image(0, GROUND_Y + 1, 'shadow').setDepth(9);
@@ -172,6 +173,18 @@ export class WorldScene extends Phaser.Scene {
     const away = this.mode !== 'base';
     if (away !== this._away) { this._away = away; UI.$('#ui').classList.toggle('away', away); }
     this.pShadow.x = this.player.x;
+    // 0.10.5: genis arsada kamera karakteri izler; yazilar da kamerayla kayar
+    const cam = this.cameras.main;
+    if (this.mode === 'plot') {
+      const g = this.plotGeom();
+      const tx = Phaser.Math.Clamp(this.player.x - GAME_W / 2, 0, Math.max(0, g.w - GAME_W));
+      cam.scrollX += Math.abs(tx - cam.scrollX) < 1 ? tx - cam.scrollX : (tx - cam.scrollX) * Math.min(1, dt / 120);
+      cam.scrollX = Math.round(cam.scrollX);
+    } else if (cam.scrollX) cam.scrollX = 0;
+    if (UI.view.x !== cam.scrollX || UI.view.y !== cam.scrollY) {
+      UI.view.x = cam.scrollX; UI.view.y = cam.scrollY;
+      for (const l of this.labels) if (l._x !== undefined) l.style.left = UI.pctX(l._x - cam.scrollX);
+    }
     // gunun saati: ustte (dis ve arsa) karakter de isiga gore boyanir
     const outdoor = this.mode === 'base' || this.mode === 'plot' || this.mode === 'pond' || this.mode === 'koru';
     const ptint = outdoor ? TOD[this.tod].tint : 0xffffff;
@@ -207,7 +220,7 @@ export class WorldScene extends Phaser.Scene {
       if (left !== right) {
         if (this.player._moveTween) this.player._moveTween.stop();
         this.walkTok++;
-        this.player.x = Phaser.Math.Clamp(this.player.x + (right ? 1 : -1) * 75 * dt / 1000, 12, GAME_W - 12);
+        this.player.x = Phaser.Math.Clamp(this.player.x + (right ? 1 : -1) * 75 * dt / 1000, 12, this.worldMaxX());
         this.player.setFlipX(left);
         this.player.play('c_walk', true);
         this.kbWalk = true;
@@ -338,7 +351,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.mode === 'plot' && !this.busy && !UI.panelOpen() && this.plotTap(ptr)) return;
     if (over && over.length) return;
     if (!this.canWalk() || this.busy || UI.panelOpen()) return;
-    this.walkThen(Phaser.Math.Clamp(ptr.worldX, 12, GAME_W - 12), null);
+    this.walkThen(Phaser.Math.Clamp(ptr.worldX, 12, this.worldMaxX()), null);
   }
 
   async walkThen(x, fn) {
@@ -526,7 +539,7 @@ export class WorldScene extends Phaser.Scene {
     else if (this.mode === 'plot') {
       const g = this.plotGeom();
       for (const [key, c] of Object.entries(S.save.plot.cells)) {
-        if (c.id !== 'fener') continue;
+        if (!BUILD[c.id] || !BUILD[c.id].glow || c.top || c.part) continue;
         const [cc, rr] = key.split(',').map(Number);
         if (cc < g.cols && rr < g.rows) spots.push([g.x0 + cc * 16 + 8, G - rr * 16 - 6, 1]);
       }
@@ -557,12 +570,16 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ arsa ve insa (0.3)
   // Arsa: usteki ayri ekran. Blok izgarasi zeminden yukari (sira 0 = zemin ustu).
+  // 0.10.5: arsa 64 blok genis ve kayar (kamera karakteri izler). Sutun numaralari eskisiyle
+  // ayni, eski arsalar sol bastan aynen durur.
   plotGeom() {
     const { cols, rows: r0 } = plotSize(S.level('insa'));
     const rows = r0 + (S.has('mimar') ? 1 : 0);
-    const x0 = Math.floor((GAME_W - cols * 16) / 32) * 16;
-    return { cols, rows, x0 };
+    const x0 = 32;
+    return { cols, rows, x0, w: x0 * 2 + cols * 16 };
   }
+
+  worldMaxX() { return this.mode === 'plot' ? this.plotGeom().w - 12 : GAME_W - 12; }
 
   cellAt(wx, wy) {
     const g = this.plotGeom();
@@ -586,6 +603,7 @@ export class WorldScene extends Phaser.Scene {
     await moveTo(this.player, 40, { speed: 95, anim: 'c_walk' });
     this.idle();
     this.busy = false;
+    if (!S.save.flags.plot105) { S.save.flags.plot105 = 1; UI.feed('Arsan artık 64 blok genişliğinde! Yürüdükçe ekran kayar. İnşa ederken Ön/Arka seçerek duvarın arkasına da blok koyabilirsin; yatak, sandık, tabela ve kupa rafına dokununca işe yarar.'); }
   }
 
   async leavePlot() {
@@ -594,8 +612,9 @@ export class WorldScene extends Phaser.Scene {
     this.busy = true;
     this.walkTok++;
     UI.setActions([]);
-    await moveTo(this.player, -12, { speed: 190, anim: 'c_sprint' });
+    await moveTo(this.player, Math.max(-12, this.cameras.main.scrollX - 12), { speed: 220, anim: 'c_sprint' });
     await this.fade(true);
+    this.cameras.main.setScroll(0, 0);
     this.goBase('plot');
     this.player.setFlipX(true);
     await this.fade(false);
@@ -610,10 +629,13 @@ export class WorldScene extends Phaser.Scene {
     this.bg.setTexture(this.todBg('bg_plot'));
     const g = this.plotGeom();
     const G = GROUND_Y;
-    // arsanin iki kenarinda direk
+    // arsa boyunca zemin (arka plan sabit kalir, cimen zemin arsayla kayar)
+    for (let x = -16; x < g.w + 16; x += 16) this.roomObjs.push(this.add.image(x, G, 'blocks', 'cimen').setOrigin(0, 0).setDepth(2));
     for (const x of [g.x0 - 8, g.x0 + g.cols * 16 + 8]) this.roomObjs.push(this.add.image(x, G, 'blocks', 'direk').setOrigin(0.5, 1).setDepth(3));
     this.plotImg = null;
+    this.plotBackImg = null;
     this.gardenSprites = {};
+    this.buildLayer = this.buildLayer || 'on';
     this.drawPlot();
     this.refreshGarden();
     this.applyTod();
@@ -633,24 +655,59 @@ export class WorldScene extends Phaser.Scene {
     ]);
   }
 
-  // Arsadaki bloklar tek resimde cizilir; yapinin disina karakterdeki gibi koyu cizgi gelir.
+  plotFrame(cell) {
+    const def = BUILD[cell.id];
+    if (!def) return null;
+    if (cell.top) return cell.open ? 'kapi_acik_ust' : def.top;
+    if (cell.part) return def.wide;
+    if (cell.open) return 'kapi_acik_alt';
+    return cell.shape || def.tex;
+  }
+
+  // Arsadaki bloklar iki resimde cizilir: arka duvar (koyu, cizgisiz) ve on (dis cizgili).
   drawPlot() {
     const g = this.plotGeom();
-    const pix = new Pix(g.cols * 16 + 2, g.rows * 16 + 2);
-    for (const [key, cell] of Object.entries(S.save.plot.cells)) {
+    const W = g.cols * 16 + 2; const H = g.rows * 16 + 2;
+    const back = new Pix(W, H);
+    for (const [key, cell] of Object.entries(S.save.plot.back || {})) {
       const def = BUILD[cell.id];
       if (!def) continue;
       const [c, r] = key.split(',').map(Number);
       if (c >= g.cols || r >= g.rows) continue;
-      const frame = cell.top ? def.top : (cell.shape || def.tex);
+      back.draw(block(def.tex), 1 + c * 16, 1 + (g.rows - 1 - r) * 16, 16);
+    }
+    back.each((v) => { const k = v >>> 24; if (!k) return v; const c = [v & 255, (v >>> 8) & 255, (v >>> 16) & 255].map((x) => Math.round(x * 0.58)); return ((k << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0; });
+    const pix = new Pix(W, H);
+    for (const [key, cell] of Object.entries(S.save.plot.cells)) {
+      const frame = this.plotFrame(cell);
+      if (!frame) continue;
+      const [c, r] = key.split(',').map(Number);
+      if (c >= g.cols || r >= g.rows) continue;
       pix.draw(block(frame), 1 + c * 16, 1 + (g.rows - 1 - r) * 16, 16);
     }
     pix.outline(INK);
-    if (this.plotImg) { this.plotImg.destroy(); this.plotImg = null; }
-    if (this.textures.exists('plot_tex')) this.textures.remove('plot_tex');
-    this.textures.addCanvas('plot_tex', pix.canvas());
-    this.plotImg = this.add.image(g.x0 - 1, GROUND_Y - g.rows * 16 - 1, 'plot_tex').setOrigin(0).setDepth(5);
-    this.roomObjs.push(this.plotImg);
+    for (const [img, tex, depth, sk] of [[this.plotBackImg, 'plot_back_tex', 4, 'plotBackImg'], [this.plotImg, 'plot_tex', 5, 'plotImg']]) {
+      if (img) img.destroy();
+      if (this.textures.exists(tex)) this.textures.remove(tex);
+      this.textures.addCanvas(tex, (tex === 'plot_tex' ? pix : back).canvas());
+      this[sk] = this.add.image(g.x0 - 1, GROUND_Y - g.rows * 16 - 1, tex).setOrigin(0).setDepth(depth);
+      this.roomObjs.push(this[sk]);
+    }
+    // tabela yazilari
+    for (const l of this.signLabels || []) { l.remove(); this.labels = this.labels.filter((x) => x !== l); }
+    this.signLabels = [];
+    for (const [key, cell] of Object.entries(S.save.plot.cells)) {
+      if (cell.id !== 'tabela_blok' || !cell.text) continue;
+      const [c, r] = key.split(',').map(Number);
+      const l = UI.el('div', 'objlabel sign', '');
+      l.textContent = cell.text;
+      l._x = g.x0 + c * 16 + 8;
+      l.style.left = UI.pctX(l._x - this.cameras.main.scrollX);
+      l.style.top = UI.pctY(GROUND_Y - (r + 1) * 16 - 2);
+      UI.$('#floats').appendChild(l);
+      this.labels.push(l);
+      this.signLabels.push(l);
+    }
   }
 
   drawCell() { this.drawPlot(); }
@@ -682,7 +739,17 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  // arsaya dokununca: insa modunda blok koy/kaldir, degilse tarlaya dokunmak bahceyi acar
+  // bir hucrenin asil (sol alt) hucresi: kapinin ustu ve yatagin sag yarisi asil hucreye gider
+  plotOrigin(cell) {
+    const cells = S.save.plot.cells;
+    const c = cells[cell.key];
+    if (!c) return null;
+    if (c.top) return { c: cell.c, r: cell.r - 1, key: `${cell.c},${cell.r - 1}` };
+    if (c.part) return { c: cell.c - 1, r: cell.r, key: `${cell.c - 1},${cell.r}` };
+    return cell;
+  }
+
+  // arsaya dokununca: insa modunda blok koy/kaldir; degilse mobilya ve tarla
   plotTap(ptr) {
     const cell = this.cellAt(ptr.worldX, ptr.worldY);
     if (this.building) {
@@ -691,8 +758,11 @@ export class WorldScene extends Phaser.Scene {
       return true;
     }
     if (!cell) return false;
+    const o = this.plotOrigin(cell);
+    const oc = o && S.save.plot.cells[o.key];
+    if (oc && BUILD[oc.id] && BUILD[oc.id].func) { this.useFurniture(o, oc); return true; }
     // tarlanin kendisi ya da ustundeki bitki
-    const base = S.save.plot.cells[cell.key] && S.save.plot.cells[cell.key].id === 'tarla' ? cell
+    const base = oc && oc.id === 'tarla' ? o
       : cell.r === 1 && S.save.plot.cells[`${cell.c},0`] && S.save.plot.cells[`${cell.c},0`].id === 'tarla' ? { c: cell.c, r: 0, key: `${cell.c},0` } : null;
     if (!base) return false;
     this.gardenTap(base);
@@ -703,13 +773,86 @@ export class WorldScene extends Phaser.Scene {
     const g = this.plotGeom();
     const cx = g.x0 + c * 16 + 8;
     const side = this.player.x <= cx ? -1 : 1;
-    return { cx, x: Phaser.Math.Clamp(cx + side * 18, 12, GAME_W - 12) };
+    return { cx, x: Phaser.Math.Clamp(cx + side * 18, 12, g.w - 12) };
   }
 
   async walkToCell(c) {
     const { cx, x } = this.standNear(c);
-    if (Math.abs(this.player.x - cx) > 30) await moveTo(this.player, x, { speed: 110, anim: 'c_walk' });
+    if (Math.abs(this.player.x - cx) > 30) await moveTo(this.player, x, Math.abs(this.player.x - x) > SPRINT_DIST ? { speed: 190, anim: 'c_sprint' } : { speed: 110, anim: 'c_walk' });
     this.player.setFlipX(cx < this.player.x);
+  }
+
+  // ---- islevli mobilyalar (0.10.5)
+  async useFurniture(o, cell) {
+    if (this.busy) return;
+    const f = BUILD[cell.id].func;
+    if (f === 'kapi') {
+      cell.open = !cell.open;
+      const top = S.save.plot.cells[`${o.c},${o.r + 1}`];
+      if (top) top.open = cell.open;
+      sfx(cell.open ? 'chest' : 'click');
+      this.drawPlot();
+      S.changed();
+      return;
+    }
+    this.busy = true;
+    await this.walkToCell(o.c);
+    this.idle();
+    this.busy = false;
+    if (f === 'masa' || f === 'firin' || f === 'kazan') { openStation(this, f); return; }
+    if (f === 'sandik') { openDepo(this); return; }
+    if (f === 'kupa') { openTrophies(this); return; }
+    if (f === 'tabela') { this.editSign(o, cell); return; }
+    if (f === 'yatak') await this.sleepInBed();
+  }
+
+  editSign(o, cell) {
+    UI.openPanel('Tabela', (body) => {
+      body.appendChild(UI.el('p', 'muted', 'Tabelaya ne yazalım? (en fazla 24 harf)'));
+      const inp = document.createElement('input');
+      inp.className = 'sign-input';
+      inp.maxLength = 24;
+      inp.value = cell.text || '';
+      body.appendChild(inp);
+      const row = UI.el('div', 'choice-row');
+      row.appendChild(UI.button('Yaz', () => {
+        cell.text = inp.value.replace(/[<>]/g, '').trim().slice(0, 24);
+        S.changed();
+        UI.closePanel();
+        sfx('craft');
+        this.drawPlot();
+      }, 'primary'));
+      row.appendChild(UI.button('Sil', () => { cell.text = ''; S.changed(); UI.closePanel(); this.drawPlot(); }, 'small'));
+      body.appendChild(row);
+      setTimeout(() => inp.focus(), 50);
+    });
+  }
+
+  async sleepInBed() {
+    this.busy = true;
+    const night = this.tod === 'gece' || this.tod === 'gunbatimi';
+    this.player.play('c_sit');
+    await wait(this, 500);
+    await this.fade(true);
+    S.hp = S.maxHp();
+    if (night) {
+      // gercek saatle sabaha kadar gunduz say (gece atlatilir)
+      const d = new Date();
+      if (d.getHours() >= 8) d.setDate(d.getDate() + 1);
+      d.setHours(8, 0, 0, 0);
+      S.save.dayUntil = d.getTime();
+      TOD_SKIP.until = S.save.dayUntil;
+    }
+    S.changed();
+    await wait(this, 500);
+    this.tod = todNow();
+    this.applyTod();
+    this.refreshHud();
+    await this.fade(false);
+    UI.feed(night ? 'Güzel bir uyku! Gece bitti, sabah oldu. Canın doldu.' : 'Biraz kestirdin. Canın doldu. (Akşam ya da gece uyursan sabah olur.)');
+    await playAnim(this.player, 'c_cheer', 1);
+    this.idle();
+    this.busy = false;
   }
 
   // ---- insa modu
@@ -740,28 +883,34 @@ export class WorldScene extends Phaser.Scene {
     this.grid = gr;
   }
 
-  // alt cubuk: elindeki bloklar (simge + adet), Kaldir, Bitti
+  canBack(id) { const d = BUILD[id]; return !!d && !d.prop && !d.tall && !d.wide && !d.func && !d.ground; }
+
+  // alt cubuk: elindeki bloklar (simge + adet), On/Arka, Kaldir, Bitti
   buildBar() {
     const bar = UI.$('#actions');
     bar.innerHTML = '';
     const lvl = S.level('insa');
+    const back = this.buildLayer === 'arka';
     const owned = BUILD_ORDER.filter((id) => S.countItem(id) > 0);
     if (!owned.length) UI.feed('Elinde inşa bloğu yok. Zanaat avlusundaki Üretim Masası\'nda Tahta Kalas, Kütük, Çit gibi bloklar yapabilirsin.');
+    const scroller = UI.el('div', 'build-scroll');
     for (const id of owned) {
       const def = BUILD[id];
       const b = UI.el('button', 'btn small build-btn' + (this.buildTool === 'koy' && this.buildSel === id ? ' sel' : ''));
       b.appendChild(UI.icon(ITEMS[id].icon));
       b.appendChild(UI.el('span', '', `${S.countItem(id)}`));
       b.title = ITEMS[id].name + (lvl < def.lvl ? ` (İnşa ${def.lvl} gerekli)` : '');
-      if (lvl < def.lvl) b.classList.add('locked');
+      if (lvl < def.lvl || (back && !this.canBack(id))) b.classList.add('locked');
       b.onclick = (ev) => {
         ev.stopPropagation(); sfx('click');
         if (lvl < def.lvl) { UI.feed(`${ITEMS[id].name} koymak için İnşa ${def.lvl} gerekli.`); return; }
+        if (back && !this.canBack(id)) { UI.feed(`${ITEMS[id].name} arka duvara konmaz. Arka duvar için tam blok seç (taş, kalas, tuğla...).`); return; }
         this.buildSel = id; this.buildTool = 'koy'; this.buildBar();
       };
-      bar.appendChild(b);
+      scroller.appendChild(b);
     }
-    if (this.buildSel === 'kiremit' && this.buildTool === 'koy') {
+    bar.appendChild(scroller);
+    if (this.buildSel === 'kiremit' && this.buildTool === 'koy' && !back) {
       const names = { kiremit: 'Düz', kiremit_sol: 'Sol eğim', kiremit_sag: 'Sağ eğim' };
       const shape = this.roofShape || 'kiremit';
       bar.appendChild(UI.button(`Şekil: ${names[shape]}`, () => {
@@ -770,20 +919,29 @@ export class WorldScene extends Phaser.Scene {
         this.buildBar();
       }, 'small'));
     }
+    bar.appendChild(UI.button(back ? 'Katman: Arka' : 'Katman: Ön', () => { this.buildLayer = back ? 'on' : 'arka'; this.buildBar(); }, 'small ' + (back ? 'purple' : 'blue')));
     bar.appendChild(UI.button('Kaldır', () => { this.buildTool = this.buildTool === 'kaldir' ? 'koy' : 'kaldir'; this.buildBar(); }, 'small' + (this.buildTool === 'kaldir' ? ' sel red' : '')));
     bar.appendChild(UI.button('Bitti', () => this.stopBuild(), 'small primary'));
-    const sel = this.buildTool === 'kaldir' ? 'Kaldır: bloğa dokun' : this.buildSel ? `${ITEMS[this.buildSel].name}: boş kareye dokun` : 'Blok seç';
+    const where = back ? 'arka duvar' : 'ön';
+    const sel = this.buildTool === 'kaldir' ? `Kaldır (${where}): bloğa dokun` : this.buildSel ? `${ITEMS[this.buildSel].name} (${where}): boş kareye dokun` : 'Blok seç';
     UI.setLocation(`İnşa · ${sel}`);
   }
 
-  canPlace(id, cell) {
+  canPlace(id, cell, back = false) {
     const def = BUILD[id];
-    const cells = S.save.plot.cells;
     const g = this.plotGeom();
+    if (back) {
+      if (!this.canBack(id)) return 'Bu arka duvara konmaz.';
+      if (S.save.plot.back[cell.key]) return 'Arka duvarda orası dolu.';
+      return null;
+    }
+    const cells = S.save.plot.cells;
     if (cells[cell.key]) return 'Orası dolu.';
     if (def.ground && cell.r !== 0) return 'Tarla sadece zemine konur.';
     if (def.tall && (cell.r + 1 >= g.rows || cells[`${cell.c},${cell.r + 1}`])) return 'Kapının üstünde bir boş kare daha lazım.';
+    if (def.wide && (cell.c + 1 >= g.cols || cells[`${cell.c + 1},${cell.r}`])) return 'Yatağın sağında bir boş kare daha lazım.';
     if (cell.r === 1 && cells[`${cell.c},0`] && cells[`${cell.c},0`].id === 'tarla') return 'Tarlanın üstü bitki için boş kalmalı.';
+    if (id === 'depo_sandigi' && Object.values(cells).filter((x) => x.id === 'depo_sandigi').length >= 4) return 'En fazla 4 Depo Sandığı koyabilirsin.';
     if (id === 'tarla') {
       const n = Object.values(cells).filter((x) => x.id === 'tarla').length;
       const mx = MAX_TARLA(S.level('insa')) + (S.has('mimar') ? 4 : 0);
@@ -798,8 +956,9 @@ export class WorldScene extends Phaser.Scene {
     const id = this.buildSel;
     if (!id || !S.countItem(id)) { UI.feed('Önce aşağıdan bir blok seç.'); this.sulk(); return; }
     const def = BUILD[id];
+    const back = this.buildLayer === 'arka';
     if (S.level('insa') < def.lvl) { UI.feed(`İnşa ${def.lvl} gerekli.`); this.sulk(); return; }
-    const why = this.canPlace(id, cell);
+    const why = this.canPlace(id, cell, back);
     if (why) { UI.feed(why); return; }
     this.busy = true;
     await this.walkToCell(cell.c);
@@ -809,53 +968,108 @@ export class WorldScene extends Phaser.Scene {
     await wait(this, 260);
     S.removeItem(id, 1);
     S.save.stats.placed = (S.save.stats.placed || 0) + 1;
-    const cells = S.save.plot.cells;
-    cells[cell.key] = id === 'kiremit' && this.roofShape && this.roofShape !== 'kiremit' ? { id, shape: this.roofShape } : { id };
-    if (def.tall) cells[`${cell.c},${cell.r + 1}`] = { id, top: true };
-    this.drawCell(cell.key);
-    if (def.tall) this.drawCell(`${cell.c},${cell.r + 1}`);
+    if (back) S.save.plot.back[cell.key] = { id };
+    else {
+      const cells = S.save.plot.cells;
+      cells[cell.key] = id === 'kiremit' && this.roofShape && this.roofShape !== 'kiremit' ? { id, shape: this.roofShape } : { id };
+      if (def.tall) cells[`${cell.c},${cell.r + 1}`] = { id, top: true };
+      if (def.wide) cells[`${cell.c + 1},${cell.r}`] = { id, part: true };
+      if (id === 'depo_sandigi') { while (S.save.depo.length < S.depoSize()) S.save.depo.push(null); UI.feed(`Depo büyüdü: artık ${S.save.depo.length} yer.`); }
+    }
+    this.drawPlot();
     if (id === 'tarla') this.refreshGarden();
-    // Insa XP sadece arsadaki blok sayisi yeni bir rekora cikinca (koy-kaldir ile XP kasilmaz)
+    if (def.glow) this.applyTod();
+    // Insa XP: arsadaki blok sayisi yeni bir rekora cikinca; ilk kez konan blok turune bonus
+    let xp = 0;
     const placed = S.placedCount();
+    if (placed > (S.save.plot.best || 0)) { S.save.plot.best = placed; xp += def.xp; }
+    if (!S.save.plot.kinds[id]) { S.save.plot.kinds[id] = 1; xp += def.xp * 4; UI.feed(`Yeni blok türü: ${ITEMS[id].name}! Bonus İnşa XP.`); }
     let ups = [];
-    if (placed > (S.save.plot.best || 0)) {
-      S.save.plot.best = placed;
-      UI.floatText(this.player.x, GROUND_Y - 44, `+${def.xp} İnşa XP`, 'good');
+    if (xp) {
+      UI.floatText(this.player.x, GROUND_Y - 44, `+${xp} İnşa XP`, 'good');
       const before = this.plotGeom();
-      ups = S.addXp({ insa: def.xp });
+      ups = S.addXp({ insa: xp });
       const after = this.plotGeom();
-      if (after.cols !== before.cols || after.rows !== before.rows) this.time.delayedCall(1200, () => { if (this.mode === 'plot') { UI.banner('Arsan büyüdü!', `${after.cols}×${after.rows} blok`, 2000); const b = this.building; this.goPlot(); if (b) this.startBuild(); } });
+      if (after.rows !== before.rows) this.time.delayedCall(1200, () => { if (this.mode === 'plot') { UI.banner('Arsan büyüdü!', `${after.cols}×${after.rows} blok`, 2000); const b = this.building; this.goPlot(); if (b) this.startBuild(); } });
     }
     S.changed();
     await anim;
     this.idle();
     for (const u of ups) await this.levelUp(u);
+    await this.checkBaseRewards();
     this.busy = false;
     if (this.building) { if (!S.countItem(id)) this.buildSel = null; this.buildBar(); }
   }
 
   async removeAt(cell) {
     if (this.busy) return;
+    const back = this.buildLayer === 'arka';
+    if (back) {
+      const bc = S.save.plot.back[cell.key];
+      if (!bc) return;
+      if (!S.fits(bc.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+      this.busy = true;
+      await this.walkToCell(cell.c);
+      await playAnim(this.player, 'c_punch', 1.6);
+      sfx('break');
+      delete S.save.plot.back[cell.key];
+      S.addItem(bc.id, 1);
+      this.drawPlot();
+      S.changed();
+      this.idle();
+      this.busy = false;
+      if (this.building) this.buildBar();
+      return;
+    }
     const cells = S.save.plot.cells;
-    let key = cell.key;
-    let c = cells[key];
+    const o = this.plotOrigin(cell);
+    if (!o) return;
+    const key = o.key;
+    const c = cells[key];
     if (!c) return;
-    if (c.top) { key = `${cell.c},${cell.r - 1}`; c = cells[key]; }
     if (c.id === 'tarla' && S.save.plot.garden[key]) { UI.feed('Tarlada bitki var. Önce hasat et.'); this.sulk(); return; }
+    if (c.id === 'depo_sandigi') {
+      // sandik kalkinca depo kuculur: fazla yerdeki esyalar ice sigmali
+      const newSize = S.depoSize() - 10;
+      const items = S.save.depo.filter(Boolean);
+      if (items.length > newSize) { UI.feed('Depon dolu: sandığı kaldırmadan önce Depo\'dan biraz eşya al.'); this.sulk(); return; }
+    }
     if (!S.fits(c.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
     this.busy = true;
-    await this.walkToCell(cell.c);
+    await this.walkToCell(o.c);
     await playAnim(this.player, 'c_punch', 1.6);
     sfx('break');
-    const [cc, rr] = key.split(',').map(Number);
     delete cells[key];
-    this.drawCell(key);
-    if (BUILD[c.id] && BUILD[c.id].tall) { delete cells[`${cc},${rr + 1}`]; this.drawCell(`${cc},${rr + 1}`); }
+    const def = BUILD[c.id];
+    if (def && def.tall) delete cells[`${o.c},${o.r + 1}`];
+    if (def && def.wide) delete cells[`${o.c + 1},${o.r}`];
+    if (c.id === 'depo_sandigi') {
+      const items = S.save.depo.filter(Boolean);
+      S.save.depo = items.concat(new Array(S.depoSize() - items.length).fill(null));
+    }
+    this.drawPlot();
+    if (def && def.glow) this.applyTod();
     S.addItem(c.id, 1);
     S.changed();
     this.idle();
     this.busy = false;
     if (this.building) this.buildBar();
+  }
+
+  // Us Puani odulleri: 100/250/500/1000 (en yuksek puana gore, bir kez)
+  async checkBaseRewards() {
+    const score = S.baseScore();
+    S.save.plot.bestScore = Math.max(S.save.plot.bestScore || 0, score);
+    for (const rw of BASE_REWARDS) {
+      if (S.save.plot.bestScore < rw.pts || S.save.plot.rw[rw.pts]) continue;
+      S.save.plot.rw[rw.pts] = 1;
+      addPul(rw.pul);
+      sfx('rare');
+      UI.banner(`Üs Puanı ${rw.pts}!`, 'Yeni tarifler açıldı', 2200, 'gold');
+      UI.feed(`Üs Puanı ${rw.pts} ödülü: Üretim Masası'nda yeni tarifler (${rw.items.map((i) => ITEMS[i].name).join(', ')}) ve +${rw.pul} ${PUL}.${rw.title ? ' Yeni bir unvan da açıldı!' : ''}`, 'gold');
+      S.changed();
+      await this.celebrate();
+    }
   }
 
   // ---- bahce
