@@ -1270,7 +1270,7 @@ export function gearRamp(icon) {
   const p = def[1];
   const g = (k) => (p[k] ? hexToRgb(p[k]) : null);
   let d, m, l;
-  if (icon.startsWith('kilic')) { d = g('P') || g('B'); m = g('B'); l = g('W'); }
+  if (icon.startsWith('kilic') || icon.startsWith('asa')) { d = g('P') || g('B'); m = g('B'); l = g('W'); }
   else if (icon.startsWith('kazma')) { m = g('D'); l = g('H'); d = shadeRgb(m, 0.72); }
   else if (icon.startsWith('yay')) { m = g('B'); l = g('W'); d = shadeRgb(m, 0.75); }
   else { d = g('d'); m = g('m'); l = g('M'); }
@@ -1431,4 +1431,18 @@ export function bigMoon() {
     }
   }
   return p.canvas();
+}
+
+// 0.13 asalar ve run taslari
+{
+  const STAFF = ['........WW..', '.......WBBP.', '......WBBPP.', '......hBPP..', '.....hh.P...', '....hh......', '...hh.......', '..hh........', '.hh.........', 'hh..........', 'h...........', '............'];
+  const RUNE = ['............', '...dddddd...', '..dSSSSSSd..', '..dSgSSgSd..', '..dSSggSSd..', '..dSSgSSSd..', '..dSgggSSd..', '..dSSSSSSd..', '..dSSSSSSd..', '...dddddd...', '............', '............'];
+  ICONS.asa_cirak = [STAFF, { W: '#d8f2fc', B: '#7cc0e0', P: '#4a88b0', h: '#8a5a32' }];
+  ICONS.asa_tas = [STAFF, { W: '#c4c0cc', B: '#8e8a98', P: '#6a6674', h: '#7e4e2a' }];
+  ICONS.asa_demir = [STAFF, { W: '#eef0f4', B: '#a9adb8', P: '#6a6e7a', h: '#5a3e26' }];
+  for (const [t, [m, l, d]] of Object.entries(TIER_COL)) ICONS[`asa_${t}`] = [STAFF, { W: l, B: m, P: d, h: '#5a3e26' }];
+  ICONS.run_tasi = [RUNE, { d: '#5a5664', S: '#a9a5b2', g: '#7af0e0' }];
+  ICONS.run_ates = [RUNE, { d: '#3e3638', S: '#76727f', g: '#ff9a3a' }];
+  ICONS.run_buz = [RUNE, { d: '#3e4a62', S: '#8aa4c8', g: '#e0f8ff' }];
+  ICONS.run_golge = [RUNE, { d: '#2e2040', S: '#5a3a8a', g: '#b88af0' }];
 }

@@ -4,6 +4,13 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.13.0 (Sınıflar ve Büyü)
+
+- Yeni beceri Büyü: asalar (Çırak Asası, Taş, Demir, Kristal, Kor, Bonkit, Gölge), Rün Taşı ve 3 rün tılsımı. Büyü Oku ve büyü yetenekleri (Alev Dalgası, Buz Kalkanı, Lanet Bulutu) mana harcar.
+- Kılıç / yay / asa üçgeni: her Glemon tipi bir tarza zayıf, birine dayanıklı (Albümde yazar). Savaşta silah değiştirmek 1 tur sürer.
+- Sınıflar (Hancı Lale, savaş becerisi 20): Savaşçı, Nişancı, Büyücü, Destek; 50'de 8 alt sınıf. Yetenek ağacının Savaş dalı artık Sınıf dalı (eski puanlar iade). Her sınıfın büyük yeteneği ve pelerini var.
+- Manuel savaş 2.0: seri sayacı, Savun'dayken savuşturma, düşman niyeti, bitirici vuruş.
+
 ## Sürüm 0.8.5 (Su ve Yetenek)
 
 - **Yeni kaçınma:** Glemon saldırmadan önce ekranın rastgele bir yerinde "KAÇ!" düğmesi çıkar, halka bitmeden bas. Patronlarda bazen arka arkaya 2 düğme. Halkanın ilk yarısında basarsan **Kusursuz kaçış** ve küçük bir karşı darbe. Düğmenin dışına basmak ıska.

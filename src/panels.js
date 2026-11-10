@@ -1,7 +1,7 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME } from './data.js';
 import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
@@ -95,7 +95,10 @@ function cook(w, r, n, render) {
 
 function statLines(it) {
   const out = [];
-  if (it.power) out.push(`${it.wt === 'yay' ? 'Yay' : it.wt === 'yumruk' ? 'Yumruk' : 'Kılıç'} gücü +${it.power}`);
+  if (it.power) out.push(`${it.wt === 'yay' ? 'Yay' : it.wt === 'yumruk' ? 'Yumruk' : it.wt === 'asa' ? 'Asa' : 'Kılıç'} gücü +${it.power}`);
+  if (it.mana) out.push(`Mana +${it.mana}`);
+  if (it.magic) out.push(`Büyü hasarı +%${Math.round(it.magic * 100)}`);
+  if (it.drain) out.push(`Büyüyle %${Math.round(it.drain * 100)} can çalma`);
   if (it.luck) out.push(`Şans +${it.luck}`);
   if (it.yem) out.push(it.special ? 'Özel yem: her nadirlik' : it.yem === 'su' ? 'Basit yem: Nadir Su Glemonları' : 'Basit yem: Sıradan Glemonlar');
   if (it.def) out.push(`Savunma +${it.def}`);
@@ -376,9 +379,22 @@ export function openTree(tab = 'savas') {
       const pts = S.treePoints(tab); const spent = S.treeSpent(tab);
       const names = def.skills.map((k) => SKILLS.find((s) => s.key === k).name).join(', ');
       body.appendChild(UI.el('p', 'muted', `${names} becerilerinde her 10 seviye 1 puan verir. Puan: ${pts} · Harcanan: ${spent} · Boş: ${pts - spent}. Her katta 2 yetenekten birini seçersin.`));
+      // 0.13 Sinif dali: secilen sinifin 3 kati + alt sinifin 2 kati
+      if (tab === 'savas') {
+        const c = S.cls(); const sb = S.sub();
+        if (S.save.flags.sinifIade) body.appendChild(UI.el('p', 'lale-says', 'Eski Savaş dalına harcadığın puanlar geri geldi. Sınıfını seçince burada yeniden harcayabilirsin.'));
+        const r = UI.el('div', 'choice-row');
+        r.appendChild(UI.button(c ? `Sınıf: ${c.name}${sb ? ` · ${sb.name}` : ''}` : 'Sınıf seç', () => openClass(), c ? 'small' : 'green'));
+        body.appendChild(r);
+        if (!c) {
+          body.appendChild(UI.el('p', 'muted', S.combatLevel() >= CLASS_RULES.unlock ? 'Bu dalın yetenekleri sınıfına göre değişir. Önce sınıfını seç.' : `Saldırı, Okçuluk ya da Büyü ${CLASS_RULES.unlock} olunca sınıf seçebilirsin (şu an en yükseği ${S.combatLevel()}).`));
+          return;
+        }
+      }
       const sel = S.save.perks[tab] || [];
-      def.tiers.forEach((pair, i) => {
+      S.treeTiers(tab).forEach((pair, i) => {
         const need = TREE_COST.slice(0, i).reduce((a, b) => a + b, 0);
+        if (tab === 'savas' && i === 3) body.appendChild(UI.el('p', 'muted', `${S.sub().name} katları`));
         body.appendChild(UI.el('h3', '', `${i + 1}. kat · ${TREE_COST[i]} puan${i ? ` (önce ${need} puan harcamış olmalısın)` : ''}`));
         const row = UI.el('div', 'tree-row');
         pair.forEach((pk, j) => {
@@ -409,6 +425,7 @@ export function openTree(tab = 'savas') {
           else if (S.save.gold >= cost) S.save.gold -= cost;
           else return;
           S.save.perks = {};
+          S.save.flags.sinifIade = false;
           S.hp = Math.min(S.hp, S.maxHp());
           S.changed();
           sfx('coin');
@@ -959,6 +976,7 @@ function speciesPage(w, body, k, back) {
   const sv = STRONG_VS(d.type); const wv = WEAK_VS(d.type);
   row('Güçlü olduğu', sv.length ? sv.join(', ') : '-');
   row('Zayıf olduğu', wv.length ? wv.join(', ') : '-');
+  if (STYLE[d.type]) row('Savaş tarzı', `${STYLE_NAME[STYLE[d.type][0]]} ile çok etkili, ${STYLE_NAME[STYLE[d.type][1]]} az işler`);
   if (d.special) row('Aktif yetenek', d.special.name);
   const ps = passiveOf(k);
   if (ps) row('Pasif yetenek', `${ps.name}: ${ps.desc}`);
@@ -1507,6 +1525,12 @@ export function openHanci(w) {
     row.appendChild(UI.button('Albüm', () => openAlbum(w), 'small'));
     row.appendChild(UI.button('Göl', () => { UI.closePanel(); w.enterPond(); }, 'small blue'));
     row.appendChild(UI.button('Yetenekler', () => openTree(), 'small'));
+    { // 0.13 sinif secimi Lale'de
+      const c = S.cls();
+      const canSub = c && !S.save.cls.sub && S.combatLevel() >= CLASS_RULES.sub;
+      const canPick = !c && S.combatLevel() >= CLASS_RULES.unlock;
+      row.appendChild(UI.button(canPick ? 'Sınıf seç!' : canSub ? 'Alt sınıf seç!' : c ? `Sınıf: ${c.name}` : 'Sınıflar', () => openClass(), canPick || canSub ? 'small green' : 'small'));
+    }
     body.appendChild(row);
   }, { wide: true });
 }
@@ -1938,6 +1962,90 @@ export function openPrep(w, floor) {
       row.appendChild(UI.button('Yola çık!', () => w.enterDungeon(floor), 'primary'));
       row.appendChild(UI.button('Geri', () => openHanci(w), 'small'));
       body.appendChild(row);
+    };
+    render();
+  }, { wide: true });
+}
+
+// ------------------------------------------------------------ 0.13 Siniflar (Hanci Lale)
+function askClass(text, fn) {
+  UI.choice('Emin misin?', text, [{ label: 'Evet', cls: 'green', onClick: () => { fn(); openClass(); } }, { label: 'Vazgeç', onClick: () => openClass() }]);
+}
+function classCard(name, lines, btn) {
+  const card = UI.el('div', 'tree-card class-card');
+  card.appendChild(UI.el('div', 'zn', name));
+  for (const [cls, t] of lines) card.appendChild(UI.el('div', cls, t));
+  if (btn) card.appendChild(btn);
+  return card;
+}
+export function openClass() {
+  UI.openPanel('Sınıflar', (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      const cl = S.save.cls;
+      const c = S.cls(); const sb = S.sub();
+      const lvl = S.combatLevel();
+      body.appendChild(UI.el('p', 'lale-says', c
+        ? `“Sınıfın: ${c.name}${sb ? ` · ${sb.name}` : ''}. ${!sb ? (lvl >= CLASS_RULES.sub ? 'Artık alt sınıfını seçebilirsin!' : `Savaş becerin ${CLASS_RULES.sub} olunca alt sınıf seçersin.`) : 'Yolun açık olsun.'}”`
+        : lvl >= CLASS_RULES.unlock ? '“Savaşmayı öğrendin. Şimdi bir yol seç! Her sınıf her silahı kullanabilir ama kendi silahında daha güçlüdür.”'
+          : `“Saldırı, Okçuluk ya da Büyü ${CLASS_RULES.unlock} olunca sınıfını seçebilirsin. Şu an en yükseği ${lvl}.”`));
+      if (c && !sb) {
+        body.appendChild(UI.el('h3', '', `${c.name} alt sınıfları (savaş becerisi ${CLASS_RULES.sub})`));
+        const row = UI.el('div', 'tree-row');
+        for (const k of c.subs) {
+          const d = SUBCLASSES[k];
+          const b = UI.button('Seç', () => {
+            askClass(`${d.name} olacaksın. Alt sınıf sonra sadece sınıf değiştirerek sıfırlanır.`, () => {
+              if (S.pickSub(k)) { sfx('levelup'); UI.banner(`${d.name}!`, d.bonus, 2200, 'gold'); UI.feed(`<span style="color:#ffd04d">★ Alt sınıf: ${d.name}. Yetenek Ağacı'nın Sınıf dalında 2 yeni kat açıldı.</span>`, 'gold'); render(); }
+            });
+          }, 'small green');
+          b.disabled = lvl < CLASS_RULES.sub;
+          row.appendChild(classCard(d.name, [['muted', d.desc], ['', d.bonus]], b));
+        }
+        body.appendChild(row);
+      }
+      body.appendChild(UI.el('h3', '', c ? 'Sınıf değiştir' : 'Sınıflar'));
+      const cost = S.classChangeCost();
+      if (c) body.appendChild(UI.el('p', 'muted', cost ? `Değiştirmek ${cost} Lale Pulu (sende ${S.save.pul || 0}). Becerilerin ve eşyaların kaybolmaz; sadece Sınıf dalı ve alt sınıf sıfırlanır.` : 'İlk değişiklik ücretsiz. Becerilerin ve eşyaların kaybolmaz; sadece Sınıf dalı ve alt sınıf sıfırlanır.'));
+      const row = UI.el('div', 'tree-row class-grid');
+      for (const [k, d] of Object.entries(CLASSES)) {
+        const mine = cl.c === k;
+        let b = null;
+        if (!mine) {
+          b = UI.button(c ? 'Bu sınıfa geç' : 'Seç', () => {
+            askClass(`${d.name} olacaksın.${c ? ' Sınıf dalındaki seçimlerin sıfırlanır.' : ''}`, () => {
+              const first = !c;
+              if (!S.pickClass(k)) return;
+              // ilk secimde Lale sinif pelerini ve (yoksa) sinif silahini verir
+              const gifts = [];
+              const cape = `pelerin_${k}`;
+              const owns = (id) => S.countItem(id) > 0 || Object.values(S.save.equip).includes(id) || S.save.depo.some((x) => x && x.id === id);
+              if (!owns(cape)) { S.addItem(cape, 1); gifts.push(ITEMS[cape].name); }
+              const hasWpn = [...S.save.bag, ...S.save.depo, { id: S.save.equip.silah }].some((x) => x && x.id && ITEMS[x.id] && ITEMS[x.id].kind === 'silah' && d.wt.includes(ITEMS[x.id].wt || 'kilic'));
+              if (!hasWpn) { S.addItem(d.start, 1); gifts.push(ITEMS[d.start].name); }
+              S.changed();
+              sfx('levelup');
+              UI.banner(`${d.name}!`, d.ult.name, 2200, 'gold');
+              UI.feed(`<span style="color:#ffd04d">★ Sınıfın: ${d.name}. Büyük yeteneğin: ${d.ult.name}.${gifts.length ? ` Lale'nin hediyesi: ${gifts.join(', ')} (çantanda).` : ''}</span>`, 'gold');
+              if (first) UI.feed('Yetenek Ağacı\'nın Sınıf dalında sınıfına özel yetenekler açıldı.');
+              render();
+            });
+          }, 'small green');
+          b.disabled = lvl < CLASS_RULES.unlock || (S.save.pul || 0) < cost;
+        }
+        const card = classCard(`${mine ? '✔ ' : ''}${d.name}`, [
+          ['muted', d.desc],
+          ['', `Silahı: ${d.gear} · ${d.bonus}`],
+          ['', `★ ${d.ult.name}: ${d.ult.desc}`],
+          ['muted', `Alt sınıflar: ${d.subs.map((x) => SUBCLASSES[x].name).join(', ')}`],
+        ], b);
+        if (mine) card.classList.add('picked');
+        row.appendChild(card);
+      }
+      body.appendChild(row);
+      const r2 = UI.el('div', 'choice-row');
+      r2.appendChild(UI.button('Yetenek Ağacı', () => openTree('savas'), 'small'));
+      body.appendChild(r2);
     };
     render();
   }, { wide: true });

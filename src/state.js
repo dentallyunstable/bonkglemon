@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES, TOK, TASTY_BONUS, TRAITS, RANCH, BOND, TEAM, passiveOf } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES, TOK, TASTY_BONUS, TRAITS, RANCH, BOND, TEAM, passiveOf, CLASSES, SUBCLASSES, CLASS_TREE, SUB_TREE, CLASS_RULES, MAGIC } from './data.js';
 
 const CRAFTABLE = new Set(RECIPES.map((r) => r.out));
 
@@ -52,6 +52,8 @@ function freshSave(char) {
     album: { seen: {}, shiny: {}, tamed: {}, drops: {} },
     // 0.12: Ahir yumurta sepeti, kulucka yuvalari, tamamlanan bolgeler
     eggs: [], nest: [null, null, null], zoneDone: {},
+    // 0.13: sinif { c: savasci|nisanci|buyucu|destek, sub: alt sinif, ch: kac kez degisti }
+    cls: { c: null, sub: null, ch: 0 },
     combos: {},
     // 0.5
     bagBonus: 0,
@@ -146,6 +148,15 @@ export const S = {
     }
     if (data.pet2 && (data.pet2 === data.pet || !data.pets.some((p) => p.id === data.pet2))) data.pet2 = null;
     data.album.drops = data.album.drops || {};
+    // 0.13: "Savas" dali "Sinif" dali oldu: o dala harcanan puanlar iade edilir
+    if (!data.flags.sinif13) {
+      if (data.perks.savas && data.perks.savas.some((v) => v != null)) data.flags.sinifIade = true;
+      delete data.perks.savas;
+      data.flags.sinif13 = true;
+    }
+    if (!data.cls || (data.cls.c && !CLASSES[data.cls.c])) data.cls = { c: null, sub: null, ch: 0 };
+    if (data.cls.sub && (!SUBCLASSES[data.cls.sub] || SUBCLASSES[data.cls.sub].of !== data.cls.c)) data.cls.sub = null;
+    if (data.perks.savas) data.perks.savas = data.perks.savas.slice(0, this.treeTiersFor(data, 'savas').length);
     if (!Array.isArray(data.nest) || data.nest.length !== 3) data.nest = [null, null, null];
     for (const [k, c] of Object.entries(data.plot.cells)) if (!c || !BUILD[c.id]) delete data.plot.cells[k];
     for (const k of Object.keys(data.plot.garden)) if (!data.plot.cells[k] || data.plot.cells[k].id !== 'tarla') delete data.plot.garden[k];
@@ -214,24 +225,77 @@ export const S = {
   // ------------------------------------------------ yetenek agaci (0.8.5)
   treePoints(branch) { return Math.floor(TREE[branch].skills.reduce((t, k) => t + this.level(k), 0) / 10); },
   treeSpent(branch) { return (this.save.perks[branch] || []).reduce((t, v, i) => t + (v == null ? 0 : TREE_COST[i]), 0); },
-  has(key) {
-    for (const [b, def] of Object.entries(TREE)) {
+  // 0.13: Sinif dalinin katlari secilen sinifa ve alt sinifa gore degisir
+  treeTiersFor(save, branch) {
+    if (branch !== 'savas') return TREE[branch].tiers;
+    const c = save.cls && save.cls.c;
+    if (!c) return [];
+    return [...CLASS_TREE[c], ...(save.cls.sub ? SUB_TREE[save.cls.sub] : [])];
+  },
+  treeTiers(branch) { return this.treeTiersFor(this.save, branch); },
+  pickedPerks() {
+    const out = [];
+    for (const b of Object.keys(TREE)) {
       const sel = this.save.perks[b];
       if (!sel) continue;
-      for (let i = 0; i < 3; i++) if (sel[i] != null && def.tiers[i][sel[i]].key === key) return true;
+      const tiers = this.treeTiers(b);
+      for (let i = 0; i < tiers.length; i++) if (sel[i] != null && tiers[i][sel[i]]) out.push(tiers[i][sel[i]]);
     }
-    return false;
+    return out;
+  },
+  has(key) { return this.pickedPerks().some((pk) => pk.key === key); },
+  // ------------------------------------------------ 0.13 sinif
+  cls() { return this.save.cls && this.save.cls.c ? CLASSES[this.save.cls.c] : null; },
+  sub() { return this.save.cls && this.save.cls.sub ? SUBCLASSES[this.save.cls.sub] : null; },
+  combatLevel() { return Math.max(...CLASS_RULES.skills.map((k) => this.level(k))); },
+  // sinif, alt sinif ve agac dugumlerinin toplam etkisi
+  cmod(k) {
+    let v = 0;
+    const c = this.cls(); const sb = this.sub();
+    if (c && c.mods[k]) v += c.mods[k];
+    if (sb && sb.mods[k]) v += sb.mods[k];
+    for (const pk of this.pickedPerks()) if (pk.mods && pk.mods[k]) v += pk.mods[k];
+    return v;
+  },
+  // kendi silahinda sinif bonusu (Savasci = kilic, Nisanci = yay, Buyucu/Destek = asa)
+  classWeapon() { const c = this.cls(); return !!c && c.wt.includes(this.weaponType()); },
+  // ilk secim ve ilk degisiklik ucretsiz, sonrasi Lale Pulu
+  classChangeCost() { const cl = this.save.cls; return cl.c && cl.ch >= 1 ? CLASS_RULES.changePul : 0; },
+  pickClass(c) {
+    if (!CLASSES[c] || this.combatLevel() < CLASS_RULES.unlock) return false;
+    const cl = this.save.cls;
+    if (cl.c === c) return false;
+    const cost = this.classChangeCost();
+    if ((this.save.pul || 0) < cost) return false;
+    this.save.pul = (this.save.pul || 0) - cost;
+    if (cl.c) cl.ch++;
+    cl.c = c; cl.sub = null;
+    delete this.save.perks.savas;
+    this.hp = Math.min(this.hp, this.maxHp());
+    this.changed();
+    return true;
+  },
+  pickSub(sb) {
+    const d = SUBCLASSES[sb];
+    if (!d || d.of !== this.save.cls.c || this.save.cls.sub || this.combatLevel() < CLASS_RULES.sub) return false;
+    this.save.cls.sub = sb;
+    this.changed();
+    return true;
+  },
+  // mana (0.13 Buyu)
+  maxMana() {
+    return Math.round(MAGIC.base + this.level('buyu') * MAGIC.perLvl + this.gear().reduce((t, it) => t + (it.mana || 0), 0) + this.cmod('manaMax'));
   },
   perk(key, val = true, def = false) { return this.has(key) ? val : def; },
   canPick(branch, tier) {
     const sel = this.save.perks[branch] || [];
-    if (sel[tier] != null) return false;
+    if (sel[tier] != null || tier >= this.treeTiers(branch).length) return false;
     for (let i = 0; i < tier; i++) if (sel[i] == null) return false;
     return this.treePoints(branch) - this.treeSpent(branch) >= TREE_COST[tier];
   },
   pickPerk(branch, tier, idx) {
     if (!this.canPick(branch, tier)) return false;
-    const sel = this.save.perks[branch] || [null, null, null];
+    const sel = this.save.perks[branch] || [];
     sel[tier] = idx;
     this.save.perks[branch] = sel;
     this.hp = Math.min(this.hp, this.maxHp());
@@ -316,7 +380,7 @@ export const S = {
   bagSize() { return BAG_SIZE + (this.save.bagBonus || 0); },
   def() {
     const base = this.level('savunma') + this.gearStat('def');
-    const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0);
+    const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0) + this.cmod('defPct');
     return Math.round(base * (1 + pct) * (1 + this.tokVal('def')));
   },
   pick() {
@@ -330,7 +394,7 @@ export const S = {
   spd() {
     return Math.round((100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0)) * (1 + this.tokVal('spd')));
   },
-  crit() { return (this.hp < this.maxHp() * 0.3 ? this.perk('ofke', 0.2, 0) : 0) + 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0); },
+  crit() { return (this.hp < this.maxHp() * 0.3 ? this.perk('ofke', 0.2, 0) : 0) + 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0) + this.cmod('crit'); },
   // 0.8: Kor seti / Magma Goguslugu yanmaz, Golge seti / Bekci Pelerini karanlikta gorur
   fireproof() { return this.gear().some((it) => it.fireproof) || this.activeSets().some((st) => st.fireproof); },
   darkproof() { return this.gear().some((it) => it.darkproof) || this.activeSets().some((st) => st.darkproof); },
@@ -584,8 +648,8 @@ export const S = {
     const f = (k) => 1 + (tr[k] || 0) + (ps[k] || 0) + (ac[k] || 0);
     const sh = p.shiny ? 1.1 : 1;
     return {
-      maxHp: Math.round(d.hp * m * sh * f('hp') * heart * sy),
-      atk: d.atk * m * bond * sh * this.perk('sadik_dost', 1.15, 1) * f('atk') * heart * sy,
+      maxHp: Math.round(d.hp * m * sh * f('hp') * heart * sy * (1 + this.cmod('petHp'))),
+      atk: d.atk * m * bond * sh * this.perk('sadik_dost', 1.15, 1) * f('atk') * heart * sy * (1 + this.cmod('petAtk')),
       def: d.def * m * 0.6 * f('def') * heart * sy,
       spd: Math.round(d.spd * f('spd')),
     };

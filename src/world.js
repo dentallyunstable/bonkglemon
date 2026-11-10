@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  RANCH, ranchDropOf, SECRETS, stormNow, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
+  RANCH, ranchDropOf, SECRETS, stormNow, CLASS_RULES, WEAPON_SKILL, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -2583,8 +2583,13 @@ export class WorldScene extends Phaser.Scene {
     const gear = Object.values(ITEMS).filter((it) => it.req && it.req[0] === up.skill && it.req[1] === up.level);
     if (gear.length) UI.feed(`Artık kuşanabilirsin: ${gear.map((it) => it.name).join(', ')}`);
     for (const [wt, list] of Object.entries(ABILITIES)) {
-      const sk = wt === 'yay' ? 'okculuk' : 'saldiri';
-      for (const a of list) if (sk === up.skill && a.lvl === up.level) UI.feed(`Yeni yetenek: ${a.name} (${wt === 'yay' ? 'yay' : wt === 'kilic' ? 'kılıç' : 'yumruk'}: ${a.desc})`, 'gold');
+      const sk = WEAPON_SKILL[wt];
+      for (const a of list) if (sk === up.skill && a.lvl === up.level) UI.feed(`Yeni yetenek: ${a.name} (${{ yay: 'yay', kilic: 'kılıç', yumruk: 'yumruk', asa: 'asa' }[wt]}: ${a.desc})`, 'gold');
+    }
+    // 0.13 sinif ve alt sinif Hanci Lale'de acilir
+    if (CLASS_RULES.skills.includes(up.skill) && S.combatLevel() === up.level) {
+      if (up.level === CLASS_RULES.unlock && !S.cls()) UI.feed('<span style="color:#ffd04d">★ Sınıf seçimi açıldı! Hancı Lale\'ye git: Savaşçı, Nişancı, Büyücü ya da Destek.</span>', 'gold');
+      if (up.level === CLASS_RULES.sub && S.cls() && !S.sub()) UI.feed('<span style="color:#ffd04d">★ Alt sınıf seçimi açıldı! Hancı Lale\'ye git.</span>', 'gold');
     }
     if (up.skill === 'bag' && up.level % 2 === 0) UI.feed(`Evcil Glemonların artık ${S.petCap()}. seviyeye kadar büyüyebilir.`);
     if (up.skill === 'uretim') {

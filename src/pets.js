@@ -58,10 +58,10 @@ export function feedPet(p, id) {
   return { ok: true, n, up, msg: up ? `${petDisplayName(p)} artık ${up} kalp!` : `+${n} bağ` };
 }
 // birlikte savastiktan sonra
-export function fightBond(p) {
+export function fightBond(p, mult = 1) {
   const tr = TRAITS[p.huy] || {};
   const ac = (p.acc && ITEMS[p.acc] && ITEMS[p.acc].acc) || {};
-  return S.addBond(p, BOND.fight * (tr.fight || 1) * (1 + (ac.bond || 0)));
+  return S.addBond(p, BOND.fight * (tr.fight || 1) * (1 + (ac.bond || 0)) * mult);
 }
 
 // ------------------------------------------------------------ aksesuar

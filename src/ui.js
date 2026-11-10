@@ -217,7 +217,7 @@ export function timingBar(title = 'VUR!', tip = 'Çizgi sarıdayken dokun (veya 
 // halka kuculup bitmeden dugmeye basmak gerekir. Dugmenin disina basmak iskalamaktir.
 // ms: bir dugmenin suresi, count: arka arkaya kac dugme (patronlarda 2).
 // Sonuc: 'kusursuz' (halkanin ilk yarisinda), true (kacindin) ya da false.
-export function dodgePrompt(ms = 900, count = 1) {
+export function dodgePrompt(ms = 900, count = 1, label = 'KAÇ!') {
   return new Promise((resolve) => {
     const ov = $('#overlay');
     ov.innerHTML = '';
@@ -244,7 +244,7 @@ export function dodgePrompt(ms = 900, count = 1) {
       do { x = 14 + Math.random() * 72; } while (lastX >= 0 && Math.abs(x - lastX) < 18);
       lastX = x;
       const y = 22 + Math.random() * 46;
-      const box = el('div', 'dodge', count > 1 ? `KAÇ! ${count - left + 1}/${count}` : 'KAÇ!');
+      const box = el('div', 'dodge' + (label !== 'KAÇ!' ? ' parry' : ''), count > 1 ? `${label} ${count - left + 1}/${count}` : label);
       box.style.left = x + '%';
       box.style.top = y + '%';
       const ring = el('div', 'ring');

@@ -4,6 +4,7 @@
 import {
   passiveOf, SECRET_HOME, GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
   typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
+  MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -41,7 +42,8 @@ const ZONE_OF_KEY = {};
 for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) ZONE_OF_KEY[k] = z;
 for (const [k] of WATER_GLEMONS) ZONE_OF_KEY[k] = 'su';
 Object.assign(ZONE_OF_KEY, NIGHT_HOME, SECRET_HOME);
-const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0 });
+const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0, lanet: 0 });
+const M = (k) => S.cmod(k);
 
 // ayri savas ekraninda (arena) Glemonlarin yerleri
 function arenaX(n, i, boss) {
@@ -72,8 +74,16 @@ export class Battle {
     this.phase = null;
     this.wt = S.weaponType();
     // yayla savasa onde baslarsin (Tek Ok: ilk saldiran sen olursun)
-    this.pAtb = opts.ambush ? 100 : Math.random() * 30 + (this.wt === 'yay' ? 45 : 0);
-    this.status = { zehir: 0, sersem: 0, savun: false, yanma: opts.burn && !S.fireproof() ? 3 : 0, tok: 0, guc: 0, donma: 0, karanlik: opts.dark && !S.darkproof() ? 3 : 0 };
+    this.pAtb = opts.ambush ? 100 : Math.min(99, Math.random() * 30 + (this.wt === 'yay' ? 45 : 0) + M('fastStart'));
+    this.status = { zehir: 0, sersem: 0, savun: false, yanma: opts.burn && !S.fireproof() ? 3 : 0, tok: 0, guc: 0, donma: 0, karanlik: opts.dark && !S.darkproof() ? 3 : 0, nara: 0, ice: 0, kalkan: 0 };
+    // 0.13: mana, buyuk yetenek (sinif), seri sayaci, nisan, ilk vurus kalkani
+    this.maxMana = S.maxMana();
+    this.mana = this.maxMana;
+    this.ult = 0;
+    this.streak = 0;
+    this.elemI = 0;
+    this.aim = false;
+    this.firstBlock = M('firstBlock') > 0;
     this.cd = {};
     this.manualActs = 0;
     this.autoActs = 0;
@@ -234,7 +244,8 @@ export class Battle {
     if (t.taunt > 0) t.taunt--;
     if (t.shell > 0) t.shell--;
     if (t.reflect > 0) t.reflect--;
-    if (t.acts % 3 === 0) t.charged = true;
+    if (t.acts % (M('petCharge') ? 2 : 3) === 0) t.charged = true;
+    this.gainUlt(MANUAL2.ultPet);
     // 0.12 pasif: sifali ruh / ay isigi
     if (t.ps.regen && S.hp > 0 && S.hp < S.maxHp()) {
       const h = Math.max(1, Math.round(S.maxHp() * t.ps.regen));
@@ -250,6 +261,7 @@ export class Battle {
     const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
     if (useSp) {
       t.charged = false; t.queued = false;
+      if (M('manaShare')) { this.mana = Math.min(this.maxMana, this.mana + M('manaShare')); this.renderMe(); }
       floatText(t.sprite.x, this.petTop(t) - 10, sp.name, 'info');
       // 0.12 kombolar: Ikili Saldiri (iki yetenek arka arkaya), Kalp Bagi (5 kalp + MUKEMMEL)
       let boost = 1;
@@ -313,7 +325,8 @@ export class Battle {
     for (const e of targets) {
       if (!e.alive) continue;
       const tm = typeMult(t.data.type, e.type);
-      let m = mult;
+      let m = mult * (this.status.nara > 0 ? 1.3 + M('naraPow') : 1) * (e.st.lanet > 0 ? 1.25 : 1);
+      if (M('petCrit') && Math.random() < M('petCrit')) { m *= 1.5; floatText(e.sprite.x + 14, this.topY(e) - 2, 'Kritik!', 'perfect'); }
       // Golge Pencesi: Golge Glemonu sersem dusmana
       if (t.data.type === 'Gölge' && e.st.sersem > 0) { m *= 2; this.combo('golge_pencesi'); floatText(e.sprite.x + 14, this.topY(e) - 2, 'Kritik!', 'perfect'); }
       const dmg = calcDamage(t.atk * tm, m, this.eDef(e));
@@ -337,6 +350,14 @@ export class Battle {
     t.hp = Math.max(0, t.hp - d);
     floatText(t.sprite.x, this.petTop(t), label ? `${label} -${d}` : `-${d}`, 'hurt');
     this.savePetHp();
+    if (t.hp <= 0 && M('petRevive') && !t.revived) {
+      t.revived = true;
+      t.hp = 0;
+      t.alive = false;
+      this.revivePet(t, M('petRevive'));
+      floatText(t.sprite.x, this.petTop(t) - 22, 'Sadakat!', 'perfect');
+      return;
+    }
     if (t.hp <= 0) {
       t.alive = false;
       this.savePetHp();
@@ -355,6 +376,7 @@ export class Battle {
   px() { return this.w.player.x + 6; }
   py() { return BPOS.y - 60; }
   pose() { if (!this.lostDone) this.w.player.play(B('idlesway'), true); }
+  gearSum(k) { return S.gear().reduce((t, it) => t + (it[k] || 0), 0); }
   atkMult() { return 1 + (this.status.tok > 0 ? 0.1 : 0) + (this.status.guc > 0 ? 0.3 : 0) + this.aura.pAtk; }
   defMult() { return (this.status.savun ? 2 : 1) * (this.status.guc > 0 ? 1.3 : 1) * (1 + this.aura.pDef); }
 
@@ -419,6 +441,13 @@ export class Battle {
     if (this.status.karanlik > 0) feed('Karanlıkta savaşıyorsun: vuruşların bazen boşa gidecek. (Fener taşı!)');
     if (this.teamLabel) feed(`Takım uyumu! ${this.teamLabel}`);
     if (this.opts.cold) feed('Üşüyorsun: bu savaşta yavaşsın. (Sıcak Çorba: Fırın)');
+    // 0.13 Avci Tuzakci: bir dusman tuzaga duser
+    if (M('startStun') && this.alive().length) {
+      const e = pick(this.alive());
+      e.st.sersem = Math.max(e.st.sersem, 2);
+      floatText(e.sprite.x, this.topY(e) - 14, 'Tuzak!', 'info');
+      this.renderEnemy(e);
+    }
     if (this.status.yanma > 0 && this.opts.burn) feed('Lav sıcağı seni yaktı! (Ateş Direnci İksiri: Simya Kazanı)');
     return new Promise((res) => {
       this.resolve = res;
@@ -434,11 +463,13 @@ export class Battle {
     const hp = el('div', 'bar'); const hf = el('div', 'fill'); hp.appendChild(hf);
     const atb = el('div', 'bar atb'); const af = el('div', 'fill'); atb.appendChild(af);
     const st = el('div', 'est', '');
+    const intent = el('div', 'intent', '');
+    wrap.insertBefore(intent, nm);
     wrap.appendChild(hp); wrap.appendChild(atb); wrap.appendChild(st);
     wrap.style.left = `${(e.homeX / 384) * 100}%`;
     wrap.style.top = `${((this.topY(e) - 3) / 216) * 100}%`;
     $('#bars').appendChild(wrap);
-    e.ui = { wrap, hf, af, st };
+    e.ui = { wrap, hf, af, st, intent };
     this.renderEnemy(e);
   }
 
@@ -448,7 +479,12 @@ export class Battle {
     e.ui.af.style.width = `${e.atb}%`;
     const parts = [];
     for (const k of ['zehir', 'yanma', 'sersem', 'donma', 'karanlik']) if (e.st[k] > 0) parts.push(STATUS_NAMES[k]);
+    if (e.st.lanet > 0) parts.push('Lanet');
     if (e.st.shell > 0) parts.push('Kabuk');
+    // 0.13 dusman niyeti: siradaki hamlesi
+    const [it, ic] = this.intentOf(e);
+    const itxt = e.st.donma > 0 ? 'Donmuş' : it;
+    if (e.ui.intent.textContent !== itxt) { e.ui.intent.textContent = itxt; e.ui.intent.className = `intent ${e.st.donma > 0 ? 'status' : ic}`; }
     if (e.st.reflect > 0) parts.push('Diken');
     if (e.fly) parts.push('Uçuyor');
     if (e.ui.st.textContent !== parts.join(' · ')) e.ui.st.textContent = parts.join(' · ');
@@ -465,7 +501,18 @@ export class Battle {
     const atb = el('div', 'bar atb'); this.atbFill = el('div', 'fill'); atb.appendChild(this.atbFill);
     this.atbBar = atb;
     this.statusEl = el('div', 'status', '');
-    me.appendChild(hp); me.appendChild(atb); me.appendChild(this.statusEl);
+    me.appendChild(hp); me.appendChild(atb);
+    // 0.13 mana (asa ya da Buyucu/Destek) ve sinifin buyuk yetenegi
+    this.manaFill = null; this.ultFill = null;
+    if (this.usesMana()) {
+      const mb = el('div', 'bar mana'); this.manaFill = el('div', 'fill'); this.manaText = el('span', '');
+      mb.appendChild(this.manaFill); mb.appendChild(this.manaText); me.appendChild(mb);
+    }
+    if (S.cls()) {
+      const ub = el('div', 'bar ult'); this.ultFill = el('div', 'fill'); this.ultBar = ub;
+      ub.appendChild(this.ultFill); ub.appendChild(el('span', '', S.cls().ult.name)); me.appendChild(ub);
+    }
+    me.appendChild(this.statusEl);
     this.acts = el('div', 'b-acts');
     const autoWrap = el('div', 'b-auto');
     this.autoBtn = button('', () => this.toggleAuto(), 'small');
@@ -477,11 +524,20 @@ export class Battle {
     this.setHint('');
   }
 
+  usesMana() { return this.wt === 'asa' || !!M('sifa') || (S.save.cls && S.save.cls.c === 'buyucu'); }
   renderMe() {
     const max = S.maxHp();
     if (this.hpFill) {
       this.hpFill.style.width = `${(S.hp / max) * 100}%`;
       this.hpText.textContent = `${S.hp} / ${max}`;
+    }
+    if (this.manaFill) {
+      this.manaFill.style.width = `${(this.mana / this.maxMana) * 100}%`;
+      this.manaText.textContent = `Mana ${Math.floor(this.mana)} / ${this.maxMana}`;
+    }
+    if (this.ultFill) {
+      this.ultFill.style.width = `${Math.min(100, this.ult)}%`;
+      this.ultBar.classList.toggle('ready', this.ult >= 100);
     }
     this.w.refreshHud();
   }
@@ -506,7 +562,13 @@ export class Battle {
     if (this.status.tok > 0) parts.push(`Tok ${this.status.tok}`);
     if (this.status.guc > 0) parts.push(`Altın güç ${this.status.guc}`);
     if (this.status.ay > 0) parts.push(`Ay kalkanı ${this.status.ay}`);
-    if (this.status.savun) parts.push('Savunmada');
+    if (this.status.savun) parts.push(S.save.settings.auto ? 'Savunmada' : 'Savunmada (savuştur!)');
+    if (this.streak > 0) parts.push(`Seri ×${this.streak}`);
+    if (this.status.nara > 0) parts.push(`Nâra ${this.status.nara}`);
+    if (this.status.ice > 0) parts.push(`Buz kalkanı ${this.status.ice}`);
+    if (this.status.kalkan > 0) parts.push('Kalkan');
+    if (this.aim) parts.push('Nişan alındı');
+    if (this.firstBlock) parts.push('Kutsal kalkan');
     if (this.firstStrike) parts.push('Pusu hazır');
     this.statusEl.textContent = parts.join(' · ');
   }
@@ -585,7 +647,16 @@ export class Battle {
     }
     if (this.status.tok > 0) this.status.tok--;
     if (this.status.guc > 0) this.status.guc--;
+    if (this.status.nara > 0) this.status.nara--;
     if (this.status.sersem > 0) this.status.sersem--;
+    // 0.13: mana her turda dolar; Sifaci Yenilenme
+    if (this.mana < this.maxMana) this.mana = Math.min(this.maxMana, this.mana + this.maxMana * MAGIC.regen * (1 + M('manaRegen')));
+    if (M('regen') && S.hp < S.maxHp()) {
+      const h = Math.max(1, Math.round(S.maxHp() * M('regen')));
+      S.hp = Math.min(S.maxHp(), S.hp + h);
+      floatText(this.px(), this.py() + 6, `+${h}`, 'heal');
+    }
+    this.renderMe();
     for (const k of Object.keys(this.cd)) if (this.cd[k] > 0) this.cd[k]--;
     if (this.status.donma > 0) {
       this.status.donma--;
@@ -608,6 +679,9 @@ export class Battle {
   endPlayerTurn() {
     this.phase = null;
     this.pAtb = 0;
+    if (S.cls() && !this.ultJust) this.gainUlt(MANUAL2.ultAct);
+    this.ultJust = false;
+    this.renderMe();
     if (this.status.karanlik > 0) this.status.karanlik--;
     this.setHint('');
     this.renderAtb();
@@ -620,25 +694,49 @@ export class Battle {
     const lvl = S.level(WEAPON_SKILL[this.wt]);
     return ABILITIES[this.wt].filter((a) => lvl >= a.lvl);
   }
-  ready(a) { return !(this.cd[a.key] > 0); }
+  manaCost(a) { return a ? (a.mana || 0) : (this.wt === 'asa' ? MAGIC.basicCost : 0); }
+  ready(a) { return !(this.cd[a.key] > 0) && this.mana >= this.manaCost(a); }
+  readyText(a) { return this.cd[a.key] > 0 ? `${a.name} (${this.cd[a.key]})` : this.mana < this.manaCost(a) ? `${a.name} (mana)` : a.name; }
 
   tameables() {
     return this.alive().filter((e) => !e.data.boss && !e.golden && e.hp / e.maxHp < TAME.hpBelow);
+  }
+  // 0.13 bitirici vurus: cani cok az kalan dusman (sadece manuel)
+  finishables() {
+    return this.alive().filter((e) => e.hp / e.maxHp < (e.data.boss ? MANUAL2.finishBoss : MANUAL2.finishAt + M('finish')));
+  }
+  // cantadaki diger silahlar (savasta degistirmek 1 tur surer)
+  swapWeapons() {
+    const out = [];
+    S.save.bag.forEach((sl, i) => { if (sl && ITEMS[sl.id] && ITEMS[sl.id].kind === 'silah' && S.canEquip(sl.id) && sl.id !== S.save.equip.silah) out.push(i); });
+    return out;
   }
 
   showMenu() {
     this.phase = 'menu';
     this.acts.innerHTML = '';
-    this.acts.appendChild(el('div', 'hint', 'Sıra sende!'));
+    this.acts.appendChild(el('div', 'hint', this.streak > 0 ? `Sıra sende! · Seri ×${this.streak}` : 'Sıra sende!'));
+    const fin = this.finishables();
+    if (fin.length) this.acts.appendChild(button('Bitir!', () => this.onFinish(), 'primary finish'));
+    if (S.cls() && this.ult >= 100) this.acts.appendChild(button(`★ ${S.cls().ult.name}`, () => this.useUlt(false), 'primary ult-btn'));
     const basic = BASIC[this.wt];
-    this.acts.appendChild(button(this.wt === 'kilic' ? 'Saldır' : basic.name, () => this.onAttack(), 'primary'));
+    const bonk = this.wt === 'asa' && this.mana < MAGIC.basicCost;
+    const atkName = this.wt === 'kilic' ? 'Saldır' : bonk ? 'Asa Darbesi' : basic.name;
+    this.acts.appendChild(button(atkName, () => this.onAttack(), 'primary'));
     const sk = this.skills();
     const first = ABILITIES[this.wt][0];
-    const skillName = WEAPON_SKILL[this.wt] === 'okculuk' ? 'Okçuluk' : 'Saldırı';
+    const skillName = SKILLS.find((x) => x.key === WEAPON_SKILL[this.wt]).name;
     const sb = button(sk.length ? 'Yetenek' : `${first.name} (${skillName} ${first.lvl})`, () => this.skillMenu(), 'purple');
     sb.disabled = !sk.some((a) => this.ready(a));
-    if (sk.length === 1) sb.textContent = this.ready(sk[0]) ? sk[0].name : `${sk[0].name} (${this.cd[sk[0].key]})`;
+    if (sk.length === 1) sb.textContent = this.readyText(sk[0]);
     this.acts.appendChild(sb);
+    if (M('sifa')) {
+      const cost = this.sifaCost();
+      const hb = button(this.cd.sifa > 0 ? `Şifa (${this.cd.sifa})` : `Şifa (${cost})`, () => this.castSifa(false), 'green');
+      hb.disabled = this.cd.sifa > 0 || this.mana < cost;
+      this.acts.appendChild(hb);
+    }
+    if (M('aimOn') && this.wt === 'yay' && !this.aim) this.acts.appendChild(button('Nişan Al', () => this.aimTurn(), 'blue'));
     const usable = BATTLE_ITEMS.filter((id) => S.countItem(id) > 0);
     const pots = S.countItem('iksir_k');
     const pb = button(usable.length > 1 || (usable.length === 1 && usable[0] !== 'iksir_k') ? 'Eşya' : `İksir (${pots})`, () => this.itemMenu(), 'red');
@@ -646,6 +744,7 @@ export class Battle {
     this.acts.appendChild(pb);
     if (this.tameables().length) this.acts.appendChild(button('Yem ver', () => this.onFeed(), 'green'));
     this.acts.appendChild(button('Savun', () => this.defend(), 'blue'));
+    if (this.swapWeapons().length) this.acts.appendChild(button('Silah', () => this.swapMenu(), 'small'));
     const fb = button('Kaç', () => this.flee(), 'small');
     fb.disabled = !!this.opts.boss || this.enemies.some((e) => e.golden);
     this.acts.appendChild(fb);
@@ -678,7 +777,7 @@ export class Battle {
     this.acts.innerHTML = '';
     this.acts.appendChild(el('div', 'hint', 'Hangi yetenek?'));
     for (const a of sk) {
-      const b = button(this.ready(a) ? a.name : `${a.name} (${this.cd[a.key]})`, () => this.useSkill(a), 'purple');
+      const b = button(this.readyText(a), () => this.useSkill(a), 'purple');
       b.title = a.desc;
       b.disabled = !this.ready(a);
       this.acts.appendChild(b);
@@ -688,6 +787,7 @@ export class Battle {
 
   async useSkill(a) {
     if (!this.ready(a) || !['menu', 'skills'].includes(this.phase)) return;
+    if (a.self) { await this.selfSpell(a, false); return; }
     if (a.aoe) { await this.doAttack(null, false, a); return; }
     const t = await this.chooseTarget();
     if (t === 'auto' || this.over) return;
@@ -809,6 +909,12 @@ export class Battle {
   async autoAct() {
     this.phase = null;
     this.setHint('Otomatik savaş…');
+    const c = S.save.cls.c;
+    const lowPet = this.pets.some((t) => t.alive && t.hp < t.maxHp * 0.5) || this.pets.some((t) => !t.alive);
+    // sinifin buyuk yetenegi: Destek iyilestirmek icin saklar, digerleri hemen kullanir
+    if (S.cls() && this.ult >= 100 && (c !== 'destek' || S.hp < S.maxHp() * 0.6 || lowPet)) return this.useUlt(true);
+    // Destek once Sifa buyusunu kullanir
+    if (M('sifa') && S.hp < S.maxHp() * 0.5 && !(this.cd.sifa > 0) && this.mana >= this.sifaCost()) return this.castSifa(true);
     if (S.hp < S.maxHp() * 0.35) {
       // eksik cani kapatan en kucuk iyilestirici; yoksa eldeki en guclusu
       const have = HEALS.filter((id) => S.countItem(id) > 0);
@@ -817,14 +923,27 @@ export class Battle {
       if (heal) return this.drink(true, heal);
     }
     const alive = this.alive();
-    const sk = this.skills().filter((a) => this.ready(a));
+    let sk = this.skills().filter((a) => this.ready(a));
+    // Buyucu manayi idareli kullanir: yetenekten sonra Buyu Oku'na mana kalsin
+    if (this.wt === 'asa') sk = sk.filter((a) => this.mana - this.manaCost(a) >= MAGIC.basicCost * 2);
+    const self = sk.find((a) => a.self);
+    if (self && S.hp < S.maxHp() * 0.7 && !(this.status.ice > 0)) return this.selfSpell(self, true);
     const aoe = sk.find((a) => a.aoe);
     if (alive.length >= 2 && aoe) return this.doAttack(null, true, aoe);
-    const single = sk.find((a) => !a.aoe && a.key !== 'patlat');
+    const single = sk.find((a) => !a.aoe && !a.self && a.key !== 'patlat');
     const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
     if (single && target.hp > S.atk() * 1.2) return this.doAttack(target, true, single);
     return this.doAttack(target, true);
   }
+
+  // mana harca (Derin Bilgi: bazen bedava)
+  spendMana(n) {
+    if (!n) return;
+    if (M('free') && Math.random() < M('free')) { floatText(this.px(), this.py() - 22, 'Bedava büyü!', 'good'); return; }
+    this.mana = Math.max(0, this.mana - n);
+    this.renderMe();
+  }
+  setCd(key, cd) { this.cd[key] = Math.max(1, cd - M('cd')); }
 
   // Saldiri ya da yetenek. target null ise alan yetenegi (aoe).
   async doAttack(target, auto, ab = null) {
@@ -832,51 +951,307 @@ export class Battle {
     this.setHint('');
     let mult = ab ? ab.mult : BASIC[this.wt].mult;
     const hits = ab ? (ab.hits || 1) : BASIC[this.wt].hits;
+    // 0.13 asa: Buyu Oku mana harcar; mana yoksa asayla vurursun (zayif)
+    const bonk = !ab && this.wt === 'asa' && this.mana < MAGIC.basicCost;
+    if (bonk) mult *= MAGIC.bonk;
+    const magic = this.wt === 'asa' && !bonk;
     let grade = null;
     if (auto) this.autoActs++;
     else {
       this.manualActs++;
       grade = await timingBar(ab ? `${ab.name.toLocaleUpperCase('tr')}!` : 'VUR!');
       mult *= GRADE[grade].mult;
+      // 0.13 seri sayaci: art arda MUKEMMEL hasari buyutur (5 seride +%50)
+      if (grade === 'mukemmel') {
+        this.streak = Math.min(MANUAL2.streakMax, this.streak + 1);
+        if (this.streak >= 2) floatText(this.px(), this.py() - 30, `Seri ×${this.streak}!`, 'perfect');
+      } else this.streak = 0;
+      mult *= 1 + MANUAL2.streakStep * this.streak;
     }
-    if (ab) this.cd[ab.key] = ab.cd;
+    if (ab) this.setCd(ab.key, ab.cd);
+    if (magic) this.spendMana(this.manaCost(ab));
     if (this.firstStrike) { mult *= 1.5; this.firstStrike = false; }
+    let aimed = false;
+    if (this.aim) { aimed = true; this.aim = false; mult *= 2.2 + M('aim'); }
     const p = this.w.player;
     const wt = this.wt;
     let targets = target ? [target] : this.alive();
     if (ab && ab.key === 'coklu') targets = targets.slice(0, 3);
     const poisonedBefore = targets.some((e) => e.st.zehir > 0);
-    // animasyon: kilic/yumruk one atilir, yay yerinde ok atar
-    const animKey = ab && ab.key === 'doner' ? 'spin' : WEAPON_ANIM[wt];
+    const elem = magic && !ab ? ELEMENTS[this.elemI++ % ELEMENTS.length] : null;
+    // animasyon: kilic/yumruk one atilir, yay yerinde ok atar, asa yerinde buyu firlatir
+    const animKey = ab && ab.key === 'doner' ? 'spin' : WEAPON_ANIM[wt] || 'stab';
     if (wt === 'yay') {
       await playAnim(p, B('bowshot'), 1.8);
       await Promise.all(targets.map((e) => this.arrow(e, ab && ab.key === 'atesli')));
+    } else if (magic) {
+      await playAnim(p, B('punch'), 1.6);
+      const col = elem ? elem[4] : ab && ab.key === 'alev_dalgasi' ? 0xff8a3a : 0xb08aff;
+      await Promise.all(targets.map((e) => this.orb(e, col)));
     } else {
       const lunge = this.lunge(p, 34, -8, 200);
       this.swing = playAnim(p, B(animKey), animKey === 'stab' ? 2.3 : animKey === 'spin' ? 1 : 1.4);
       await wait(this.scene, animKey === 'stab' ? 760 / 2.3 : 260);
       await lunge;
     }
+    this.curMagic = magic;
     for (let h = 0; h < hits; h++) {
       for (const e of targets) {
         if (!e.alive) continue;
-        const crit = Math.random() < S.crit() + this.aura.crit;
+        const crit = aimed || Math.random() < S.crit() + this.aura.crit;
         this.hitEnemy(e, S.atk() * this.atkMult(), mult, crit, h === 0 && e === targets[0] ? grade : null, ab);
+        if (e.alive && elem && Math.random() < elem[3] * (1 + M('statusX'))) this.giveEnemyStatus(e, [elem[1], elem[2]]);
       }
       if (hits > 1 && h < hits - 1) {
         await wait(this.scene, 180);
-        if (wt !== 'yay') playAnim(p, B(WEAPON_ANIM[wt]), 2.4);
+        if (wt !== 'yay' && !magic) playAnim(p, B(WEAPON_ANIM[wt]), 2.4);
       }
     }
+    // Cifte Ok: Tek Ok bazen iki kez
+    if (!ab && wt === 'yay' && M('double') && Math.random() < M('double') && targets[0].alive) {
+      await this.arrow(targets[0], false);
+      floatText(targets[0].sprite.x, this.topY(targets[0]) - 24, 'Çifte ok!', 'good');
+      this.hitEnemy(targets[0], S.atk() * this.atkMult(), mult, Math.random() < S.crit() + this.aura.crit, null, null);
+    }
+    // Firtina Cagir: Buyu Oku ikinci bir dusmana seker
+    if (elem && M('chain') && Math.random() < M('chain')) {
+      const other = this.alive().find((e) => !targets.includes(e));
+      if (other) {
+        await this.orb(other, elem[4]);
+        floatText(other.sprite.x, this.topY(other) - 24, 'Sekti!', 'good');
+        this.hitEnemy(other, S.atk() * this.atkMult(), mult * 0.6, false, null, null);
+      }
+    }
+    // Lanet Bulutu: herkese zehir ve karanlik, durumlar yayilir
+    if (ab && ab.spread) {
+      const spread = {};
+      for (const e of this.enemies) for (const k of ['zehir', 'yanma', 'sersem', 'donma', 'lanet']) if (e.st[k] > 0) spread[k] = Math.max(spread[k] || 0, e.st[k]);
+      for (const e of this.alive()) {
+        for (const [k, v] of Object.entries(spread)) e.st[k] = Math.max(e.st[k], k === 'donma' ? 1 : v);
+        e.st.zehir = Math.max(e.st.zehir, 3);
+        e.st.karanlik = Math.max(e.st.karanlik, 2 + M('shroud'));
+        this.renderEnemy(e);
+      }
+    }
+    this.curMagic = false;
     // Zehirli Yagmur: zehirli hedefe Coklu Ok -> zehir herkese yayilir
     if (ab && ab.key === 'coklu' && poisonedBefore) {
       this.combo('zehirli_yagmur');
       for (const e of this.alive()) { e.st.zehir = Math.max(e.st.zehir, 5); this.renderEnemy(e); }
     }
-    if (wt !== 'yay') { await this.swing; await this.back(p); }
+    if (wt !== 'yay' && !magic) { await this.swing; await this.back(p); }
     if (S.hp <= 0) { await this.lose(); if (this.over) return; }
+    // Avci ortak saldiri: MUKEMMEL vurustan sonra Glemonun da saldirir
+    if (grade === 'mukemmel' && M('coop') && this.pet && this.alive().length) {
+      const t = this.pet;
+      const tg = target && target.alive ? target : this.alive()[0];
+      floatText(t.sprite.x, this.petTop(t) - 10, 'Ortak saldırı!', 'perfect');
+      await this.petStrike(t, [tg], 0.6 * M('coop'), null);
+      if (t.sprite.active) t.sprite.play(t.k('durma'));
+    }
     this.pose();
     this.endPlayerTurn();
+  }
+
+  // buyu topu: oyuncudan hedefe ucan parlak daire
+  orb(e, col) {
+    const a = this.scene.add.circle(BPOS.x + 30, GROUND_Y - 30, 3, col).setDepth(21);
+    const g = this.scene.add.circle(a.x, a.y, 6, col, 0.35).setDepth(20);
+    const ty = this.topY(e) + e.meta.bodyH * e.scale * 0.45;
+    return new Promise((res) => this.scene.tweens.add({ targets: [a, g], x: e.sprite.x, y: ty, duration: 220, ease: 'Sine.easeIn', onComplete: () => { a.destroy(); g.destroy(); res(); } }));
+  }
+
+  // Buz Kalkani: kendine buyu
+  async selfSpell(a, auto) {
+    this.phase = null;
+    this.setHint('');
+    if (auto) this.autoActs++; else this.manualActs++;
+    this.setCd(a.key, a.cd);
+    this.spendMana(this.manaCost(a));
+    await playAnim(this.w.player, B('drinkpotion'), 3.2);
+    this.status.ice = 2;
+    sfx('heal');
+    floatText(this.px(), this.py() - 14, 'Buz kalkanı!', 'perfect');
+    this.pose(); this.renderStatus(); this.endPlayerTurn();
+  }
+
+  // Destek: Sifa buyusu
+  sifaCost() { return Math.round(SIFA.mana * (1 - M('sifaCost'))); }
+  healPlayer(frac) {
+    const h = Math.round(S.maxHp() * frac * (1 + M('heal')));
+    S.hp = Math.min(S.maxHp(), S.hp + h);
+    floatText(this.px(), this.py(), `+${h}`, 'heal');
+    if (M('cleanse')) { for (const k of ['zehir', 'yanma', 'sersem', 'donma', 'karanlik']) this.status[k] = 0; }
+    if (M('shieldOnHeal')) this.status.kalkan = 1;
+    this.renderMe(); this.renderStatus();
+  }
+  healPets(frac) {
+    for (const t of this.pets) if (t.alive) {
+      const h = Math.round(t.maxHp * frac * (1 + M('heal')));
+      t.hp = Math.min(t.maxHp, t.hp + h);
+      floatText(t.sprite.x, this.petTop(t), `+${h}`, 'heal');
+      this.renderPet(t);
+    }
+  }
+  async castSifa(auto) {
+    if (!auto && this.phase !== 'menu') return;
+    if (this.cd.sifa > 0 || this.mana < this.sifaCost()) return;
+    this.phase = null;
+    this.setHint('');
+    if (auto) this.autoActs++; else this.manualActs++;
+    this.mana -= this.sifaCost();
+    this.cd.sifa = SIFA.cd;
+    await playAnim(this.w.player, B('drinkpotion'), 3.2);
+    sfx('heal');
+    this.healPlayer(SIFA.heal);
+    this.healPets(SIFA.pet);
+    if (M('sifaWard')) { this.status.ay = Math.max(this.status.ay || 0, 1); floatText(this.px(), this.py() - 14, 'Ay kalkanı!', 'perfect'); }
+    this.pose(); this.endPlayerTurn();
+  }
+
+  // Keskin Nisanci: bir tur nisan al, sonraki vurus kesin kritik
+  async aimTurn() {
+    if (this.phase !== 'menu') return;
+    this.phase = null;
+    this.setHint('');
+    this.manualActs++;
+    this.aim = true;
+    floatText(this.px(), this.py() - 14, 'Nişan alındı…', 'info');
+    sfx('click');
+    await playAnim(this.w.player, B('bowshot'), 0.6);
+    this.pose(); this.renderStatus(); this.endPlayerTurn();
+  }
+
+  // savasta silah degistirmek 1 tur surer
+  swapMenu() {
+    this.phase = 'items';
+    this.acts.innerHTML = '';
+    this.acts.appendChild(el('div', 'hint', 'Hangi silah? (1 tur sürer)'));
+    for (const i of this.swapWeapons()) {
+      const it = ITEMS[S.save.bag[i].id];
+      this.acts.appendChild(button(it.name, () => this.swap(i), it.wt === 'yay' ? 'green' : it.wt === 'asa' ? 'purple' : 'primary'));
+    }
+    this.acts.appendChild(button('Geri', () => this.showMenu(), 'small'));
+  }
+  async swap(i) {
+    if (this.phase !== 'items') return;
+    this.phase = null;
+    this.manualActs++;
+    if (!S.equipFromBag(i)) { this.showMenu(); return; }
+    this.wt = S.weaponType();
+    this.maxMana = S.maxMana();
+    this.mana = Math.min(this.mana, this.maxMana);
+    this.streak = 0;
+    sfx('click');
+    floatText(this.px(), this.py() - 14, ITEMS[S.save.equip.silah].name, 'info');
+    this.buildPanel();
+    await wait(this.scene, 400);
+    this.endPlayerTurn();
+  }
+
+  // 0.13 bitirici vurus (sadece manuel)
+  async onFinish() {
+    if (this.phase !== 'menu') return;
+    const list = this.finishables();
+    const e = await this.chooseTarget(list, 'Kimi bitireceksin?');
+    if (e === 'auto' || this.over) return;
+    if (!e) { this.showMenu(); return; }
+    this.phase = null;
+    this.setHint('');
+    this.manualActs++;
+    const p = this.w.player;
+    p.play(B('run'));
+    await new Promise((res) => this.scene.tweens.add({ targets: p, x: BPOS.x + 60, y: BPOS.y - 12, duration: 240, ease: 'Quad.easeIn', onComplete: res }));
+    await playAnim(p, B('spin'), 1.3);
+    this.scene.cameras.main.flash(160, 255, 240, 200);
+    if (S.save.settings.shake !== false) this.scene.cameras.main.shake(200, 0.014);
+    sfx('crit');
+    floatText(e.sprite.x, this.topY(e) - 18, 'BİTİRİCİ!', 'perfect');
+    this.burst(e.sprite.x, this.topY(e) + e.meta.bodyH * e.scale * 0.5, 10);
+    e.finished = true;
+    S.save.stats.finishers = (S.save.stats.finishers || 0) + 1;
+    this.applyDamage(e, Math.max(1, e.hp), true);
+    await this.back(p, 260);
+    this.pose();
+    this.endPlayerTurn();
+  }
+
+  // 0.13 sinifin buyuk yetenegi
+  gainUlt(n) {
+    if (!S.cls() || this.over) return;
+    const low = M('lastBreath') && S.hp < S.maxHp() * 0.3 ? 2 : 1;
+    const before = this.ult;
+    this.ult = Math.min(100, this.ult + n * low);
+    if (before < 100 && this.ult >= 100) floatText(this.px(), this.py() - 34, `★ ${S.cls().ult.name} hazır!`, 'perfect');
+    this.renderMe();
+  }
+  async useUlt(auto) {
+    if (!S.cls() || this.ult < 100) return;
+    if (!auto && this.phase !== 'menu') return;
+    this.phase = null;
+    this.setHint('');
+    if (auto) this.autoActs++; else this.manualActs++;
+    this.ult = 0;
+    this.ultJust = true;
+    const u = S.cls().ult;
+    const p = this.w.player;
+    banner(`★ ${u.name}!`, u.desc, 1300, 'gold');
+    sfx('levelup');
+    if (u.key === 'nara') {
+      await playAnim(p, B('cheer'), 1.4);
+      this.scene.cameras.main.shake(260, 0.012);
+      this.status.nara = 3 + M('naraTurns') + 1;
+      for (const e of this.alive()) { e.st.sersem = Math.max(e.st.sersem, 1); this.renderEnemy(e); }
+      sfx('roar');
+    } else if (u.key === 'ok_yagmuru') {
+      await playAnim(p, B('jump'), 1.4);
+      const n = 6 + M('arrows');
+      for (let i = 0; i < n && this.alive().length; i++) {
+        const e = pick(this.alive());
+        playAnim(p, B('bowshot'), 3);
+        await this.arrow(e, false);
+        this.hitEnemy(e, S.atk() * this.atkMult(), 0.55, Math.random() < S.crit() + this.aura.crit, null, null);
+      }
+    } else if (u.key === 'meteor') {
+      await playAnim(p, B('shake'), 1.2);
+      const alive = this.alive();
+      const cx = alive.reduce((t, e) => t + e.sprite.x, 0) / Math.max(1, alive.length);
+      const m = this.scene.add.circle(cx + 60, -20, 9, 0xff7a2a).setDepth(22);
+      await new Promise((res) => this.scene.tweens.add({ targets: m, x: cx, y: this.gy - 20, duration: 420, ease: 'Quad.easeIn', onComplete: res }));
+      m.destroy();
+      this.boom(cx, this.gy - 26, 2);
+      this.curMagic = true;
+      for (const e of alive) {
+        this.hitEnemy(e, S.atk() * this.atkMult(), 1.6 + M('meteor'), Math.random() < S.crit() + this.aura.crit, null, null);
+        if (e.alive) this.giveEnemyStatus(e, ['yanma', 3 + (M('meteor') ? 2 : 0)]);
+      }
+      this.curMagic = false;
+    } else if (u.key === 'toplu_sifa') {
+      await playAnim(p, B('cheer'), 1.4);
+      sfx('heal');
+      for (const k of ['zehir', 'yanma', 'sersem', 'donma', 'karanlik']) this.status[k] = 0;
+      this.healPlayer(0.4);
+      if (M('revive')) for (const t of this.pets) if (!t.alive && t.sprite.active) this.revivePet(t, M('revive'));
+      this.healPets(0.5);
+      if (M('ward')) this.status.ay = Math.max(this.status.ay || 0, 1);
+    }
+    if (S.hp <= 0) { await this.lose(); if (this.over) return; }
+    this.pose();
+    this.renderStatus();
+    this.endPlayerTurn();
+  }
+
+  // bayilan Glemonu kaldir (Diriltme, Sadakat)
+  revivePet(t, frac) {
+    t.alive = true;
+    t.hp = Math.max(1, Math.round(t.maxHp * frac));
+    this.scene.tweens.killTweensOf([t.sprite, t.shadow]);
+    t.sprite.setAlpha(1); t.shadow.setAlpha(1);
+    t.sprite.play(t.k('durma'));
+    floatText(t.sprite.x, this.petTop(t) - 12, 'Kalktı!', 'perfect');
+    if (!t.ui) this.makePetBar(t);
+    this.renderPet(t);
+    this.savePetHp();
   }
 
   // ok: oyuncudan hedefe ucan kucuk cubuk
@@ -984,7 +1359,7 @@ export class Battle {
 
   // 0.12: evcillestirme sansi (ekranda da gorunur)
   tameChance(e, food) {
-    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004) * S.perk('yem_ustasi', 1.15, 1);
+    let ch = TAME.chance[e.stage] * (e.sleeping ? TAME.sleepingBonus : 1) * (1 + S.level('bag') * 0.004) * S.perk('yem_ustasi', 1.15, 1) * (1 + M('tame'));
     if (food && ITEMS[food].special && e.rarity === 'siradan') ch *= 1.3;
     return Math.min(1, ch);
   }
@@ -1079,10 +1454,11 @@ export class Battle {
       this.combo('buhar_patlamasi');
       this.boom(e.sprite.x, this.gy - 26, 1.4);
       const best = Math.max(S.atk() * this.atkMult(), ...this.pets.filter((t) => t.alive).map((t) => t.atk));
-      this.applyDamage(e, calcDamage(best, 2.2, this.eDef(e)), true);
+      this.applyDamage(e, calcDamage(best, 2.2 * (1 + M('steam')), this.eDef(e)), true);
       for (const o of this.alive()) { o.st.sersem = Math.max(o.st.sersem, 1); this.renderEnemy(o); }
       return;
     }
+    if (st === 'donma') turns += M('freeze');
     e.st[st] = Math.max(e.st[st], turns);
     floatText(e.sprite.x, this.topY(e) - 14, STATUS_NAMES[st] + '!', 'info');
     this.renderEnemy(e);
@@ -1095,13 +1471,24 @@ export class Battle {
       floatText(e.sprite.x, top + 4, 'Iska!', 'weak');
       return;
     }
-    let m = mult * (crit ? 1.5 : 1);
+    let m = mult * (crit ? 1.5 + M('critDmg') : 1);
+    // 0.13 kilic / yay / asa ucgeni
+    const sm = styleMult(this.wt, e.type);
+    m *= sm;
+    if (sm !== 1 && !e.styleTold) { e.styleTold = true; floatText(e.sprite.x, top - 30, sm > 1 ? 'Zayıf noktası!' : 'Dayanıklı…', sm > 1 ? 'good' : 'weak'); }
+    // 0.13 sinif: kendi silahinda bonus, Barbar ofkesi, Nara, durumlu / lanetli hedef
+    m *= 1 + M(`dmg_${styleOf(this.wt)}`) + (this.curMagic ? this.gearSum('magic') : 0);
+    if (M('rage')) m *= 1 + Math.min(0.4, M('rage') * Math.floor((1 - S.hp / S.maxHp()) * 10));
+    if (this.status.nara > 0) m *= 1.3 + M('naraPow');
+    if (M('statusDmg') && ['zehir', 'yanma', 'sersem', 'donma', 'karanlik', 'lanet'].some((k) => e.st[k] > 0)) m *= 1 + M('statusDmg');
+    if (e.st.lanet > 0) m *= 1.25;
+    if (e.fly && M('fly')) m *= 1 + M('fly');
     // tur ustaligi: cok yendigin ture daha sert vurursun
     m *= 1 + masteryOf((S.save.stats.glemons || {})[e.key] || 0).bonus;
     // 0.12 bolge tamamlama bonusu
     { const zb = zoneBonus(this.zone.key); if (zb) m *= 1 + zb.dmg; }
     // ucan Glemonlar: kilic ve yumruk yari hasar, yay tam
-    if (e.fly && this.wt !== 'yay') {
+    if (e.fly && this.wt !== 'yay' && this.wt !== 'asa') {
       m *= 0.5;
       if (!this.flyTold) { this.flyTold = true; floatText(e.sprite.x, top - 20, 'Uçuyor! Yay daha iyi', 'weak'); }
     }
@@ -1128,6 +1515,11 @@ export class Battle {
     this.scene.tweens.add({ targets: sl, alpha: 0, scale: 1.4, duration: 260, onComplete: () => sl.destroy() });
     this.applyDamage(e, dmg, crit || grade === 'mukemmel');
     if (e.alive && ab && ab.status) this.giveEnemyStatus(e, ab.status);
+    // 0.13: can calma (Golge Buyucusu, Golge Runu), Kan Hirsi, Lanet, Avci zehri
+    const steal = (this.curMagic ? M('drain') + this.gearSum('drain') : 0) + M('leech');
+    if (steal > 0 && S.hp > 0) { const h = Math.max(1, Math.round(dmg * steal)); S.hp = Math.min(S.maxHp(), S.hp + h); floatText(this.px(), this.py() + 4, `+${h}`, 'heal'); this.renderMe(); }
+    if (e.alive && this.curMagic && M('curse')) { e.st.lanet = Math.max(e.st.lanet, 2 + M('curseTurns')); this.renderEnemy(e); }
+    if (e.alive && this.wt === 'yay' && M('poison') && Math.random() < M('poison')) this.giveEnemyStatus(e, ['zehir', 3]);
     // 0.8: bazi silahlar vurunca durum verir (Buzul Kilici dondurur, Kor Kilici yakar)
     const wpn = S.save.equip.silah && ITEMS[S.save.equip.silah];
     if (e.alive && wpn && wpn.onHit && Math.random() < wpn.onHit[1]) this.giveEnemyStatus(e, [wpn.onHit[0], wpn.onHit[0] === 'donma' ? 1 : 3]);
@@ -1177,6 +1569,7 @@ export class Battle {
     if (e.shiny) xp *= 2;
     if (e.golden) xp *= 4;
     if (this.opts.night) xp *= NIGHT.reward; // 0.11 gece
+    if (e.finished) xp *= 1 + MANUAL2.finishXp; // 0.13 bitirici vurus
     this.killXp += xp;
     let gold = Math.round(this.floor * (2 + Math.random() * 2) * Math.min(rm, 3) * (e.data.goldMult || 1));
     if (e.shiny) gold *= 3;
@@ -1218,7 +1611,14 @@ export class Battle {
     }
   }
 
-  damagePlayer(d, anim = true, dot = false) {
+  damagePlayer(d, anim = true, dot = false, src = null) {
+    // 0.13 Kutsal Kalkan: her savasta ilk vurus
+    if (this.firstBlock && d > 0 && !dot) {
+      this.firstBlock = false;
+      floatText(this.px(), this.py(), 'Kutsal kalkan!', 'good');
+      this.renderStatus();
+      return;
+    }
     // Ay Iksiri: sonraki saldirilardan hasar yok (zehir ve yanma kalkani harcamaz)
     if (this.status.ay > 0 && d > 0 && !dot) {
       this.status.ay--;
@@ -1227,6 +1627,15 @@ export class Battle {
       return;
     }
     if (S.has('demir_deri')) d = Math.max(1, Math.round(d * 0.9));
+    if (!dot && this.status.ice > 0) { this.status.ice--; d = Math.max(1, Math.round(d * 0.4)); if (src && src.alive && Math.random() < 0.3) this.giveEnemyStatus(src, ['donma', 1]); }
+    if (!dot && this.status.kalkan > 0) { this.status.kalkan = 0; d = Math.max(1, Math.round(d * 0.5)); }
+    // Mana Kalkani: hasarin bir kismini mana karsilar
+    if (M('manaShield') && this.mana > 0) { const m = Math.min(this.mana, Math.round(d * M('manaShield'))); this.mana -= m; d = Math.max(1, d - m); }
+    if (!dot) {
+      // hasar alinca seri bozulur (patronun cagirdiklari bozmaz)
+      if (this.streak > 0 && !(src && src.summoned)) { this.streak = 0; floatText(this.px(), this.py() - 24, 'Seri bozuldu', 'weak'); }
+      this.gainUlt(MANUAL2.ultHit);
+    }
     S.hp = Math.max(0, S.hp - d);
     const p = this.w.player;
     floatText(this.px(), this.py(), `-${d}`, 'hurt');
@@ -1250,12 +1659,22 @@ export class Battle {
       if (e.st[k] > 0 && e.alive) {
         e.st[k]--;
         floatText(e.sprite.x, this.topY(e) - 12, txt, 'info');
-        this.applyDamage(e, Math.max(1, Math.round(e.maxHp * pct)), false);
+        this.applyDamage(e, Math.max(1, Math.round(e.maxHp * pct * (1 + M('dotPow')))), false);
         await wait(this.scene, 250);
       }
     }
     this.renderEnemy(e);
     if (!e.alive) { this.endEnemyTurn(); return; }
+    // 0.13 Lanet ve Korku
+    const cursed = e.st.lanet > 0;
+    if (cursed) e.st.lanet--;
+    if (cursed && M('fear') && Math.random() < M('fear')) {
+      floatText(e.sprite.x, this.topY(e) - 12, 'Korktu!', 'info');
+      await wait(this.scene, 500);
+      this.renderEnemy(e);
+      this.endEnemyTurn();
+      return;
+    }
     if (e.st.donma > 0) {
       e.st.donma--;
       floatText(e.sprite.x, this.topY(e) - 12, 'Donmuş!', 'info');
@@ -1265,13 +1684,7 @@ export class Battle {
       return;
     }
     const d = e.data;
-    let act = { mult: 1 };
-    if (d.boss) {
-      const step = d.pattern[(e.acts - 1) % d.pattern.length];
-      if (step !== 'normal') act = { ...d.specials[step] };
-    } else if (d.special && e.acts % d.every === 0) {
-      act = { ...d.special };
-    }
+    let act = this.planAct(e, e.acts);
     if (act.heal) {
       const allies = this.alive();
       const low = allies.reduce((a, b) => (a.hp / a.maxHp <= b.hp / b.maxHp ? a : b));
@@ -1305,7 +1718,14 @@ export class Battle {
     }
     const onPet = !act.aoe && !!t;
     let dodged = false;
-    if (act.telegraph) {
+    let parried = false;
+    // 0.13 savusturma: Savun'dayken dogru anda dokun -> hasar yok ve karsi vurus
+    if (this.status.savun && !onPet && !S.save.settings.auto) {
+      const top = this.topY(e);
+      floatText(e.sprite.x, top - 2, '!', 'warn');
+      sfx('warn');
+      parried = !!(await dodgePrompt(Math.round(MANUAL2.parryMs * (1 + M('parry'))), 1, 'SAVUŞTUR!'));
+    } else if (act.telegraph) {
       const top = this.topY(e);
       floatText(e.sprite.x, top - 2, '!', 'warn');
       if (act.name) floatText(e.sprite.x, top - 20, act.name, 'info');
@@ -1336,12 +1756,22 @@ export class Battle {
     await wait(this.scene, 300 / 1.6);
     if (missed) {
       floatText(onPet ? t.sprite.x : this.px(), onPet ? this.petTop(t) : this.py() - 10, 'Iskaladı!', 'good');
+    } else if (parried) {
+      sfx('perfect');
+      floatText(this.px(), this.py() - 10, 'Savuşturdun!', 'perfect');
+      S.save.stats.parries = (S.save.stats.parries || 0) + 1;
+      this.defXp += 4 * this.floor;
+      if (e.alive) {
+        const back = calcDamage(S.atk() * this.atkMult(), MANUAL2.parryCounter * S.counterMult() * (1 + M('counter')), this.eDef(e));
+        this.scene.time.delayedCall(300, () => { if (!this.over && e.alive) { floatText(e.sprite.x, this.topY(e) - 22, 'Karşı vuruş!', 'perfect'); this.applyDamage(e, back, true); } });
+      }
+      playAnim(p, B('stab'), 2.4).then(() => { if (!this.over) this.pose(); });
     } else if (onPet && t.ps.dodge && Math.random() < t.ps.dodge) {
       floatText(t.sprite.x, this.petTop(t) - 6, 'Kaçtı!', 'good');
       sfx('dodge');
     } else if (onPet) {
       const tm = typeMult(e.type, t.data.type);
-      const dmg = calcDamage(e.atk * tm, act.mult || 1, t.def * (t.shell > 0 ? 2 : 1));
+      const dmg = calcDamage(e.atk * tm * (cursed ? 0.8 : 1) * this.petGuard(), act.mult || 1, t.def * (t.shell > 0 ? 2 : 1));
       this.damagePet(t, dmg);
       const refl = (t.reflect > 0 ? 0.5 : 0) + (t.ps.thorns || 0);
       if (refl > 0 && e.alive) {
@@ -1365,8 +1795,8 @@ export class Battle {
       this.scene.time.delayedCall(900, () => { if (!this.over) this.pose(); });
     } else {
       const def = S.def() * this.defMult();
-      const dmg = calcDamage(e.atk, act.mult || 1, def);
-      this.damagePlayer(dmg, true);
+      const dmg = calcDamage(e.atk * (cursed ? 0.8 : 1), act.mult || 1, def);
+      this.damagePlayer(dmg, true, false, e);
       this.defXp += dmg * 0.6;
       if ((act.mult || 1) >= 2) this.scene.cameras.main.shake(180, 0.012);
       const immune = act.status && ((act.status[0] === 'yanma' && S.fireproof()) || (act.status[0] === 'karanlik' && S.darkproof()));
@@ -1380,7 +1810,7 @@ export class Battle {
         this.renderStatus();
       }
       // alan saldirisi yanindaki Glemon'a da vurur
-      if (act.aoe) for (const x of this.pets) if (x.alive) this.damagePet(x, calcDamage(e.atk * typeMult(e.type, x.data.type), (act.mult || 1) * 0.7, x.def));
+      if (act.aoe) for (const x of this.pets) if (x.alive) this.damagePet(x, calcDamage(e.atk * typeMult(e.type, x.data.type) * this.petGuard(), (act.mult || 1) * 0.7, x.def));
     }
     await atkAnim;
     if (S.hp <= 0) { await this.lose(); if (this.over) return; }
@@ -1394,6 +1824,29 @@ export class Battle {
     }
     this.endEnemyTurn();
   }
+
+  // 0.13 dusmanin siradaki hamlesi (niyet simgesi icin de kullanilir)
+  planAct(e, n) {
+    const d = e.data;
+    if (d.boss) {
+      const step = d.pattern[(n - 1) % d.pattern.length];
+      if (step !== 'normal') return { ...d.specials[step] };
+    } else if (d.special && n % d.every === 0) return { ...d.special };
+    return { mult: 1 };
+  }
+  intentOf(e) {
+    const a = this.planAct(e, e.acts + 1);
+    if (a.heal) return ['Şifa', 'heal'];
+    if (a.summon) return ['Çağırır', 'summon'];
+    if (a.shell) return ['Kabuk', 'guard'];
+    if (a.reflect) return ['Diken', 'guard'];
+    if (a.aoe) return ['Alan!', 'strong'];
+    if ((a.mult || 1) >= 1.5 || a.telegraph) return ['Güçlü!', 'strong'];
+    if (a.status) return [STATUS_NAMES[a.status[0]], 'status'];
+    return ['Vuruş', 'atk'];
+  }
+  // Sovalye ve Kale: Glemonlar daha az hasar alir
+  petGuard() { return (1 - M('petTaken')) * (this.status.savun && M('guardPets') ? 1 - M('guardPets') : 1); }
 
   endEnemyTurn() {
     this.renderAtb();
@@ -1458,7 +1911,7 @@ export class Battle {
       const res = S.petAddXp(t.p, this.killXp * 0.6 * xm * (1 + (ac.xp || 0)));
       if (res.up) petMsg += ` · ${t.name} Sv.${res.up}!`;
       if (res.evolved > 0) evos.push({ name: GLEMONS[t.p.key].name, stage: res.evolved });
-      const hu = fightBond(t.p);
+      const hu = fightBond(t.p, 1 + M('bond'));
       if (hu) petMsg += ` · <span style="color:#ff9ab4">${t.name} ${'♥'.repeat(hu)}</span>`;
     }
     gains.bag = this.bagXp;
@@ -1469,7 +1922,7 @@ export class Battle {
     const hatched = S.tickEggs();
     tickNest();
     const r = (x) => Math.round(x);
-    const skName = skill === 'okculuk' ? 'Okçuluk' : 'Saldırı';
+    const skName = SKILLS.find((x) => x.key === skill).name;
     const extra = [];
     if (gains.bag >= 1) extra.push(`+${r(gains.bag)} Bağ`);
     if (gains.sans >= 1) extra.push(`+${r(gains.sans)} Şans`);

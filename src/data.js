@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.12.0';
+export const VERSION = '0.13.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -37,6 +37,7 @@ export const SKILLS = [
   { key: 'savunma', name: 'Savunma', desc: 'Hasar alınca ve kaçınınca artar. DEF.' },
   { key: 'can', name: 'Can', desc: 'Her savaşta artar. Her seviye +10 can.' },
   { key: 'okculuk', name: 'Okçuluk', desc: 'Yayla Glemon yenince artar. Daha iyi yaylar ve ok yetenekleri (20, 40, 60). Uçan Glemonlara tam hasar.' },
+  { key: 'buyu', name: 'Büyü', desc: 'Asayla Glemon yenince artar. Daha çok mana, daha iyi asalar ve büyü yetenekleri (20, 40, 60).' },
   { key: 'madencilik', name: 'Madencilik', desc: 'Maden Ocağı\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
   { key: 'toplama', name: 'Toplama', desc: 'Keşifte ve Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
   { key: 'uretim', name: 'Üretim', desc: 'Zanaat avlusundaki Masa, Fırın, Kazan ve Yem Tezgâhı\'nda üretince artar. Yeni tarifler açar.' },
@@ -450,11 +451,12 @@ export const petCap = (bagLvl) => Math.min(PET_MAX_LVL, Math.max(5, Math.floor(b
 
 // ---------------------------------------------------------------- Silah yetenekleri (0.5)
 // wt: kilic | yay | yumruk (silahsiz ya da eldiven). Seviye: kilic/yumruk Saldiri, yay Okculuk.
-export const WEAPON_SKILL = { kilic: 'saldiri', yay: 'okculuk', yumruk: 'saldiri' };
+export const WEAPON_SKILL = { kilic: 'saldiri', yay: 'okculuk', yumruk: 'saldiri', asa: 'buyu' };
 export const BASIC = {
   kilic: { name: 'Kesik', hits: 1, mult: 1 },
   yay: { name: 'Tek Ok', hits: 1, mult: 1 },
   yumruk: { name: 'Seri Yumruk', hits: 2, mult: 0.6 },
+  asa: { name: 'Büyü Oku', hits: 1, mult: 1 },
 };
 export const ABILITIES = {
   kilic: [
@@ -471,6 +473,12 @@ export const ABILITIES = {
     { key: 'sersemletici', name: 'Sersemletici', lvl: 20, cd: 3, mult: 0.7, status: ['sersem', 2], desc: '×0,7 + Sersem' },
     { key: 'buz', name: 'Buz Yumruğu', lvl: 40, cd: 3, mult: 0.6, status: ['donma', 1], desc: '×0,6 + Donma' },
     { key: 'patlat', name: 'Patlat', lvl: 60, cd: 4, mult: 1.2, desc: 'yanan hedefi patlatır' },
+  ],
+  // 0.13 Buyu: yetenekler mana harcar
+  asa: [
+    { key: 'alev_dalgasi', name: 'Alev Dalgası', lvl: 20, cd: 2, mana: 12, aoe: true, mult: 0.65, status: ['yanma', 2], desc: 'tüm düşmanlara ×0,65 + Yanma (12 mana)' },
+    { key: 'buz_kalkani', name: 'Buz Kalkanı', lvl: 40, cd: 4, mana: 14, self: true, desc: '2 saldırıdan %60 az hasar, vuranı dondurabilir (14 mana)' },
+    { key: 'lanet_bulutu', name: 'Lanet Bulutu', lvl: 60, cd: 4, mana: 20, aoe: true, mult: 0.45, spread: true, desc: 'herkese ×0,45 + Zehir + Karanlık (20 mana)' },
   ],
 };
 export const STATUS_NAMES = { zehir: 'Zehir', yanma: 'Yanma', sersem: 'Sersem', donma: 'Donma', karanlik: 'Karanlık' };
@@ -739,6 +747,10 @@ export const CAPE_COLORS = {
   balikcilik: ['#1e4a62', '#2e7a9a', '#5ab0c8', '#e0f8ff'], sans: ['#7a5a12', '#c09020', '#ecc850', '#fff8d0'],
   bag: ['#4a2a6a', '#7448a0', '#a880d0', '#f0e0ff'], cirak: ['#4a4038', '#6e6254', '#9a8c7a', '#d8ccb8'],
   tuccar: ['#1e3e3a', '#2e6a5e', '#c89a3a', '#ffe8a0'],
+  buyu: ['#2a2a6a', '#4a48a8', '#8a88e0', '#e0f0ff'],
+  // 0.13 sinif pelerinleri
+  savasci: ['#5a2420', '#94382c', '#c8604a', '#e8c070'], nisanci: ['#24402a', '#3a6a3a', '#6a9a50', '#d8e8a0'],
+  buyucu: ['#2a1e5a', '#46329a', '#7a5ad0', '#b8f0ff'], destek: ['#5a4a22', '#9a8040', '#e0d0a0', '#fff8e0'],
 };
 for (const s of SKILLS) {
   ITEMS[`pelerin_${s.key}`] = {
@@ -911,6 +923,7 @@ for (const [t, T] of Object.entries(TIERS)) {
   const d = 'Üretim Masasında yapılır.';
   ITEMS[`${t}_kilic`] = { name: `${T.name} Kılıç`, kind: 'silah', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `kilic_${t}`, power: T.atk, req: ['saldiri', T.lvl], desc: d };
   ITEMS[`${t}_yay`] = { name: `${T.name} Yay`, kind: 'silah', wt: 'yay', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `yay_${t}`, power: T.bow, req: ['okculuk', T.lvl], desc: d };
+  ITEMS[`${t}_asa`] = { name: `${T.name} Asa`, kind: 'silah', wt: 'asa', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `asa_${t}`, power: T.bow, mana: { kristal: 16, kor: 20, bonkit: 25, golge: 30 }[t], req: ['buyu', T.lvl], desc: `${d} Mana +${{ kristal: 16, kor: 20, bonkit: 25, golge: 30 }[t]}.` };
   ITEMS[`${t}_kazma`] = { name: `${T.name} Kazma`, kind: 'kazma', rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `kazma_${t}`, pick: T.pick, req: ['madencilik', T.mine], desc: d };
   ['kask', 'gogus', 'bot'].forEach((k, i) => {
     ITEMS[`${t}_${k}`] = { name: `${T.name} ${{ kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot' }[k]}`, kind: k, rarity: t === 'bonkit' ? 'epik' : 'nadir', icon: `${k}_${t}`, def: T.def[i], set: t, req: ['savunma', T.lvl], desc: d };
@@ -1619,3 +1632,158 @@ MASTERY.push([2500, 0.15]);
 // Bolge tamamlama: bir bolgenin butun turlerini evcillestirince kalici bonus
 export const ZONE_DONE = { dmg: 0.05, xp: 0.05, pul: 20 };
 BUILD_ORDER.push('kulucka');
+
+// ================================================================ 0.13 Siniflar ve Buyu (1. parca)
+// Mana: Buyu Oku ve buyu yetenekleri harcar, her turunda biraz dolar.
+export const MAGIC = { base: 20, perLvl: 0.8, regen: 0.15, basicCost: 4, bonk: 0.45 };
+// Kilic / yay / asa ucgeni: tip -> [zayif oldugu tarz, dayanikli oldugu tarz]
+export const STYLE = {
+  Orman: ['asa', 'yay'], Taş: ['asa', 'kilic'], Kum: ['kilic', 'asa'], Buz: ['kilic', 'yay'],
+  Ateş: ['yay', 'asa'], Gölge: ['yay', 'kilic'], Su: ['asa', 'kilic'], Ay: ['kilic', 'yay'],
+};
+export const STYLE_NAME = { kilic: 'Kılıç', yay: 'Yay', asa: 'Asa' };
+export const STYLE_MULT = { weak: 1.3, resist: 0.75 };
+export const styleOf = (wt) => (wt === 'yumruk' ? 'kilic' : wt);
+export function styleMult(wt, type) {
+  const s = STYLE[type];
+  if (!s) return 1;
+  const w = styleOf(wt);
+  return s[0] === w ? STYLE_MULT.weak : s[1] === w ? STYLE_MULT.resist : 1;
+}
+// Buyu Oku her atista siradaki elementi kullanir: [ad, durum, tur, sans, renk]
+export const ELEMENTS = [['Ateş', 'yanma', 2, 0.15, 0xff9a3a], ['Buz', 'donma', 1, 0.1, 0x9ad8ff], ['Yıldırım', 'sersem', 1, 0.12, 0xffe060]];
+Object.assign(STATUS_NAMES, { lanet: 'Lanet' });
+
+Object.assign(ITEMS, {
+  cirak_asasi: { name: 'Çırak Asası', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_cirak', power: 5, mana: 5, desc: 'İlk asa. Büyü Oku mana harcar, mana her turunda dolar. Manan bitince asayla vurursun (zayıf).' },
+  tas_asa: { name: 'Taş Asa', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_tas', power: 9, mana: 8, req: ['buyu', 10], desc: 'Üretim Masasında yapılır. Mana +8.' },
+  demir_asa: { name: 'Demir Asa', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_demir', power: 14, mana: 12, req: ['buyu', 20], desc: 'Üretim Masasında yapılır. Mana +12.' },
+  run_tasi: { name: 'Rün Taşı', kind: 'malzeme', rarity: 'nadir', icon: 'run_tasi', desc: 'Simya Kazanında yapılır. Asaların ve rün tılsımlarının malzemesi.' },
+  ates_runu: { name: 'Ateş Rünü', kind: 'tilsim', rarity: 'nadir', icon: 'run_ates', magic: 0.12, desc: 'Büyü hasarın +%12.' },
+  buz_runu: { name: 'Buz Rünü', kind: 'tilsim', rarity: 'nadir', icon: 'run_buz', mana: 20, def: 3, desc: 'Mana +20, Savunma +3.' },
+  golge_runu: { name: 'Gölge Rünü', kind: 'tilsim', rarity: 'epik', icon: 'run_golge', drain: 0.1, desc: 'Büyü vuruşlarının %10\'u kadar can çalarsın.' },
+});
+for (const c of ['savasci', 'nisanci', 'buyucu', 'destek']) {
+  ITEMS[`pelerin_${c}`] = { name: `${{ savasci: 'Savaşçı', nisanci: 'Nişancı', buyucu: 'Büyücü', destek: 'Destek' }[c]} Pelerini`, kind: 'pelerin', rarity: 'nadir', icon: `pelerin_${c}`, def: 2, hp: 10, desc: 'Sınıf seçince Hancı Lale verir. Savunma +2, Can +10.' };
+}
+Object.assign(SELL, { cirak_asasi: 10, tas_asa: 15, demir_asa: 40, run_tasi: 12, ates_runu: 60, buz_runu: 60, golge_runu: 120 });
+SHOP.push({ id: 'cirak_asasi', price: 60 });
+RECIPES.push(
+  { out: 'cirak_asasi', mats: { dal: 4, ham_kristal: 1 }, station: 'masa', lvl: 1, xp: 50 },
+  { out: 'run_tasi', mats: { ham_kristal: 2, tas: 2 }, station: 'kazan', lvl: 6, xp: 40 },
+  { out: 'tas_asa', mats: { tas: 5, run_tasi: 1 }, station: 'masa', lvl: 5, xp: 70 },
+  { out: 'demir_asa', mats: { demir_kulcesi: 8, run_tasi: 2 }, station: 'masa', lvl: 12, xp: 160 },
+  { out: 'kristal_asa', mats: { saf_kristal: 3, run_tasi: 2, altin_kulcesi: 2 }, station: 'masa', lvl: 30, xp: 400 },
+  { out: 'kor_asa', mats: { kor_kulcesi: 3, run_tasi: 2, kivilcim: 3 }, station: 'masa', lvl: 42, xp: 700 },
+  { out: 'bonkit_asa', mats: { bonkit_kulcesi: 2, run_tasi: 3, saf_kristal: 2 }, station: 'masa', lvl: 55, xp: 1200 },
+  { out: 'golge_asa', mats: { golge_kulcesi: 3, run_tasi: 3, golge_ozu: 3 }, station: 'masa', lvl: 68, xp: 1400 },
+  { out: 'buz_runu', mats: { run_tasi: 2, buz_kristali: 4 }, station: 'kazan', lvl: 20, xp: 160 },
+  { out: 'ates_runu', mats: { run_tasi: 2, kivilcim: 3 }, station: 'kazan', lvl: 25, xp: 200 },
+  { out: 'golge_runu', mats: { run_tasi: 3, golge_ozu: 4 }, station: 'kazan', lvl: 40, xp: 320 },
+);
+
+// ---------------------------------------------------------------- Sinif sistemi (Eren'in fikri)
+// Bir savas becerisi (Saldiri, Okculuk, Buyu) 20 olunca Hanci Lale'de sinif secilir, 50'de alt sinif.
+// mods: sinifin, alt sinifin ve secilen agac dugumlerinin topladigi etkiler (S.cmod ile okunur).
+export const CLASS_RULES = { unlock: 20, sub: 50, changePul: 30, skills: ['saldiri', 'okculuk', 'buyu'] };
+export const CLASSES = {
+  savasci: {
+    name: 'Savaşçı', wt: ['kilic', 'yumruk'], gear: 'Kılıç', main: 'Saldırı ve Savunma', desc: 'Önde durur, darbe alır ve vurur.',
+    bonus: 'Kılıç ve yumrukla +%10 hasar, Savunma +%10', mods: { dmg_kilic: 0.1, defPct: 0.1 },
+    ult: { key: 'nara', name: 'Savaş Nârası', desc: '3 tur sen ve Glemonların +%30 saldırı, bütün düşmanlar 1 tur sersemler' },
+    subs: ['sovalye', 'barbar'], start: 'demir_kilic',
+  },
+  nisanci: {
+    name: 'Nişancı', wt: ['yay'], gear: 'Yay', main: 'Okçuluk', desc: 'Uzaktan vurur: zamanlama ve kritik vuruş.',
+    bonus: 'Yayla +%10 hasar, Kritik +%5', mods: { dmg_yay: 0.1, crit: 0.05 },
+    ult: { key: 'ok_yagmuru', name: 'Ok Yağmuru', desc: '6 ok rastgele düşmanlara yağar (her biri ×0,55)' },
+    subs: ['avci', 'keskin'], start: 'tahta_yay',
+  },
+  buyucu: {
+    name: 'Büyücü', wt: ['asa'], gear: 'Asa', main: 'Büyü', desc: 'Mana harcar: alan hasarı ve durum etkileri.',
+    bonus: 'Asayla +%10 hasar, mana %50 hızlı dolar', mods: { dmg_asa: 0.1, manaRegen: 0.5 },
+    ult: { key: 'meteor', name: 'Meteor', desc: 'Bütün düşmanlara ×1,6 hasar ve Yanma' },
+    subs: ['element', 'golge_b'], start: 'cirak_asasi',
+  },
+  destek: {
+    name: 'Destek', wt: ['asa'], gear: 'Asa', main: 'Glemon Bağı ve Büyü', desc: 'İyileştirir, korur, Glemonları güçlendirir.',
+    bonus: 'Şifa büyüsü, iyileştirmeler +%30, Glemonların +%10 güçlü', mods: { heal: 0.3, petAtk: 0.1, petHp: 0.1, sifa: 1 },
+    ult: { key: 'toplu_sifa', name: 'Toplu Şifa', desc: 'Sen %40, Glemonların %50 iyileşir; kötü durumların silinir' },
+    subs: ['sifaci', 'terbiyeci'], start: 'cirak_asasi',
+  },
+};
+export const SUBCLASSES = {
+  sovalye: { name: 'Şövalye', of: 'savasci', desc: 'Kalkan ve savuşturma ustası, takımı korur.', bonus: 'Savuşturma süresi 2 kat, Glemonların %20 az hasar alır', mods: { parry: 1, petTaken: 0.2 } },
+  barbar: { name: 'Barbar', of: 'savasci', desc: 'Öfke: canı azaldıkça güçlenir, büyük tek vuruşlar.', bonus: 'Canının her eksik %10\'u için +%5 hasar (en çok +%40)', mods: { rage: 0.05 } },
+  avci: { name: 'Avcı', of: 'nisanci', desc: 'Tuzak, zehir ve yoldaş Glemonla ortak saldırı.', bonus: 'Okların %25 zehirler; MÜKEMMEL vuruştan sonra Glemonun da saldırır', mods: { poison: 0.25, coop: 1 } },
+  keskin: { name: 'Keskin Nişancı', of: 'nisanci', desc: 'Nişan alma turu, dev kritik, uçanlara ekstra hasar.', bonus: 'Nişan Al eylemi (sonraki vuruş kesin kritik ×2,2); uçanlara +%30', mods: { aimOn: 1, fly: 0.3 } },
+  element: { name: 'Element Ustası', of: 'buyucu', desc: 'Ateş, buz, yıldırım ve kombolar.', bonus: 'Büyü durumları 2 kat sık; durumu olan düşmana +%25 hasar', mods: { statusX: 1, statusDmg: 0.25 } },
+  golge_b: { name: 'Gölge Büyücüsü', of: 'buyucu', desc: 'Zayıflatma, can çalma, lanet.', bonus: 'Büyüler Lanet verir (düşman %25 fazla hasar alır, %20 az vurur); %15 can çalma', mods: { drain: 0.15, curse: 1 } },
+  sifaci: { name: 'Şifacı', of: 'destek', desc: 'İyileştirme, kalkan, durum temizleme.', bonus: 'İyileştirmeler kötü durumları siler ve kalkan verir (sonraki vuruş yarım)', mods: { cleanse: 1, shieldOnHeal: 1 } },
+  terbiyeci: { name: 'Terbiyeci', of: 'destek', desc: '2 yoldaş çok güçlü, Glemon yetenekleri sık çalışır.', bonus: 'Glemonların +%25 saldırı; ★ yetenekleri 2 turda bir dolar', mods: { petAtk: 0.25, petCharge: 1 } },
+};
+// Yetenek agacinin "Savas" dali artik "Sinif" dali: 3 kat sinif + 2 kat alt sinif
+export const CLASS_TREE = {
+  savasci: [
+    [{ key: 'keskin_kilic', name: 'Keskin Kılıç', desc: 'Kılıç ve yumruk gücü +%8' }, { key: 'demir_deri', name: 'Demir Deri', desc: 'Aldığın hasar -%10' }],
+    [{ key: 'kalkan_duvari', name: 'Kalkan Duvarı', desc: 'Savun: savunman 3 kat (2 yerine)', mods: { savunX: 1 } }, { key: 'savas_coskusu', name: 'Savaş Coşkusu', desc: 'Savaş Nârası 5 tur sürer', mods: { naraTurns: 2 } }],
+    [{ key: 'ofke', name: 'Öfke', desc: 'Canın %30\'un altındayken kritik +%20' }, { key: 'karsi_darbe', name: 'Karşı Darbe', desc: 'Kusursuz kaçış ve savuşturmanın karşı darbesi 2 kat' }],
+  ],
+  nisanci: [
+    [{ key: 'kartal_gozu', name: 'Kartal Gözü', desc: 'Yay gücü +%8' }, { key: 'refleks', name: 'Refleks', desc: 'Kaçınma düğmesi %20 uzun kalır, otomatik savaşta %25 kaçınırsın' }],
+    [{ key: 'hizli_el', name: 'Hızlı El', desc: 'Savaşa daha önde başlarsın', mods: { fastStart: 30 } }, { key: 'zayif_nokta', name: 'Zayıf Nokta', desc: 'Kritik vuruşların ×1,9 (×1,5 yerine)', mods: { critDmg: 0.4 } }],
+    [{ key: 'cifte_ok', name: 'Çifte Ok', desc: 'Tek Ok %25 ihtimalle iki kez vurur', mods: { double: 0.25 } }, { key: 'yagmur_ustasi', name: 'Yağmur Ustası', desc: 'Ok Yağmuru 9 ok atar', mods: { arrows: 3 } }],
+  ],
+  buyucu: [
+    [{ key: 'mana_kaynagi', name: 'Mana Kaynağı', desc: 'Mana +20', mods: { manaMax: 20 } }, { key: 'buyu_gucu', name: 'Büyü Gücü', desc: 'Asa gücü +%8', mods: { dmg_asa: 0.08 } }],
+    [{ key: 'hizli_buyu', name: 'Hızlı Büyü', desc: 'Yeteneklerin bekleme süresi 1 tur kısa', mods: { cd: 1 } }, { key: 'mana_kalkani', name: 'Mana Kalkanı', desc: 'Aldığın hasarın %20\'sini manan karşılar', mods: { manaShield: 0.2 } }],
+    [{ key: 'yanan_dunya', name: 'Yanan Dünya', desc: 'Meteor ×2,1 vurur ve 2 tur fazla yakar', mods: { meteor: 0.5 } }, { key: 'derin_bilgi', name: 'Derin Bilgi', desc: 'Büyüler %30 ihtimalle mana harcamaz', mods: { free: 0.3 } }],
+  ],
+  destek: [
+    [{ key: 'sifali_el', name: 'Şifalı El', desc: 'İyileştirmelerin +%15', mods: { heal: 0.15 } }, { key: 'dost_eli', name: 'Dost Eli', desc: 'Glemonlarının canı +%15', mods: { petHp: 0.15 } }],
+    [{ key: 'koruyucu_isik', name: 'Koruyucu Işık', desc: 'Toplu Şifa sonrası bir saldırı seni hiç acıtmaz', mods: { ward: 1 } }, { key: 'bag_gucu', name: 'Bağ Gücü', desc: 'Glemonlarının saldırısı +%10', mods: { petAtk: 0.1 } }],
+    [{ key: 'diriltme', name: 'Diriltme', desc: 'Toplu Şifa bayılan Glemonları %40 canla kaldırır', mods: { revive: 0.4 } }, { key: 'mana_paylasimi', name: 'Mana Paylaşımı', desc: 'Glemonun ★ yeteneğini kullanınca +8 mana', mods: { manaShare: 8 } }],
+  ],
+};
+export const SUB_TREE = {
+  sovalye: [
+    [{ key: 'kale', name: 'Kale', desc: 'Savunmadayken Glemonların da %50 az hasar alır', mods: { guardPets: 0.5 } }, { key: 'adalet', name: 'Adalet', desc: 'Savuşturma karşı darbesi +%50', mods: { counter: 0.5 } }],
+    [{ key: 'sarsilmaz', name: 'Sarsılmaz', desc: 'Savunma +%15', mods: { defPct: 0.15 } }, { key: 'kutsal_kalkan', name: 'Kutsal Kalkan', desc: 'Her savaşta seni ilk vuran hiç acıtamaz', mods: { firstBlock: 1 } }],
+  ],
+  barbar: [
+    [{ key: 'kan_hirsi', name: 'Kan Hırsı', desc: 'Vuruşlarının %8\'i kadar can kazanırsın', mods: { leech: 0.08 } }, { key: 'yikici', name: 'Yıkıcı', desc: 'Kılıç ve yumruk hasarı +%15, savunma -%10', mods: { dmg_kilic: 0.15, defPct: -0.1 } }],
+    [{ key: 'son_nefes', name: 'Son Nefes', desc: 'Canın %30 altındayken büyük yetenek 2 kat hızlı dolar', mods: { lastBreath: 1 } }, { key: 'ofkeli_nara', name: 'Öfkeli Nâra', desc: 'Savaş Nârası +%50 saldırı verir', mods: { naraPow: 0.2 } }],
+  ],
+  avci: [
+    [{ key: 'tuzakci', name: 'Tuzakçı', desc: 'Savaş başında bir düşman tuzağa düşer (Sersem 2 tur)', mods: { startStun: 1 } }, { key: 'zehir_ustasi', name: 'Zehir Ustası', desc: 'Zehir 2 kat acıtır', mods: { dotPow: 1 } }],
+    [{ key: 'suru_lideri', name: 'Sürü Lideri', desc: 'Ortak saldırı 2 kat güçlü', mods: { coop: 1 } }, { key: 'avci_igdisi', name: 'Avcı İçgüdüsü', desc: 'Evcilleştirme şansı +%15', mods: { tame: 0.15 } }],
+  ],
+  keskin: [
+    [{ key: 'sabir', name: 'Sabır', desc: 'Nişan Al sonraki vuruşu ×3 yapar (×2,2 yerine)', mods: { aim: 0.8 } }, { key: 'ucan_avci', name: 'Uçan Avcı', desc: 'Uçanlara ek +%30 hasar', mods: { fly: 0.3 } }],
+    [{ key: 'tek_atis', name: 'Tek Atış', desc: 'Bitirici vuruş canı %20 altındaki düşmanlarda açılır', mods: { finish: 0.1 } }, { key: 'kuzgun_goz', name: 'Kuzgun Göz', desc: 'Kritik +%10', mods: { crit: 0.1 } }],
+  ],
+  element: [
+    [{ key: 'ates_ustasi', name: 'Ateş Ustası', desc: 'Zehir ve yanma 2 kat acıtır', mods: { dotPow: 1 } }, { key: 'buz_ustasi', name: 'Buz Ustası', desc: 'Dondurduğun düşmanlar 1 tur fazla donar', mods: { freeze: 1 } }],
+    [{ key: 'firtina_cagir', name: 'Fırtına Çağır', desc: 'Büyü Oku %30 ihtimalle ikinci bir düşmana seker', mods: { chain: 0.3 } }, { key: 'element_kombo', name: 'Element Kombosu', desc: 'Buhar Patlaması 2 kat güçlü', mods: { steam: 1 } }],
+  ],
+  golge_b: [
+    [{ key: 'lanet_ustasi', name: 'Lanet Ustası', desc: 'Lanet 2 tur fazla sürer', mods: { curseTurns: 2 } }, { key: 'ruh_emici', name: 'Ruh Emici', desc: 'Can çalma %25 olur', mods: { drain: 0.1 } }],
+    [{ key: 'korku', name: 'Korku', desc: 'Lanetli düşman %20 ihtimalle sırasını kaçırır', mods: { fear: 0.2 } }, { key: 'karanlik_perde', name: 'Karanlık Perde', desc: 'Lanet Bulutu 2 tur fazla kör eder', mods: { shroud: 2 } }],
+  ],
+  sifaci: [
+    [{ key: 'yenilenme', name: 'Yenilenme', desc: 'Her turunda canının %3\'ü dolar', mods: { regen: 0.03 } }, { key: 'bereket', name: 'Bereket', desc: 'Şifa %40 daha az mana harcar', mods: { sifaCost: 0.4 } }],
+    [{ key: 'kutsal_isik', name: 'Kutsal Işık', desc: 'Şifa bir de Ay kalkanı verir (1 saldırı)', mods: { sifaWard: 1 } }, { key: 'umut', name: 'Umut', desc: 'İyileştirmelerin +%25', mods: { heal: 0.25 } }],
+  ],
+  terbiyeci: [
+    [{ key: 'suru', name: 'Sürü', desc: 'Glemonlarının canı +%20', mods: { petHp: 0.2 } }, { key: 'vahsi_bag', name: 'Vahşi Bağ', desc: 'Savaşta bağ kalbi 2 kat hızlı dolar', mods: { bond: 1 } }],
+    [{ key: 'alfa', name: 'Alfa', desc: 'Glemonlarının vuruşları %15 kritik', mods: { petCrit: 0.15 } }, { key: 'sadakat', name: 'Sadakat', desc: 'Bayılan Glemon bir kez %30 canla kalkar', mods: { petRevive: 0.3 } }],
+  ],
+};
+TREE.savas.name = 'Sınıf';
+TREE.savas.skills = ['saldiri', 'savunma', 'can', 'okculuk', 'buyu'];
+TREE.savas.tiers = [];
+TREE_COST.push(8, 8);
+// Sifa (Destek sinifinin buyusu)
+export const SIFA = { mana: 12, cd: 2, heal: 0.25, pet: 0.2 };
+// Manuel savas 2.0
+export const MANUAL2 = { streakMax: 5, streakStep: 0.1, parryMs: 650, parryCounter: 0.8, finishAt: 0.1, finishBoss: 0.05, finishXp: 0.15, ultAct: 18, ultHit: 8, ultPet: 5 };
