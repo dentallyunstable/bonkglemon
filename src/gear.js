@@ -1,4 +1,5 @@
-// Giydigin ekipman karakterin ustunde gorunur (0.8.9, 0.10.1'de yeniden: Eren, 2026-11-10).
+// Giydigin ekipman karakterin ustunde gorunur (0.8.9, 0.10.1 ve 0.13.1'de yeniden: Eren, 2026-11-10).
+// 0.13.1: kask bakis acisina gore cizilir; eldeki esyalar boyanmaz; aletler sadece kendi animasyonunda.
 // tools/gen_gearmap.py her karakter icin gear.png (kask, goguslik, bot, silah) ve cape.png
 // (pelerin) uretir. Skin degismez: zirh, karakterin ustune ayri bir piksel katmani olarak
 // cizilir ve siluetten 1 piksel tasar. Silahlar animasyonda cizili oldugu icin boyanir.
@@ -53,7 +54,7 @@ function ramps() {
   const w = e.silah && ITEMS[e.silah];
   const isBow = w && w.wt === 'yay';
   // 7: pelerin (0.9). Pelerin yoksa sirttaki pikseller goguslugun rengini alir (yoksa oldugu gibi kalir)
-  return { 1: r(e.kask), 2: r(e.gogus), 3: r(e.bot), 4: isBow ? null : r(e.silah), 5: r(e.kazma), 6: isBow ? r(e.silah) : null, 7: r(e.pelerin), 8: r(e.pelerin) };
+  return { 1: r(e.kask), 2: r(e.gogus), 3: r(e.bot), 4: isBow || (w && w.wt === 'asa') ? null : r(e.silah), 5: r(e.kazma), 6: isBow ? r(e.silah) : null, 7: r(e.pelerin), 8: r(e.pelerin) };
 }
 
 export function gearKey() {
