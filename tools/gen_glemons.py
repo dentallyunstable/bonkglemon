@@ -940,6 +940,25 @@ SPECIES.update({
     },
 })
 
+# ---------------------------------------------------------------- 0.9 Dolunay Gecesi
+SPECIES['ay_tavsani'] = {  # ay rengi tavsan, alninda hilal, sola donuk
+    'pal': {'H': '#e8ecff', 'g': '#c8d0f0', 'G': '#9aa4d0', 'e': '#f0b8d0', 'm': '#ffe890',
+            'c': '#ffffff', 'w': '#ffffff', 'k': '#1a1630', 'p': '#f0a0c0', 'l': '#8a90c0', 'y': '#fff4b0'},
+    'map': [
+        "..He..He....",
+        "..He..He....",
+        "..gH..gH....",
+        ".gHHmHHgg..y",
+        "gHwkHHwkgg.c",
+        "gHkkHHkkggcc",
+        "gpgHccgpgGG.",
+        ".gHccccgGG..",
+        ".gccccggGG..",
+        "..ccccggG...",
+        "..ll..ll....",
+    ],
+    'fx': 'star', 'accent': '#ffe890',
+}
 SPECIES['agacbasi'] = boss_agacbasi()
 SPECIES['tas_golemi'] = boss_golem()
 SPECIES['firtina_cakali'] = boss_cakal()

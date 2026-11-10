@@ -6,6 +6,7 @@ import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
 import { POND, iconUrl } from './art.js';
+import { fullMoon } from './goals.js';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 function weighted(list) {
@@ -51,7 +52,8 @@ export function baitLabel() {
 
 // bu suda ne tutulabilir
 export function fishOf(water) {
-  return Object.entries(FISH).filter(([, f]) => f.water === water);
+  // 0.9: Ay Isigi Sazani sadece dolunayda
+  return Object.entries(FISH).filter(([, f]) => f.water === water && (!f.moon || fullMoon()));
 }
 
 // bir atista ne cikar: balik, sandik ya da Glemon

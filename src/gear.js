@@ -42,12 +42,13 @@ function ramps() {
   const r = (id) => (id && ITEMS[id] ? gearRamp(ITEMS[id].icon) : null);
   const w = e.silah && ITEMS[e.silah];
   const isBow = w && w.wt === 'yay';
-  return { 1: r(e.kask), 2: r(e.gogus), 3: r(e.bot), 4: isBow ? null : r(e.silah), 5: r(e.kazma), 6: isBow ? r(e.silah) : null };
+  // 7: pelerin (0.9). Pelerin yoksa sirttaki pikseller goguslugun rengini alir (yoksa oldugu gibi kalir)
+  return { 1: r(e.kask), 2: r(e.gogus), 3: r(e.bot), 4: isBow ? null : r(e.silah), 5: r(e.kazma), 6: isBow ? r(e.silah) : null, 7: r(e.pelerin) || r(e.gogus), 8: r(e.pelerin) };
 }
 
 export function gearKey() {
   const e = S.save && S.save.equip;
-  return e ? [e.kask, e.gogus, e.bot, e.silah, e.kazma].join('|') : '';
+  return e ? [e.kask, e.gogus, e.bot, e.silah, e.kazma, e.pelerin].join('|') : '';
 }
 
 // ekipman degistiyse atlasi yeniden boya
@@ -61,7 +62,7 @@ export function refreshGear() {
   const d = out.data;
   for (let i = 0; i < parts.length; i += 4) {
     if (!parts[i + 3]) continue;
-    const ramp = R[Math.round(parts[i] / 40)];
+    const ramp = R[Math.round(parts[i] / 30)];
     if (!ramp || !d[i + 3]) continue;
     const c = ramp[Math.min(3, Math.round(parts[i + 1] / 80))];
     d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2];

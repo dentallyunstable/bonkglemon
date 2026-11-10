@@ -1,4 +1,4 @@
-# Hanci NPC'si (Lale): karakterlerle ayni chibi piksel tarzi, buyuk kafa, 1px koyu cizgi.
+# Hanci NPC'si (Lale) ve 0.9 Gezgin Tuccar: karakterlerle ayni chibi piksel tarzi, buyuk kafa, 1px koyu cizgi.
 # Cikti: assets/npc/hanci.png (yan yana kareler) + hanci.json (kare boyu, animasyonlar)
 import json, os
 from PIL import Image
@@ -13,6 +13,9 @@ P = {
  'b': (78, 50, 36), 'f': (236, 206, 104), 'F': (214, 120, 132), 'r': (176, 70, 64),
 }
 
+TUCCAR = False
+
+
 def frame(breath=0, blink=False, wave=None, smile=False):
     g = [[None] * W for _ in range(H)]
     def R(x0, y0, x1, y1, c):
@@ -22,9 +25,14 @@ def frame(breath=0, blink=False, wave=None, smile=False):
     def S_(x, y, c):
         if 0 <= x < W and 0 <= y < H: g[y][x] = c
     ox, hy = 6, 3 + breath  # kafa ofseti (nefeste kafa 1px iner)
-    # arkadaki uzun sac (omuzlardan bele)
-    R(ox - 2, hy + 12, ox + 1, hy + 27, 'H'); R(ox + 18, hy + 12, ox + 21, hy + 27, 'H')
-    R(ox - 1, hy + 12, ox, hy + 26, 'h'); R(ox + 19, hy + 12, ox + 20, hy + 26, 'h')
+    if TUCCAR:
+        # sirtinda kocaman heybe (sol arkadan tasar), ustunde tomar
+        R(ox - 5, 19, ox + 3, 34, 'b'); R(ox - 4, 20, ox + 2, 33, 'i'); R(ox - 4, 26, ox + 2, 26, 'b')
+        R(ox - 2, 28, ox, 29, 'f'); R(ox - 6, 15, ox + 1, 18, 'a'); R(ox - 6, 18, ox + 1, 18, 'A')
+    else:
+        # arkadaki uzun sac (omuzlardan bele)
+        R(ox - 2, hy + 12, ox + 1, hy + 27, 'H'); R(ox + 18, hy + 12, ox + 21, hy + 27, 'H')
+        R(ox - 1, hy + 12, ox, hy + 26, 'h'); R(ox + 19, hy + 12, ox + 20, hy + 26, 'h')
     # govde
     by = 22
     R(ox + 2, by, ox + 17, by + 7, 'c')          # bluz
@@ -69,8 +77,15 @@ def frame(breath=0, blink=False, wave=None, smile=False):
     for x in (ox + 3, ox + 4, ox + 8, ox + 9, ox + 10, ox + 15, ox + 16): S_(x, hy + 7, 'h')
     for x in (ox + 3, ox + 9): S_(x, hy + 8, 'h')
     R(ox + 4, hy + 5, ox + 7, hy + 5, 'i')
+    if TUCCAR:
+        # genis kenarli gezgin sapkasi, uzerinde tuy; cicek yok
+        R(ox - 4, hy + 2, ox + 23, hy + 3, 'D'); R(ox - 3, hy + 2, ox + 22, hy + 2, 'd')
+        R(ox + 2, hy - 3, ox + 17, hy + 1, 'd'); R(ox + 2, hy - 3, ox + 17, hy - 3, 'D')
+        R(ox + 2, hy, ox + 17, hy + 1, 'f')
+        R(ox + 18, hy - 3, ox + 19, hy + 1, 'F'); R(ox + 20, hy - 2, ox + 20, hy, 'F')
     # sacta cicek
-    R(ox + 15, hy - 1, ox + 17, hy + 1, 'F'); S_(ox + 16, hy, 'f'); S_(ox + 14, hy, 'F'); S_(ox + 18, hy, 'F'); S_(ox + 16, hy - 2, 'F'); S_(ox + 16, hy + 2, 'F')
+    if not TUCCAR:
+        R(ox + 15, hy - 1, ox + 17, hy + 1, 'F'); S_(ox + 16, hy, 'f'); S_(ox + 14, hy, 'F'); S_(ox + 18, hy, 'F'); S_(ox + 16, hy - 2, 'F'); S_(ox + 16, hy + 2, 'F')
     # gozler (buyuk, yesil, kirpikli)
     ey = hy + 9
     for ex, outer in ((ox + 4, ox + 3), (ox + 12, ox + 16)):
@@ -100,15 +115,25 @@ def frame(breath=0, blink=False, wave=None, smile=False):
             if out[y][x]: im.putpixel((x, y), P[out[y][x]] + (255,))
     return im
 
-frames = [frame(0), frame(1), frame(0, blink=True), frame(0, wave=0, smile=True), frame(0, wave=1, smile=True), frame(1, smile=True)]
-sheet = Image.new('RGBA', (W * len(frames), H), (0, 0, 0, 0))
-for i, f in enumerate(frames): sheet.paste(f, (i * W, 0))
-root = os.path.join(os.path.dirname(__file__), '..', 'assets', 'npc')
-os.makedirs(root, exist_ok=True)
-sheet.save(os.path.join(root, 'hanci.png'))
+def write(name):
+    frames = [frame(0), frame(1), frame(0, blink=True), frame(0, wave=0, smile=True), frame(0, wave=1, smile=True), frame(1, smile=True)]
+    sheet = Image.new('RGBA', (W * len(frames), H), (0, 0, 0, 0))
+    for i, f in enumerate(frames): sheet.paste(f, (i * W, 0))
+    root = os.path.join(os.path.dirname(__file__), '..', 'assets', 'npc')
+    os.makedirs(root, exist_ok=True)
+    sheet.save(os.path.join(root, name + '.png'))
+    print('ok', name, sheet.size)
+
+
+write('hanci')
 json.dump({'w': W, 'h': H, 'footY': 42, 'anims': {
     'durma': {'frames': [0, 1, 0, 1, 0, 1, 2, 1], 'durs': [700, 700, 700, 700, 700, 600, 140, 600]},
     'selam': {'frames': [3, 4, 3, 4, 3, 4], 'durs': [180, 180, 180, 180, 180, 300]},
     'gulumse': {'frames': [5, 0], 'durs': [900, 400]},
-}}, open(os.path.join(root, 'hanci.json'), 'w'))
-print('ok', sheet.size)
+}}, open(os.path.join(os.path.dirname(__file__), '..', 'assets', 'npc', 'hanci.json'), 'w'))
+# 0.9 Gezgin Tuccar: ayni govde; kisa koyu sac, sapka, heybe, deniz yesili pelerin, kehribar goz
+TUCCAR = True
+P.update({'h': (62, 44, 38), 'H': (44, 30, 26), 'i': (150, 98, 58), 'I': (92, 66, 52),
+          'd': (120, 78, 46), 'D': (84, 52, 30), 't': (46, 106, 94), 'T': (30, 74, 66),
+          'g': (196, 140, 50), 'G': (150, 96, 30), 'c': (226, 214, 186), 'a': (214, 196, 150), 'A': (176, 156, 110)})
+write('tuccar')

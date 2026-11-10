@@ -32,8 +32,8 @@ function freshSave(char) {
     gold: 0,
     bag,
     depo: new Array(DEPO_SIZE).fill(null),
-    equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null, kazma: 'tahta_kazma', olta: 'tahta_olta' },
-    stats: { kills: 0, deepest: 0, bossKills: 0, shiny: 0, deaths: 0, battles: 0, glemons: {}, playMs: 0, mined: 0, crafted: 0, gathered: 0, deepestMine: 1 },
+    equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null, kazma: 'tahta_kazma', olta: 'tahta_olta', pelerin: null },
+    stats: { kills: 0, deepest: 0, bossKills: 0, shiny: 0, deaths: 0, battles: 0, glemons: {}, playMs: 0, mined: 0, crafted: 0, gathered: 0, deepestMine: 1, placed: 0, zfloors: 0 },
     seen: {},                               // bir kez bulunan esyalar (tarif defteri icin)
     furnace: { rid: null, n: 0, t0: 0 },    // firindaki is: tarif, adet, baslama zamani
     mine: { depth: 1 },
@@ -57,6 +57,17 @@ function freshSave(char) {
     fishing: { caught: {}, best: {}, bait: 'yok', total: 0 },
     upg: {},            // Ors yukseltmeleri: esya turu -> +1..+4
     perks: {},          // yetenek agaci: dal -> [kat0, kat1, kat2] secilen yetenek sirasi (0/1) ya da null
+    // 0.9 Hedefler (bkz. goals.js)
+    pul: 0,             // Lale Pulu: sadece gorev ve etkinliklerden
+    goals: null,        // gunluk/haftalik gorevler
+    ach: {},            // basarim -> bildirilen kademe
+    title: 'caylak',
+    flags: {},          // gizli basarimlar icin anlar (tek vurus, kil payi)
+    capes: {},          // verilen pelerinler
+    albumRw: {},        // albume tamamlama odulleri (25/50/75/100)
+    merch: { week: -1, bought: {} },
+    ev: { daily: -1, weekend: -1, tourWeek: -1, tourBase: 0, tour: [] },
+    clock: { max: 0 },
   };
 }
 
@@ -95,6 +106,7 @@ export const S = {
     }
     // 0.8.5: olta yuvasi; herkese bir Tahta Olta
     if (!('olta' in data.equip)) data.equip.olta = 'tahta_olta';
+    if (!('pelerin' in data.equip)) data.equip.pelerin = null;
     if (!data.fishing) data.fishing = { caught: {}, best: {}, bait: 'yok', total: 0 };
     if (!data.upg) data.upg = {};
     if (!data.perks) data.perks = {};
@@ -158,9 +170,11 @@ export const S = {
   // XP ekler, seviye atlayan becerileri dondurur
   addXp(gains) {
     const ups = [];
-    for (const [skill, amount] of Object.entries(gains)) {
+    for (let [skill, amount] of Object.entries(gains)) {
       if (!amount) continue;
       const before = this.level(skill);
+      // 0.9: secili unvan o beceriye en fazla %3 XP bonusu verir
+      if (amount > 0 && this.xpBonus) amount *= this.xpBonus(skill);
       this.save.skills[skill] = (this.save.skills[skill] || 0) + Math.round(amount);
       const after = this.level(skill);
       if (after > before) ups.push({ skill, level: after });
@@ -238,7 +252,7 @@ export const S = {
   // Sans: nadir dusme ve parlak Glemon (seviye + tilsim)
   luck() { return this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0) + this.perk('sansli_dogan', 8, 0); },
   dropMult() { return 1 + this.luck() * 0.006; },
-  shinyChance() { return this.perk('parlak_goz', 1.5, 1) / Math.max(200, 500 - this.luck() * 2.5); },
+  shinyChance() { return (this.shinyMult ? this.shinyMult() : 1) * this.perk('parlak_goz', 1.5, 1) / Math.max(200, 500 - this.luck() * 2.5); },
   bagSize() { return BAG_SIZE + (this.save.bagBonus || 0); },
   def() {
     const base = this.level('savunma') + this.gearStat('def');

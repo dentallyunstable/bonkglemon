@@ -3,12 +3,13 @@
 Kullanim: python3 tools/gen_partmap.py [assets/chars]
 
 Her karakter klasorune parts.png yazar. Atlasla ayni boyda; her piksel:
-  R = parca: 0 yok, 1 kask, 2 goguslik, 3 bot, 4 kilic agzi, 5 kazma ucu, 6 yay
+  R = parca (x30): 0 yok, 1 kask, 2 goguslik, 3 bot, 4 kilic agzi, 5 kazma ucu, 6 yay, 7 pelerin (yoksa goguslik), 8 pelerin etegi (0.9)
   G = ton: 0 koyu, 1 orta, 2 acik, 3 parlak (oyunda malzemenin renk rampasindan secilir)
 Oyun (src/gear.js) giyilen esyaya gore bu pikselleri o malzemenin renkleriyle boyar,
 boylece kask sacin, goguslik tisortun, bot ayakkabinin yerine gecer; 44 animasyonun
 hepsinde ve her gorunuste (yandan, 3/4 onden, arkadan) kendiliginden dogru yerde durur.
 
+Pelerin (0.9): arkadan gorunuste (b_ kareleri) sirt ve bacak ustu, kollar haric.
 Kural: kafa ust 16 satir, govde sonraki 10, bot en alttaki 6 satir (ayak ortasina gore).
 Ten rengi (yuz, el) ve siyah dis cizgi hic boyanmaz. Yuzdeki goz ve agiz (iki yaninda ten
 olan pikseller) kaskla kaplanmaz.
@@ -112,6 +113,13 @@ def process(char_dir):
         if top is None:
             continue
         part = [[0] * W for _ in range(H)]
+        back = name.startswith('b_')
+        spans = {}
+        if back:
+            for y in range(top + HEAD, min(H, top + BOOT_FROM)):
+                xs = [x for x in range(W) if P[x, y][3] and not is_outline(P[x, y]) and not is_item[y][x]]
+                if xs:
+                    spans[y] = (min(xs), max(xs))
         for y in range(H):
             for x in range(W):
                 p = P[x, y]
@@ -132,6 +140,8 @@ def process(char_dir):
                     if l and r:
                         continue
                     part[y][x] = 1
+                elif back and d < BOOT_FROM and spans.get(y) and spans[y][0] + 3 <= x <= spans[y][1] - 3:
+                    part[y][x] = 7 if d < HEAD + TORSO else 8
                 elif d < HEAD + TORSO and d < BOOT_FROM:
                     part[y][x] = 2
                 elif d >= BOOT_FROM:
@@ -155,7 +165,7 @@ def process(char_dir):
                         t = 0
                     if t == 2 and (x + y) % 5 == 0:
                         t = 3
-                O[fx + x, fy + y] = (k * 40, t * 80, 0, 255)
+                O[fx + x, fy + y] = (k * 30, t * 80, 0, 255)
                 stats[k] = stats.get(k, 0) + 1
     out.save(os.path.join(char_dir, 'parts.png'), optimize=True)
     return sk, stats

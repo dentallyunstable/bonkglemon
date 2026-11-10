@@ -23,6 +23,7 @@ class BootScene extends Phaser.Scene {
     this.load.on('progress', (v) => { $('#loading').textContent = `Yükleniyor… %${Math.round(v * 100)}`; });
     // butun karakter kareleri tek atlasta; her karenin pivotu ayak ortasi
     this.load.spritesheet('hanci', 'assets/npc/hanci.png', { frameWidth: BOOT.npc.w, frameHeight: BOOT.npc.h });
+    this.load.spritesheet('tuccar', 'assets/npc/tuccar.png', { frameWidth: BOOT.npc.w, frameHeight: BOOT.npc.h }); // 0.9 Gezgin Tuccar
     this.load.atlas('char', `assets/chars/${char}/atlas.png`, `assets/chars/${char}/atlas.json`);
     // 0.8.9: ekipmanin karakter ustunde gorunmesi icin parca haritasi
     this.load.image('charparts', `assets/chars/${char}/parts.png`);
@@ -52,6 +53,7 @@ class BootScene extends Phaser.Scene {
     }
     for (const [a, m] of Object.entries(BOOT.npc.anims)) {
       if (!this.anims.exists(`npc_${a}`)) this.anims.create({ key: `npc_${a}`, frames: m.frames.map((f, i) => ({ key: 'hanci', frame: f, duration: m.durs[i] })), frameRate: 1000, repeat: a === 'durma' ? -1 : 0 });
+      if (!this.anims.exists(`tuccar_${a}`)) this.anims.create({ key: `tuccar_${a}`, frames: m.frames.map((f, i) => ({ key: 'tuccar', frame: f, duration: m.durs[i] })), frameRate: 1000, repeat: a === 'durma' ? -1 : 0 });
     }
     const tex = (key, canvas) => { if (!this.textures.exists(key)) this.textures.addCanvas(key, canvas); };
     tex('bg_base', ART.forestBackground(1, 0, true));
@@ -66,6 +68,7 @@ class BootScene extends Phaser.Scene {
     tex('yard', ART.workshopYard());
     tex('inn_back', ART.innBack());
     tex('inn_counter', ART.innCounter());
+    tex('bigmoon', ART.bigMoon());
     tex('feedtable', ART.feedTable());
     tex('mine', ART.mineEntrance());
     tex('signpost', ART.signpost());

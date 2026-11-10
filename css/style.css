@@ -700,3 +700,61 @@ html, body {
 .char-card { background: var(--wood); border: none; border-radius: calc(6 * var(--u)); box-shadow: 0 0 0 calc(1 * var(--u)) var(--wood-dark), inset 0 0 0 calc(1.5 * var(--u)) var(--trim), 0 calc(2 * var(--u)) 0 rgba(0, 0, 0, 0.35); }
 .char-card:hover { box-shadow: 0 0 0 calc(1 * var(--u)) var(--wood-dark), inset 0 0 0 calc(1.5 * var(--u)) var(--cream-dark), 0 calc(2 * var(--u)) 0 rgba(0, 0, 0, 0.35); }
 .char-card.sel { background: var(--wood-light); box-shadow: 0 0 0 calc(2 * var(--u)) var(--gold), inset 0 0 0 calc(1.5 * var(--u)) var(--trim); }
+
+/* ================= 0.9 Hedefler ================= */
+.btn.tiny { font-size: var(--fs-s); padding: calc(1 * var(--u)) calc(3 * var(--u)) calc(2 * var(--u)); border-radius: calc(2 * var(--u)); }
+.dock-btn { position: relative; }
+.dock-badge { position: absolute; top: calc(-2 * var(--u)); right: calc(-2 * var(--u)); min-width: calc(8 * var(--u)); height: calc(8 * var(--u)); padding: 0 calc(1.5 * var(--u)); border-radius: calc(4 * var(--u)); background: #e0503a; color: #fff; font-size: var(--fs-s); line-height: calc(8 * var(--u)); text-align: center; box-shadow: 0 0 0 calc(0.8 * var(--u)) var(--wood-dark); }
+.dock-badge.hidden { display: none; }
+.hud-title { font-size: var(--fs-s); color: #c8a8f0; font-weight: 700; margin-left: calc(2 * var(--u)); }
+.choice-row.tabs { justify-content: flex-start; margin-bottom: calc(2 * var(--u)); flex-wrap: wrap; }
+.pul-line { font-size: var(--fs-s); margin: calc(1 * var(--u)) 0 calc(2 * var(--u)); }
+.pul-line b { color: #ffb0c4; }
+.warn-line { font-size: var(--fs-s); color: #ff9a7a; }
+.quest.claimed { opacity: 0.6; }
+.chest-row .zn::before { content: '🎁 '; }
+/* basarimlar */
+.ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: calc(3 * var(--u)); }
+.ach { display: flex; gap: calc(4 * var(--u)); align-items: center; padding: calc(3 * var(--u)) calc(4 * var(--u)); background: var(--wood-light); border-radius: calc(3 * var(--u)); box-shadow: inset 0 0 0 calc(1 * var(--u)) #6e5440; }
+.ach .zn { font-size: var(--fs-m); }
+.ach .zf { font-size: var(--fs-s); color: var(--ink-dim); }
+.ach .qbar { height: calc(2.5 * var(--u)); background: #2a1d16; margin-top: calc(1.5 * var(--u)); border-radius: calc(2 * var(--u)); overflow: hidden; }
+.ach .qfill { height: 100%; background: var(--gold); }
+.ach-tx { flex: 1; min-width: 0; }
+.medal { width: calc(20 * var(--u)); text-align: center; font-size: var(--fs-m); color: #8a7460; }
+.ach.t1 .medal { color: #d08a4a; } .ach.t2 .medal { color: #d8dce8; } .ach.t3 .medal { color: #ffd04d; }
+.ach.t3 { box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--gold); }
+.ach.locked { opacity: 0.55; }
+/* unvanlar */
+.title-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(3 * var(--u)); }
+.title-card { padding: calc(3 * var(--u)); background: var(--wood-light); border-radius: calc(3 * var(--u)); cursor: pointer; box-shadow: inset 0 0 0 calc(1 * var(--u)) #6e5440; }
+.title-card .zn { font-size: var(--fs-m); }
+.title-card .zf { font-size: var(--fs-s); color: var(--ink-dim); }
+.title-card.on { box-shadow: inset 0 0 0 calc(1.5 * var(--u)) #c8a8f0; background: #4a3858; }
+.title-card.locked { opacity: 0.45; cursor: default; }
+.title-tag { color: #c8a8f0; font-size: var(--fs-s); margin-top: calc(-1 * var(--u)); }
+.card-pics { display: flex; gap: calc(2 * var(--u)); justify-content: center; }
+.log-head { display: flex; gap: calc(2 * var(--u)); align-items: center; flex-wrap: wrap; margin-top: calc(3 * var(--u)); }
+.log-head h3 { margin: 0 calc(2 * var(--u)) 0 0; }
+/* etkinlikler */
+.zone.event .zb { flex-direction: column; align-items: flex-end; gap: calc(1.5 * var(--u)); }
+.ev-timer { font-size: var(--fs-s); color: var(--cream); background: rgba(0, 0, 0, 0.25); border-radius: calc(3 * var(--u)); padding: calc(0.5 * var(--u)) calc(3 * var(--u)); white-space: nowrap; }
+.zone.event.daily { box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--gold); }
+.zone.event.weekend { box-shadow: inset 0 0 0 calc(1 * var(--u)) #7ac8e0; }
+.zone.event.merchant { box-shadow: inset 0 0 0 calc(1 * var(--u)) #c08cff; }
+.zone.event.moon { box-shadow: inset 0 0 0 calc(1 * var(--u)) #e0e4ff; background: #3e3a5a; }
+.zone.event.soon { opacity: 0.7; }
+/* tuccar */
+.merch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(3 * var(--u)); }
+.merch-card { display: flex; flex-direction: column; align-items: center; gap: calc(1.5 * var(--u)); text-align: center; padding: calc(3 * var(--u)); background: var(--wood-light); border-radius: calc(3 * var(--u)); box-shadow: inset 0 0 0 calc(1 * var(--u)) #6e5440; }
+.merch-card .ico { width: calc(16 * var(--u)); height: calc(16 * var(--u)); image-rendering: pixelated; }
+.merch-card .zn { font-size: var(--fs-m); }
+.merch-card .zf { font-size: var(--fs-s); color: var(--ink-dim); flex: 1; }
+.merch-card.sold { opacity: 0.5; }
+/* albume odulleri */
+.album-rw { display: flex; flex-wrap: wrap; gap: calc(2 * var(--u)); margin: calc(2 * var(--u)) 0; font-size: var(--fs-s); }
+.album-rw .rw-got { color: #8ad87a; }
+.album-rw .rw-lock { color: var(--ink-dim); opacity: 0.7; }
+/* canta: 8 ekipman yuvasi iki sutunda */
+.equip-col { display: grid; grid-template-columns: repeat(2, auto); align-content: start; }
+.event-list .zone.event { justify-content: space-between; }

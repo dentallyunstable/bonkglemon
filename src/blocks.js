@@ -717,6 +717,8 @@ const SOLID = {
   su: () => water(), su_ust: waterTop, renkli_cam: () => tintTo(glass(), '#5ab8a8', 0.4),
   yildiz: () => ore(28, ['#d8dce8', '#b8bccc', '#fff6c0', '#ffffff']),
   cekirdek: () => ore(29, ['#e05aa0', '#b03a7a', '#ffa8d8', '#fff0f8']),
+  // 0.9 Gezgin Tuccar bloklari
+  ay_tasi: () => tintTo(stone(41), '#b8c4f4', 0.5), altin_tugla: () => tintTo(brick(), '#e8c050', 0.55), pembe_yaprak: () => tintTo(leaves(), '#f0a8c8', 0.55),
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
@@ -732,7 +734,7 @@ const PROPS = {
   kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
   silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
-  nilufer: lilyPad, saz: reeds, ay_otu: moonHerb,
+  nilufer: lilyPad, saz: reeds, ay_otu: moonHerb, mavi_fener: () => tintTo(lantern(), '#90c8ff', 0.4),
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav', 'su', 'su_ust']);

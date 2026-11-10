@@ -3,7 +3,7 @@
 // - Yakin nesnelerin (ev, sandik, tezgah...) etrafinda karakterdeki gibi 1 piksel koyu cizgi var.
 // - Uzaktaki tepeler ve agaclar ayni bloklardir, sadece gok rengine karisip soluklasir.
 // - Zindan katlari derinlestikce sahne aksama / geceye doner.
-import { GAME_W, GAME_H, GROUND_Y, FISH } from './data.js';
+import { GAME_W, GAME_H, GROUND_Y, FISH, CAPE_COLORS } from './data.js';
 import { rng, Pix, hex, mix, mul, pack, unpack, col, INK } from './pix.js';
 import { B, block, build } from './blocks.js';
 
@@ -1076,6 +1076,14 @@ Object.assign(ICONS, {
   tilsim_yakut: TILSIM('#c8304a', '#ff9aa0'),
   tilsim_ay: TILSIM('#8a8ac8', '#fff0a0'),
 });
+// 0.9 pelerinler ve Gezgin Tuccar tohumlari
+const CAPE_ICON = ['............', '...dyyyyd...', '..dmMMMMmd..', '..mMMMMMMm..', '.dmMMMMMMmd.', '.mMMMMMMMMm.', '.mMMMMMMMMm.', 'dmMMMMMMMMmd', 'mMMMMMMMMMMm', 'mmMMmMMmMMmm', 'dmmddmmddmmd', '............'];
+for (const [k, c] of Object.entries(CAPE_COLORS)) ICONS[`pelerin_${k}`] = [CAPE_ICON, { d: c[0], m: c[1], M: c[2], y: c[3] }];
+// Lale Pulu: kenari tirtikli, ortasinda pembe lale olan para
+ICONS.lale_pulu = [['....yyyy....', '..yYYYYYYy..', '.yYYpYYpYYy.', '.yYYpPPpYYy.', 'yYYYpPPpYYYy', 'yYYYYppYYYYy', 'yYYYYgYYYYYy', 'yYYYggYYYYYy', '.yYYYgYYYYy.', '.yYYYYYYYYy.', '..yYYYYYYy..', '....yyyy....'],
+  { y: '#c89a3a', Y: '#f4dc8a', p: '#e0607a', P: '#ff9ab0', g: '#4a9a4a' }];
+ICONS.tohum_ay = [ICONS.tohum_ot[0], { p: '#7a80b8', P: '#b8c0f0', w: '#ffffff', g: '#fff0a0' }];
+ICONS.tohum_altin = [ICONS.tohum_bogurtlen[0], { p: '#b08020', P: '#f0c040', w: '#fff0a0' }];
 // 0.8.5 balikcilik simgeleri
 const FISH_ICON = ['............', '............', '......FF....', '....BBBBF...', '..BBLLLBBF.F', '.BwkLBBBBBFF', '.BkkBBBBBBFF', '.BBBDDDBBBF.', '..DDDDDDDF.F', '....DDDF....', '............', '............'];
 const ROD_ICON = ['..........R.', '.........Rl.', '........R.l.', '.......R..l.', '......R...l.', '.....R....l.', '....R.....l.', '...r......l.', '..r......wb.', '.gg.......b.', 'gg..........', '............'];
@@ -1136,9 +1144,10 @@ const CHESTPLATE = ['............', '.mmm....mmm.', '.mMMmmmmMMm.', '.mMMMMMMMMm
 const ICON_BLOCKS = {
   tas: 'tas', kum: 'kum', kalas: 'kalas', tugla: 'tugla', cam: 'cam', cimen: 'cimen', demir_cevheri: 'demir',
   kutuk: 'kutuk', kaldirim: 'kaldirim', kiremit: 'kiremit', yaprak_blok: 'yaprak', tarla: 'tarla', renkli_cam: 'renkli_cam',
+  ay_tasi: 'ay_tasi', altin_tugla: 'altin_tugla', pembe_yaprak: 'pembe_yaprak',
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
-const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt' };
+const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);
@@ -1335,5 +1344,28 @@ export function hitStar() {
 export function dustPuff() {
   const p = new Pix(8, 6);
   p.map(['..aaa...', '.abbba..', 'abbbbbaa', 'abbbbbba', '.aabbaa.', '........'], { a: '#c8bca8', b: '#ece4d4' });
+  return p.canvas();
+}
+
+// 0.9 Dolunay Gecesi: gokte buyuk, hafif parlayan ay
+export function bigMoon() {
+  const R = 14; const S = 2 * R + 10; const p = new Pix(S, S); const c = S / 2;
+  const r = rng(77);
+  const craters = [[-5, -4, 3], [4, 3, 4], [-2, 7, 2], [6, -6, 2], [-8, 3, 2]];
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = x + 0.5 - c; const dy = y + 0.5 - c; const d = Math.hypot(dx, dy);
+      if (d <= R) {
+        let v = hex('#f6f0d8');
+        if (dx + dy > R * 0.9) v = hex('#e2dabe');
+        for (const [cx, cy, cr] of craters) if (Math.hypot(dx - cx, dy - cy) <= cr) v = mix(v, hex('#c8c0a8'), 0.55);
+        if (dx + dy < -R * 1.1) v = hex('#fffbea');
+        if (r() < 0.04) v = mix(v, hex('#d8d0b8'), 0.4);
+        p.set(x, y, pack(v));
+      } else if (d <= R + 5) {
+        p.set(x, y, pack(hex('#fff6d0'), Math.round(70 * (1 - (d - R) / 5))));
+      }
+    }
+  }
   return p.canvas();
 }

@@ -1029,6 +1029,8 @@ export class Battle {
 
   applyDamage(e, dmg, big) {
     if (!e.alive) return;
+    // 0.9 gizli basarim: patronu ya da ara patronu tek vurusta bitirmek
+    if ((e.data.boss || e.golden) && e.hp >= e.maxHp && dmg >= e.hp) S.save.flags.tek_vurus = true;
     e.hp = Math.max(0, e.hp - dmg);
     floatText(e.sprite.x, this.topY(e) + 4, String(dmg), big ? 'crit' : 'dmg');
     this.renderEnemy(e);
@@ -1067,6 +1069,7 @@ export class Battle {
     if (e.shiny) gold *= 3;
     if (e.golden) gold *= 3;
     if (e.data.boss) gold = 150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50);
+    if (S.run && S.run.goldX) gold = Math.round(gold * S.run.goldX); // 0.9 Altin Gunu
     S.addGold(gold);
     this.gold += gold;
     const st = S.save.stats;
@@ -1310,7 +1313,7 @@ export class Battle {
     await wait(this.scene, 350);
     sfx('win');
     const manual = this.manualActs > 0 && this.manualActs >= this.autoActs;
-    const xm = manual ? 1.2 : 1;
+    const xm = (manual ? 1.2 : 1) * ((S.run && S.run.xpX) || 1); // 0.9 Devler Gunu: 2 kat
     const skill = WEAPON_SKILL[this.wt];
     const gains = { [skill]: this.killXp * 0.7 * xm, can: this.killXp * 0.3 * xm, savunma: this.defXp, sans: this.luckXp };
     const t = this.pet;
@@ -1325,6 +1328,8 @@ export class Battle {
     gains.bag = this.bagXp;
     const ups = S.addXp(gains);
     S.save.stats.battles++;
+    // 0.9 gizli basarim: canin %5 ya da altindayken kazanmak
+    if (S.hp > 0 && S.hp <= S.maxHp() * 0.05) S.save.flags.kil_payi = true;
     const hatched = S.tickEggs();
     const r = (x) => Math.round(x);
     const skName = skill === 'okculuk' ? 'Okçuluk' : 'Saldırı';

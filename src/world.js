@@ -16,10 +16,12 @@ import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
 import { TOD, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant } from './panels.js';
+import { refreshGoals, readyCount, goalTick, fullMoon, merchantHere, todayRule, PUL, clockOk, dayNum, weekNum, addPul, titleOf } from './goals.js';
 
 const PLAYER_HOME = 96;
 const MINE_X = 330;
+const MERCHANT_X = 296; // 0.9 Gezgin Tuccar (hafta sonu)
 const WALK_MODES = ['base', 'plot'];
 // 0.6 us yerlesimi (Eren, 2026-11-07): solda zanaat avlusu, ortada kamp atesi, sonra han, sagda zindan
 const ST = { masa: 24, firin: 56, kazan: 88, yem: 120, depo: 152 };
@@ -74,7 +76,13 @@ export class WorldScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('LEFT,RIGHT,A,D');
     this.buildHud();
     S.onChange(() => this.refreshHud());
+    // 0.9: basarim, pelerin ve unvan bildirimleri (degisiklikler biriktirilip saniyede bir bakilir)
+    refreshGoals();
+    S.onChange(() => { if (this._gt) return; this._gt = setTimeout(() => { this._gt = null; goalTick((kind, a) => this.goalNote(kind, a)); }, 900); });
+    this.time.delayedCall(2500, () => goalTick((kind, a) => this.goalNote(kind, a)));
+    this.time.addEvent({ delay: 60000, loop: true, callback: () => { if (refreshGoals()) this.refreshHud(); } });
     window.__BG = this; // testler icin
+    window.__goalTick = () => goalTick((kind, a) => this.goalNote(kind, a));
     this.goBase(false);
     UI.show('#loading', false);
     UI.feed(`Hoş geldin, ${S.save.char}! Hancı Lale'ye dokun: Keşif, Zindan, görevler ve takas hep onda.`);
@@ -276,16 +284,40 @@ export class WorldScene extends Phaser.Scene {
     item('dock_canta', 'Çanta', () => openBag(this));
     item('dock_beceri', 'Beceriler', () => openSkills(this));
     this.questBtn = item('dock_gorev', 'Görevler', () => openQuests(this));
+    this.questBadge = UI.el('span', 'dock-badge hidden', '');
+    this.questBtn.appendChild(this.questBadge);
     item('dock_album', 'Albüm', () => openAlbum(this));
     item('dock_profil', 'Profil', () => openProfile(this));
     this.refreshHud();
+  }
+
+  // 0.9 bildirimler
+  goalNote(kind, a) {
+    if (kind === 'init') {
+      if (a.ach) UI.feed(`<span style="color:#ffd04d">★ Eski ilerlemenle ${a.ach} başarım açıldı! Profil > Başarımlar.</span>`, 'gold');
+      return;
+    }
+    if (kind === 'ach') {
+      UI.feed(`<span style="color:#ffd04d">★ Başarım: ${UI.escapeHtml(a.name)}${a.tier ? ` (${a.tier})` : ''}!</span>`, 'gold');
+      if (a.big) UI.banner('Başarım!', a.name, 2200, 'gold');
+      sfx('levelup');
+    } else if (kind === 'title') {
+      UI.feed(`<span style="color:#c08cff">Yeni unvan açıldı: “${UI.escapeHtml(a.name)}”. Profil > Unvan'dan seçebilirsin.</span>`, 'epic');
+    } else if (kind === 'cape') {
+      UI.banner('Pelerin kazandın!', a.name, 3000, 'gold');
+      UI.feed(`<span style="color:#ffd04d">★ ${UI.escapeHtml(a.name)} ${a.where === 'depo' ? 'depona' : 'çantana'} kondu. Çantadan giyebilirsin.</span>`, 'gold');
+      sfx('rare');
+    }
   }
 
   refreshHud() {
     if (!S.save) return;
     const max = S.maxHp();
     S.hp = Math.min(S.hp, max);
-    UI.$('#hud-name').textContent = S.save.char;
+    const tt = titleOf();
+    UI.$('#hud-name').innerHTML = `${UI.escapeHtml(S.save.char)}${tt && tt.k !== 'caylak' ? `<span class="hud-title">${UI.escapeHtml(tt.n)}</span>` : ''}`;
+    // 0.9: hazir gorev sayisi Gorevler dugmesinde
+    if (this.questBadge) { const n = readyCount(); this.questBadge.textContent = n; this.questBadge.classList.toggle('hidden', !n); }
     UI.$('#hud-lvl').textContent = `Toplam Sv. ${S.totalLevel()}`;
     UI.$('#hud-hp').style.width = `${(S.hp / max) * 100}%`;
     UI.$('#hud-hp-text').textContent = `${S.hp} / ${max}`;
@@ -414,6 +446,13 @@ export class WorldScene extends Phaser.Scene {
     const gate = this.add.sprite(MINE_X, G + 1, 'gate', 0).setOrigin(0.5, 1).setDepth(3);
     gate.play('gate');
     this.addObj(gate, { x: MINE_X - 30, face: true, label: 'Etkinlik Kapısı', ly: G - 86, act: () => openEventGate(this) });
+    // 0.9 Gezgin Tuccar: cumartesi ve pazar kapinin onunde
+    if (merchantHere()) {
+      const tc = this.add.sprite(MERCHANT_X, G + 1, 'tuccar', 0).setOrigin(0.5, 1).setDepth(6);
+      tc.play('tuccar_durma');
+      this.merchant = tc;
+      this.addObj(tc, { x: MERCHANT_X - 26, face: false, label: 'Gezgin Tüccar', ly: G - 58, act: () => { tc.play('tuccar_selam'); tc.once('animationcomplete', () => { if (tc.active) tc.play('tuccar_durma'); }); openMerchant(this); } });
+    } else this.merchant = null;
     this.refreshFurnace();
     if (!S.run) S.hp = S.maxHp(); // us guvenli yer: her donuste can dolar
     this.player.setFlipX(false);
@@ -463,6 +502,12 @@ export class WorldScene extends Phaser.Scene {
     if (this.mode !== 'base' && this.mode !== 'plot' && this.mode !== 'pond') return;
     this.tod = todNow();
     this.bg.setTexture(this.todBg(this.mode === 'plot' ? 'bg_plot' : this.mode === 'pond' ? 'bg_pond' : 'bg_base'));
+    // 0.9 Dolunay Gecesi: aksam ve gece gokte kocaman ay
+    if (fullMoon() && (this.tod === 'gece' || this.tod === 'gunbatimi')) {
+      const m = this.add.image(GAME_W * 0.62, 30, 'bigmoon').setDepth(0.5);
+      this.glows.push(m);
+      this.roomObjs.push(m);
+    }
     const T = TOD[this.tod];
     for (const o of this.roomObjs) {
       if (!o.active || !o.setTint || o.noTint) continue;
@@ -758,6 +803,7 @@ export class WorldScene extends Phaser.Scene {
     const anim = playAnim(this.player, 'c_placeblock', 2.2);
     await wait(this, 260);
     S.removeItem(id, 1);
+    S.save.stats.placed = (S.save.stats.placed || 0) + 1;
     const cells = S.save.plot.cells;
     cells[cell.key] = id === 'kiremit' && this.roofShape && this.roofShape !== 'kiremit' ? { id, shape: this.roofShape } : { id };
     if (def.tall) cells[`${cell.c},${cell.r + 1}`] = { id, top: true };
@@ -1359,13 +1405,92 @@ export class WorldScene extends Phaser.Scene {
     if (Math.random() < Math.min(0.15, 0.02 + n * 0.002) * S.dropMult()) this.giveDrop(`yumurta_${pick(zs).key}`, 1, 'Ödül sandığından');
   }
 
+  // 0.9 Etkinlik Kapisi: Gunun Zindani (5 kat, gunun kurali) ve Patron Kosusu (arka arkaya bolge patronlari)
+  async enterEvent(kind) {
+    UI.closePanel();
+    if (this.busy || this.mode !== 'base') return;
+    this.busy = true;
+    stopMusic();
+    this.walkTok++;
+    UI.setActions([]);
+    await this.travelOut();
+    const best = S.save.stats.zindanBest || 0;
+    const start = kind === 'gunluk' ? Math.max(1, Math.floor(best * 0.6)) : 1;
+    S.startRun(start);
+    S.run.zindan = true;
+    S.run.ev = kind;
+    S.run.zseed = Math.floor(Math.random() * 3);
+    S.run.evEnd = kind === 'gunluk' ? start + 4 : start;
+    if (kind === 'gunluk') {
+      const r = todayRule();
+      S.run.rule = r.k;
+      if (r.k === 'altin') S.run.goldX = 2;
+      if (r.k === 'dev') S.run.xpX = 2;
+    }
+    S.hp = S.maxHp();
+    this.mode = 'dungeon';
+    await this.enterFloor(start);
+  }
+
+  bossRushRooms() {
+    const zs = this.unlockedZones().slice(-4);
+    const rooms = [];
+    zs.forEach((z, i) => {
+      rooms.push({ type: 'evboss', key: z.boss, fl: z.floors[1] });
+      if (i === 1) rooms.push({ type: 'kamp' });
+    });
+    rooms.push({ type: 'evodul' });
+    return rooms;
+  }
+
+  async eventReward(room) {
+    if (this.busy || room.opened) return;
+    this.busy = true;
+    UI.setActions([]);
+    await moveTo(this.player, room.obj.x - 20, { speed: 85, anim: 'c_walk' });
+    this.player.setFlipX(false);
+    await playAnim(this.player, 'c_punch', 1.4);
+    room.obj.setTexture('chest_open');
+    room.opened = true;
+    sfx('chest');
+    this.idle();
+    const kind = S.run.ev;
+    const ev = S.save.ev;
+    const field = kind === 'gunluk' ? 'daily' : 'weekend';
+    const key = kind === 'gunluk' ? dayNum() : weekNum();
+    if (!clockOk()) UI.feed('Cihazının saati geri alınmış görünüyor. Saat düzelince etkinlik ödülleri yine gelir.');
+    else if (ev[field] === key) UI.feed(kind === 'gunluk' ? 'Bugünün ödülünü zaten aldın. Yarın yeni kural, yeni sandık!' : 'Bu hafta sonunun ödülünü zaten aldın.');
+    else {
+      ev[field] = key;
+      const pul = kind === 'gunluk' ? 3 : 6;
+      addPul(pul);
+      UI.banner('Etkinlik sandığı!', `+${pul} ${PUL}`, 2400, 'gold');
+      UI.feed(`<span style="color:#ffd04d">★ Etkinlik ödülü: +${pul} ${PUL}!</span>`, 'gold');
+      await this.zindanReward();
+      // patron kosusu: garanti bir epik esya
+      if (kind === 'patron') this.giveDrop(pick(['can_tilsimi', 'altin_elma', 'buyuk_iksir', 'canta_eki']), 1, 'Patron sandığından');
+      else if (Math.random() < 0.35) this.giveDrop(pick(['altin_elma', 'parlak_yem', 'canta_eki']), 1, 'Etkinlik sandığından');
+    }
+    S.changed();
+    this.busy = false;
+    room.cleared = true;
+    UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
+  }
+
   zindanRooms(level) {
+    if (S.run && S.run.ev === 'patron') return this.bossRushRooms();
     const W = [['savas', 50], ['uyuyan', 15], ['sandik', 12], ['tuzak', 18], ['maden', 5]];
     const rooms = [{ type: 'savas' }];
     const n = 3 + (level >= 10 ? 1 : 0);
     for (let i = 1; i < n; i++) rooms.push({ type: weighted(W) });
-    for (const r of rooms) r.dark = Math.random() < 0.25;
-    rooms[0].dark = false;
+    const allDark = S.run && S.run.rule === 'karanlik';
+    for (const r of rooms) r.dark = allDark || Math.random() < 0.25;
+    if (!allDark) rooms[0].dark = false;
+    if (S.run && S.run.ev) {
+      // Gunun Zindani: son katta etkinlik sandigi
+      if (level >= S.run.evEnd) { rooms.push({ type: 'arapatron' }); rooms.push({ type: 'evodul' }); } else rooms.push({ type: 'merdiven' });
+      return rooms;
+    }
     if (level % 5 === 0) { rooms.push({ type: 'arapatron' }); rooms.push({ type: 'sandik', big: true }); }
     rooms.push({ type: 'merdiven' });
     return rooms;
@@ -1405,14 +1530,20 @@ export class WorldScene extends Phaser.Scene {
   enemySpecs(n, extra = {}) {
     const table = ZONE_SPAWNS[this.zone().key];
     const [usta, genc] = wildStageChances(this.zoneFloor());
+    const rule = S.run && S.run.rule;
+    const moon = fullMoon();
     return Array.from({ length: n }, () => {
       const r = Math.random();
-      const stage = r < usta ? 2 : r < usta + genc ? 1 : 0;
-      return { key: weighted(table), shiny: Math.random() < S.shinyChance(), stage, ...extra };
+      const stage = rule === 'dev' ? 2 : r < usta ? 2 : r < usta + genc ? 1 : 0;
+      // 0.9 Dolunay Gecesi: her bolgede nadiren Dolunay Tavsani
+      const key = moon && Math.random() < 0.06 ? 'ay_tavsani' : weighted(table);
+      return { key, shiny: Math.random() < S.shinyChance() * (rule === 'parlak' ? 3 : 1), stage, ...extra };
     });
   }
 
   roomLabel() {
+    if (S.run && S.run.ev === 'patron') return `Patron Koşusu · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
+    if (S.run && S.run.ev) return `Günün Zindanı · Kat ${this.zLevel - S.run.evEnd + 5}/5 · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
     if (this.inZindan()) return `Zindan · Kat ${this.zLevel} · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
     return `${zoneOf(this.floor).name} · Kat ${this.floor} · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
   }
@@ -1423,8 +1554,11 @@ export class WorldScene extends Phaser.Scene {
       this.floor = this.zEff(f);
       const zs = this.unlockedZones();
       this.zz = zs[(Math.floor((f - 1) / 3) + (S.run.zseed || 0)) % zs.length];
+      // 0.9 Gunun Zindani kurali: sadece ates / buz Glemonlari
+      if (S.run.rule === 'ates') this.zz = ZONES.find((z) => z.key === 'kor');
+      if (S.run.rule === 'buz') this.zz = ZONES.find((z) => z.key === 'buz');
       this.rooms = this.genRooms(f);
-      if (f > (S.save.stats.zindanBest || 0)) {
+      if (!S.run.ev && f > (S.save.stats.zindanBest || 0)) {
         S.save.stats.zindanBest = f;
         if (f > 1 && f % 10 === 1) UI.feed(`<span style="color:#ffd04d">Zindan Kat ${f} kısayolu açıldı!</span>`, 'gold');
       }
@@ -1466,7 +1600,10 @@ export class WorldScene extends Phaser.Scene {
     this.darkness(room);
     UI.setLocation(this.roomLabel());
     await this.fade(false);
-    if (i === 0) UI.banner(zin ? `Zindan Kat ${this.zLevel}` : `Kat ${this.floor}`, zin ? `Rekorun: Kat ${S.save.stats.zindanBest || 0}` : zone.name, 1600);
+    const evr = S.run && S.run.ev;
+    if (i === 0 && evr === 'patron') UI.banner('Patron Koşusu', 'Bölge patronları arka arkaya!', 1800, 'gold');
+    else if (i === 0 && evr) UI.banner(`Günün Zindanı ${this.zLevel - S.run.evEnd + 5}/5`, todayRule().n, 1800, 'gold');
+    else if (i === 0) UI.banner(zin ? `Zindan Kat ${this.zLevel}` : `Kat ${this.floor}`, zin ? `Rekorun: Kat ${S.save.stats.zindanBest || 0}` : zone.name, 1600);
     await moveTo(this.player, PLAYER_HOME, { speed: 115, anim: 'c_walk', timeScale: 1.3 });
     this.idle();
     if (zone.key === 'col' && !zin) await this.heat();
@@ -1601,6 +1738,12 @@ export class WorldScene extends Phaser.Scene {
       case 'merdiven':
         room.obj = this.addObj(this.add.image(300, G, 'stairs').setOrigin(0.5, 0).setDepth(2));
         break;
+      case 'evboss':
+        this.battle = new Battle(this, [{ key: room.key }], { ...this.battleOpts({}), floor: room.fl, boss: true });
+        break;
+      case 'evodul':
+        room.obj = this.addObj(this.add.image(250, G + 1, room.opened ? 'chest_open' : 'chest').setOrigin(0.5, 1).setDepth(4).setScale(1.4));
+        break;
       case 'gol':
         this.addPond(this.zone().key, true);
         room.casts = room.casts ?? 3;
@@ -1635,6 +1778,8 @@ export class WorldScene extends Phaser.Scene {
       room.node = ok && Math.random() < GATHER_CHANCE ? weighted(ZONE_GATHER[this.zone().key]) : null;
       // 0.8.5: gece (gercek saat) Ay otu da cikar
       if (room.node && !this.inZindan() && todNow() === 'gece' && Math.random() < AY_OTU_CHANCE) room.node = 'ay_otu';
+      // 0.9 Dolunay Gecesi: ay otu her odada, gunun her saatinde cikabilir
+      if (ok && fullMoon() && Math.random() < 0.3) room.node = 'ay_otu';
       room.nodeX = 146 + Math.floor(Math.random() * 40);
     }
     if (room.node && !room.gathered) {
@@ -1715,7 +1860,12 @@ export class WorldScene extends Phaser.Scene {
       case 'savas':
       case 'arapatron':
       case 'boss':
+      case 'evboss':
         this.fight(room);
+        break;
+      case 'evodul':
+        if (room.opened) UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
+        else UI.setActions([{ label: 'Etkinlik sandığını aç', cls: 'primary', onClick: () => this.eventReward(room) }]);
         break;
       case 'uyuyan':
         UI.feed('Uyuyan Glemon! Gizlice geçebilir ya da pusu kurabilirsin.');
@@ -1777,9 +1927,9 @@ export class WorldScene extends Phaser.Scene {
   async fight(room) {
     this.busy = true;
     UI.setActions([]);
-    if (room.type === 'boss') {
-      const z = zoneOf(this.floor);
-      UI.banner(GLEMONS[z.boss].name.toLocaleUpperCase('tr'), `${z.name} bekçisi`, 2400, 'boss');
+    if (room.type === 'boss' || room.type === 'evboss') {
+      const z = room.type === 'evboss' ? zoneOf(room.fl) : zoneOf(this.floor);
+      UI.banner(GLEMONS[room.key || z.boss].name.toLocaleUpperCase('tr'), `${z.name} bekçisi`, 2400, 'boss');
       sfx('roar');
       this.cameras.main.shake(500, 0.012);
       await wait(this, 1300);
@@ -2025,6 +2175,7 @@ export class WorldScene extends Phaser.Scene {
     await new Promise((res) => this.tweens.add({ targets: this.player, x: 312, y: GROUND_Y + 22, alpha: 0, duration: 600, onComplete: res }));
     this.player.alpha = 1;
     this.player.y = GROUND_Y;
+    if (this.inZindan()) S.save.stats.zfloors = (S.save.stats.zfloors || 0) + 1;
     this.enterFloor(this.inZindan() ? this.zLevel + 1 : this.floor + 1);
   }
 

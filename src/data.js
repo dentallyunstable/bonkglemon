@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.8.9';
+export const VERSION = '0.9.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -289,6 +289,13 @@ export const GLEMONS = {
     hp: 26, atk: 4, def: 4, spd: 120, goldMult: 2,
     special: { name: 'Ay Tozu', mult: 0.6, status: ['sersem', 2], luck: true, telegraph: true, aoe: true }, every: 3,
     drops: [['ay_tozu', 0.12], ['golge_ozu', 0.5]],
+  },
+  // 0.9 Dolunay Gecesi: sadece dolunayda, her bolgede nadiren cikar
+  ay_tavsani: {
+    name: 'Dolunay Tavşanı', from: "Dolunay Tavşanı'ndan", rarity: 'epik', type: 'Ay', moon: true,
+    hp: 22, atk: 3.6, def: 3, spd: 140, goldMult: 3,
+    special: { name: 'Ay Sıçrayışı', mult: 1.5, luck: true, telegraph: true }, every: 3,
+    drops: [['ay_otu', 0.6], ['ay_tozu', 0.25], ['ay_tilsimi', 0.04]],
   },
   bosluk_bekcisi: {
     name: 'Boşluk Bekçisi', from: "Boşluk Bekçisi'nden", rarity: 'efsanevi', type: 'Gölge', boss: true, fly: true,
@@ -674,6 +681,8 @@ export const FISH = {
   bosluk_vatozu: { name: 'Boşluk Vatozu', water: 'golge', lvl: 74, diff: 4.5, w: 16, rarity: 'nadir', col: ['#2a2040', '#5a4a8a', '#140e20', '#c8a0f0'] },
   ay_baligi: { name: 'Dolunay Balığı', water: 'golge', lvl: 90, diff: 5, legend: 'dive', rarity: 'efsanevi', col: ['#e8e8f8', '#ffffff', '#8a8ac8', '#fff0a0'] },
 };
+// 0.9 Dolunay Gecesi: sadece dolunayda Üs Göletinde
+FISH.ay_sazani = { name: 'Ay Işığı Sazanı', water: 'us', lvl: 10, diff: 2.2, w: 30, rarity: 'nadir', moon: true, col: ['#c8d0f0', '#ffffff', '#7a80b8', '#fff0a0'] };
 export const fishXp = (f) => Math.round((20 + f.lvl * 5 + f.lvl * f.lvl * 0.06) * (f.legend ? 5 : f.rarity === 'nadir' ? 1.6 : 1));
 export const FISHING = {
   legendChance: 0.015,   // uygun seviyedeysen her atista efsane balik
@@ -683,6 +692,34 @@ export const FISHING = {
   biteMs: [2000, 8000],
   hookMs: 800,
 };
+// ---------------------------------------------------------------- 0.9 Hedefler esyalari
+// Beceri pelerinleri: bir beceri 99 olunca kendiliginden gelir. Sirtta gorunur.
+export const CAPE_COLORS = {
+  saldiri: ['#7a2a22', '#b8402e', '#e0705a', '#ffd04d'], savunma: ['#2e3e62', '#4a6496', '#7a98c8', '#e8f0ff'],
+  can: ['#7a2a44', '#c04a6a', '#e888a0', '#fff0f4'], okculuk: ['#2a5430', '#3e8240', '#74b45a', '#e8f8a0'],
+  madencilik: ['#5a3a22', '#8a5a32', '#b8885a', '#c8ccd6'], toplama: ['#3e5a22', '#62883a', '#94c060', '#f0e078'],
+  uretim: ['#6a4a26', '#a07040', '#d0a868', '#fff0c8'], insa: ['#6a2e22', '#a04a32', '#d07a58', '#f0d0a0'],
+  balikcilik: ['#1e4a62', '#2e7a9a', '#5ab0c8', '#e0f8ff'], sans: ['#7a5a12', '#c09020', '#ecc850', '#fff8d0'],
+  bag: ['#4a2a6a', '#7448a0', '#a880d0', '#f0e0ff'], cirak: ['#4a4038', '#6e6254', '#9a8c7a', '#d8ccb8'],
+  tuccar: ['#1e3e3a', '#2e6a5e', '#c89a3a', '#ffe8a0'],
+};
+for (const s of SKILLS) {
+  ITEMS[`pelerin_${s.key}`] = {
+    name: `${s.name} Pelerini`, kind: 'pelerin', rarity: 'efsanevi', icon: `pelerin_${s.key}`, def: 6, hp: 30, cape: s.key,
+    desc: `${s.name} 99 olanlara. Ustalığın sırtında dalgalanır. Savunma +6, Can +30.`,
+  };
+}
+Object.assign(ITEMS, {
+  cirak_pelerini: { name: 'Çırak Pelerini', kind: 'pelerin', rarity: 'nadir', icon: 'pelerin_cirak', def: 1, desc: 'Bir beceriyi 50\'ye çıkaranlara. İlk büyük hedefin!' },
+  tuccar_pelerini: { name: 'Gezgin Pelerini', kind: 'pelerin', rarity: 'epik', icon: 'pelerin_tuccar', def: 3, spd: 10, desc: 'Gezgin Tüccar\'ın yedek pelerini. Hız +10.' },
+  ay_tasi: { name: 'Ay Taşı', kind: 'malzeme', rarity: 'nadir', icon: 'ay_tasi', desc: 'İnşa bloğu: soluk mavi parlayan taş. Sadece Gezgin Tüccar\'da.' },
+  altin_tugla: { name: 'Altın Tuğla', kind: 'malzeme', rarity: 'nadir', icon: 'altin_tugla', desc: 'İnşa bloğu: yaldızlı tuğla. Sadece Gezgin Tüccar\'da.' },
+  pembe_yaprak: { name: 'Pembe Yaprak', kind: 'malzeme', rarity: 'nadir', icon: 'pembe_yaprak', desc: 'İnşa bloğu: çiçek açmış ağaç tacı. Sadece Gezgin Tüccar\'da.' },
+  mavi_fener: { name: 'Ay Feneri', kind: 'malzeme', rarity: 'nadir', icon: 'mavi_fener', desc: 'İnşa bloğu: mavi ışıklı fener. Sadece Gezgin Tüccar\'da.' },
+  ay_tohumu: { name: 'Ay Tohumu', kind: 'malzeme', rarity: 'nadir', icon: 'tohum_ay', desc: 'Tarlaya ek: 4 saatte Ay otu verir. Sadece Gezgin Tüccar\'da.' },
+  altin_tohum: { name: 'Altın Tohum', kind: 'malzeme', rarity: 'epik', icon: 'tohum_altin', desc: 'Tarlaya ek: 8 saatte bir Altın Elma verir. Sadece Gezgin Tüccar\'da.' },
+});
+
 // Su Glemonlari sadece balik tutarken cikar
 export const WATER_GLEMONS = [['damlacik', 50], ['inci_istiridye', 35], ['gol_ejderi', 15]];
 for (const [k, f] of Object.entries(FISH)) {
@@ -722,7 +759,7 @@ export const SETS = {
 };
 
 export const SLOTS = [
-  ['silah', 'Silah'], ['kask', 'Kask'], ['gogus', 'Göğüslük'], ['bot', 'Bot'], ['tilsim', 'Tılsım'], ['kazma', 'Kazma'], ['olta', 'Olta'],
+  ['silah', 'Silah'], ['kask', 'Kask'], ['gogus', 'Göğüs'], ['bot', 'Bot'], ['tilsim', 'Tılsım'], ['kazma', 'Kazma'], ['olta', 'Olta'], ['pelerin', 'Pelerin'],
 ];
 
 export const BAG_SIZE = 20;
@@ -998,6 +1035,11 @@ export const BUILD = {
   fener: { tex: 'fener', lvl: 12, xp: 40, pts: 6 },
   cam: { tex: 'cam', lvl: 12, xp: 14, pts: 3 },
   renkli_cam: { tex: 'renkli_cam', lvl: 15, xp: 20, pts: 4 },
+  // 0.9 Gezgin Tuccar bloklari
+  ay_tasi: { tex: 'ay_tasi', lvl: 5, xp: 20, pts: 5 },
+  altin_tugla: { tex: 'altin_tugla', lvl: 5, xp: 20, pts: 5 },
+  pembe_yaprak: { tex: 'pembe_yaprak', lvl: 5, xp: 16, pts: 4 },
+  mavi_fener: { tex: 'mavi_fener', lvl: 5, xp: 40, pts: 8 },
 };
 export const BUILD_ORDER = Object.keys(BUILD);
 // Arsa boyu Insa seviyesiyle buyur (tasarim belgesi 16x8 -> 32x12; ekrana sigsin diye 24x10'a kadar)
@@ -1011,6 +1053,8 @@ export const MAX_TARLA = (insaLvl) => Math.min(16, 4 + Math.floor(insaLvl / 10) 
 export const SEEDS = {
   ot_tohumu: { out: 'sifali_ot', n: [2, 3], ms: 60 * 60 * 1000, xp: 45, name: 'Şifalı ot' },
   bogurtlen_tohumu: { out: 'bogurtlen', n: [2, 4], ms: 2 * 60 * 60 * 1000, xp: 70, name: 'Böğürtlen' },
+  ay_tohumu: { out: 'ay_otu', n: [1, 2], ms: 4 * 60 * 60 * 1000, xp: 160, name: 'Ay otu' },
+  altin_tohum: { out: 'altin_elma', n: [1, 1], ms: 8 * 60 * 60 * 1000, xp: 300, name: 'Altın Elma' },
 };
 export const SEED_CHANCE = 0.3; // ot / bogurtlen toplarken tohum cikma ihtimali
 // Kamp: oyun kapaliyken en fazla 2 saat, saatte bu kadar basit malzeme (XP ve nadir esya yok)
