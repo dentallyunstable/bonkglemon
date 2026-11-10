@@ -704,7 +704,7 @@ export function dungeonRoomBackground(level, variant = 0) {
 // Hanci Lale'nin arkasindaki harita (panelde buyuk gosterilir): eski kagit uzerine
 // kucuk bloklarla bolgeler, us, maden, arsa ve zindan cukuru; aralarinda kesik yollar.
 export const HUB_SPOTS = {
-  us: [34, 58], kesif: [60, 22], zindan: [160, 62], maden: [104, 66], arsa: [16, 70], ahir: [56, 74],
+  us: [34, 58], kesif: [60, 22], zindan: [160, 62], maden: [104, 66], arsa: [16, 70], ahir: [56, 74], koru: [100, 44],
 };
 export function hubMap() {
   const W = 192, H = 96;
@@ -725,6 +725,8 @@ export function hubMap() {
   putScaled(p, 'kiremit', 30, 50, 8); putScaled(p, 'kalas', 30, 58, 8); putScaled(p, 'ates0', 42, 58, 8);
   putScaled(p, 'kaldirim', 154, 54, 12); p.rect(157, 57, 6, 6, '#1a1420');
   putScaled(p, 'demir', 100, 62, 8);
+  // 0.10 Koru: kucuk agaclar
+  for (const [x, y, l] of [[92, 34, 'yaprak'], [102, 32, 'pembe_yaprak'], [112, 35, 'hus_yaprak']]) { putScaled(p, 'kutuk', x + 2, y + 6, 4); putScaled(p, l, x, y, 8); }
   putScaled(p, 'cit', 10, 66, 8); putScaled(p, 'tarla', 18, 66, 8);
   putScaled(p, 'cit', 50, 70, 8); putScaled(p, 'cit', 58, 70, 8);
   const path = (pts) => {
@@ -850,7 +852,8 @@ export function caveBackground(depth = 1) {
 }
 
 // Cevher bloklari (16x16): toprak, kum, tas, komur, demir, define + 3 catlak
-export const ORE_FRAMES = ['toprak', 'kum', 'tas', 'komur', 'demir', 'define', 'crack1', 'crack2', 'crack3', 'altin', 'kristal', 'kor', 'bonkit', 'golge', 'yildiz', 'cekirdek'];
+export const ORE_FRAMES = ['toprak', 'kum', 'tas', 'komur', 'demir', 'define', 'crack1', 'crack2', 'crack3', 'altin', 'kristal', 'kor', 'bonkit', 'golge', 'yildiz', 'cekirdek',
+  'cimen', 'cakil', 'fosil', 'antik', 'jeot', 'bazalt', 'lav', 'su', 'merdiven', 'mesale', 'arka_tas']; // 0.10 maden kuyusu
 export function oreSheet() {
   const out = new Pix(B * ORE_FRAMES.length, B);
   ORE_FRAMES.forEach((k, i) => out.draw(block(k), i * B, 0, B));
@@ -1082,6 +1085,21 @@ for (const [k, c] of Object.entries(CAPE_COLORS)) ICONS[`pelerin_${k}`] = [CAPE_
 // Lale Pulu: kenari tirtikli, ortasinda pembe lale olan para
 ICONS.lale_pulu = [['....yyyy....', '..yYYYYYYy..', '.yYYpYYpYYy.', '.yYYpPPpYYy.', 'yYYYpPPpYYYy', 'yYYYYppYYYYy', 'yYYYYgYYYYYy', 'yYYYggYYYYYy', '.yYYYgYYYYy.', '.yYYYYYYYYy.', '..yYYYYYYy..', '....yyyy....'],
   { y: '#c89a3a', Y: '#f4dc8a', p: '#e0607a', P: '#ff9ab0', g: '#4a9a4a' }];
+// 0.10 kurek, balta, fidanlar, fosiller
+const SHOVEL = ['.........HH.', '........HHHH', '.......HHHH.', '.......HHH..', '......h.H...', '.....h......', '....h.......', '...h........', '..h.........', '.gh.........', 'gg..........', '............'];
+ICONS.kurek_tahta = [SHOVEL, { H: '#c49a64', h: '#8a5e36', g: '#5a3e24' }];
+ICONS.kurek_demir = [SHOVEL, { H: '#c8ccd6', h: '#8a5e36', g: '#5a3e24' }];
+ICONS.balta_tahta = [['............', '...HHH......', '..HHHHh.....', '..HHHh.h....', '...HH...h...', '.........h..', '..........h.', '...........g', '............', '............', '............', '............'], { H: '#c49a64', h: '#8a5e36', g: '#5a3e24' }];
+ICONS.balta_demir = [ICONS.balta_tahta[0], { H: '#c8ccd6', h: '#8a5e36', g: '#5a3e24' }];
+const SAPLING = ['............', '....ll......', '...lLLl.ll..', '....lLlLLl..', '.....lLll...', '......t.....', '......t.....', '....ddtdd...', '...dDDDDDd..', '...dDDDDDd..', '....ddddd...', '............'];
+ICONS.fidan_mese = [SAPLING, { l: '#4a8a3a', L: '#7cc25a', t: '#7a5232', d: '#6a4a2e', D: '#8a6a4a' }];
+ICONS.fidan_hus = [SAPLING, { l: '#7aa848', L: '#b8e078', t: '#e8e0d0', d: '#6a4a2e', D: '#8a6a4a' }];
+ICONS.fidan_cam = [SAPLING, { l: '#1e4a32', L: '#3e7a4e', t: '#4a3424', d: '#6a4a2e', D: '#8a6a4a' }];
+ICONS.fidan_kiraz = [SAPLING, { l: '#c86a8a', L: '#f0a8c8', t: '#8a4a3a', d: '#6a4a2e', D: '#8a6a4a' }];
+const FOSSIL = ['............', '...mmmmm....', '..mMMMMMm...', '.mMMbbMMMm..', '.mMbBBbMMm..', '.mMbBBBbMm..', '.mMMbBBbMm..', '.mMMMbbMMm..', '..mMMMMMm...', '...mmmmm....', '............', '............'];
+for (const [k, c] of Object.entries({ fosil_kabuk: '#e8dcc0', fosil_yaprak: '#a8c890', fosil_dis: '#f0ece0', fosil_kemik: '#e0d4b8', fosil_kafatasi: '#d8ccb0', fosil_kehribar: '#f0a030' })) {
+  ICONS[k] = [FOSSIL, { m: '#6e6874', M: '#8a8490', b: c, B: '#fff8e8' }];
+}
 ICONS.tohum_ay = [ICONS.tohum_ot[0], { p: '#7a80b8', P: '#b8c0f0', w: '#ffffff', g: '#fff0a0' }];
 ICONS.tohum_altin = [ICONS.tohum_bogurtlen[0], { p: '#b08020', P: '#f0c040', w: '#fff0a0' }];
 // 0.8.5 balikcilik simgeleri
@@ -1145,9 +1163,11 @@ const ICON_BLOCKS = {
   tas: 'tas', kum: 'kum', kalas: 'kalas', tugla: 'tugla', cam: 'cam', cimen: 'cimen', demir_cevheri: 'demir',
   kutuk: 'kutuk', kaldirim: 'kaldirim', kiremit: 'kiremit', yaprak_blok: 'yaprak', tarla: 'tarla', renkli_cam: 'renkli_cam',
   ay_tasi: 'ay_tasi', altin_tugla: 'altin_tugla', pembe_yaprak: 'pembe_yaprak',
+  hus_kutuk: 'hus_kutuk', cam_kutuk: 'cam_kutuk', kiraz_kutuk: 'kiraz_kutuk', hus_kalas: 'hus_kalas', cam_kalas: 'cam_kalas', kiraz_kalas: 'kiraz_kalas',
+  toprak_blok: 'toprak', cimen_blok: 'cimen', cakil_blok: 'cakil',
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
-const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener' };
+const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener', merdiven: 'merdiven', mesale: 'mesale' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);

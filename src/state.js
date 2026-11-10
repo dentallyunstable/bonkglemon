@@ -68,6 +68,11 @@ function freshSave(char) {
     merch: { week: -1, bought: {} },
     ev: { daily: -1, weekend: -1, tourWeek: -1, tourBase: 0, tour: [] },
     clock: { max: 0 },
+    // 0.10 Blok Dunyasi: maden kuyusu, fosiller, kazma ozelligi, Koru
+    shaft: null,
+    fossils: {},
+    ench: null,
+    grove: null,
   };
 }
 

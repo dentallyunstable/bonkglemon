@@ -1,6 +1,7 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf } from './data.js';
+import { newShaft } from './shaft.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
@@ -12,7 +13,7 @@ import {
   merchantHere, merchantNext, merchantStock, weekNum, tourCount, FISH_TOUR, FISH_TOUR_PUL, dayNum,
 } from './goals.js';
 
-const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', olta: 'Olta', yumurta: 'Yumurta', pelerin: 'Pelerin' };
+const KIND = { malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', olta: 'Olta', yumurta: 'Yumurta', pelerin: 'Pelerin', alet: 'Alet' };
 
 function slotEl(s, label) {
   const d = UI.el('div', 'slot');
@@ -405,6 +406,29 @@ export function openAnvil(w) {
         list(row);
       }
       function list(row) { body.appendChild(row); }
+      // 0.10 kazma ozelligi: ayni anda bir tane (yenisi eskisinin yerine gecer)
+      body.appendChild(UI.el('h3', '', 'Kazma özelliği'));
+      body.appendChild(UI.el('p', 'muted', `Kazmana bir özellik işle. Aynı anda bir tane olur; yenisini işlersen eskisi gider. Şu an: ${S.save.ench ? ENCH[S.save.ench].name : 'yok'}`));
+      for (const [k, e] of Object.entries(ENCH)) {
+        const row = UI.el('div', 'shop-row');
+        row.appendChild(UI.icon('kazma_demir'));
+        const nm = UI.el('div', 'shop-nm');
+        nm.innerHTML = `<b>${e.name}</b>${S.save.ench === k ? ' ✓' : ''}<br><span class="muted">${e.desc}</span>`;
+        row.appendChild(nm);
+        const ok = S.save.ench !== k && e.cost.every(([m, n]) => S.countItem(m) >= n);
+        const b = UI.button(S.save.ench === k ? 'İşli' : e.cost.map(([m, n]) => `${ITEMS[m].name} ×${n}`).join(', '), () => {
+          if (S.save.ench === k || !e.cost.every(([m, n]) => S.countItem(m) >= n)) return;
+          for (const [m, n] of e.cost) S.removeItem(m, n);
+          S.save.ench = k;
+          S.changed();
+          sfx('craft');
+          UI.feed(`Kazmana <b>${e.name}</b> işlendi! ${e.desc}`, 'gold');
+          render();
+        }, ok ? 'small primary' : 'small');
+        b.disabled = !ok;
+        row.appendChild(b);
+        body.appendChild(row);
+      }
     };
     render();
   }, { wide: true });
@@ -549,12 +573,23 @@ export function openMap(w) {
     }
     const mine = UI.el('div', 'zone');
     const ml = UI.el('div');
-    ml.appendChild(UI.el('div', 'zn', 'Orman Maden Ocağı'));
-    ml.appendChild(UI.el('div', 'zf', `Sakin bir kazı yeri · Kaldığın derinlik: ${S.save.mine.depth} · En derin: ${S.save.stats.deepestMine || 1}`));
+    ml.appendChild(UI.el('div', 'zn', 'Maden Kuyusu'));
+    const sh = S.save.shaft;
+    ml.appendChild(UI.el('div', 'zf', sh ? `Kaldığın yer: ${Math.max(0, sh.pr + 1)}. sıra · En derin kazdığın: ${Math.max(0, (sh.low ?? -1) + 1)}. sıra` : 'Aşağı doğru sonsuz bir kuyu. Kaz, in, merdivenle çık.'));
     mine.appendChild(ml);
     const mb = UI.el('div', 'zb');
-    mb.appendChild(UI.button('Kaza git', () => w.enterMine(S.save.mine.depth), 'blue small'));
-    if (S.save.mine.depth > 1) mb.appendChild(UI.button('Derinlik 1', () => w.enterMine(1), 'small'));
+    mb.appendChild(UI.button('Kuyuya git', () => w.enterMine(), 'blue small'));
+    if (sh) {
+      // yeni kuyu: 30 dakikada bir ya da 30. siraya kadar kazdiysan (define icin kuyu cevirme olmasin)
+      const ok = (sh.low ?? -1) >= 29 || Date.now() - (sh.t || 0) > 30 * 60 * 1000;
+      mb.appendChild(UI.button('Yeni kuyu aç', () => {
+        if (!ok) { UI.feed('Yeni kuyu için 30. sıraya kadar kaz ya da biraz bekle.'); return; }
+        S.save.shaft = newShaft();
+        S.changed();
+        UI.feed('Yeni bir kuyu açıldı. Eski kuyudaki merdiven ve meşaleler orada kaldı.');
+        w.enterMine();
+      }, 'small' + (ok ? '' : ' disabled')));
+    }
     mine.appendChild(mb);
     body.appendChild(mine);
     body.appendChild(UI.el('p', 'muted', 'Her bölgede 5. katta ara patron, 10. katta bölge patronu var. 5 ve 10. katlarda kısayol açılır.'));
@@ -652,7 +687,27 @@ export function openAlbum(w, tab = 'glemon') {
       const fishN = Object.keys(FISH).filter((k) => fc[k]).length;
       tabs.appendChild(UI.button(`Balıklar (${fishN}/${Object.keys(FISH).length})`, () => { tab = 'balik'; render(); }, tab === 'balik' ? 'primary small' : 'small'));
       tabs.appendChild(UI.button(`Kombo Defteri (${Object.keys(S.save.combos).length}/${Object.keys(COMBOS).length})`, () => { tab = 'kombo'; render(); }, tab === 'kombo' ? 'primary small' : 'small'));
+      const fo = S.save.fossils || {};
+      tabs.appendChild(UI.button(`Fosiller (${Object.keys(FOSSILS).filter((k) => fo[k]).length}/${Object.keys(FOSSILS).length})`, () => { tab = 'fosil'; render(); }, tab === 'fosil' ? 'primary small' : 'small'));
       body.appendChild(tabs);
+      if (tab === 'fosil') {
+        body.appendChild(UI.el('p', 'muted', 'Maden kuyusunda fosil bloklarından çıkanlar (8. sıradan aşağıda, Madencilik 10). Nadir olanlar derin ve şanslı kazıcılara.'));
+        const grid = UI.el('div', 'album-grid');
+        for (const [k, f] of Object.entries(FOSSILS)) {
+          const n = fo[k] || 0;
+          const c = UI.el('div', 'album-card' + (n ? '' : ' unseen'));
+          const im = UI.icon(ITEMS[k].icon);
+          if (!n) im.style.filter = 'brightness(0)';
+          c.appendChild(im);
+          const nm = UI.el('div', 'pn', n ? f.name : '???');
+          if (n) nm.style.color = RARITY[ITEMS[k].rarity].color;
+          c.appendChild(nm);
+          c.appendChild(UI.el('div', 'muted', n ? `${n} bulundu` : f.w <= 8 ? 'çok nadir' : 'nadir'));
+          grid.appendChild(c);
+        }
+        body.appendChild(grid);
+        return;
+      }
       if (tab === 'balik') {
         body.appendChild(UI.el('p', 'muted', 'Tuttuğun balıklar. Her suyun kendi balıkları var; ★ efsane balıklar çok nadirdir ve sadece elle tutulur.'));
         for (const [wk, wd] of Object.entries(WATERS)) {
@@ -1094,8 +1149,9 @@ export function openHanci(w) {
     };
     pin('kesif', 'Keşif', 'primary', () => openMap(w));
     pin('zindan', 'Zindan', 'purple', () => openZindan(w));
-    pin('maden', 'Maden', 'blue', () => { UI.closePanel(); w.enterMine(S.save.mine.depth); });
+    pin('maden', 'Maden', 'blue', () => { UI.closePanel(); w.enterMine(); });
     pin('arsa', 'Arsa', 'blue', () => { UI.closePanel(); w.enterPlot(); });
+    pin('koru', 'Koru', 'green', () => { UI.closePanel(); w.enterKoru(); });
     pin('ahir', 'Ahır', 'green', () => openAhir(w));
     body.appendChild(map);
     const row = UI.el('div', 'choice-row');

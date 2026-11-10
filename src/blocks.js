@@ -698,6 +698,43 @@ function deadTree() {
   return t;
 }
 
+// ---------------------------------------------------------------- 0.10 maden kuyusu bloklari
+function gravel() {
+  const r = rng(91); const t = T('#8a8490');
+  blobs(t, r, ['#6e6874', '#a8a2ac', '#7c7682', '#5e5864', '#b8b2bc'], 34, 1, 2);
+  return t;
+}
+function fossil() {
+  const t = stone(43);
+  const bone = '#e8dcc0'; const sh = '#b8a888';
+  t.rect(4, 7, 8, 2, bone); t.rect(3, 6, 2, 2, bone); t.rect(3, 8, 2, 2, bone); t.rect(11, 6, 2, 2, bone); t.rect(11, 8, 2, 2, bone);
+  t.rect(5, 9, 6, 1, sh); t.set(3, 9, pack(hex(sh))); t.set(12, 9, pack(hex(sh)));
+  return t;
+}
+function geode() {
+  const t = stone(47);
+  const r = rng(48);
+  for (let y = 4; y < 12; y++) for (let x = 4; x < 12; x++) {
+    const d = Math.hypot(x - 7.5, y - 7.5);
+    if (d < 4.2) t.set(x, y, pack(hex(d < 2 ? '#e0c8ff' : r() < 0.5 ? '#a070d8' : '#7a4ab8')));
+  }
+  return t;
+}
+function oldChest() { return tintTo(chest(false), '#6a7a5a', 0.35); }
+function ladder() {
+  const t = T(null); const w = '#a07848'; const d = '#6e4e2c';
+  t.rect(2, 0, 2, 16, w); t.rect(12, 0, 2, 16, w); t.rect(3, 0, 1, 16, d); t.rect(13, 0, 1, 16, d);
+  for (const y of [2, 6, 10, 14]) { t.rect(4, y, 8, 2, w); t.rect(4, y + 1, 8, 1, d); }
+  return t;
+}
+function torch() {
+  const t = T(null);
+  t.rect(7, 7, 2, 7, '#8a5a32'); t.rect(8, 7, 1, 7, '#6a4426');
+  t.rect(6, 4, 4, 3, '#f0a030'); t.rect(7, 3, 2, 2, '#ffe080'); t.set(7, 2, pack(hex('#fff4c0')));
+  return t;
+}
+function backWall() { return tintTo(stone(5), '#241e2a', 0.62); }
+
 const SOLID = {
   toprak: () => dirt(), cimen: grassSide, cimen_ust: grassTop, tas: () => stone(), kum: sand,
   komur: () => ore(20, ['#2e2c32', '#3c3a40', '#24222a', '#4a4850']),
@@ -717,8 +754,12 @@ const SOLID = {
   su: () => water(), su_ust: waterTop, renkli_cam: () => tintTo(glass(), '#5ab8a8', 0.4),
   yildiz: () => ore(28, ['#d8dce8', '#b8bccc', '#fff6c0', '#ffffff']),
   cekirdek: () => ore(29, ['#e05aa0', '#b03a7a', '#ffa8d8', '#fff0f8']),
+  cakil: gravel, fosil: fossil, jeot: geode, arka_tas: backWall,
+  hus_kutuk: () => tintTo(log(), '#ece6d6', 0.55), cam_kutuk: () => tintTo(log(), '#3e2c20', 0.4), kiraz_kutuk: () => tintTo(log(), '#9a4a4a', 0.4),
+  hus_kalas: () => tintTo(planks(), '#e8dcc0', 0.5), cam_kalas: () => tintTo(planks(), '#4a3424', 0.45), kiraz_kalas: () => tintTo(planks(), '#d88a8a', 0.45),
+  hus_yaprak: () => tintTo(leaves(), '#a8d070', 0.4), cam_yaprak: () => tintTo(leaves(), '#2a5a3e', 0.45),
   // 0.9 Gezgin Tuccar bloklari
-  ay_tasi: () => tintTo(stone(41), '#b8c4f4', 0.5), altin_tugla: () => tintTo(brick(), '#e8c050', 0.55), pembe_yaprak: () => tintTo(leaves(), '#f0a8c8', 0.55),
+  ay_tasi: () => tintTo(stone(41), '#b8c4f4', 0.5), altin_tugla: () => tintTo(brick(), '#e8c050', 0.55), pembe_yaprak: () => tintTo(leaves(), '#f294c0', 0.78),
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
 const PROPS = {
@@ -734,7 +775,7 @@ const PROPS = {
   kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
   silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
-  nilufer: lilyPad, saz: reeds, ay_otu: moonHerb, mavi_fener: () => tintTo(lantern(), '#90c8ff', 0.4),
+  nilufer: lilyPad, saz: reeds, ay_otu: moonHerb, mavi_fener: () => tintTo(lantern(), '#90c8ff', 0.4), antik: oldChest, merdiven: ladder, mesale: torch,
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav', 'su', 'su_ust']);

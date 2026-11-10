@@ -70,6 +70,10 @@ const SFX = {
   gather: () => { noise(0.1, { freq: 3000, vol: 0.08, q: 0.7 }); tone(660, 0.08, { delay: 0.06, vol: 0.06, type: 'sine' }); },
   craft: () => { noise(0.05, { freq: 1800, vol: 0.12 }); noise(0.05, { freq: 1800, vol: 0.12, delay: 0.12 }); tone(784, 0.12, { delay: 0.22, vol: 0.07 }); },
   smelt: () => { noise(0.3, { freq: 400, vol: 0.08, q: 0.5 }); tone(523, 0.1, { delay: 0.2, vol: 0.06, type: 'sine' }); },
+  // 0.10 maden kuyusu
+  fire: () => { noise(0.25, { freq: 500, vol: 0.12, q: 0.5 }); tone(180, 0.2, { slide: 60, vol: 0.05, type: 'sawtooth' }); },
+  splash: () => { noise(0.2, { freq: 1400, vol: 0.12, q: 0.6 }); tone(520, 0.1, { slide: -200, vol: 0.05, type: 'sine' }); },
+  place: () => { noise(0.05, { freq: 900, vol: 0.14, q: 1.5 }); tone(260, 0.06, { vol: 0.06, type: 'triangle' }); },
   boom: () => { noise(0.6, { freq: 220, vol: 0.3, q: 0.4 }); tone(70, 0.5, { slide: -30, vol: 0.14, type: 'sawtooth' }); },
 };
 

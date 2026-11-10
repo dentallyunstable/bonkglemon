@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.9.0';
+export const VERSION = '0.10.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -466,7 +466,7 @@ export const ITEMS = {
   tas: { name: 'Taş parçası', kind: 'malzeme', rarity: 'siradan', icon: 'tas', desc: 'Maden Ocağında kazılır. Taş eşyalar ve Taş Tuğla.' },
   kum: { name: 'Kum', kind: 'malzeme', rarity: 'siradan', icon: 'kum', desc: 'Ocağın üst katlarında. Fırında şişe ve cam olur.' },
   komur: { name: 'Kömür', kind: 'malzeme', rarity: 'siradan', icon: 'komur', desc: 'Fırın yakıtı ve Bonk Bombası malzemesi.' },
-  demir_cevheri: { name: 'Demir cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'demir_cevheri', desc: 'Ocağın derinlerinde (Derinlik 2+). Fırında külçe olur.' },
+  demir_cevheri: { name: 'Demir cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'demir_cevheri', desc: 'Maden kuyusunda 6. sıradan aşağıda. Fırında külçe olur.' },
   demir_kulcesi: { name: 'Demir külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'kulce', desc: 'Fırında eritilir. Demir eşyaların ana malzemesi.' },
   // ---- toplama
   sifali_ot: { name: 'Şifalı ot', kind: 'malzeme', rarity: 'siradan', icon: 'ot', desc: 'Keşifte toplanır. İksir ve çorba malzemesi.' },
@@ -571,14 +571,14 @@ export const ITEMS = {
   ates_biberi: { name: 'Ateş biberi', kind: 'malzeme', rarity: 'siradan', icon: 'ates_biberi', desc: 'Kor Diyarında toplanır. Sıcak Çorba ve Biber Kebabı malzemesi.' },
   gece_mantari: { name: 'Gece mantarı', kind: 'malzeme', rarity: 'siradan', icon: 'gece_mantari', desc: 'Gölge Boşluğunda toplanır. Parlıyor.' },
   // ---- 0.8 cevherler ve kulceler
-  altin_cevheri: { name: 'Altın cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'altin_cevheri', desc: 'Madende Derinlik 3+ (Madencilik 25). Fırında külçe olur.' },
+  altin_cevheri: { name: 'Altın cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'altin_cevheri', desc: 'Maden kuyusunda 11. sıradan aşağıda (Madencilik 25). Fırında külçe olur.' },
   altin_kulcesi: { name: 'Altın külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'altin_kulcesi', desc: 'Kristal eşyaların ve tılsımların malzemesi.' },
-  saf_kristal: { name: 'Saf kristal', kind: 'malzeme', rarity: 'siradan', icon: 'saf_kristal', desc: 'Madende Derinlik 5+ (Madencilik 35). Kristal eşyaların ana malzemesi.' },
-  kor_tasi: { name: 'Kor taşı', kind: 'malzeme', rarity: 'siradan', icon: 'kor_tasi', desc: 'Madende Derinlik 7+ (Madencilik 50). Fırında Kor külçesi olur.' },
+  saf_kristal: { name: 'Saf kristal', kind: 'malzeme', rarity: 'siradan', icon: 'saf_kristal', desc: 'Maden kuyusunda 21. sıradan aşağıda (Madencilik 35). Kristal eşyaların ana malzemesi.' },
+  kor_tasi: { name: 'Kor taşı', kind: 'malzeme', rarity: 'siradan', icon: 'kor_tasi', desc: 'Maden kuyusunda 31. sıradan aşağıda (Madencilik 50). Fırında Kor külçesi olur.' },
   kor_kulcesi: { name: 'Kor külçesi', kind: 'malzeme', rarity: 'siradan', icon: 'kor_kulcesi', desc: 'Kor eşyaların ana malzemesi.' },
   bonkit: { name: 'Bonkit', kind: 'malzeme', rarity: 'epik', icon: 'bonkit', desc: 'Her derinlikte çok nadir (%0,5, Madencilik 65). Oyunun en sert cevheri.' },
   bonkit_kulcesi: { name: 'Bonkit külçesi', kind: 'malzeme', rarity: 'epik', icon: 'bonkit_kulcesi', desc: 'Bonkit eşyaların ana malzemesi.' },
-  golge_tasi: { name: 'Gölge taşı', kind: 'malzeme', rarity: 'nadir', icon: 'golge_tasi', desc: 'Madende Derinlik 9+ (Madencilik 80). Fırında Gölge külçesi olur.' },
+  golge_tasi: { name: 'Gölge taşı', kind: 'malzeme', rarity: 'nadir', icon: 'golge_tasi', desc: 'Maden kuyusunda 41. sıradan aşağıda (Madencilik 80). Fırında Gölge külçesi olur.' },
   golge_kulcesi: { name: 'Gölge külçesi', kind: 'malzeme', rarity: 'nadir', icon: 'golge_kulcesi', desc: 'Gölge eşyaların ana malzemesi.' },
   // ---- 0.8 yemler ve tuketilebilirler
   kar_kurabiyesi: { name: 'Kar Kurabiyesi', kind: 'malzeme', rarity: 'siradan', icon: 'kar_kurabiyesi', yem: 'buz', desc: 'Buz Glemonlarının sevdiği basit yem.' },
@@ -625,8 +625,8 @@ export const ITEMS = {
   balik_corbasi: { name: 'Balık Çorbası', kind: 'tuketim', rarity: 'nadir', icon: 'balik_corbasi', heal: 0.5, food: true, warm: true, anim: 'eat', desc: 'Canının %50\'sini doldurur ve soğuğu 30 dakika engeller.' },
   balik_kraker: { name: 'Balık Kraker', kind: 'malzeme', rarity: 'siradan', icon: 'balik_kraker', yem: 'su', desc: 'Su Glemonlarının sevdiği yem. Sadece nadir Su Glemonlarını evcilleştirir.' },
   // ---- 0.8.5 sadece tek beceriyle bulunan malzemeler ve onlardan yapilanlar
-  yildiz_demiri: { name: 'Yıldız Demiri', kind: 'malzeme', rarity: 'epik', icon: 'yildiz_demiri', desc: 'Sadece madende Derinlik 12 ve altında (Madencilik 70). Örste eşya yükseltir.' },
-  cekirdek_kristali: { name: 'Çekirdek Kristali', kind: 'malzeme', rarity: 'efsanevi', icon: 'cekirdek_kristali', desc: 'Sadece madende Derinlik 16 ve altında (Derin Kazı yeteneği, Madencilik 80).' },
+  yildiz_demiri: { name: 'Yıldız Demiri', kind: 'malzeme', rarity: 'epik', icon: 'yildiz_demiri', desc: 'Sadece maden kuyusunda 56. sıradan aşağıda (Madencilik 70). Örste eşya yükseltir.' },
+  cekirdek_kristali: { name: 'Çekirdek Kristali', kind: 'malzeme', rarity: 'efsanevi', icon: 'cekirdek_kristali', desc: 'Sadece maden kuyusunda 76. sıradan aşağıda (Derin Kazı yeteneği, Madencilik 80).' },
   ay_otu: { name: 'Ay otu', kind: 'malzeme', rarity: 'nadir', icon: 'ay_otu', desc: 'Sadece gece (gerçek saat) Keşifte toplanır. Ay İksiri malzemesi.' },
   usta_damgasi: { name: 'Usta Damgası', kind: 'malzeme', rarity: 'epik', icon: 'usta_damgasi', desc: 'Üretim 75+ iken her üretimde %2 ihtimalle çıkar. Örste eşyayı +4 Usta yapar.' },
   inci_tilsimi: { name: 'İnci Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_inci', dodge: 0.15, def: 4, desc: 'Kaçınma düğmesi %15 daha uzun kalır.' },
@@ -720,6 +720,29 @@ Object.assign(ITEMS, {
   altin_tohum: { name: 'Altın Tohum', kind: 'malzeme', rarity: 'epik', icon: 'tohum_altin', desc: 'Tarlaya ek: 8 saatte bir Altın Elma verir. Sadece Gezgin Tüccar\'da.' },
 });
 
+// ---------------------------------------------------------------- 0.10 Blok Dunyasi esyalari
+Object.assign(ITEMS, {
+  merdiven: { name: 'Merdiven', kind: 'malzeme', rarity: 'siradan', icon: 'merdiven', desc: 'Madende bulunduğun yere koy, yukarı tırman. Merdivensiz dik kuyudan çıkılmaz.' },
+  mesale: { name: 'Meşale', kind: 'malzeme', rarity: 'siradan', icon: 'mesale', desc: 'Madende duvara koy: derinlerdeki karanlığı aydınlatır.' },
+  tahta_kurek: { name: 'Tahta Kürek', kind: 'alet', rarity: 'siradan', icon: 'kurek_tahta', shovel: 2, desc: 'Çantanda dursun yeter: toprak, kum ve çakıl 2 kat hızlı kazılır.' },
+  demir_kurek: { name: 'Demir Kürek', kind: 'alet', rarity: 'nadir', icon: 'kurek_demir', shovel: 3, desc: 'Toprak, kum ve çakıl 3 kat hızlı kazılır.' },
+  tahta_balta: { name: 'Tahta Balta', kind: 'alet', rarity: 'siradan', icon: 'balta_tahta', axe: 1, desc: 'Çantanda dursun yeter: Koru\'da ağaç kesersin.' },
+  demir_balta: { name: 'Demir Balta', kind: 'alet', rarity: 'nadir', icon: 'balta_demir', axe: 2, desc: 'Ağaçlar daha az vuruşta devrilir, biraz daha fazla kütük.' },
+  hus_kutuk: { name: 'Huş Kütüğü', kind: 'malzeme', rarity: 'siradan', icon: 'hus_kutuk', desc: 'İnşa bloğu: beyaz huş gövdesi.' },
+  cam_kutuk: { name: 'Çam Kütüğü', kind: 'malzeme', rarity: 'siradan', icon: 'cam_kutuk', desc: 'İnşa bloğu: koyu çam gövdesi.' },
+  kiraz_kutuk: { name: 'Kiraz Kütüğü', kind: 'malzeme', rarity: 'nadir', icon: 'kiraz_kutuk', desc: 'İnşa bloğu: kızıl kiraz gövdesi.' },
+  hus_kalas: { name: 'Huş Kalas', kind: 'malzeme', rarity: 'siradan', icon: 'hus_kalas', desc: 'İnşa bloğu: açık renk kalas.' },
+  cam_kalas: { name: 'Çam Kalas', kind: 'malzeme', rarity: 'siradan', icon: 'cam_kalas', desc: 'İnşa bloğu: koyu kalas.' },
+  kiraz_kalas: { name: 'Kiraz Kalas', kind: 'malzeme', rarity: 'nadir', icon: 'kiraz_kalas', desc: 'İnşa bloğu: pembe kalas.' },
+  mese_fidani: { name: 'Meşe Fidanı', kind: 'malzeme', rarity: 'siradan', icon: 'fidan_mese', desc: 'Koru\'ya dik: 20 dakikada büyür.' },
+  hus_fidani: { name: 'Huş Fidanı', kind: 'malzeme', rarity: 'siradan', icon: 'fidan_hus', desc: 'Koru\'ya dik: 30 dakikada büyür (Toplama 10).' },
+  cam_fidani: { name: 'Çam Fidanı', kind: 'malzeme', rarity: 'siradan', icon: 'fidan_cam', desc: 'Koru\'ya dik: 45 dakikada büyür (Toplama 20).' },
+  kiraz_fidani: { name: 'Kiraz Fidanı', kind: 'malzeme', rarity: 'nadir', icon: 'fidan_kiraz', desc: 'Koru\'ya dik: 60 dakikada büyür (Toplama 30).' },
+  toprak_blok: { name: 'Toprak Bloğu', kind: 'malzeme', rarity: 'siradan', icon: 'toprak_blok', desc: 'İnşa bloğu (İpek kazmayla gelir).' },
+  cimen_blok: { name: 'Çimenli Toprak', kind: 'malzeme', rarity: 'siradan', icon: 'cimen_blok', desc: 'İnşa bloğu (İpek kazmayla gelir).' },
+  cakil_blok: { name: 'Çakıl Bloğu', kind: 'malzeme', rarity: 'siradan', icon: 'cakil_blok', desc: 'İnşa bloğu (İpek kazmayla gelir).' },
+});
+
 // Su Glemonlari sadece balik tutarken cikar
 export const WATER_GLEMONS = [['damlacik', 50], ['inci_istiridye', 35], ['gol_ejderi', 15]];
 for (const [k, f] of Object.entries(FISH)) {
@@ -810,7 +833,16 @@ export const ORES = {
   // 0.8.5 sadece en derinde: Yildiz Demiri (Derinlik 12+), Cekirdek Kristali (Derinlik 16+, Derin Kazi yetenegi)
   yildiz: { name: 'Yıldız Demiri', hard: 52, xp: 600, req: 70, drop: 'yildiz_demiri' },
   cekirdek: { name: 'Çekirdek Kristali', hard: 70, xp: 950, req: 80, drop: 'cekirdek_kristali' },
+  // 0.10 maden kuyusu
+  cimen: { name: 'Çimenli toprak', hard: 1, xp: 3, req: 1, drop: null, soft: true },
+  cakil: { name: 'Çakıl', hard: 2, xp: 8, req: 1, drop: 'tas', soft: true, falls: true },
+  fosil: { name: 'Fosil', hard: 6, xp: 90, req: 10, drop: null, find: 'fosil' },
+  antik: { name: 'Antik sandık', hard: 3, xp: 50, req: 1, drop: null, find: 'antik' },
+  jeot: { name: 'Jeot', hard: 14, xp: 160, req: 25, drop: null, find: 'jeot' },
+  bazalt: { name: 'Bazalt', hard: 8, xp: 30, req: 10, drop: null },
 };
+// 0.10: toprak, kum ve cakil kurekle yumusak
+ORES.toprak.soft = true; ORES.kum.soft = true;
 export const DEEP_LIMIT = 15; // Derin Kazi yetenegi olmadan inilebilen en derin kat
 export const BONKIT_CHANCE = 0.005;
 export const zoneOf = (floor) => ZONES.find((z) => floor >= z.floors[0] && floor <= z.floors[1]) || ZONES[0];
@@ -834,6 +866,43 @@ export function oreWeights(depth) {
 }
 export const mineXpMult = (depth) => Math.min(1.5, 1 + 0.05 * (depth - 1));
 export const mineHardBonus = (depth) => Math.floor((depth - 1) / 4);
+
+// ---------------------------------------------------------------- 0.10 Maden kuyusu
+// 12 blok genis, asagi dogru sonsuz. Her 10 satirda yeni katman; cevher tablosu derinlik/5 ile buyur.
+export const SHAFT = { cols: 12, deepRow: 75 };
+export const LAYERS = [
+  { name: 'Toprak', base: 'toprak', tint: 0xffffff, zone: 'orman' },
+  { name: 'Taş', base: 'tas', tint: 0xffffff, zone: 'magara' },
+  { name: 'Kristal Mağara', base: 'tas', tint: 0xb8c8f0, zone: 'buz' },
+  { name: 'Magma', base: 'tas', tint: 0xf0b49a, zone: 'kor' },
+  { name: 'Gölge Taşı', base: 'tas', tint: 0xb4a4d4, zone: 'golge' },
+  { name: 'Çekirdek', base: 'tas', tint: 0xf0b0d0, zone: 'golge' },
+];
+export const layerOf = (row) => LAYERS[Math.max(0, Math.min(LAYERS.length - 1, Math.floor(row / 10)))];
+export const oreDepthOf = (row) => 1 + Math.floor(Math.max(0, row) / 5);
+// Fosiller (Albumde kendi sayfasi)
+export const FOSSILS = {
+  fosil_kabuk: { name: 'Sarmal Kabuk', w: 30 }, fosil_yaprak: { name: 'Taş Yaprak', w: 26 }, fosil_dis: { name: 'Kadim Diş', w: 18 },
+  fosil_kemik: { name: 'Dev Kemik', w: 14 }, fosil_kafatasi: { name: 'Glemon Kafatası', w: 8 }, fosil_kehribar: { name: 'Kehribar Böcek', w: 4 },
+};
+for (const [k, f] of Object.entries(FOSSILS)) {
+  ITEMS[k] = { name: f.name, kind: 'malzeme', rarity: f.w <= 8 ? 'epik' : 'nadir', icon: k, fossil: true, desc: 'Madende fosil bloğundan çıkar. Albümün Fosiller sayfasına eklenir. Satılabilir.' };
+}
+export const GEODE_GEMS = [['ametist', 30], ['saf_kristal', 30], ['yakut', 15], ['gol_incisi', 10], ['ham_kristal', 15]];
+// Orsteki alet ozellikleri (kazmaya bir tane)
+export const ENCH = {
+  servet: { name: 'Servet', desc: 'Cevherlerden %30 ihtimalle 2 tane çıkar.', cost: [['altin_kulcesi', 3], ['saf_kristal', 2]] },
+  verim: { name: 'Verim', desc: 'Her blok 1 vuruş erken kırılır ve kazma daha hızlı sallanır.', cost: [['demir_kulcesi', 6], ['komur', 12]] },
+  ipek: { name: 'İpek', desc: 'Toprak, çimen ve çakıl kırılmadan blok olarak gelir (inşa için).', cost: [['yaprak_kanadi', 3], ['demir_kulcesi', 3]] },
+};
+// 0.10 Koru: agaclar gercek zamanla buyur, baltayla kesilir
+export const TREES = {
+  mese: { name: 'Meşe', ms: 20 * 60000, log: 'kutuk', sap: 'mese_fidani', xp: 60, lvl: 1 },
+  hus: { name: 'Huş', ms: 30 * 60000, log: 'hus_kutuk', sap: 'hus_fidani', xp: 90, lvl: 10 },
+  cam: { name: 'Çam', ms: 45 * 60000, log: 'cam_kutuk', sap: 'cam_fidani', xp: 130, lvl: 20 },
+  kiraz: { name: 'Kiraz', ms: 60 * 60000, log: 'kiraz_kutuk', sap: 'kiraz_fidani', xp: 180, lvl: 30 },
+};
+export const GROVE_PLOTS = 6;
 
 // ---------------------------------------------------------------- Toplama (0.2)
 export const GATHER = {
@@ -980,6 +1049,17 @@ export const RECIPES = [
   { out: 'sifirlama_tasi', mats: { cekirdek_kristali: 1, altin_kulcesi: 2 }, station: 'masa', lvl: 60, xp: 500 },
   { out: 'ay_iksiri', mats: { ay_otu: 2, bal: 1, bos_sise: 1 }, station: 'kazan', lvl: 35, xp: 220 },
   { out: 'renkli_cam', n: 4, mats: { deniz_cami: 1, cam: 2 }, station: 'masa', lvl: 15, xp: 40 },
+  // 0.10 Blok Dunyasi (tarifler hep sona eklenir)
+  { out: 'merdiven', n: 4, mats: { tahta_kalas: 3 }, station: 'masa', lvl: 1, xp: 12 },
+  { out: 'mesale', n: 4, mats: { dal: 1, komur: 1 }, station: 'masa', lvl: 1, xp: 10 },
+  { out: 'tahta_kurek', mats: { tahta_kalas: 2, dal: 2 }, station: 'masa', lvl: 1, xp: 20 },
+  { out: 'tahta_balta', mats: { tahta_kalas: 3, dal: 2 }, station: 'masa', lvl: 1, xp: 20 },
+  { out: 'demir_kurek', mats: { demir_kulcesi: 2, dal: 2 }, station: 'masa', lvl: 15, xp: 120 },
+  { out: 'demir_balta', mats: { demir_kulcesi: 3, dal: 2 }, station: 'masa', lvl: 15, xp: 140 },
+  { out: 'tahta_kalas', n: 4, mats: { kutuk: 1 }, station: 'masa', lvl: 1, xp: 8 },
+  { out: 'hus_kalas', n: 4, mats: { hus_kutuk: 1 }, station: 'masa', lvl: 5, xp: 10 },
+  { out: 'cam_kalas', n: 4, mats: { cam_kutuk: 1 }, station: 'masa', lvl: 10, xp: 12 },
+  { out: 'kiraz_kalas', n: 4, mats: { kiraz_kutuk: 1 }, station: 'masa', lvl: 15, xp: 16 },
 ];
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -999,6 +1079,12 @@ export const SHOP = [
   { id: 'ates_iksiri', price: 80 },
   { id: 'altin_elma', price: 450 },
   { id: 'can_tilsimi', price: 1500 },
+  // 0.10
+  { id: 'merdiven', price: 6 },
+  { id: 'mesale', price: 6 },
+  { id: 'mese_fidani', price: 20 },
+  { id: 'hus_fidani', price: 40 },
+  { id: 'tahta_balta', price: 40 },
 ];
 export const SELL = {
   dal: 1, mantar: 2, diken: 2, tas: 1, kum: 1, komur: 2, demir_cevheri: 4, demir_kulcesi: 10,
@@ -1014,6 +1100,9 @@ export const SELL = {
   solucan: 1, parlak_yem: 5, gol_incisi: 150, deniz_cami: 25, efsane_pul: 300, izgara_balik: 10, balik_corbasi: 18, balik_kraker: 6,
 };
 // baliklar: seviyesiyle ve nadirligiyle artar
+// 0.10
+Object.assign(SELL, { hus_kutuk: 2, cam_kutuk: 3, kiraz_kutuk: 6, hus_kalas: 1, cam_kalas: 1, kiraz_kalas: 2, merdiven: 1, mesale: 1 });
+for (const [k, f] of Object.entries(FOSSILS)) SELL[k] = Math.round(400 / f.w) * 10;
 for (const [k, f] of Object.entries(FISH)) SELL[k] = Math.round((2 + f.lvl * 0.6) * (f.legend ? 8 : f.rarity === 'nadir' ? 2 : 1));
 
 // ---------------------------------------------------------------- Us ve insa (0.3)
@@ -1035,6 +1124,16 @@ export const BUILD = {
   fener: { tex: 'fener', lvl: 12, xp: 40, pts: 6 },
   cam: { tex: 'cam', lvl: 12, xp: 14, pts: 3 },
   renkli_cam: { tex: 'renkli_cam', lvl: 15, xp: 20, pts: 4 },
+  // 0.10 agac ve maden bloklari
+  hus_kutuk: { tex: 'hus_kutuk', lvl: 1, xp: 14, pts: 2 },
+  cam_kutuk: { tex: 'cam_kutuk', lvl: 1, xp: 14, pts: 2 },
+  kiraz_kutuk: { tex: 'kiraz_kutuk', lvl: 1, xp: 16, pts: 3 },
+  hus_kalas: { tex: 'hus_kalas', lvl: 1, xp: 12, pts: 2 },
+  cam_kalas: { tex: 'cam_kalas', lvl: 1, xp: 12, pts: 2 },
+  kiraz_kalas: { tex: 'kiraz_kalas', lvl: 1, xp: 14, pts: 3 },
+  toprak_blok: { tex: 'toprak', lvl: 1, xp: 3, pts: 1 },
+  cimen_blok: { tex: 'cimen', lvl: 1, xp: 4, pts: 1 },
+  cakil_blok: { tex: 'cakil', lvl: 1, xp: 4, pts: 1 },
   // 0.9 Gezgin Tuccar bloklari
   ay_tasi: { tex: 'ay_tasi', lvl: 5, xp: 20, pts: 5 },
   altin_tugla: { tex: 'altin_tugla', lvl: 5, xp: 20, pts: 5 },
@@ -1093,7 +1192,7 @@ export const TREE = {
     tiers: [
       [{ key: 'hizli_kazma', name: 'Hızlı Kazma', desc: 'Bloklar 1 vuruş erken kırılır' }, { key: 'sabirli_olta', name: 'Sabırlı Olta', desc: 'Balık %30 daha çabuk ısırır' }],
       [{ key: 'damar_bulucu', name: 'Damar Bulucu', desc: 'Değerli cevher şansı +%30' }, { key: 'genis_ag', name: 'Geniş Ağ', desc: 'Balık yakalama kutusu +%20' }],
-      [{ key: 'derin_kazi', name: 'Derin Kazı', desc: 'Madende Derinlik 15\'ten aşağı inebilirsin (Çekirdek Kristali)' }, { key: 'efsane_avcisi', name: 'Efsane Avcısı', desc: 'Efsane balık şansı 2 kat' }],
+      [{ key: 'derin_kazi', name: 'Derin Kazı', desc: 'Maden kuyusunda 76. sıra ve aşağısını kazabilirsin (Çekirdek Kristali)' }, { key: 'efsane_avcisi', name: 'Efsane Avcısı', desc: 'Efsane balık şansı 2 kat' }],
     ],
   },
   zanaat: {
