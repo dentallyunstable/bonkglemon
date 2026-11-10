@@ -3,7 +3,7 @@
 // yanindaki evcil Glemon ve evcillestirme (0.4), odul ve dusurmeler.
 import {
   GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
-  typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES,
+  typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -27,7 +27,8 @@ export function calcDamage(atk, mult, def) {
 }
 
 const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'ay_iksiri', 'mantar_corbasi', 'izgara_balik', 'balik_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
-const HEALS = ['iksir_k', 'orta_iksir', 'mantar_corbasi', 'hurma', 'bogurtlen'];
+// otomatik savasin kullanabildigi iyilestiriciler (Altin Elma haric), zayiftan gucluye
+const HEALS = BATTLE_ITEMS.filter((id) => ITEMS[id] && ITEMS[id].heal && !ITEMS[id].golden).sort((a, b) => ITEMS[a].heal - ITEMS[b].heal);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
 export const BPOS = { x: 62, y: GROUND_Y + 56, scale: 3.1 };
@@ -495,7 +496,7 @@ export class Battle {
       this.status.zehir--;
       const d = Math.max(1, Math.round(S.maxHp() * 0.03));
       floatText(this.px(), this.py() - 10, 'Zehir', 'info');
-      this.damagePlayer(d, false);
+      this.damagePlayer(d, false, true);
       this.renderStatus();
       if (S.hp <= 0) { await this.lose(); if (this.over) return; }
       await wait(this.scene, 400);
@@ -504,7 +505,7 @@ export class Battle {
       this.status.yanma--;
       const d = Math.max(1, Math.round(S.maxHp() * 0.05));
       floatText(this.px(), this.py() - 10, 'Yanıyorsun!', 'info');
-      this.damagePlayer(d, false);
+      this.damagePlayer(d, false, true);
       this.renderStatus();
       if (S.hp <= 0) { await this.lose(); if (this.over) return; }
       await playAnim(p, B('onfire'), 2);
@@ -595,7 +596,7 @@ export class Battle {
   }
 
   async useSkill(a) {
-    if (!this.ready(a)) return;
+    if (!this.ready(a) || !['menu', 'skills'].includes(this.phase)) return;
     if (a.aoe) { await this.doAttack(null, false, a); return; }
     const t = await this.chooseTarget();
     if (t === 'auto' || this.over) return;
@@ -620,6 +621,7 @@ export class Battle {
   }
 
   async useItem(id, auto) {
+    if (!auto && !['menu', 'items'].includes(this.phase)) return;
     if (ITEMS[id].bomb) return this.bomb(auto);
     return this.drink(auto, id);
   }
@@ -664,6 +666,7 @@ export class Battle {
   }
 
   async onAttack() {
+    if (this.phase !== 'menu') return;
     const t = await this.chooseTarget();
     if (t === 'auto' || this.over) return;
     if (!t) { this.showMenu(); return; }
@@ -715,7 +718,10 @@ export class Battle {
     this.phase = null;
     this.setHint('Otomatik savaş…');
     if (S.hp < S.maxHp() * 0.35) {
-      const heal = HEALS.find((id) => S.countItem(id) > 0);
+      // eksik cani kapatan en kucuk iyilestirici; yoksa eldeki en guclusu
+      const have = HEALS.filter((id) => S.countItem(id) > 0);
+      const need = 1 - S.hp / S.maxHp();
+      const heal = have.find((id) => ITEMS[id].heal >= need - 0.15) || have[have.length - 1];
       if (heal) return this.drink(true, heal);
     }
     const alive = this.alive();
@@ -830,7 +836,9 @@ export class Battle {
   }
 
   async defend() {
+    if (this.phase !== 'menu') return;
     this.phase = null;
+    this.setHint('');
     this.manualActs++;
     this.status.savun = true;
     this.defXp += 2 * this.floor;
@@ -844,6 +852,7 @@ export class Battle {
   }
 
   async flee() {
+    if (this.phase !== 'menu') return;
     this.phase = null;
     this.setHint('');
     this.manualActs++;
@@ -878,6 +887,7 @@ export class Battle {
   }
 
   async onFeed() {
+    if (this.phase !== 'menu') return;
     const list = this.tameables();
     const e = await this.chooseTarget(list, 'Kime yem vereceksin?');
     if (e === 'auto' || this.over) return;
@@ -959,6 +969,8 @@ export class Battle {
       return;
     }
     let m = mult * (crit ? 1.5 : 1);
+    // tur ustaligi: cok yendigin ture daha sert vurursun
+    m *= 1 + masteryOf((S.save.stats.glemons || {})[e.key] || 0).bonus;
     // ucan Glemonlar: kilic ve yumruk yari hasar, yay tam
     if (e.fly && this.wt !== 'yay') {
       m *= 0.5;
@@ -1019,7 +1031,13 @@ export class Battle {
         this.scene.tweens.add({ targets: [o.sprite, o.shadow], alpha: 0, y: '+=12', duration: 600, onComplete: () => { o.sprite.destroy(); o.shadow.destroy(); } });
       }
     }
-    // oduller
+    // oduller. Patronun cagirdiklari sonsuza kadar kasilmasin: az XP, altin ve esya yok
+    if (e.summoned) {
+      this.killXp += 2 * Math.pow(this.floor, 1.2);
+      S.save.stats.kills++;
+      if (S.run) S.run.kills++;
+      return;
+    }
     const rm = RMULT[e.rarity] || 1;
     let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage);
     if (e.shiny) xp *= 2;
@@ -1033,7 +1051,14 @@ export class Battle {
     this.gold += gold;
     const st = S.save.stats;
     st.kills++;
+    const mBefore = masteryOf(st.glemons[e.key] || 0).lvl;
     st.glemons[e.key] = (st.glemons[e.key] || 0) + 1;
+    const mNow = masteryOf(st.glemons[e.key]);
+    if (!e.data.boss && mNow.lvl > mBefore) {
+      banner(`${e.data.name} ustalığı ${'★'.repeat(mNow.lvl)}`, `Bu türe hasarın +%${Math.round(mNow.bonus * 100)}`, 2200, 'gold');
+      feed(`<span style="color:#ffd04d">★ ${e.data.name} ustalığı ${mNow.lvl}. kademe: bu türe hasarın +%${Math.round(mNow.bonus * 100)}.</span>`, 'gold');
+      sfx('levelup');
+    }
     if (S.run) S.run.kills++;
     if (e.golden) st.golden = (st.golden || 0) + 1;
     if (e.data.boss) { st.bossKills++; this.luckXp += 250 * (ZONES.indexOf(this.zone) + 1); }
@@ -1054,9 +1079,9 @@ export class Battle {
     }
   }
 
-  damagePlayer(d, anim = true) {
-    // Ay Iksiri: sonraki saldirilardan hasar yok
-    if (this.status.ay > 0 && d > 0) {
+  damagePlayer(d, anim = true, dot = false) {
+    // Ay Iksiri: sonraki saldirilardan hasar yok (zehir ve yanma kalkani harcamaz)
+    if (this.status.ay > 0 && d > 0 && !dot) {
       this.status.ay--;
       floatText(this.px(), this.py(), 'Ay kalkanı!', 'good');
       this.renderStatus();

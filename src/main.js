@@ -2,7 +2,7 @@
 import { GAME_W, GAME_H, CHARACTERS } from './data.js';
 import { S } from './state.js';
 import { $, show } from './ui.js';
-import { setSound, stopMusic } from './audio.js';
+import { setSound, stopMusic, pauseMusic } from './audio.js';
 import { showLogin } from './login.js';
 import { makeAnim, makeAnimFrames } from './anim.js';
 import { WorldScene } from './world.js';
@@ -118,6 +118,7 @@ function startGame(char, charMeta, gmeta, npc) {
   }, 30000);
   // eslik: sekme kapanirken kaydet
   window.addEventListener('pagehide', () => { S.save.lastSeen = Date.now(); S.persist(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { S.save.lastSeen = Date.now(); S.persist(); } pauseMusic(document.hidden); });
   new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',

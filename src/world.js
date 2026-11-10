@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE,
+  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -76,6 +76,11 @@ export class WorldScene extends Phaser.Scene {
     this.goBase(false);
     UI.show('#loading', false);
     UI.feed(`Hoş geldin, ${S.save.char}! Hancı Lale'ye dokun: Keşif, Zindan, görevler ve takas hep onda.`);
+    if (S.loadNote) {
+      const n = S.loadNote; S.loadNote = null;
+      const lost = n.lost.map((l) => `${ITEMS[l.id].name} ×${l.n}`).concat(n.gold ? [`${n.gold} ${CURRENCY}`] : []).join(', ');
+      UI.feed(`Oyun bir savaşın ortasında kapandı: bayılmış sayıldın.${lost ? ' Kaybettiklerin: ' + UI.escapeHtml(lost) : ''}`);
+    }
     this.checkCamp();
     this.makeFollower();
   }
@@ -160,6 +165,12 @@ export class WorldScene extends Phaser.Scene {
     this.todTick = (this.todTick || 0) + dt;
     if (this.todTick > 30000) { this.todTick = 0; if (outdoor && todNow() !== this.tod) this.applyTod(); }
     this.pShadow.setAlpha(this.inBattleView ? 0 : this.player.alpha);
+    // karakterin ustune binen yazilar soluklasir (Depo yazisi yuzunu kapatmasin)
+    for (const l of this.labels) {
+      if (l._x === undefined) continue;
+      const near = Math.abs(l._x - this.player.x) < 20;
+      if (l._near !== near) { l._near = near; l.classList.toggle('near', near); }
+    }
     this.updateFollower(dt);
     // uzun sure hareketsiz kalinca otur
     const cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
@@ -296,6 +307,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (opts.label) {
       const l = UI.el('div', 'objlabel', opts.label);
+      l._x = opts.lx ?? obj.x;
       l.style.left = UI.pctX(opts.lx ?? obj.x);
       l.style.top = UI.pctY(opts.ly);
       UI.$('#floats').appendChild(l);
@@ -311,6 +323,22 @@ export class WorldScene extends Phaser.Scene {
     for (const l of this.labels) l.remove();
     this.labels = [];
     UI.$('#bars').innerHTML = '';
+  }
+
+  // Uretilen arka planlar (oda, savas meydani) sinirsiz birikmesin: son 12 tanesi tutulur.
+  bgTex(key, make) {
+    this.bgKeys = this.bgKeys || [];
+    const i = this.bgKeys.indexOf(key);
+    if (i >= 0) this.bgKeys.splice(i, 1);
+    if (!this.textures.exists(key)) this.textures.addCanvas(key, make());
+    this.bgKeys.push(key);
+    while (this.bgKeys.length > 12) {
+      const old = this.bgKeys[0];
+      if (old === this.bg.texture.key || old === this.roomBg) { this.bgKeys.push(this.bgKeys.shift()); break; }
+      this.bgKeys.shift();
+      if (this.textures.exists(old)) this.textures.remove(old);
+    }
+    return key;
   }
 
   fade(out) {
@@ -364,6 +392,7 @@ export class WorldScene extends Phaser.Scene {
       x: MINE_X, label: 'Zindan', ly: G - 92, act: () => openZindan(this),
     });
     this.refreshFurnace();
+    if (!S.run) S.hp = S.maxHp(); // us guvenli yer: her donuste can dolar
     this.player.setFlipX(false);
     this.player.x = from === 'dungeon' ? MINE_X : from === 'death' ? FIRE_X - 22 : from === 'plot' ? GAME_W - 16 : FIRE_X - 18;
     this.resetPlayer();
@@ -1019,6 +1048,13 @@ export class WorldScene extends Phaser.Scene {
 
   buildWall(depth) {
     const W = MINE_WALL;
+    // 0.8.6: duvar kayda yazilir. Madenden cikip girmek yeni duvar vermez (define/Bonkit
+    // icin duvar cevirme acigi); yarisi kazilinca ya da 10 dakika gecince yenilenir.
+    const sv = S.save.mine.wall;
+    const half = (MINE_COLS * MINE_ROWS) / 2;
+    const keep = sv && sv.depth === depth && Array.isArray(sv.grid) && sv.grid.length === MINE_ROWS
+      && sv.grid.every((r) => Array.isArray(r) && r.length === MINE_COLS && r.every((k) => k === null || ORES[k]))
+      && sv.grid.flat().filter((k) => k === null).length < half && Date.now() - sv.t < 10 * 60 * 1000;
     const weights = oreWeights(depth).map(([k, w]) => [k, ['toprak', 'kum', 'tas', 'komur'].includes(k) ? w : w * S.perk('damar_bulucu', 1.3, 1)]);
     const grid = [];
     for (let r = 0; r < MINE_ROWS; r++) {
@@ -1043,6 +1079,8 @@ export class WorldScene extends Phaser.Scene {
         else if (Math.random() < BONKIT_CHANCE) grid[r][c] = 'bonkit';
       }
     }
+    if (keep) for (let r = 0; r < MINE_ROWS; r++) for (let c = 0; c < MINE_COLS; c++) grid[r][c] = sv.grid[r][c];
+    else S.save.mine.wall = { depth, t: Date.now(), grid: grid.map((r) => r.slice()) };
     this.wall = [];
     for (let r = 0; r < MINE_ROWS; r++) {
       const row = [];
@@ -1050,9 +1088,9 @@ export class WorldScene extends Phaser.Scene {
         const kind = grid[r][c];
         const x = W.x + c * W.size + W.size / 2;
         const y = GROUND_Y - (MINE_ROWS - r) * W.size + W.size / 2;
-        const spr = this.add.image(x, y, 'ores', kind).setDepth(5);
-        spr.setInteractive({ useHandCursor: true });
+        const spr = this.add.image(x, y, 'ores', kind || 'tas').setDepth(5);
         const b = { r, c, kind, hits: 0, spr, crack: null };
+        if (kind) spr.setInteractive({ useHandCursor: true }); else spr.setVisible(false);
         spr.on('pointerdown', () => this.onBlock(b));
         this.roomObjs.push(spr);
         row.push(b);
@@ -1166,6 +1204,8 @@ export class WorldScene extends Phaser.Scene {
     const kind = b.kind;
     const ore = ORES[kind];
     b.kind = null;
+    const mw = S.save.mine.wall;
+    if (this.mode === 'mine' && b.r !== undefined && mw && mw.grid[b.r]) mw.grid[b.r][b.c] = null;
     b.spr.setVisible(false);
     b.spr.disableInteractive();
     if (b.crack) b.crack.setVisible(false);
@@ -1403,11 +1443,9 @@ export class WorldScene extends Phaser.Scene {
     const zone = this.zone();
     const zin = this.inZindan();
     const key = zin ? `zbg_${Math.min(this.zLevel, 40)}_${v}` : `bg_${this.floor}_${v}${room.dark ? '_d' : ''}`;
-    if (!this.textures.exists(key)) {
-      const cv = zin ? dungeonRoomBackground(Math.min(this.zLevel, 40), v) : zone.key === 'magara' ? caveRoomBackground(this.floor, v, !!room.dark)
-        : zone.key === 'col' ? desertRoomBackground(this.floor, v) : BIOME_KEYS.includes(zone.key) ? biomeRoomBackground(zone.key, this.floor, v) : forestBackground(this.floor, v);
-      this.textures.addCanvas(key, cv);
-    }
+    this.roomBg = null;
+    this.bgTex(key, () => (zin ? dungeonRoomBackground(Math.min(this.zLevel, 40), v) : zone.key === 'magara' ? caveRoomBackground(this.floor, v, !!room.dark)
+      : zone.key === 'col' ? desertRoomBackground(this.floor, v) : BIOME_KEYS.includes(zone.key) ? biomeRoomBackground(zone.key, this.floor, v) : forestBackground(this.floor, v)));
     this.bg.setTexture(key);
     this.player.setFlipX(false);
     this.player.x = -20;
@@ -1761,6 +1799,7 @@ export class WorldScene extends Phaser.Scene {
   async enterBattleView() {
     if (this.inBattleView) return;
     this.inBattleView = true;
+    S.setFight(true);
     playMusic('enemyfight');
     const cam = this.cameras.main;
     cam.flash(120, 255, 255, 255);
@@ -1769,7 +1808,7 @@ export class WorldScene extends Phaser.Scene {
     this.roomBg = this.bg.texture.key;
     const zk = this.inZindan() ? 'magara' : this.zone().key;
     const key = `arena_${zk}_${this.floor || 1}`;
-    if (!this.textures.exists(key)) this.textures.addCanvas(key, battleBackground(this.floor || 1, zk));
+    this.bgTex(key, () => battleBackground(this.floor || 1, zk));
     this.bg.setTexture(key);
     this.hiddenObjs = this.roomObjs.filter((o) => o.visible);
     for (const o of this.hiddenObjs) o.setVisible(false);
@@ -1787,6 +1826,7 @@ export class WorldScene extends Phaser.Scene {
 
   async exitBattleView(show = true) {
     if (!this.inBattleView) return;
+    S.setFight(false);
     stopMusic();
     if (show) await this.fade(true);
     this.inBattleView = false;
@@ -1813,6 +1853,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.player.setFlipX(false);
     this.player.x = -24;
+    if (room.nodeSpr && room.nodeSpr.active) { room.nodeSpr.destroy(); room.nodeSpr = null; }
     this.prepareRoom(room);
     await moveTo(this.player, 50, { speed: 85, anim: 'c_walk' });
     this.idle();
@@ -2103,6 +2144,14 @@ export class WorldScene extends Phaser.Scene {
     if (up.skill === 'madencilik') {
       const os = Object.values(ORES).filter((o) => o.req === up.level);
       if (os.length) UI.feed(`Artık kazabilirsin: ${os.map((o) => o.name).join(', ')}`);
+    }
+    // her 10 seviye bir kilometre tasi: buyuk yazi ve yetenek agaci puani hatirlatmasi
+    if (up.level % 10 === 0) UI.banner(`${sk.name} ${up.level}!`, up.level === 99 ? 'En üst seviye!' : 'Kilometre taşı', 2200, 'gold');
+    const br = Object.entries(TREE).find(([, t]) => t.skills.includes(up.skill));
+    if (br) {
+      const free = S.treePoints(br[0]) - S.treeSpent(br[0]);
+      const sum = br[1].skills.reduce((t, k) => t + S.level(k), 0);
+      if (free > 0 && sum % 10 === 0) UI.feed(`<span style="color:#9ce08a">Yetenek Ağacı: ${br[1].name} dalında ${free} boş puanın var. (Beceriler → Yetenek Ağacı)</span>`);
     }
     if (!this.inBattleView) {
       await playAnim(this.player, 'c_levelup', 1);

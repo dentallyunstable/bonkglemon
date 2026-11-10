@@ -1,5 +1,5 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
@@ -352,7 +352,7 @@ export function openTree(tab = 'savas') {
 }
 
 // ------------------------------------------------------------ Ors (0.8.5)
-// Silah, zirh, kazma ve olta +1..+3 Yildiz Demiriyle, +4 Usta Damgasiyla. Her arti %8. Asla basarisiz olmaz.
+// Silah, zirh ve kazma +1..+3 Yildiz Demiriyle, +4 Usta Damgasiyla. Her arti %8. Asla basarisiz olmaz.
 const ANVIL_COST = [[['yildiz_demiri', 1]], [['yildiz_demiri', 2]], [['yildiz_demiri', 3]], [['yildiz_demiri', 2], ['usta_damgasi', 1]]];
 export function openAnvil(w) {
   UI.openPanel('Örs', (body) => {
@@ -459,7 +459,7 @@ export function openProfile(w) {
         ]);
       }, 'small red'));
       info.appendChild(row);
-      info.appendChild(UI.el('p', 'muted', `Arkadaşlarının kartını görmek (Buluşma) 0.6 sürümünde gelecek. · sürüm ${VERSION}`));
+      info.appendChild(UI.el('p', 'muted', `Bonkglemon · sürüm ${VERSION}`));
       pr.appendChild(info);
       body.appendChild(pr);
     };
@@ -480,7 +480,7 @@ export function openMap(w) {
       const left = UI.el('div');
       left.appendChild(UI.el('div', 'zn', z.name));
       let info;
-      if (!z.open) info = `Kat ${z.floors[0]}–${z.floors[1]} · 0.8 sürümünde açılacak`;
+      if (!z.open) info = `Kat ${z.floors[0]}–${z.floors[1]} · ileride açılacak`;
       else if (!opened) info = `Kat ${z.floors[0]}–${z.floors[1]} · Önce ${GLEMONS[z.after].name}'ı yen`;
       else info = `Kat ${z.floors[0]}–${z.floors[1]} · En derin: ${deepest >= z.floors[0] ? Math.min(deepest, z.floors[1]) : '-'} · Giriş gücü ${z.atk}${atkOk ? '' : ` (sende ${S.atk()})`}`;
       left.appendChild(UI.el('div', 'zf', info));
@@ -660,12 +660,18 @@ export function openAlbum(w, tab = 'glemon') {
           if (al.shiny[k]) marks.push('✦');
           const kills = (S.save.stats.glemons || {})[k] || 0;
           c.appendChild(UI.el('div', 'muted', al.seen[k] ? (d.egg ? marks.join(' ') || 'Efsanevi' : `${marks.join(' ')} ${kills} yenildi`) : d.boss ? 'Patron' : d.egg ? 'Yumurta' : RARITY[d.rarity].name));
-          c.title = al.seen[k] ? `${d.name} · ${d.type} tipi${d.special ? ' · ' + d.special.name : ''}` : '';
+          const ms = masteryOf(kills);
+          if (al.seen[k] && !d.egg && !d.boss) {
+            const me = UI.el('div', 'muted', ms.lvl ? `${'★'.repeat(ms.lvl)} hasar +%${Math.round(ms.bonus * 100)}` : `Ustalık: ${kills}/${ms.next}`);
+            if (ms.lvl) me.style.color = '#ffd04d';
+            c.appendChild(me);
+          }
+          c.title = al.seen[k] ? `${d.name} · ${d.type} tipi${d.special ? ' · ' + d.special.name : ''}${ms.next ? ` · sonraki ustalık: ${ms.next} yenme` : ''}` : '';
           grid.appendChild(c);
         }
         body.appendChild(grid);
       }
-      body.appendChild(UI.el('p', 'muted', '♥ evcilleştirdin · ✦ parlak versiyonunu gördün'));
+      body.appendChild(UI.el('p', 'muted', '♥ evcilleştirdin · ✦ parlak versiyonunu gördün · ★ ustalık: bir türü 50, 250 ve 1000 kez yenince o türe hasarın %5, %10, %15 artar'));
     };
     render();
   }, { wide: true });

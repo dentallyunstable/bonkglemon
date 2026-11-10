@@ -24,13 +24,19 @@ function tone(freq, dur, { type = 'square', vol = 0.12, slide = 0, delay = 0 } =
   o.start(t); o.stop(t + dur + 0.02);
 }
 
+const noiseCache = {};
 function noise(dur, { vol = 0.15, freq = 1200, delay = 0, q = 1 } = {}) {
   const a = ac(); if (!a) return;
   const t = a.currentTime + delay;
-  const len = Math.floor(a.sampleRate * dur);
-  const buf = a.createBuffer(1, len, a.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+  // ayni uzunluktaki gurultu bir kez uretilir (her vurusta yeniden hesaplanmaz)
+  let buf = noiseCache[dur];
+  if (!buf) {
+    const len = Math.floor(a.sampleRate * dur);
+    buf = a.createBuffer(1, len, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    noiseCache[dur] = buf;
+  }
   const s = a.createBufferSource(); s.buffer = buf;
   const f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
   const g = a.createGain(); g.gain.value = vol;
@@ -104,11 +110,15 @@ function fadeTo(a, vol, ms, then) {
   step();
 }
 
+let hiddenPause = false; // sekme arkadayken muzik durur
+export function pauseMusic(on) { hiddenPause = !!on; syncMusic(); }
+
 function syncMusic() {
   for (const [key, a] of Object.entries(tracks)) {
-    if (key !== want || !enabled) fadeTo(a, 0, 400, () => a.pause());
+    if (hiddenPause) { cancelAnimationFrame(a._fade); a.volume = 0; a.pause(); } // arka sekmede rAF calismaz: hemen durdur
+    else if (key !== want || !enabled) fadeTo(a, 0, 400, () => a.pause());
   }
-  if (!want || !enabled) return;
+  if (!want || !enabled || hiddenPause) return;
   const a = track(want);
   const p = a.play();
   if (p && p.catch) p.catch(() => { /* izin yok: ilk dokunusu bekle */ });

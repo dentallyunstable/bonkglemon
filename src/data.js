@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.8.5';
+export const VERSION = '0.8.6';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -1069,5 +1069,13 @@ export const TREE = {
     ],
   },
 };
+// ---------------------------------------------------------------- Tur ustaligi (0.8.6)
+// Bir Glemon turunu yendikce o ture karsi guclenirsin: [yenilen sayi, hasar bonusu]
+export const MASTERY = [[50, 0.05], [250, 0.1], [1000, 0.15]];
+export function masteryOf(kills) {
+  let lvl = 0; let bonus = 0;
+  for (const [n, b] of MASTERY) if (kills >= n) { lvl++; bonus = b; }
+  return { lvl, bonus, next: MASTERY[lvl] ? MASTERY[lvl][0] : null };
+}
 export const respecCost = (spent) => 100 + spent * 40;
 export const QUEST_REROLL = 15;

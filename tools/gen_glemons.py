@@ -1001,12 +1001,38 @@ def texel_layer(rows, pal, only=None, skip=None, shiny_on=False, ts=2):
     return px
 
 
+def soft_ink(c):
+    """Yumusak dis cizgi (0.8.6): duz siyah yerine govde renginin koyusu.
+    Koyu parcalarda neredeyse siyah kalir, acik parcalarda renkli ve yumusak durur."""
+    r, g, b = c[:3]
+    return (int(INK[0] * 0.55 + r * 0.45 * 0.42), int(INK[1] * 0.55 + g * 0.45 * 0.42), int(INK[2] * 0.55 + b * 0.45 * 0.42), 255)
+
+
+def rounded(px):
+    """Merdiven gibi duran sivri dis koseleri yumusat: iki komsusu da bos olan
+    (cikinti yapan) kose pikseli silinir. Sadece buyuk duz parcalarda, ince
+    ayrintilara (kulak ucu, bacak, anten) dokunmaz."""
+    out = dict(px)
+    for (x, y), c in px.items():
+        for dx, dy in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+            if (x + dx, y) in px or (x, y + dy) in px:
+                continue
+            # kosenin ic tarafi dolu ve ayni renkte olmali (2x2 texelin kosesi)
+            if px.get((x - dx, y)) == c and px.get((x, y - dy)) == c and px.get((x - dx, y - dy)) == c \
+                    and (x - 2 * dx, y) in px and (x, y - 2 * dy) in px:
+                out.pop((x, y), None)
+                break
+    return out
+
+
 def outlined(px):
     out = dict(px)
     for (x, y), c in px.items():
         for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if n not in px:
-                out[n] = INK
+                k = soft_ink(c)
+                if n not in out or sum(k[:3]) < sum(out[n][:3]):
+                    out[n] = k
     return out
 
 
@@ -1054,7 +1080,7 @@ def shaded(px):
 
 
 def render(size, parts, flash=False):
-    parts = [(shaded(pix) if i < 3 else pix, ox, oy) for i, (pix, ox, oy) in enumerate(parts)]
+    parts = [(shaded(rounded(pix)) if i < 3 else pix, ox, oy) for i, (pix, ox, oy) in enumerate(parts)]
     cw, ch = size
     img = Image.new('RGBA', (cw, ch), (0, 0, 0, 0))
     p = img.load()

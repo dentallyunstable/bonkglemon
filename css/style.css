@@ -209,6 +209,8 @@ html, body {
   background: rgba(14, 10, 20, 0.6); padding: calc(0.5 * var(--u)) calc(3 * var(--u));
   border-radius: calc(2 * var(--u)); white-space: nowrap; pointer-events: none;
 }
+.objlabel { transition: opacity .2s; }
+.objlabel.near { opacity: .18; }
 
 #banner {
   position: absolute; left: 0; right: 0; top: 34%;

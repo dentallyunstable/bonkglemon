@@ -101,20 +101,51 @@ export const S = {
     for (const x of [...data.bag, ...data.depo]) if (x) data.seen[x.id] = true;
     for (const id of Object.values(data.equip)) if (id) data.seen[id] = true;
     // bilinmeyen esya kimliklerini temizle (eski surumlerden kalma)
-    for (const list of [data.bag, data.depo]) list.forEach((x, i) => { if (x && !ITEMS[x.id]) list[i] = null; });
+    for (const list of [data.bag, data.depo]) list.forEach((x, i) => { if (x && (!ITEMS[x.id] || !(x.n > 0))) list[i] = null; });
+    // 0.8.6: bozuk ya da eski kayit oyunu cokertmesin
+    for (const [slot, id] of Object.entries(data.equip)) if (id && (!ITEMS[id] || ITEMS[id].kind !== slot)) data.equip[slot] = null;
+    data.pets = (data.pets || []).filter((p) => p && GLEMONS[p.key] && !GLEMONS[p.key].boss);
+    for (const p of data.pets) { p.stage = Math.max(0, Math.min(2, p.stage | 0)); p.lvl = Math.max(1, Math.min(PET_MAX_LVL, p.lvl | 0)); if (!(p.xp >= 0)) p.xp = petXpFor(p.lvl); }
+    if (data.pet && !data.pets.some((p) => p.id === data.pet)) data.pet = null;
+    for (const [k, c] of Object.entries(data.plot.cells)) if (!c || !BUILD[c.id]) delete data.plot.cells[k];
+    for (const k of Object.keys(data.plot.garden)) if (!data.plot.cells[k] || data.plot.cells[k].id !== 'tarla') delete data.plot.garden[k];
+    if (data.furnace.rid != null && !RECIPES[data.furnace.rid]) data.furnace = { rid: null, n: 0, t0: 0 };
+    data.quests.list = (data.quests.list || []).filter((q) => q && QUESTS[q.kind] && (q.kind !== 'species' || GLEMONS[q.key]));
+    if (!(data.gold >= 0)) data.gold = 0;
+    data.gold = Math.floor(data.gold);
+    for (const k of Object.keys(data.skills)) if (!(data.skills[k] >= 0)) data.skills[k] = 0;
+    for (const k of Object.keys(data.upg)) if (!ITEMS[k]) delete data.upg[k];
     this.save = data;
     this.hp = this.maxHp();
+    // 0.8.6: savasin ortasinda oyunu kapatmak bayilma cezasindan kurtarmaz
+    this.loadNote = null;
+    if (data.run) {
+      if (data.run.fight) {
+        this.run = data.run;
+        const res = this.loseHalfRun();
+        data.stats.deaths++;
+        this.loadNote = res;
+      }
+      this.run = null;
+      data.run = null;
+    }
     storageSet('bonkglemon.last', char);
     this.changed();
   },
 
   persist() {
     if (!this.save) return;
+    if (this._pt) { clearTimeout(this._pt); this._pt = null; }
     storageSet(SAVE_PREFIX + this.save.char, JSON.stringify(this.save));
+  },
+  // 0.8.6: art arda gelen degisiklikler tek seferde yazilir (sekme kapanirken hemen yazilir)
+  persistSoon() {
+    if (this._pt || !this.save) return;
+    this._pt = setTimeout(() => { this._pt = null; this.persist(); }, 200);
   },
 
   changed() {
-    this.persist();
+    this.persistSoon();
     for (const fn of this.listeners) { try { fn(); } catch (e) { console.error(e); } }
   },
 
@@ -382,6 +413,14 @@ export const S = {
   // ------------------------------------------------ dungeon turu
   startRun(floor) {
     this.run = { gained: {}, gold: 0, startFloor: floor, kills: 0 };
+    this.save.run = this.run; // kayitla birlikte yazilir (bkz. load)
+    this.persist();
+  },
+  // savas basladi / bitti: savas sirasinda sayfa kapanirsa tur bayilma sayilir
+  setFight(on) {
+    if (!this.run) return;
+    this.run.fight = !!on;
+    this.persist();
   },
 
   // Bayilinca: bu turda kazanilanlarin yarisi kaybolur
@@ -400,7 +439,7 @@ export const S = {
     return { lost, gold };
   },
 
-  endRun() { this.run = null; this.hp = this.maxHp(); this.changed(); },
+  endRun() { this.run = null; this.save.run = null; this.hp = this.maxHp(); this.persist(); this.changed(); },
 
   // ------------------------------------------------ gorevler (0.6)
   questProgress(q) {
