@@ -1,7 +1,7 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES } from './data.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES, TOK, TASTY_BONUS } from './data.js';
 
 const CRAFTABLE = new Set(RECIPES.map((r) => r.out));
 
@@ -41,6 +41,8 @@ function freshSave(char) {
     settings: { sound: true, auto: false },
     // 0.3 Us: arsa hucreleri "sutun,sira" -> { id, shape? }, bahce "sutun" -> { seed, t0 }
     plot: { cells: {}, garden: {}, best: 0, back: {}, kinds: {}, rw: {}, bestScore: 0 },
+    // 0.11: Tok guclendirmesi { id, k, v, until }, lezzetli yemek sayilari, kamp atesi, savas esyasi kullanimlari
+    tok: null, tasty: {}, fireUntil: 0, useCount: {},
     lastSeen: Date.now(),
     // 0.4 evcil Glemonlar: { id, key, stage, shiny, lvl, xp, t }
     pets: [],
@@ -187,6 +189,7 @@ export const S = {
       const before = this.level(skill);
       // 0.9: secili unvan o beceriye en fazla %3 XP bonusu verir
       if (amount > 0 && this.xpBonus) amount *= this.xpBonus(skill);
+      if (amount > 0) amount *= 1 + this.tokVal('xp'); // 0.11 Tok
       this.save.skills[skill] = (this.save.skills[skill] || 0) + Math.round(amount);
       const after = this.level(skill);
       if (after > before) ups.push({ skill, level: after });
@@ -242,7 +245,38 @@ export const S = {
     return this.activeSets().reduce((t, st) => t + (st.hp || 0), 0);
   },
   maxHp() {
-    return 50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.setBonusHp();
+    return Math.round((50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.setBonusHp()) * (1 + this.tokVal('hp')));
+  },
+  // ------------------------------------------------ 0.11 Tok guclendirmesi (ayni anda bir tane)
+  tokVal(k) {
+    const t = this.save && this.save.tok;
+    if (!t || t.k !== k || Date.now() >= t.until) return 0;
+    return t.v;
+  },
+  applyTok(id) {
+    const [k, v, min] = ITEMS[id].tok;
+    let ms = min * 60000;
+    let tasty = false;
+    this.save.tasty[id] = Math.min(this.save.tasty[id] || 0, this.countItem(id) + 1);
+    if ((this.save.tasty[id] || 0) > 0) { this.save.tasty[id]--; ms *= TASTY_BONUS; tasty = true; }
+    const before = this.save.tok && this.tokLeft() ? this.save.tok : null;
+    this.save.tok = { id, k, v, until: Date.now() + ms };
+    this.hp = Math.min(this.hp, this.maxHp());
+    return `Tok: ${TOK[k].fmt(v)} (${Math.round(ms / 60000)} dk${tasty ? ', lezzetli!' : ''})${before && before.id !== id ? ` · ${ITEMS[before.id].name} etkisi bitti` : ''}`;
+  },
+  tokLeft() { const t = this.save.tok; return t && Date.now() < t.until ? t.until - Date.now() : 0; },
+  // yemek, iksir, matara: hepsi buradan yenir. Mesajlari dondurur.
+  consume(id) {
+    const it = ITEMS[id];
+    const msgs = [];
+    if (this.removeItem(id, 1) < 1) return null;
+    if (it.heal) { const h = Math.round(this.maxHp() * it.heal); this.hp = Math.min(this.maxHp(), this.hp + h); msgs.push(`+${h} can`); }
+    const m30 = Date.now() + 30 * 60 * 1000;
+    if (it.warm) { this.save.warmUntil = m30; msgs.push('30 dakika soğuktan etkilenmezsin'); }
+    if (it.fireRes) { this.save.fireResUntil = m30; msgs.push('30 dakika lav seni yakmaz'); }
+    if (it.water) { this.save.waterUntil = m30; msgs.push('30 dakika çöl sıcağından etkilenmezsin'); }
+    if (it.tok) msgs.push(this.applyTok(id));
+    return msgs;
   },
   // silah turu: kilic, yay ya da yumruk (silahsiz ya da eldiven)
   weaponType() {
@@ -254,7 +288,7 @@ export const S = {
   atk() {
     const wt = this.weaponType();
     const m = wt === 'yay' ? this.perk('kartal_gozu', 1.08, 1) : this.perk('keskin_kilic', 1.08, 1);
-    return Math.round(this.atkBase() * m);
+    return Math.round(this.atkBase() * m * (1 + this.tokVal('atk')));
   },
   atkBase() {
     const id = this.save.equip.silah;
@@ -262,25 +296,25 @@ export const S = {
     return this.level(this.atkSkill()) + w;
   },
   // Sans: nadir dusme ve parlak Glemon (seviye + tilsim)
-  luck() { return this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0) + this.perk('sansli_dogan', 8, 0); },
+  luck() { return this.tokVal('luck') + this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0) + this.perk('sansli_dogan', 8, 0); },
   dropMult() { return 1 + this.luck() * 0.006; },
   shinyChance() { return (this.shinyMult ? this.shinyMult() : 1) * this.perk('parlak_goz', 1.5, 1) / Math.max(200, 500 - this.luck() * 2.5); },
   bagSize() { return BAG_SIZE + (this.save.bagBonus || 0); },
   def() {
     const base = this.level('savunma') + this.gearStat('def');
     const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0);
-    return Math.round(base * (1 + pct));
+    return Math.round(base * (1 + pct) * (1 + this.tokVal('def')));
   },
   pick() {
     const id = this.save.equip.kazma;
-    return id ? ITEMS[id].pick * this.upMult(id) : 0;
+    return id ? ITEMS[id].pick * this.upMult(id) * (1 + this.tokVal('mine')) : 0;
   },
   rod() {
     const id = this.save.equip.olta;
     return id ? ITEMS[id].rod : null;
   },
   spd() {
-    return 100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0);
+    return Math.round((100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0)) * (1 + this.tokVal('spd')));
   },
   crit() { return (this.hp < this.maxHp() * 0.3 ? this.perk('ofke', 0.2, 0) : 0) + 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0); },
   // 0.8: Kor seti / Magma Goguslugu yanmaz, Golge seti / Bekci Pelerini karanlikta gorur

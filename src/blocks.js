@@ -840,6 +840,62 @@ const SOLID = {
   pencere: windowFrame, somine: () => hearth(0),
   tarla: farmland, firin0: () => furnace(0), firin1: () => furnace(1), firin2: () => furnace(2),
 };
+// ------------------------------------------------------------- 0.11 ciftlik urunleri (olgun hal) ve kovan
+function cropLeaves(t, h = 9) {
+  t.rect(7, 16 - h, 1, h, GRASS[2]);
+  t.rect(3, 16 - h + 2, 4, 2, GRASS[1]); t.rect(8, 16 - h + 1, 4, 2, GRASS[1]);
+  t.rect(4, 13, 3, 2, GRASS[0]); t.rect(8, 13, 4, 2, GRASS[0]);
+  t.set(3, 16 - h + 2, GRASS[3]); t.set(11, 16 - h + 1, GRASS[3]);
+  return t;
+}
+function crop(kind) {
+  const t = T(null);
+  if (kind === 'bugday') {
+    const g = ['#d8b048', '#f0d070', '#b08a30'];
+    for (const x of [2, 5, 8, 11, 13]) {
+      const h = 10 + ((x * 7) % 4);
+      t.rect(x, 16 - h, 1, h, '#a8a050');
+      t.rect(x - 1, 16 - h - 1, 3, 4, g[0]); t.set(x, 16 - h - 2, g[1]); t.set(x - 1, 16 - h, g[2]); t.set(x + 1, 16 - h + 2, g[1]);
+    }
+  } else if (kind === 'havuc') {
+    for (const x of [3, 7, 11]) { t.rect(x, 5, 1, 7, GRASS[1]); t.rect(x - 1, 4, 3, 3, GRASS[3]); t.set(x - 2, 6, GRASS[0]); t.set(x + 2, 5, GRASS[0]); t.rect(x - 1, 12, 3, 4, '#e8782a'); t.set(x, 13, '#f8a050'); }
+  } else if (kind === 'patates') {
+    cropLeaves(t, 8); t.rect(2, 4, 12, 3, GRASS[1]); t.rect(3, 3, 3, 1, GRASS[3]); t.rect(9, 3, 4, 1, GRASS[3]);
+    for (const [x, y] of [[2, 13], [7, 14], [11, 13]]) { t.rect(x, y, 3, 2, '#b8884a'); t.set(x, y, '#d8b070'); t.set(x + 2, y + 1, '#8a6030'); }
+  } else if (kind === 'kabak') {
+    t.rect(1, 8, 6, 3, GRASS[1]); t.rect(10, 7, 5, 3, GRASS[0]); t.rect(6, 6, 1, 4, GRASS[2]); t.set(7, 5, GRASS[3]);
+    t.rect(4, 9, 8, 7, '#e0802a'); t.rect(3, 10, 10, 5, '#e0802a'); t.rect(5, 10, 1, 5, '#b85a1a'); t.rect(8, 9, 1, 7, '#b85a1a'); t.rect(10, 10, 1, 5, '#b85a1a');
+    t.set(6, 10, '#f8a850'); t.set(9, 11, '#f8a850'); t.rect(7, 7, 2, 2, '#6a8a2e');
+  } else if (kind === 'misir') {
+    for (const x of [4, 11]) {
+      t.rect(x, 1, 1, 15, '#7aa852'); t.rect(x - 3, 8, 3, 1, GRASS[1]); t.rect(x + 1, 5, 3, 1, GRASS[1]); t.rect(x + 1, 11, 3, 1, GRASS[0]); t.set(x, 0, '#d8c070');
+      t.rect(x + 1, 6, 2, 5, '#f0c838'); t.set(x + 1, 7, '#f8e070'); t.set(x + 2, 9, '#d8a828'); t.rect(x + 3, 7, 1, 4, GRASS[3]);
+    }
+  } else if (kind === 'pamuk') {
+    for (const x of [3, 8, 12]) t.rect(x, 6, 1, 10, '#7a5a3a');
+    t.rect(3, 9, 9, 1, '#7a5a3a');
+    for (const [x, y] of [[2, 4], [7, 3], [11, 5], [5, 8], [10, 9]]) { t.rect(x, y, 3, 3, '#f4f0ea'); t.set(x + 1, y + 1, '#ffffff'); t.set(x + 2, y + 2, '#c8c0b8'); }
+  } else if (kind === 'biber') {
+    cropLeaves(t, 11);
+    for (const [x, y] of [[3, 9], [10, 7], [6, 11], [11, 11]]) { t.rect(x, y, 2, 3, '#c8301e'); t.set(x, y, '#f07a3a'); t.set(x + 1, y - 1, GRASS[2]); }
+  } else if (kind === 'cilek') {
+    t.rect(1, 10, 14, 4, GRASS[1]); t.rect(2, 9, 4, 1, GRASS[3]); t.rect(9, 9, 5, 1, GRASS[3]); t.rect(1, 14, 14, 2, GRASS[0]);
+    for (const [x, y] of [[2, 11], [6, 12], [10, 11], [13, 12]]) { t.rect(x, y, 2, 2, '#5a8ac0'); t.set(x, y, '#c8e0f8'); }
+  }
+  return t;
+}
+function beehive() {
+  const t = T(null);
+  t.rect(3, 13, 10, 3, '#7a5a3a'); t.rect(4, 15, 1, 1, '#4a3420'); t.rect(11, 15, 1, 1, '#4a3420');
+  const c = ['#e8b84a', '#d09a30', '#f8d870'];
+  t.rect(4, 3, 8, 10, c[0]); t.rect(3, 5, 10, 6, c[0]); t.rect(5, 2, 6, 1, c[0]);
+  for (const y of [5, 8, 11]) t.rect(3, y, 10, 1, c[1]);
+  t.rect(5, 3, 2, 1, c[2]); t.rect(4, 6, 2, 1, c[2]);
+  t.rect(7, 9, 2, 2, '#3a2416');
+  t.set(13, 3, '#2a2010'); t.set(14, 3, '#f8d870'); t.set(1, 7, '#2a2010'); t.set(2, 7, '#f8d870');
+  return t;
+}
+
 const PROPS = {
   kiremit_sol: () => roofStair('sol'), kiremit_sag: () => roofStair('sag'), tente: awning,
   sandik: () => chest(false), sandik_acik: () => chest(true),
@@ -858,6 +914,8 @@ const PROPS = {
   hali_k: () => carpet('#a8463e', '#c86a5a', '#7e322e'), hali_m: () => carpet('#3e6aa8', '#5a8ac8', '#2a4a7e'),
   masa_m: table, sandalye: chair, saksi: flowerPot, bayrak_k: () => flag('#b8483e', '#d86a5a'), bayrak_m: () => flag('#3e6aa8', '#5a8ac8'),
   kupa_rafi: trophyShelf, heykel: statue, kapi_acik_alt: () => openDoor(false), kapi_acik_ust: () => openDoor(true),
+  ekin_bugday: () => crop('bugday'), ekin_havuc: () => crop('havuc'), ekin_patates: () => crop('patates'), ekin_kabak: () => crop('kabak'),
+  ekin_misir: () => crop('misir'), ekin_pamuk: () => crop('pamuk'), ekin_biber: () => crop('biber'), ekin_cilek: () => crop('cilek'), kovan: beehive,
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,
 };
 const BEVEL_SKIP = new Set(['bulut', 'cam', 'kapi_ust', 'kapi_alt', 'tas_duvar', 'karanlik', 'cimen_ust', 'kar_ust', 'lav', 'su', 'su_ust']);

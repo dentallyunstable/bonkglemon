@@ -3,7 +3,7 @@
 // - Yakin nesnelerin (ev, sandik, tezgah...) etrafinda karakterdeki gibi 1 piksel koyu cizgi var.
 // - Uzaktaki tepeler ve agaclar ayni bloklardir, sadece gok rengine karisip soluklasir.
 // - Zindan katlari derinlestikce sahne aksama / geceye doner.
-import { GAME_W, GAME_H, GROUND_Y, FISH, CAPE_COLORS } from './data.js';
+import { GAME_W, GAME_H, GROUND_Y, FISH, CAPE_COLORS, KITCHEN, SEED_OF } from './data.js';
 import { rng, Pix, hex, mix, mul, pack, unpack, col, INK } from './pix.js';
 import { B, block, build } from './blocks.js';
 
@@ -1029,6 +1029,8 @@ const ICONS = {
 // 0.8 simgeleri: cogu eski cizimlerin yeni renkli hali
 const EGG = ['............', '.....oo.....', '....oYYo....', '...oYwYYo...', '...oYYYYo...', '..oYsYYsYo..', '..oYYYYYYo..', '..oYYsYYYo..', '..oYYYYYso..', '...oYYYYo...', '....oooo....', '............'];
 const like = (base, pal) => [ICONS[base][0], pal];
+const mixHex = (a, b, t) => { const c = mix(hex(a), hex(b), t); return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join(''); };
+
 const TILSIM = (Y, y) => like('tilsim_skarabe', { s: '#dccc96', o: '#b07a2a', Y, y });
 Object.assign(ICONS, {
   buz_kristali: like('kristal', { c: '#9cc8e8', C: '#d8eef8', v: '#ffffff', d: '#6a7a98' }),
@@ -1157,6 +1159,25 @@ for (const [t, [m, l, d, x]] of Object.entries(TIER_COL)) {
 const BOW = ['......WB....', '.....W..s...', '....W...s...', '...W....s...', '...W....s...', '..WB....s...', '..WB....s...', '...W....s...', '...W....s...', '....W...s...', '.....W..s...', '......WB....'];
 const PICK = ['............', '...DHHHHD...', '..HH....HH..', '.HD..h...DH.', '.D...h....D.', '.....h......', '.....h......', '.....h......', '.....h......', '.....h......', '.....h......', '............'];
 const SWORD = ['............', '...........W', '..........WB', '.........WB.', '........WB..', '.......WB...', '..G...WB....', '...G.WB.....', '....G.......', '...h.G......', '..h...G.....', '.P..........'];
+// 0.11 ciftlik ve mutfak simgeleri
+Object.assign(ICONS, {
+  bugday: [['............', '...y.y.y....', '..yYyYyYy...', '..yyYyYyy...', '...yyyyy....', '....gyg.....', '....gyg.....', '...rrrrr....', '....gyg.....', '...gyyyg....', '..gy.y.yg...', '............'], { y: '#d8b048', Y: '#f0d070', g: '#a8a050', r: '#8a5a30' }],
+  havuc: [['........gg..', '.......gGg..', '......gGg.g.', '.....oogGg..', '....oOoo....', '...oOooo....', '...oooo.....', '..oOoo......', '..ooo.......', '.oo.........', '.o..........', '............'], { o: '#e8782a', O: '#f8a050', g: '#4e8a2e', G: '#7ac04e' }],
+  patates: [['............', '............', '....pppp....', '...pPpppp...', '..pPppdppp..', '..ppppppdp..', '..pdppppppd.', '..ppppdppp..', '...pppppp...', '....dddd....', '............', '............'], { p: '#c8985a', P: '#e8c890', d: '#8a6030' }],
+  kabak: [['.....gg.....', '......g.....', '...oOoOoo...', '..oOoOoOoo..', '.oOodOdoOdo.', '.ooodoodood.', '.oOodOdoOdo.', '.ooodoodood.', '..oodoodoo..', '...dddddd...', '............', '............'], { o: '#e0802a', O: '#f8a850', d: '#b85a1a', g: '#5a7a2e' }],
+  misir: [['.......gg...', '......gyyg..', '.....gyYyg..', '....gyYyYg..', '...gyYyYyg..', '...gyyYyg...', '..gyYyYg....', '..gyyyg.....', '.gGgyg......', '.gGgg.......', '..g.........', '............'], { y: '#f0c838', Y: '#f8e070', g: '#5a8a2e', G: '#8ac05a' }],
+  pamuk: [['............', '...ww..ww...', '..wWWwwWWw..', '..wWWwwWWw..', '...wwbbww...', '....bwwb....', '...wwbbww...', '..wWWwwWWw..', '..wWWw.wWw..', '...ww...w...', '............', '............'], { w: '#e8e2d8', W: '#ffffff', b: '#7a5a3a' }],
+  su_kovasi: [['............', '...kkkkkk...', '..k......k..', '.k........k.', '.mbbbbbbbbm.', '.mBwBBBBBBm.', '.mbbbbbbbbm.', '..mssssssm..', '..mssssssm..', '..mMMMMMMm..', '...mmmmmm...', '............'], { k: '#5a5a6a', m: '#7a7a8a', M: '#5a5a6a', s: '#a8a8b8', b: '#3a8ac8', B: '#8ad8ff', w: '#ffffff' }],
+  gubre: [['............', '....kkkk....', '.....ss.....', '....ssss....', '...sSsssS...', '..sSssssss..', '..sssbbsss..', '..ssbBbbss..', '..ssbbbbss..', '..sssssssd..', '...dddddd...', '............'], { s: '#c8a870', S: '#e8d0a0', d: '#8a6a40', b: '#5a3e24', B: '#7a5a34', k: '#6a4a2a' }],
+});
+ICONS.yanmis_yemek = like('corba', { s: '#8a8a8a', b: '#4a4040', B: '#2a2424', c: '#3a2a20', m: '#5a4030' });
+{
+  const SC = { bugday_tohumu: '#d8b048', havuc_tohumu: '#e8782a', patates_tohumu: '#b8884a', kabak_tohumu: '#f0d8a0', misir_tohumu: '#f0c838', pamuk_tohumu: '#e8e2d8', biber_tohumu: '#c8301e', cilek_tohumu: '#5a8ac0' };
+  const tp = ICONS.tohum_ot[1];
+  for (const sd of Object.values(SEED_OF)) ICONS[sd] = like('tohum_ot', { ...tp, p: mixHex(SC[sd], '#3a2a20', 0.35), P: SC[sd] });
+  for (const [id, , , , , , [base, pal]] of KITCHEN) ICONS[id] = pal ? like(base, pal) : ICONS[base];
+}
+
 const CHESTPLATE = ['............', '.mmm....mmm.', '.mMMmmmmMMm.', '.mMMMMMMMMm.', '..mMMyMMMm..', '..mMMMMMMm..', '..mMMMMMMm..', '..mMMMMMMm..', '..mmmmmmmm..', '..dddddddd..', '............', '............'];
 
 
@@ -1172,7 +1193,7 @@ const ICON_BLOCKS = {
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
 const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener', merdiven: 'merdiven', mesale: 'mesale',
-  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan' };
+  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan', kovan: 'kovan' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);

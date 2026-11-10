@@ -940,6 +940,74 @@ SPECIES.update({
     },
 })
 
+# ---------------------------------------------------------------- 0.11 gece Glemonlari (sadece gece)
+SPECIES.update({
+    'isilbocek': {  # karnindan sari-yesil isik yayan yuvarlak ates bocegi
+        'pal': {'b': '#3a4a6a', 'B': '#5a6c94', 'y': '#d8f070', 'Y': '#f8ffc0', 'a': '#8ab8e8', 'k': '#100c14', 'w': '#ffffff', 'l': '#2a3450'},
+        'map': [
+            "..a.....a...",
+            "...a...a....",
+            "..aaa.aaa...",
+            ".abbbbbbba..",
+            ".bBwkbBwkb..",
+            "bbBkkbBkkbb.",
+            "bbbbbbbbbbyy",
+            ".bbbbbbbbyYY",
+            "..bbbbbbyYYy",
+            "...l..l..yy.",
+        ],
+        'fx': 'star', 'fxcol': ('#f8ffc0', '#d8f070'), 'accent': '#d8f070',
+    },
+    'parilmantar': {  # sapkasi mavi parlayan, benekli gece mantari
+        'pal': {'m': '#3a8ac8', 'M': '#8ad8ff', 'd': '#c8f4ff', 's': '#e8e0d0', 'S': '#b8ac98', 'k': '#100c14', 'w': '#ffffff', 'p': '#f0a0c0'},
+        'map': [
+            "...mmmmmm...",
+            "..mMdmmdMm..",
+            ".mMMmmmmMMm.",
+            "mmdmmMMmmdmm",
+            "mmmmmmmmmmmm",
+            "..ssssssss..",
+            "..swkssswk..",
+            "..skkssskk..",
+            "..spssssps..",
+            "...SsssssS..",
+            "...SS..SS...",
+        ],
+        'fx': 'spores', 'fxcol': ('#c8f4ff', '#3a8ac8'), 'accent': '#8ad8ff',
+    },
+    'gece_kelebegi': {  # mor kanatli, kanatlarinda ay deseni olan pervane
+        'pal': {'v': '#6a4a9a', 'V': '#a07ad0', 'm': '#f0e0a0', 'b': '#3a2a4a', 'B': '#5a4a6a', 'k': '#100c14', 'w': '#ffffff', 'f': '#e8d8f0'},
+        'map': [
+            "VV....ff....VV",
+            "vVV...ff...VVv",
+            "vmVV..bb..VVmv",
+            "vvVVbbBBbbVVvv",
+            ".vvVbwkbwkVvv.",
+            ".vVVbkkbkkVVv.",
+            "vmvVbBBBBbVvmv",
+            "vvv.bbbbbb.vvv",
+            ".v....bb....v.",
+        ],
+        'fx': 'wind', 'accent': '#f0e0a0', 'fly': True,
+    },
+    'ruya_kuzusu': {  # lavanta yunlu, yununde yildizlar olan uykucu kuzu (nadir)
+        'pal': {'c': '#d8c8f0', 'C': '#f4ecff', 'y': '#fff0a0', 'f': '#3a3050', 'F': '#5a4a70', 'k': '#100c14', 'w': '#ffffff', 'p': '#f0a0c0'},
+        'map': [
+            "..cCcc.cCc..",
+            ".cCCycccCCc.",
+            "cCCcccCCcycc",
+            "cFFFcccCCccc",
+            "FwkFFcccycCc",
+            "FkkFFcCccccc",
+            "FpFFccccCCc.",
+            ".FFcccyccc..",
+            "..cccccccc..",
+            "...ff..ff...",
+        ],
+        'fx': 'star', 'accent': '#fff0a0',
+    },
+})
+
 # ---------------------------------------------------------------- 0.9 Dolunay Gecesi
 SPECIES['ay_tavsani'] = {  # ay rengi tavsan, alninda hilal, sola donuk
     'pal': {'H': '#e8ecff', 'g': '#c8d0f0', 'G': '#9aa4d0', 'e': '#f0b8d0', 'm': '#ffe890',

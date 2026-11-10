@@ -3,11 +3,11 @@
 // yanindaki evcil Glemon ve evcillestirme (0.4), odul ve dusurmeler.
 import {
   GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
-  typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf,
+  typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
-import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner } from './ui.js';
+import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner, icon } from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
 
@@ -26,9 +26,11 @@ export function calcDamage(atk, mult, def) {
   return Math.max(1, Math.round(d));
 }
 
-const BATTLE_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'ay_iksiri', 'mantar_corbasi', 'izgara_balik', 'balik_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
+const OLD_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'ay_iksiri', 'mantar_corbasi', 'izgara_balik', 'balik_corbasi', 'bogurtlen', 'hurma', 'altin_elma', 'bonk_bombasi'];
+// 0.11: Mutfak yemekleri, sargi ve havuc da savasta yenir
+const BATTLE_ITEMS = [...OLD_ITEMS.slice(0, -2), 'sargi_bezi', 'havuc', 'yanmis_yemek', ...KITCHEN.map(([id]) => id), ...OLD_ITEMS.slice(-2)];
 // otomatik savasin kullanabildigi iyilestiriciler (Altin Elma haric), zayiftan gucluye
-const HEALS = BATTLE_ITEMS.filter((id) => ITEMS[id] && ITEMS[id].heal && !ITEMS[id].golden).sort((a, b) => ITEMS[a].heal - ITEMS[b].heal);
+const HEALS = OLD_ITEMS.filter((id) => ITEMS[id] && ITEMS[id].heal && !ITEMS[id].golden).sort((a, b) => ITEMS[a].heal - ITEMS[b].heal);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
 export const BPOS = { x: 70, y: GROUND_Y + 34, scale: 2 }; // 0.8.9: daha kucuk, on tumsegin ustunde
@@ -37,6 +39,7 @@ const B = (a) => `c_b_${a}`;
 const ZONE_OF_KEY = {};
 for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) ZONE_OF_KEY[k] = z;
 for (const [k] of WATER_GLEMONS) ZONE_OF_KEY[k] = 'su';
+Object.assign(ZONE_OF_KEY, NIGHT_HOME);
 const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0 });
 
 // ayri savas ekraninda (arena) Glemonlarin yerleri
@@ -115,8 +118,8 @@ export class Battle {
       type: data.type,
       fly: !!data.fly,
       shiny: !!spec.shiny, golden: !!spec.golden, sleeping: !!spec.sleeping,
-      maxHp: Math.round(data.hp * m * sm * (spec.golden ? 2.2 : 1)),
-      atk: data.atk * m * (1 + 0.25 * stage) * (spec.golden ? 1.4 : 1),
+      maxHp: Math.round(data.hp * m * sm * (spec.golden ? 2.2 : 1) * (this.opts.night ? NIGHT.mult : 1)),
+      atk: data.atk * m * (1 + 0.25 * stage) * (spec.golden ? 1.4 : 1) * (this.opts.night ? NIGHT.mult : 1),
       defense: data.def * m * (1 + 0.2 * stage),
       spd: data.spd,
       atb: Math.random() * 30,
@@ -596,6 +599,26 @@ export class Battle {
     const fb = button('Kaç', () => this.flee(), 'small');
     fb.disabled = !!this.opts.boss || this.enemies.some((e) => e.golden);
     this.acts.appendChild(fb);
+    // 0.11 Hizli kemer: en cok kullandigin 3 esya tek dokunusla
+    const belt = this.beltItems();
+    if (belt.length) {
+      const row = el('div', 'belt');
+      for (const id of belt) {
+        const b = button('', () => this.useItem(id, false), 'belt-btn');
+        b.appendChild(icon(ITEMS[id].icon));
+        b.appendChild(el('span', '', `${S.countItem(id)}`));
+        b.title = ITEMS[id].name;
+        if (ITEMS[id].heal && !ITEMS[id].golden && !ITEMS[id].tok && S.hp >= S.maxHp()) b.disabled = true;
+        row.appendChild(b);
+      }
+      this.acts.appendChild(row);
+    }
+  }
+
+  beltItems() {
+    const have = BATTLE_ITEMS.filter((id) => S.countItem(id) > 0);
+    const uc = S.save.useCount || {};
+    return have.sort((a, b) => (uc[b] || 0) - (uc[a] || 0) || HEALS.indexOf(a) - HEALS.indexOf(b)).slice(0, 3);
   }
 
   skillMenu() {
@@ -648,6 +671,7 @@ export class Battle {
     this.phase = null;
     this.setHint('');
     if (S.removeItem('bonk_bombasi', 1) < 1) { this.showMenu(); return; }
+    if (!auto) S.save.useCount.bonk_bombasi = (S.save.useCount.bonk_bombasi || 0) + 1;
     if (auto) this.autoActs++; else this.manualActs++;
     const p = this.w.player;
     await playAnim(p, B('punch'), 1.4);
@@ -827,6 +851,7 @@ export class Battle {
     this.setHint('');
     if (S.removeItem(id, 1) < 1) { this.showMenu(); return; }
     if (auto) this.autoActs++; else this.manualActs++;
+    if (!auto) S.save.useCount[id] = (S.save.useCount[id] || 0) + 1;
     const it = ITEMS[id];
     const p = this.w.player;
     if (it.anim === 'goldenapple') await playAnim(p, B('goldenapple'), 1.6);
@@ -846,6 +871,7 @@ export class Battle {
     // yemek yiyince guclenir: normal yemek 3 tur +%10 saldiri, Altin Elma 5 tur +%30 saldiri ve savunma
     if (it.golden) { this.status.guc = 5; sfx('levelup'); floatText(this.px(), this.py() - 14, 'Altın güç!', 'perfect'); }
     else if (it.strong) { this.status.guc = Math.max(this.status.guc, it.strong); floatText(this.px(), this.py() - 14, 'Balık gücü: saldırı +%30', 'info'); }
+    else if (it.tok) { const msg = S.applyTok(id); floatText(this.px(), this.py() - 14, msg.split(' (')[0], 'info'); this.w.refreshHud(); }
     else if (it.food) { this.status.tok = 3; floatText(this.px(), this.py() - 14, 'Tok: saldırı +%10', 'info'); }
     this.pose();
     this.renderMe();
@@ -1064,10 +1090,12 @@ export class Battle {
     let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage);
     if (e.shiny) xp *= 2;
     if (e.golden) xp *= 4;
+    if (this.opts.night) xp *= NIGHT.reward; // 0.11 gece
     this.killXp += xp;
     let gold = Math.round(this.floor * (2 + Math.random() * 2) * Math.min(rm, 3) * (e.data.goldMult || 1));
     if (e.shiny) gold *= 3;
     if (e.golden) gold *= 3;
+    if (this.opts.night) gold = Math.round(gold * NIGHT.reward);
     if (e.data.boss) gold = 150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50);
     if (S.run && S.run.goldX) gold = Math.round(gold * S.run.goldX); // 0.9 Altin Gunu
     S.addGold(gold);
@@ -1093,7 +1121,7 @@ export class Battle {
     }
     const manual = this.manualActs >= this.autoActs;
     for (const [id, ch] of e.data.drops) {
-      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + 0.3 * e.stage);
+      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + 0.3 * e.stage) * (this.opts.night ? NIGHT.reward : 1);
       if (ch >= 1) c = 1;
       if (Math.random() < Math.min(1, c)) {
         this.w.giveDrop(id, 1, e.from);

@@ -215,7 +215,7 @@ export async function castOnce(world) {
   const ripple = () => { const c = world.add.ellipse(bob.x, spot.surfY + 1, 6, 2).setStrokeStyle(1, 0xc4e0ee, 0.8).setDepth(10); world.tweens.add({ targets: c, scaleX: 3, scaleY: 2, alpha: 0, duration: 700, onComplete: () => c.destroy() }); };
   ripple();
   // bekle: samandira batinca dokun (erken dokunursan balik kacar)
-  const biteMul = rod.bite * (bait === 'solucan' ? 0.6 : 1) * (S.perk ? S.perk('sabirli_olta', 0.7, 1) : 1);
+  const biteMul = rod.bite * (bait === 'solucan' ? 0.6 : 1) * (S.perk ? S.perk('sabirli_olta', 0.7, 1) : 1) * (1 - S.tokVal('fish')); // 0.11 Tok
   const biteMs = rand(FISHING.biteMs[0], FISHING.biteMs[1]) * biteMul;
   let hooked = false;
   if (auto) {

@@ -785,3 +785,28 @@ html, body {
 .trophies { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(4 * var(--u)); margin-top: calc(4 * var(--u)); }
 .trophy { display: flex; flex-direction: column; align-items: center; gap: calc(1 * var(--u)); padding: calc(4 * var(--u)); border-radius: calc(4 * var(--u)); background: rgba(240, 208, 128, 0.12); box-shadow: inset 0 0 0 calc(1 * var(--u)) rgba(240, 208, 128, 0.45); text-align: center; }
 .trophy.none { opacity: 0.55; background: rgba(0, 0, 0, 0.15); box-shadow: none; }
+
+/* ---- 0.11 Mutfak zamanlama oyunu, Hazirlik ekrani, hizli kemer, Tok */
+
+.cook-game { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; width: calc(170 * var(--u)); background: var(--cream); color: var(--ink-brown); border-radius: calc(5 * var(--u)); box-shadow: 0 0 0 calc(1.2 * var(--u)) var(--wood-dark), 0 calc(2 * var(--u)) calc(8 * var(--u)) rgba(0,0,0,.5); padding: calc(6 * var(--u)); display: flex; flex-direction: column; align-items: center; gap: calc(4 * var(--u)); }
+.cg-title { font-weight: 800; font-size: var(--fs-m); }
+.cg-bar { position: relative; width: 100%; height: calc(10 * var(--u)); border-radius: calc(5 * var(--u)); background: #5a3e2e; overflow: hidden; }
+.cg-zone { position: absolute; top: 0; bottom: 0; background: #7cc25a; }
+.cg-mark { position: absolute; top: calc(-1 * var(--u)); bottom: calc(-1 * var(--u)); width: calc(2 * var(--u)); margin-left: calc(-1 * var(--u)); background: #fff4c8; box-shadow: 0 0 calc(2 * var(--u)) #000; }
+.cg-msg { min-height: calc(8 * var(--u)); font-weight: 800; }
+.cg-msg.good { color: #3e8a2e; }
+.prep-night { background: rgba(60, 50, 110, .55); color: #e8e0ff; border-radius: calc(3 * var(--u)); padding: calc(3 * var(--u)) calc(4 * var(--u)); margin-bottom: calc(3 * var(--u)); font-weight: 700; }
+.prep-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(4 * var(--u)); }
+.prep-box { background: rgba(0,0,0,.18); border-radius: calc(4 * var(--u)); padding: calc(4 * var(--u)); display: flex; flex-direction: column; gap: calc(2.5 * var(--u)); }
+.prep-box h3 { margin: 0; }
+.prep-ok { color: #8ad86a; font-weight: 700; }
+.prep-bad { color: #ff8a6a; font-weight: 700; }
+.prep-row { display: flex; align-items: center; gap: calc(2.5 * var(--u)); }
+.prep-row span { flex: 1; }
+.prep-row .ico, .prep-chip .ico { width: calc(12 * var(--u)); height: calc(12 * var(--u)); image-rendering: pixelated; }
+.prep-belt { display: flex; gap: calc(3 * var(--u)); }
+.prep-chip { display: flex; align-items: center; gap: calc(1 * var(--u)); background: rgba(240,208,128,.15); border-radius: calc(3 * var(--u)); padding: calc(1 * var(--u)) calc(2.5 * var(--u)); }
+.belt { display: flex; gap: calc(2.5 * var(--u)); margin-left: calc(2 * var(--u)); }
+.belt-btn { display: inline-flex; align-items: center; gap: calc(1.5 * var(--u)); padding: calc(1.5 * var(--u)) calc(3 * var(--u)); }
+.belt-btn .ico { width: calc(11 * var(--u)); height: calc(11 * var(--u)); image-rendering: pixelated; }
+.hud-tok { margin-left: calc(4 * var(--u)); color: #ffd890; }

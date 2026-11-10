@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.10.5';
+export const VERSION = '0.11.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -40,6 +40,7 @@ export const SKILLS = [
   { key: 'madencilik', name: 'Madencilik', desc: 'Maden Ocağı\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
   { key: 'toplama', name: 'Toplama', desc: 'Keşifte ve Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
   { key: 'uretim', name: 'Üretim', desc: 'Zanaat avlusundaki Masa, Fırın, Kazan ve Yem Tezgâhı\'nda üretince artar. Yeni tarifler açar.' },
+  { key: 'ascilik', name: 'Aşçılık', desc: 'Kamp ateşindeki Mutfak\'ta yemek pişirince artar. Yeni yemekler açar; seviye arttıkça yemekler yanmaz.' },
   { key: 'insa', name: 'İnşa', desc: 'Arsana blok ve eşya koyunca artar. Yeni bloklar açar, arsan büyür (20, 40, 60).' },
   { key: 'balikcilik', name: 'Balıkçılık', desc: 'Üs Göletinde ve Keşifteki göllerde balık tutunca artar. Yeni balıklar, oltalar ve batık sandıklar.' },
   { key: 'sans', name: 'Şans', desc: 'Patron yenince, sandık açınca ve nadir bir şey düşünce artar. Nadir düşme ve parlak Glemon şansı.' },
@@ -291,6 +292,31 @@ export const GLEMONS = {
     drops: [['ay_tozu', 0.12], ['golge_ozu', 0.5]],
   },
   // 0.9 Dolunay Gecesi: sadece dolunayda, her bolgede nadiren cikar
+  // 0.11 gece Glemonlari: sadece gece (gercek saat) Keşif'te cikar
+  isilbocek: {
+    name: 'Işılböcek', from: "Işılböcek'ten", rarity: 'nadir', type: 'Orman', night: true,
+    hp: 15, atk: 3.4, def: 2.6, spd: 120,
+    special: { name: 'Göz Kamaştırma', mult: 1.5, telegraph: true }, every: 3,
+    drops: [['bal', 0.2], ['ay_tozu', 0.05]],
+  },
+  parilmantar: {
+    name: 'Parıl Mantar', from: "Parıl Mantar'dan", rarity: 'nadir', type: 'Taş', night: true,
+    hp: 19, atk: 3.2, def: 3.6, spd: 90,
+    special: { name: 'Işıltı Sporları', mult: 1.6, telegraph: true }, every: 3,
+    drops: [['gece_mantari', 0.4], ['mantar', 0.3]],
+  },
+  gece_kelebegi: {
+    name: 'Gece Kelebeği', from: "Gece Kelebeği'nden", rarity: 'nadir', type: 'Gölge', night: true, fly: true,
+    hp: 13, atk: 3.8, def: 2.2, spd: 135,
+    special: { name: 'Pul Fırtınası', mult: 1.7, telegraph: true }, every: 3,
+    drops: [['sifali_ot', 0.3], ['ay_tozu', 0.08]],
+  },
+  ruya_kuzusu: {
+    name: 'Rüya Kuzusu', from: "Rüya Kuzusu'ndan", rarity: 'epik', type: 'Ay', night: true,
+    hp: 26, atk: 3.4, def: 3.4, spd: 100, goldMult: 2,
+    special: { name: 'Ninni', mult: 1.3, heal: 0.2 }, every: 3,
+    drops: [['pamuk', 0.6], ['ay_tozu', 0.15]],
+  },
   ay_tavsani: {
     name: 'Dolunay Tavşanı', from: "Dolunay Tavşanı'ndan", rarity: 'epik', type: 'Ay', moon: true,
     hp: 22, atk: 3.6, def: 3, spd: 140, goldMult: 3,
@@ -361,6 +387,17 @@ export const ZONE_SPAWNS = {
   kor: [['kor_semender', 0.27], ['kivilcim_yarasa', 0.27], ['magma_salyangoz', 0.26], ['kul_koc', 0.17], ['yakut_ejder', 0.03]],
   golge: [['fisilti', 0.27], ['gece_pisi', 0.27], ['bosluk_kurdu', 0.26], ['gozmantar', 0.17], ['ay_guvesi', 0.03]],
 };
+// 0.11 Gece: Kesifte Glemonlar %15 guclu, %30 fazla XP ve esya; bazen gece turleri cikar
+export const NIGHT = { mult: 1.15, reward: 1.3, chance: 0.2 };
+export const NIGHT_SPAWNS = {
+  orman: [['isilbocek', 0.8], ['ruya_kuzusu', 0.2]],
+  magara: [['parilmantar', 0.8], ['ruya_kuzusu', 0.2]],
+  col: [['gece_kelebegi', 0.8], ['ruya_kuzusu', 0.2]],
+  buz: [['isilbocek', 0.4], ['gece_kelebegi', 0.4], ['ruya_kuzusu', 0.2]],
+  kor: [['parilmantar', 0.5], ['gece_kelebegi', 0.3], ['ruya_kuzusu', 0.2]],
+  golge: [['isilbocek', 0.25], ['parilmantar', 0.25], ['gece_kelebegi', 0.25], ['ruya_kuzusu', 0.25]],
+};
+export const NIGHT_HOME = { isilbocek: 'orman', parilmantar: 'magara', gece_kelebegi: 'col', ruya_kuzusu: 'golge' };
 // Efsanevi yumurtalar (0.8): her bolgenin patronundan (%10) ve Zindan odul sandiklarindan dusur.
 // Cantanda tasirsan 100 savastan sonra catlar.
 export const EGGS = {
@@ -772,6 +809,87 @@ Object.assign(ITEMS, {
   varil: { name: 'Varil', kind: 'malzeme', rarity: 'siradan', icon: 'varil', desc: 'Süs: ahşap varil.' },
   kalkan_duvar: { name: 'Duvar Kalkanı', kind: 'malzeme', rarity: 'siradan', icon: 'kalkan', desc: 'Süs: duvara asılan kalkan.' },
 });
+
+// ---------------------------------------------------------------- 0.11 Hayatta Kalma ve Ciftlik
+// Tok guclendirmesi: ayni anda bir tane. k: etki turu, v: deger, m: dakika
+export const TOK = {
+  atk: { name: 'Saldırı', fmt: (v) => `Saldırı +%${Math.round(v * 100)}` },
+  def: { name: 'Savunma', fmt: (v) => `Savunma +%${Math.round(v * 100)}` },
+  mine: { name: 'Kazı', fmt: (v) => `Kazma gücü +%${Math.round(v * 100)}` },
+  fish: { name: 'Balık', fmt: (v) => `Balık %${Math.round(v * 100)} çabuk vurur` },
+  xp: { name: 'XP', fmt: (v) => `Bütün XP +%${Math.round(v * 100)}` },
+  gather: { name: 'Toplama', fmt: (v) => `Toplarken %${Math.round(v * 100)} ihtimalle +1` },
+  luck: { name: 'Şans', fmt: (v) => `Şans +${v}` },
+  hp: { name: 'Can', fmt: (v) => `En yüksek can +%${Math.round(v * 100)}` },
+  spd: { name: 'Hız', fmt: (v) => `Savaşta hız +%${Math.round(v * 100)}` },
+};
+export const TASTY_BONUS = 1.2; // zamanlama oyununda "lezzetli" olursa Tok %20 uzun
+export const burnChance = (lvl, need) => Math.max(0, 0.35 - (lvl - need) * 0.035); // 10 seviye sonra yanmaz
+// [id, ad, Ascilik sv, malzemeler, can, [etki, deger, dakika], simge]
+export const KITCHEN = [
+  ['ekmek', 'Ekmek', 1, { bugday: 2 }, 0.2, ['def', 0.06, 10], ['turta', { c: '#e8c078', R: '#c89048', d: '#d8a860', b: '#a87a40' }]],
+  ['havuc_corbasi', 'Havuç Çorbası', 5, { havuc: 2, sifali_ot: 1 }, 0.25, ['gather', 0.2, 10], ['corba', { s: '#f4f4f8', b: '#a85a2a', B: '#7a3e1e', c: '#f08a2a', m: '#ffd060' }]],
+  ['kizarmis_patates', 'Kızarmış Patates', 8, { patates: 2, komur: 1 }, 0.25, ['atk', 0.06, 10], ['hurma_tatlisi', { h: '#f0c848', H: '#f8e080', Y: '#c84a3a', y: '#e86a5a', p: '#e8e4dc' }]],
+  ['bogurtlen_turtasi', 'Böğürtlen Turtası', 14, { bugday: 2, bogurtlen: 3 }, 0.3, ['luck', 5, 15], ['turta', { c: '#e8c078', R: '#5a2a6a', d: '#d8a860', b: '#a87a40' }]],
+  ['misir_patlagi', 'Mısır Patlağı', 17, { misir: 2 }, 0.15, ['spd', 0.08, 10], ['seker', { w: '#c84a3a', c: '#fff8e0', C: '#f8e8a0', v: '#f0c848' }]],
+  ['madenci_guveci', 'Madenci Güveci', 20, { patates: 2, havuc: 1, mantar: 1 }, 0.35, ['mine', 0.15, 15], ['corba', { s: '#f4f4f8', b: '#7a6a5a', B: '#4a3e34', c: '#b86a3a', m: '#e8a050' }]],
+  ['balikci_coregi', 'Balıkçı Çöreği', 22, { bugday: 2, pulcuk: 1 }, 0.3, ['fish', 0.15, 15], ['ezme', { m: '#8ab4c8', M: '#d0e8f0', b: '#d8a860', B: '#a87a40' }]],
+  ['kabak_tatlisi', 'Kabak Tatlısı', 27, { kabak: 1, bal: 1 }, 0.3, ['xp', 0.08, 15], ['hurma_tatlisi', { h: '#e0802a', H: '#f8a850', Y: '#f4ecd8', y: '#fff8ec', p: '#e8e4dc' }]],
+  ['mantarli_borek', 'Mantarlı Börek', 33, { bugday: 2, mantar: 2 }, 0.4, ['def', 0.1, 15], ['turta', { c: '#f0d090', R: '#8a5a3a', d: '#d8a860', b: '#a87a40' }]],
+  ['kumpir', 'Kumpir', 36, { patates: 2, misir: 1 }, 0.4, ['hp', 0.1, 15], ['ezme', { m: '#f0c838', M: '#f8e070', b: '#b8884a', B: '#8a6030' }]],
+  ['acili_guvec', 'Acılı Güveç', 39, { ates_biberi: 2, patates: 1, havuc: 1 }, 0.4, ['atk', 0.1, 15], ['corba', { s: '#f4f4f8', b: '#7a4a3a', B: '#4a2a20', c: '#c8301e', m: '#f07a3a' }]],
+  ['kar_cilekli_pasta', 'Kar Çilekli Pasta', 42, { bugday: 2, kar_cilegi: 2 }, 0.45, ['spd', 0.12, 15], ['hurma_tatlisi', { h: '#5a8ac0', H: '#c8e0f8', Y: '#f4f8fb', y: '#ffffff', p: '#d8d0c4' }]],
+  ['kabak_corbasi', 'Kabak Çorbası', 45, { kabak: 1, sifali_ot: 2 }, 0.45, ['gather', 0.35, 15], ['corba', { s: '#f4f4f8', b: '#5a7a4a', B: '#3a5a2e', c: '#e0802a', m: '#f8c850' }]],
+  ['maden_kumanyasi', 'Maden Kumanyası', 48, { ekmek: 1, kizarmis_patates: 1 }, 0.45, ['mine', 0.25, 20], ['ezme', { m: '#e8c078', M: '#f8e8b0', b: '#7a5a3a', B: '#4a3420' }]],
+  ['firin_alabalik', 'Fırın Alabalık', 52, { dere_alabaligi: 1, havuc: 1 }, 0.5, ['fish', 0.25, 20], ['izgara_balik', null]],
+  ['ay_otu_cayi', 'Ay Otu Çayı', 56, { ay_otu: 1, bal: 1 }, 0.3, ['luck', 12, 20], ['corba', { s: '#e8ecff', b: '#d8d0e8', B: '#a8a0c0', c: '#c8b0f0', m: '#fff0a0' }]],
+  ['savasci_kebabi', 'Savaşçı Kebabı', 60, { ates_biberi: 2, bugday: 1, patates: 1 }, 0.55, ['atk', 0.15, 20], ['hurma_tatlisi', { h: '#8a4a2a', H: '#c87a4a', Y: '#d8a860', y: '#f0c890', p: '#8a6a40' }]],
+  ['kale_guveci', 'Kale Güveci', 64, { kabak: 1, patates: 2, mantar: 2 }, 0.55, ['def', 0.15, 20], ['corba', { s: '#f4f4f8', b: '#6a6a7a', B: '#3e3e4a', c: '#c8783a', m: '#e8c050' }]],
+  ['hasat_pastasi', 'Hasat Pastası', 68, { bugday: 2, kabak: 1, bal: 1 }, 0.55, ['xp', 0.12, 20], ['turta', { c: '#f0c870', R: '#e0802a', d: '#d8a860', b: '#a87a40' }]],
+  ['gece_corbasi', 'Gece Çorbası', 72, { gece_mantari: 2, havuc: 1 }, 0.6, ['hp', 0.15, 25], ['corba', { s: '#c8fff4', b: '#4a3a6a', B: '#2a2040', c: '#3a8a8a', m: '#c8fff4' }]],
+  ['ziyafet_tabagi', 'Ziyafet Tabağı', 77, { misir: 1, patates: 1, havuc: 1, kabak: 1 }, 0.65, ['spd', 0.15, 25], ['hurma_tatlisi', { h: '#e0802a', H: '#f0c838', Y: '#e8782a', y: '#6cbc4e', p: '#e8e4dc' }]],
+  ['biber_dolmasi', 'Biber Dolması', 82, { ates_biberi: 3, misir: 1 }, 0.7, ['atk', 0.2, 25], ['hurma_tatlisi', { h: '#c8301e', H: '#f07a3a', Y: '#4e7a2e', y: '#7aa852', p: '#e8e4dc' }]],
+  ['balik_ziyafeti', 'Balık Ziyafeti', 87, { altin_pulcuk: 1, misir: 1, bal: 1 }, 0.7, ['fish', 0.35, 30], ['izgara_balik', null]],
+  ['altin_turta', 'Altın Elmalı Turta', 92, { altin_elma: 1, bugday: 2 }, 0.8, ['luck', 20, 30], ['turta', { c: '#f8e070', R: '#f0b020', d: '#e8c060', b: '#b08a30' }]],
+  ['efsane_ziyafet', 'Efsane Ziyafet', 97, { bugday: 2, kabak: 1, ates_biberi: 1, kar_cilegi: 1 }, 1, ['xp', 0.2, 30], ['turta', { c: '#ffd34d', R: '#c84a3a', d: '#e8b048', b: '#a87a40' }]],
+];
+// eski yemekler de Tok verir (0.11)
+export const OLD_TOK = { mantar_corbasi: ['def', 0.05, 10], izgara_balik: ['atk', 0.08, 10], balik_corbasi: ['fish', 0.1, 15], sicak_corba: ['hp', 0.05, 10] };
+for (const [id, t] of Object.entries(OLD_TOK)) ITEMS[id].tok = t;
+for (const [id, name, lvl, , heal, tok] of KITCHEN) {
+  ITEMS[id] = { name, kind: 'tuketim', rarity: lvl >= 70 ? 'epik' : lvl >= 30 ? 'nadir' : 'siradan', icon: id, heal, food: true, tok, anim: 'eat', desc: `Mutfak yemeği. Yersen can doldurur ve ${tok[2]} dakika Tok güçlendirmesi verir.` };
+}
+// [urun, ad, tohum adi, sure (saat), adet, XP, sevdigi saat, simge]
+export const CROPS = [
+  ['bugday', 'Buğday', 1, [3, 5], 50, 'gun'],
+  ['havuc', 'Havuç', 1.5, [2, 4], 60, 'gundogumu'],
+  ['patates', 'Patates', 2, [2, 4], 75, 'gece'],
+  ['kabak', 'Kabak', 4, [1, 2], 140, 'gun'],
+  ['misir', 'Mısır', 2.5, [2, 3], 90, 'gun'],
+  ['pamuk', 'Pamuk', 3, [2, 4], 110, 'gunbatimi'],
+  ['ates_biberi', 'Ateş biberi', 3, [2, 3], 120, 'gunbatimi'],
+  ['kar_cilegi', 'Kar çileği', 3.5, [2, 4], 130, 'gece'],
+];
+export const CROP_FRAME = { bugday: 'ekin_bugday', havuc: 'ekin_havuc', patates: 'ekin_patates', kabak: 'ekin_kabak', misir: 'ekin_misir', pamuk: 'ekin_pamuk', ates_biberi: 'ekin_biber', kar_cilegi: 'ekin_cilek' };
+export const SEED_OF = { bugday: 'bugday_tohumu', havuc: 'havuc_tohumu', patates: 'patates_tohumu', kabak: 'kabak_tohumu', misir: 'misir_tohumu', pamuk: 'pamuk_tohumu', ates_biberi: 'biber_tohumu', kar_cilegi: 'cilek_tohumu' };
+const TOD_NAME = { gun: 'gündüz', gundogumu: 'gündoğumu', gunbatimi: 'günbatımı', gece: 'gece' };
+Object.assign(ITEMS, {
+  bugday: { name: 'Buğday', kind: 'malzeme', rarity: 'siradan', icon: 'bugday', desc: 'Tarlada yetişir. Ekmek, börek ve pasta malzemesi.' },
+  havuc: { name: 'Havuç', kind: 'tuketim', rarity: 'siradan', icon: 'havuc', heal: 0.08, food: true, anim: 'eat', desc: 'Tarlada yetişir. Çiğ yenir, çorbaya da girer.' },
+  patates: { name: 'Patates', kind: 'malzeme', rarity: 'siradan', icon: 'patates', desc: 'Tarlada yetişir. Kızartma, güveç ve kumpir malzemesi.' },
+  kabak: { name: 'Kabak', kind: 'malzeme', rarity: 'siradan', icon: 'kabak', desc: 'Tarlada yetişir (büyük ama yavaş). Tatlı ve çorba malzemesi.' },
+  misir: { name: 'Mısır', kind: 'malzeme', rarity: 'siradan', icon: 'misir', desc: 'Tarlada yetişir. Patlak ve ziyafet malzemesi.' },
+  pamuk: { name: 'Pamuk', kind: 'malzeme', rarity: 'siradan', icon: 'pamuk', desc: 'Tarlada yetişir. Yatak, halı ve sargı yapımında kullanılır.' },
+  su_kovasi: { name: 'Su Kovası', kind: 'malzeme', rarity: 'siradan', icon: 'su_kovasi', desc: 'Çantanda dursun: ekili tarlaya dokununca sularsın, kalan süre yarıya iner. Bitmez.' },
+  gubre: { name: 'Gübre', kind: 'malzeme', rarity: 'siradan', icon: 'gubre', desc: 'Ekili tarlaya dokunup gübrele: hasatta +2 ürün.' },
+  kovan: { name: 'Arı Kovanı', kind: 'malzeme', rarity: 'nadir', icon: 'kovan', desc: 'Mobilya: arsana koy. Arsanda saksı ya da çiçek varsa kendiliğinden bal yapar; dokunup al.' },
+  yanmis_yemek: { name: 'Yanmış Yemek', kind: 'tuketim', rarity: 'siradan', icon: 'yanmis_yemek', heal: 0.05, food: true, anim: 'eat', desc: 'Olmadı… Biraz can verir. Aşçılık seviyen arttıkça yemekler yanmaz.' },
+  sargi_bezi: { name: 'Pamuk Sargı', kind: 'tuketim', rarity: 'siradan', icon: 'sargi', heal: 0.3, anim: 'drinkpotion', desc: 'Pamuktan sargı. Canının %30\'unu doldurur.' },
+});
+for (const [id, name, h, , , tod] of CROPS) {
+  const sd = SEED_OF[id];
+  ITEMS[sd] = { name: `${name} tohumu`, kind: 'malzeme', rarity: 'siradan', icon: sd, desc: `Bahçe tarlasına ekilir (${h} saat). En çok ${TOD_NAME[tod]} ekilince sever: o saatte ekersen %25 çabuk büyür. Hancı Lale satar.` };
+}
 // Su Glemonlari sadece balik tutarken cikar
 export const WATER_GLEMONS = [['damlacik', 50], ['inci_istiridye', 35], ['gol_ejderi', 15]];
 for (const [k, f] of Object.entries(FISH)) {
@@ -969,6 +1087,7 @@ export const STATIONS = {
   firin: { name: 'Fırın', desc: 'Eritme ve pişirme. Her biri 5 saniye sürer, sen yokken de çalışır.' },
   kazan: { name: 'Simya Kazanı', desc: 'İksirler ve bombalar.' },
   yem: { name: 'Yem Tezgâhı', desc: 'Glemon yemleri.' },
+  mutfak: { name: 'Mutfak', desc: 'Kamp ateşinde yemek pişir. Yemekler can doldurur ve "Tok" güçlendirmesi verir.' },
 };
 const gearSet = (tier, main, lvl, xpEach) => [
   { out: `${tier}_kilic`, mats: { [main]: 3, dal: 1 } },
@@ -1004,7 +1123,7 @@ export const RECIPES = [
   { out: 'demir_kulcesi', mats: { demir_cevheri: 2, komur: 1 }, station: 'firin', lvl: 1, xp: 35 },
   { out: 'bos_sise', mats: { kum: 2 }, station: 'firin', lvl: 1, xp: 12 },
   { out: 'cam', mats: { kum: 1 }, station: 'firin', lvl: 4, xp: 8 },
-  { out: 'mantar_corbasi', mats: { mantar: 2, sifali_ot: 1 }, station: 'firin', lvl: 3, xp: 40 },
+  { out: 'mantar_corbasi', mats: { mantar: 2, sifali_ot: 1 }, station: 'mutfak', lvl: 1, xp: 40 },
   { out: 'iksir_k', mats: { sifali_ot: 2, bos_sise: 1 }, station: 'kazan', lvl: 5, xp: 55 },
   { out: 'bonk_bombasi', mats: { komur: 3, mantar: 2 }, station: 'kazan', lvl: 10, xp: 90 },
   { out: 'can_tilsimi', mats: { antik_yosun: 2, sifali_ot: 3, bal: 1 }, station: 'kazan', lvl: 8, xp: 250 },
@@ -1049,7 +1168,7 @@ export const RECIPES = [
   { out: 'yakut_receli', mats: { ates_biberi: 2, bal: 1 }, station: 'yem', lvl: 40, xp: 170 },
   { out: 'gece_coregi', mats: { gece_mantari: 2, dal: 1 }, station: 'yem', lvl: 46, xp: 110 },
   { out: 'ay_pastasi', mats: { gece_mantari: 2, bal: 1 }, station: 'yem', lvl: 50, xp: 200 },
-  { out: 'sicak_corba', mats: { mantar: 2, sifali_ot: 1, komur: 1 }, station: 'firin', lvl: 24, xp: 60 },
+  { out: 'sicak_corba', mats: { mantar: 2, sifali_ot: 1, komur: 1 }, station: 'mutfak', lvl: 24, xp: 60 },
   { out: 'ates_iksiri', mats: { buz_kristali: 2, sifali_ot: 1, bos_sise: 1 }, station: 'kazan', lvl: 32, xp: 120 },
   { out: 'buyuk_iksir', mats: { sifali_ot: 3, kar_cilegi: 2, bos_sise: 1 }, station: 'kazan', lvl: 40, xp: 180 },
   { out: 'buzul_kilici', mats: { buzul_kalbi: 1, saf_kristal: 4, altin_kulcesi: 2 }, station: 'masa', lvl: 34, xp: 600 },
@@ -1065,10 +1184,10 @@ export const RECIPES = [
   { out: 'kristal_olta', mats: { saf_kristal: 3, kar_tuyu: 2 }, station: 'masa', lvl: 32, xp: 400 },
   { out: 'kor_olta', mats: { kor_kulcesi: 3, kivilcim: 2 }, station: 'masa', lvl: 44, xp: 600 },
   { out: 'parlak_yem', n: 3, mats: { solucan: 3, ham_kristal: 1 }, station: 'kazan', lvl: 10, xp: 60 },
-  { out: 'izgara_balik', mats: { pulcuk: 2, komur: 1 }, station: 'firin', lvl: 2, xp: 30 },
-  { out: 'izgara_balik', n: 2, mats: { yaprak_baligi: 2, komur: 1 }, station: 'firin', lvl: 10, xp: 50 },
-  { out: 'balik_corbasi', mats: { camur_yayini: 1, mantar: 1, sifali_ot: 1 }, station: 'firin', lvl: 12, xp: 70 },
-  { out: 'balik_corbasi', n: 2, mats: { buz_morinasi: 1, kar_cilegi: 1, sifali_ot: 1 }, station: 'firin', lvl: 30, xp: 110 },
+  { out: 'izgara_balik', mats: { pulcuk: 2, komur: 1 }, station: 'mutfak', lvl: 3, xp: 30 },
+  { out: 'izgara_balik', n: 2, mats: { yaprak_baligi: 2, komur: 1 }, station: 'mutfak', lvl: 10, xp: 50 },
+  { out: 'balik_corbasi', mats: { camur_yayini: 1, mantar: 1, sifali_ot: 1 }, station: 'mutfak', lvl: 12, xp: 70 },
+  { out: 'balik_corbasi', n: 2, mats: { buz_morinasi: 1, kar_cilegi: 1, sifali_ot: 1 }, station: 'mutfak', lvl: 30, xp: 110 },
   { out: 'balik_kraker', mats: { cizgili_sazan: 1, kum: 1 }, station: 'yem', lvl: 10, xp: 50 },
   { out: 'inci_kraker', mats: { cizgili_sazan: 1, gol_incisi: 1 }, station: 'yem', lvl: 25, xp: 160 },
   { out: 'inci_tilsimi', mats: { gol_incisi: 3, altin_kulcesi: 2 }, station: 'masa', lvl: 40, xp: 700 },
@@ -1114,7 +1233,16 @@ export const RECIPES = [
   { out: 'kalkan_duvar', mats: { tahta_kalas: 2, demir_kulcesi: 1 }, station: 'masa', lvl: 6, xp: 30, us: 500 },
   { out: 'varil', mats: { tahta_kalas: 3 }, station: 'masa', lvl: 2, xp: 15, us: 500 },
   { out: 'glemon_heykeli', mats: { tas: 10, altin_kulcesi: 2 }, station: 'masa', lvl: 15, xp: 200, us: 1000 },
+  // 0.11 ciftlik aletleri ve pamuk
+  { out: 'su_kovasi', mats: { demir_kulcesi: 2 }, station: 'masa', lvl: 3, xp: 30 },
+  { out: 'gubre', n: 3, mats: { solucan: 2, pulcuk: 1 }, station: 'masa', lvl: 2, xp: 15 },
+  { out: 'kovan', mats: { tahta_kalas: 4, bal: 1 }, station: 'masa', lvl: 8, xp: 60 },
+  { out: 'yatak', mats: { tahta_kalas: 3, pamuk: 3 }, station: 'masa', lvl: 5, xp: 50 },
+  { out: 'hali_kirmizi', n: 3, mats: { pamuk: 2, bogurtlen: 1 }, station: 'masa', lvl: 4, xp: 20 },
+  { out: 'sargi_bezi', n: 2, mats: { pamuk: 2, sifali_ot: 1 }, station: 'kazan', lvl: 6, xp: 25 },
 ];
+// 0.11 Mutfak tarifleri (Ascilik). Yeni tarifler hep sona eklenir.
+for (const [out, , lvl, mats] of KITCHEN) RECIPES.push({ out, mats, station: 'mutfak', lvl, xp: Math.round(20 + lvl * 2.2) });
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
 // Fiyatlar Cimen Blogu. Satis fiyati uretim maliyetinden dusuk tutulur.
@@ -1139,6 +1267,14 @@ export const SHOP = [
   { id: 'mese_fidani', price: 20 },
   { id: 'hus_fidani', price: 40 },
   { id: 'tahta_balta', price: 40 },
+  { id: 'bugday_tohumu', price: 8 },
+  { id: 'havuc_tohumu', price: 10 },
+  { id: 'patates_tohumu', price: 12 },
+  { id: 'misir_tohumu', price: 15 },
+  { id: 'kabak_tohumu', price: 25 },
+  { id: 'pamuk_tohumu', price: 20 },
+  { id: 'biber_tohumu', price: 22 },
+  { id: 'cilek_tohumu', price: 26 },
 ];
 export const SELL = {
   dal: 1, mantar: 2, diken: 2, tas: 1, kum: 1, komur: 2, demir_cevheri: 4, demir_kulcesi: 10,
@@ -1151,6 +1287,7 @@ export const SELL = {
   altin_cevheri: 8, altin_kulcesi: 20, saf_kristal: 14, kor_tasi: 18, kor_kulcesi: 40, bonkit: 200, bonkit_kulcesi: 420,
   golge_tasi: 30, golge_kulcesi: 70, kar_kurabiyesi: 10, biber_kebabi: 12, gece_coregi: 14,
   yildiz_demiri: 120, cekirdek_kristali: 400, ay_otu: 30, usta_damgasi: 150, renkli_cam: 6,
+  bugday: 2, havuc: 2, patates: 2, kabak: 6, misir: 3, pamuk: 4, gubre: 2, yanmis_yemek: 1,
   solucan: 1, parlak_yem: 5, gol_incisi: 150, deniz_cami: 25, efsane_pul: 300, izgara_balik: 10, balik_corbasi: 18, balik_kraker: 6,
 };
 // baliklar: seviyesiyle ve nadirligiyle artar
@@ -1209,6 +1346,7 @@ export const BUILD = {
   kitaplik: { tex: 'raf', lvl: 8, xp: 25, pts: 8 },
   somine: { tex: 'somine', lvl: 10, xp: 40, pts: 12, glow: 1 },
   saksi: { tex: 'saksi', lvl: 2, xp: 10, pts: 4, prop: true },
+  kovan: { tex: 'kovan', lvl: 6, xp: 40, pts: 8, prop: true, func: 'kovan' },
   tabela_blok: { tex: 'tabela', lvl: 2, xp: 10, pts: 3, prop: true, func: 'tabela' },
   bayrak_kirmizi: { tex: 'bayrak_k', lvl: 4, xp: 14, pts: 5, prop: true },
   bayrak_mavi: { tex: 'bayrak_m', lvl: 4, xp: 14, pts: 5, prop: true },
@@ -1247,6 +1385,12 @@ export const SEEDS = {
   ay_tohumu: { out: 'ay_otu', n: [1, 2], ms: 4 * 60 * 60 * 1000, xp: 160, name: 'Ay otu' },
   altin_tohum: { out: 'altin_elma', n: [1, 1], ms: 8 * 60 * 60 * 1000, xp: 300, name: 'Altın Elma' },
 };
+for (const [id, name, h, n, xp, likes] of CROPS) SEEDS[SEED_OF[id]] = { out: id, n, ms: h * 3600000, xp, name, likes, frame: CROP_FRAME[id], crop: true };
+SEEDS.ay_tohumu.likes = 'gece';
+// Kovan: arsada cicek varsa bal yapar (dakika basina, en fazla 3 birikir)
+export const HIVE = { ms: 90 * 60000, msFlowers: 60 * 60000, max: 3, flowers: ['saksi', 'cicek_k', 'cicek_s'] };
+// Kamp atesi: dal atinca 2 saat harli yanar; kapaliyken kamp odulu %50 fazla
+export const FIRE = { ms: 2 * 3600000, dal: 3, bonus: 1.5 };
 export const SEED_CHANCE = 0.3; // ot / bogurtlen toplarken tohum cikma ihtimali
 // Kamp: oyun kapaliyken en fazla 2 saat, saatte bu kadar basit malzeme (XP ve nadir esya yok)
 export const CAMP = { maxMs: 2 * 60 * 60 * 1000, minMs: 10 * 60 * 1000, perHour: { dal: 6, tas: 6, komur: 3, bogurtlen: 3 } };

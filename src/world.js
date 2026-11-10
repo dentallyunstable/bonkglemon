@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS,
+  FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -16,7 +16,7 @@ import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
 import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep } from './panels.js';
 import { ShaftMixin } from './shaft.js';
 import { GroveMixin } from './grove.js';
 import { refreshGoals, readyCount, goalTick, fullMoon, merchantHere, todayRule, PUL, clockOk, dayNum, weekNum, addPul, titleOf } from './goals.js';
@@ -82,7 +82,7 @@ export class WorldScene extends Phaser.Scene {
     refreshGoals();
     S.onChange(() => { if (this._gt) return; this._gt = setTimeout(() => { this._gt = null; goalTick((kind, a) => this.goalNote(kind, a)); }, 900); });
     this.time.delayedCall(2500, () => goalTick((kind, a) => this.goalNote(kind, a)));
-    this.time.addEvent({ delay: 60000, loop: true, callback: () => { if (refreshGoals()) this.refreshHud(); if (this.mode === 'koru') this.koruTick(); } });
+    this.time.addEvent({ delay: 60000, loop: true, callback: () => { refreshGoals(); this.refreshHud(); if (this.mode === 'koru') this.koruTick(); } });
     window.__BG = this; // testler icin
     window.__goalTick = () => goalTick((kind, a) => this.goalNote(kind, a));
     this.goBase(false);
@@ -151,20 +151,58 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ kamp (0.3)
   // Oyun kapaliyken kamp atesinin basinda en fazla 2 saatlik basit malzeme birikir.
-  campReward(awayMs) {
+  campReward(awayMs, fire = false) {
     const ms = Math.min(CAMP.maxMs, awayMs);
     if (ms < CAMP.minMs) return null;
     const h = ms / 3600000;
     const items = {};
-    for (const [id, per] of Object.entries(CAMP.perHour)) items[id] = Math.max(1, Math.round(per * h));
-    return { ms, items };
+    // 0.11: ayrilirken kamp atesi harliysa %50 fazla
+    for (const [id, per] of Object.entries(CAMP.perHour)) items[id] = Math.max(1, Math.round(per * h * (fire ? FIRE.bonus : 1)));
+    return { ms, items, fire };
+  }
+
+  // 0.11 kamp atesi: pisir, otur ve dinlen, odun at
+  fireMenu() {
+    const burning = Date.now() < (S.save.fireUntil || 0);
+    const left = burning ? Math.ceil((S.save.fireUntil - Date.now()) / 60000) : 0;
+    UI.choice('Kamp ateşi', burning ? `Ateş harlı yanıyor (${left} dk). Oyunu kapatırsan kamp ödülü %50 fazla olur.` : 'Ateş kısık. 3 Dal atarsan 2 saat harlı yanar ve kamp ödülün %50 artar.', [
+      { label: 'Yemek pişir', cls: 'primary', onClick: () => openStation(this, 'mutfak') },
+      { label: 'Otur, dinlen', cls: 'green', onClick: () => this.restAtFire() },
+      { label: `Odun at (${FIRE.dal} Dal, sende ${S.countItem('dal')})`, cls: 'small', onClick: () => this.feedFire() },
+      { label: 'Kapat' },
+    ]);
+  }
+
+  async restAtFire() {
+    if (this.busy) return;
+    this.busy = true;
+    this.player.play('c_sit');
+    await wait(this, 1600);
+    const heal = S.maxHp() - S.hp;
+    S.hp = S.maxHp();
+    if (heal > 0) { UI.floatText(this.player.x, GROUND_Y - 44, `+${heal}`, 'heal'); sfx('heal'); }
+    UI.feed(heal > 0 ? 'Ateşin başında dinlendin. Canın doldu.' : 'Ateşin başında biraz oturdun. Canın zaten dolu.');
+    S.changed();
+    this.busy = false;
+  }
+
+  feedFire() {
+    if (S.countItem('dal') < FIRE.dal) { UI.feed(`Odun atmak için ${FIRE.dal} Dal lazım. Keşifte ve Koru'da dal toplanır.`); this.sulk(); return; }
+    S.removeItem('dal', FIRE.dal);
+    S.save.fireUntil = Date.now() + FIRE.ms;
+    sfx('smelt');
+    UI.feed('Ateşe odun attın! 2 saat harlı yanacak. Bu sırada oyunu kapatırsan kamp ödülün %50 fazla olur.');
+    if (this.fireSpr) this.tweens.add({ targets: this.fireSpr, scale: 1.3, duration: 400, ease: 'Back.easeOut' });
+    this.applyTod();
+    S.changed();
   }
 
   checkCamp() {
     const away = Date.now() - (S.save.lastSeen || Date.now());
+    const fire = (S.save.fireUntil || 0) > (S.save.lastSeen || 0);
     S.save.lastSeen = Date.now();
     S.persist();
-    const rw = this.campReward(away);
+    const rw = this.campReward(away, fire);
     if (rw) this.time.delayedCall(700, () => openCamp(this, rw));
   }
 
@@ -339,6 +377,12 @@ export class WorldScene extends Phaser.Scene {
     UI.$('#hud-hp').style.width = `${(S.hp / max) * 100}%`;
     UI.$('#hud-hp-text').textContent = `${S.hp} / ${max}`;
     UI.$('#hud-gold').innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${S.save.gold} ${CURRENCY}`;
+    // 0.11 Tok: kucuk simge ve kalan dakika
+    const left = S.tokLeft();
+    if (left) {
+      const t = S.save.tok;
+      UI.$('#hud-gold').insertAdjacentHTML('beforeend', `<span class="hud-tok" title="${UI.escapeHtml(ITEMS[t.id].name)}: ${UI.escapeHtml(TOK[t.k].fmt(t.v))}"><img class="ico-inline" src="${iconUrl(ITEMS[t.id].icon)}">${Math.ceil(left / 60000)} dk</span>`);
+    }
   }
 
   say(text, ms = 3000) {
@@ -448,11 +492,10 @@ export class WorldScene extends Phaser.Scene {
     fire.noTint = true;
     this.addObj(fire, {
       x: FIRE_X - 16, face: false,
-      act: () => {
-        this.player.play('c_sit');
-        this.say('Sen yokken burada 2 saate kadar dal, taş, kömür ve böğürtlen birikir.', 3600);
-      },
+      act: () => this.fireMenu(),
     });
+    this.fireSpr = fire;
+    if (Date.now() < (S.save.fireUntil || 0)) fire.setScale(1.3);
     // Han: arkada harita, onde tezgah; Hanci Lale ikisinin arasinda durur
     this.addObj(this.add.image(INN_X, G + 1, 'inn_back').setOrigin(0, 1).setDepth(2));
     const npc = this.add.sprite(NPC_X, G - 4, 'hanci', 0).setOrigin(0.5, 1).setDepth(3); // ayaklari tezgahin arkasinda kalir
@@ -534,7 +577,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.tod === 'gun') return;
     const G = GROUND_Y;
     const spots = [];
-    if (this.mode === 'base') spots.push([FIRE_X, G - 8, 1.6], [MINE_X, G - 26, 0.9], [32, G - 40, 0.6], [128, G - 40, 0.6], [INN_X + 68, G - 40, 0.7]);
+    if (this.mode === 'base') spots.push([FIRE_X, G - 8, Date.now() < (S.save.fireUntil || 0) ? 2.3 : 1.6], [MINE_X, G - 26, 0.9], [32, G - 40, 0.6], [128, G - 40, 0.6], [INN_X + 68, G - 40, 0.7]);
     else if (this.mode === 'pond') spots.push([POND.standX - 40, G - 30, 0.8]);
     else if (this.mode === 'plot') {
       const g = this.plotGeom();
@@ -727,7 +770,7 @@ export class WorldScene extends Phaser.Scene {
     for (const [key, cell] of Object.entries(S.save.plot.cells)) {
       if (cell.id !== 'tarla') continue;
       const info = this.gardenInfo(key);
-      const frame = !info ? null : info.ready ? (info.seed === 'ot_tohumu' ? 'bitki' : 'cali') : info.p < 0.4 ? 'filiz' : 'fide';
+      const frame = !info ? null : info.ready ? (info.sd.frame || (info.seed === 'ot_tohumu' ? 'bitki' : info.seed === 'ay_tohumu' ? 'ay_otu' : 'cali')) : info.p < 0.4 ? 'filiz' : 'fide';
       const cur = this.gardenSprites[key];
       if (cur && cur.frame.name === frame) continue;
       if (cur) { cur.destroy(); delete this.gardenSprites[key]; }
@@ -804,6 +847,7 @@ export class WorldScene extends Phaser.Scene {
     if (f === 'kupa') { openTrophies(this); return; }
     if (f === 'tabela') { this.editSign(o, cell); return; }
     if (f === 'yatak') await this.sleepInBed();
+    if (f === 'kovan') await this.useHive(o, cell);
   }
 
   editSign(o, cell) {
@@ -974,6 +1018,7 @@ export class WorldScene extends Phaser.Scene {
       cells[cell.key] = id === 'kiremit' && this.roofShape && this.roofShape !== 'kiremit' ? { id, shape: this.roofShape } : { id };
       if (def.tall) cells[`${cell.c},${cell.r + 1}`] = { id, top: true };
       if (def.wide) cells[`${cell.c + 1},${cell.r}`] = { id, part: true };
+      if (def.func === 'kovan') cells[cell.key].t = Date.now();
       if (id === 'depo_sandigi') { while (S.save.depo.length < S.depoSize()) S.save.depo.push(null); UI.feed(`Depo büyüdü: artık ${S.save.depo.length} yer.`); }
     }
     this.drawPlot();
@@ -1077,19 +1122,62 @@ export class WorldScene extends Phaser.Scene {
     const info = this.gardenInfo(cell.key);
     if (!info) {
       const seeds = Object.keys(SEEDS).filter((id) => S.countItem(id) > 0);
-      if (!seeds.length) { UI.feed('Tohumun yok. Keşifte ot ve böğürtlen toplarken tohum çıkar, Hancı Lale de satar.'); this.sulk(); return; }
-      UI.choice('Bahçe tarlası', 'Ne ekmek istersin?', [
-        ...seeds.map((id) => ({ label: `${SEEDS[id].name} (${S.countItem(id)})`, cls: 'primary', onClick: () => this.plant(cell, id) })),
+      if (!seeds.length) { UI.feed('Tohumun yok. Hancı Lale buğday, havuç, patates ve daha fazla tohum satar; Keşifte ot ve böğürtlen toplarken de tohum çıkar.'); this.sulk(); return; }
+      const tod = todNow();
+      UI.choice('Bahçe tarlası', 'Ne ekmek istersin? (★ = şu an sevdiği saat, %25 çabuk büyür)', [
+        ...seeds.map((id) => ({ label: `${SEEDS[id].likes === tod ? '★ ' : ''}${SEEDS[id].name} (${S.countItem(id)})`, cls: 'primary', onClick: () => this.plant(cell, id) })),
         { label: 'Vazgeç' },
       ]);
       return;
     }
     if (!info.ready) {
       const m = Math.ceil(info.left / 60000);
-      this.say(`${info.sd.name} büyüyor. ${m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`} kaldı.`, 2600);
+      const gd = S.save.plot.garden[cell.key];
+      const opts = [];
+      if (!gd.w) opts.push({ label: S.countItem('su_kovasi') ? 'Sula (süre yarıya iner)' : 'Sula (Su Kovası lazım)', cls: 'blue', onClick: () => this.waterCrop(cell) });
+      if (!gd.f) opts.push({ label: `Gübrele: +2 ürün (Gübre ${S.countItem('gubre')})`, cls: 'green', onClick: () => this.fertilize(cell) });
+      opts.push({ label: 'Tamam' });
+      const tags = [gd.w ? 'sulandı' : '', gd.f ? 'gübrelendi' : ''].filter(Boolean).join(', ');
+      UI.choice(info.sd.name, `Büyüyor: ${m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`} kaldı.${tags ? ` (${tags})` : ''}`, opts);
       return;
     }
     this.harvest(cell, info);
+  }
+
+  async waterCrop(cell) {
+    const gd = S.save.plot.garden[cell.key];
+    if (!gd || gd.w || this.busy) return;
+    if (!S.countItem('su_kovasi')) { UI.feed('Sulamak için Su Kovası lazım. Üretim Masası: 2 Demir Külçesi.'); this.sulk(); return; }
+    this.busy = true;
+    await this.walkToCell(cell.c);
+    await playAnim(this.player, 'c_drinkpotion', 2.4);
+    const sd = SEEDS[gd.seed];
+    const left = Math.max(0, gd.t0 + sd.ms - Date.now());
+    gd.t0 -= left / 2;
+    gd.w = 1;
+    sfx('splash');
+    UI.floatText(this.plotGeom().x0 + cell.c * 16 + 8, GROUND_Y - 30, 'Sulandı!', 'info');
+    S.changed();
+    this.refreshGarden();
+    this.idle();
+    this.busy = false;
+  }
+
+  async fertilize(cell) {
+    const gd = S.save.plot.garden[cell.key];
+    if (!gd || gd.f || this.busy) return;
+    if (!S.countItem('gubre')) { UI.feed('Gübre yok. Üretim Masası: 2 Solucan + 1 Pulcuk = 3 Gübre.'); this.sulk(); return; }
+    this.busy = true;
+    await this.walkToCell(cell.c);
+    this.player.play('c_sneakspam');
+    await wait(this, 800);
+    S.removeItem('gubre', 1);
+    gd.f = 1;
+    sfx('gather');
+    UI.floatText(this.plotGeom().x0 + cell.c * 16 + 8, GROUND_Y - 30, 'Gübrelendi: +2', 'info');
+    S.changed();
+    this.idle();
+    this.busy = false;
   }
 
   async plant(cell, seed) {
@@ -1099,18 +1187,22 @@ export class WorldScene extends Phaser.Scene {
     this.player.play('c_sneakspam');
     await wait(this, 900);
     S.removeItem(seed, 1);
-    S.save.plot.garden[cell.key] = { seed, t0: Date.now() };
+    const sd = SEEDS[seed];
+    const liked = sd.likes && sd.likes === todNow();
+    S.save.plot.garden[cell.key] = { seed, t0: Date.now() - (liked ? sd.ms * 0.25 : 0) };
     sfx('gather');
     S.changed();
     this.refreshGarden();
-    UI.feed(`${SEEDS[seed].name} ektin. ${SEEDS[seed].ms / 3600000} saatte büyür, oyun kapalıyken de.`);
+    const h = sd.ms / 3600000;
+    UI.feed(`${sd.name} ektin. ${h} saatte büyür, oyun kapalıyken de.${liked ? ' Sevdiği saatte ektin: %25 çabuk!' : ''}`);
     this.idle();
     this.busy = false;
   }
 
   async harvest(cell, info) {
     if (this.busy) return;
-    const n = info.sd.n[0] + Math.floor(Math.random() * (info.sd.n[1] - info.sd.n[0] + 1));
+    const gd = S.save.plot.garden[cell.key];
+    const n = info.sd.n[0] + Math.floor(Math.random() * (info.sd.n[1] - info.sd.n[0] + 1)) + (gd && gd.f ? 2 : 0);
     if (!S.fits(info.sd.out, n)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
     this.busy = true;
     await this.walkToCell(cell.c);
@@ -1119,13 +1211,45 @@ export class WorldScene extends Phaser.Scene {
     delete S.save.plot.garden[cell.key];
     sfx('gather');
     this.giveDrop(info.sd.out, n, 'Hasat ettin:', true);
-    if (Math.random() < 0.5) this.giveDrop(info.seed, 1, 'Tohum geri geldi:', true);
+    // ciftlik urunleri tohumunu hep geri verir (1-2), eski bitkiler %50
+    if (info.sd.crop) this.giveDrop(info.seed, 1 + (Math.random() < 0.4 ? 1 : 0), 'Tohum:', true);
+    else if (Math.random() < 0.5) this.giveDrop(info.seed, 1, 'Tohum geri geldi:', true);
     UI.floatText(this.player.x, GROUND_Y - 44, `+${info.sd.xp} Toplama XP`, 'good');
     const ups = S.addXp({ toplama: info.sd.xp });
     S.save.stats.gathered++;
+    S.save.stats.harvested = (S.save.stats.harvested || 0) + 1;
     S.changed();
     this.refreshGarden();
     for (const u of ups) await this.levelUp(u);
+    this.idle();
+    this.busy = false;
+  }
+
+  // 0.11 Ari Kovani: arsada cicek varsa bal birikir
+  hiveInfo(cell) {
+    const flowers = Object.values(S.save.plot.cells).filter((c) => HIVE.flowers.includes(c.id)).length;
+    const rate = flowers >= 3 ? HIVE.msFlowers : HIVE.ms;
+    const t = cell.t || Date.now();
+    const honey = flowers ? Math.min(HIVE.max, Math.floor((Date.now() - t) / rate)) : 0;
+    return { flowers, rate, honey, t };
+  }
+
+  async useHive(o, cell) {
+    const h = this.hiveInfo(cell);
+    if (!h.flowers) { cell.t = Date.now(); S.changed(); UI.feed('Arıların çiçeğe ihtiyacı var: arsana Çiçek Saksısı koy (3 ve üstü çiçek = daha hızlı bal).'); this.sulk(); return; }
+    if (!h.honey) {
+      const m = Math.ceil((h.t + h.rate - Date.now()) / 60000);
+      this.say(`Arılar çalışıyor… ${m} dk sonra bal olur. (${h.flowers} çiçek)`, 2600);
+      return;
+    }
+    if (!S.fits('bal', h.honey)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+    this.busy = true;
+    await this.walkToCell(o.c);
+    this.player.play('c_sneakspam');
+    await wait(this, 900);
+    this.giveDrop('bal', h.honey, 'Kovandan aldın:', true);
+    cell.t = h.honey >= HIVE.max ? Date.now() : h.t + h.honey * h.rate;
+    S.changed();
     this.idle();
     this.busy = false;
   }
@@ -1396,6 +1520,7 @@ export class WorldScene extends Phaser.Scene {
     this.mode = 'dungeon';
     this.zz = null;
     await this.enterFloor(floor);
+    if (this.isNight()) { UI.banner('Gece', 'Glemonlar %15 güçlü · %30 fazla XP ve eşya', 2600); UI.feed('Gece Keşfi: Glemonlar daha güçlü ama daha çok XP ve eşya veriyor. Sadece gece çıkan Glemonlar da var!'); }
   }
 
   // ------------------------------------------------------------ Zindan (0.6)
@@ -1577,11 +1702,12 @@ export class WorldScene extends Phaser.Scene {
     const [usta, genc] = wildStageChances(this.zoneFloor());
     const rule = S.run && S.run.rule;
     const moon = fullMoon();
+    const night = this.isNight();
     return Array.from({ length: n }, () => {
       const r = Math.random();
       const stage = rule === 'dev' ? 2 : r < usta ? 2 : r < usta + genc ? 1 : 0;
       // 0.9 Dolunay Gecesi: her bolgede nadiren Dolunay Tavsani
-      const key = moon && Math.random() < 0.06 ? 'ay_tavsani' : weighted(table);
+      const key = moon && Math.random() < 0.06 ? 'ay_tavsani' : night && Math.random() < NIGHT.chance ? weighted(NIGHT_SPAWNS[this.zone().key]) : weighted(table);
       return { key, shiny: Math.random() < S.shinyChance() * (rule === 'parlak' ? 3 : 1), stage, ...extra };
     });
   }
@@ -1681,37 +1807,23 @@ export class WorldScene extends Phaser.Scene {
 
   // 0.8 Donmus Zirve: sicak corba yoksa savaslarda yavaslarsin
   cold() { return this.zone().key === 'buz' && !this.inZindan() && Date.now() >= (S.save.warmUntil || 0); }
+  // 0.11: corba, iksir ve matara artik kendiliginden icilmez; Hazirlik ekranindan (ya da cantadan) icilir
   async coldCheck() {
     if (Date.now() < (S.save.warmUntil || 0)) return;
-    if (S.countItem('sicak_corba') > 0) {
-      S.removeItem('sicak_corba', 1);
-      S.save.warmUntil = Date.now() + 30 * 60 * 1000;
-      S.hp = Math.min(S.maxHp(), S.hp + Math.round(S.maxHp() * 0.2));
-      UI.feed('Üşüdün ve Sıcak Çorba içtin. 30 dakika soğuktan etkilenmezsin.');
-      await playAnim(this.player, 'c_eat', 2.4);
-      this.idle();
-      this.refreshHud();
-      S.changed();
-      return;
-    }
-    if (!this.toldCold) { this.toldCold = true; UI.feed('Donmuş Zirve çok soğuk! Sıcak Çorba taşımazsan savaşlarda yavaşlarsın. (Fırın: Mantar + Şifalı ot + Kömür, ya da Hancı Lale)'); }
+    if (!this.toldCold) { this.toldCold = true; UI.feed(S.countItem('sicak_corba') || S.countItem('balik_corbasi') ? 'Üşüyorsun! Çantandan Sıcak Çorba iç (Çanta → Ye), yoksa savaşlarda yavaşlarsın.' : 'Donmuş Zirve çok soğuk! Sıcak Çorba içmezsen savaşlarda yavaşlarsın. (Mutfak ya da Hancı Lale)'); }
   }
   // 0.8 Kor Diyari: ates direnci yoksa savaslara yanarak baslarsin
   burning() { return this.zone().key === 'kor' && !this.inZindan() && Date.now() >= (S.save.fireResUntil || 0) && !S.fireproof(); }
   async lavaCheck() {
     if (Date.now() < (S.save.fireResUntil || 0) || S.fireproof()) return;
-    if (S.countItem('ates_iksiri') > 0) {
-      S.removeItem('ates_iksiri', 1);
-      S.save.fireResUntil = Date.now() + 30 * 60 * 1000;
-      UI.feed('Lavın sıcağı geldi ve Ateş Direnci İksiri içtin. 30 dakika yanmazsın.');
-      await playAnim(this.player, 'c_drinkpotion', 2.4);
-      this.idle();
-      S.changed();
-      return;
-    }
-    if (!this.toldLava) { this.toldLava = true; UI.feed('Kor Diyarı yakıyor! Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın. (Simya Kazanı ya da Hancı Lale)'); }
+    if (!this.toldLava) { this.toldLava = true; UI.feed(S.countItem('ates_iksiri') ? 'Lav yakıyor! Çantandan Ateş Direnci İksiri iç, yoksa savaşlara yanarak başlarsın.' : 'Kor Diyarı yakıyor! Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın. (Simya Kazanı ya da Hancı Lale)'); }
   }
-  battleOpts(room) { return { floor: this.floor, dark: this.unlit(room), cold: this.cold(), burn: this.burning() }; }
+  battleOpts(room) { return { floor: this.floor, dark: this.unlit(room), cold: this.cold(), burn: this.burning(), night: this.isNight() }; }
+  // 0.11 gece tehlikesi: sadece Kesifte (Zindan ve etkinlikler haric), gercek saatle gece
+  isNight() { return this.mode === 'dungeon' && !this.inZindan() && !(S.run && S.run.ev) && todNow() === 'gece'; }
+
+  // Kesife cikmadan once Hazirlik ekrani
+  prepDungeon(floor) { openPrep(this, floor); }
 
   async eggHatched(h) {
     if (h.progress) { UI.feed(`${h.name} çatırdıyor… (${h.progress}/${S.eggNeed()} savaş)`); return; }
@@ -1728,20 +1840,11 @@ export class WorldScene extends Phaser.Scene {
   // Col sicagi: su matarasi yoksa her odada biraz can gider (bayiltmaz)
   async heat() {
     if (Date.now() < (S.save.waterUntil || 0)) return;
-    if (S.countItem('su_matarasi') > 0) {
-      S.removeItem('su_matarasi', 1);
-      S.save.waterUntil = Date.now() + 30 * 60 * 1000;
-      UI.feed('Susadın ve Su Matarası\'ndan içtin. 30 dakika sıcaktan etkilenmezsin.');
-      await playAnim(this.player, 'c_drinkpotion', 2.4);
-      this.idle();
-      S.changed();
-      return;
-    }
     const d = Math.max(1, Math.round(S.maxHp() * 0.04));
     if (S.hp <= 1) return;
     S.hp = Math.max(1, S.hp - d);
     UI.floatText(this.player.x, GROUND_Y - 40, `Sıcak! -${d}`, 'hurt');
-    if (!this.toldHeat) { this.toldHeat = true; UI.feed('Çöl çok sıcak! Su Matarası taşırsan can kaybetmezsin. (Simya Kazanı: Kaktüs suyu + Pul)'); }
+    if (!this.toldHeat) { this.toldHeat = true; UI.feed(S.countItem('su_matarasi') ? 'Çok sıcak! Çantandan Su Matarası iç (Çanta → Kullan), yoksa her odada can kaybedersin.' : 'Çöl çok sıcak! Su Matarası içersen can kaybetmezsin. (Simya Kazanı: Kaktüs suyu + Pul)'); }
     this.refreshHud();
   }
 
@@ -1880,7 +1983,7 @@ export class WorldScene extends Phaser.Scene {
     p.play('c_sneakspam');
     await wait(this, 1300);
     sfx('gather');
-    const n = 1 + Math.floor(S.level('toplama') / 10) + (Math.random() < 0.3 ? 1 : 0);
+    const n = 1 + Math.floor(S.level('toplama') / 10) + (Math.random() < 0.3 ? 1 : 0) + (Math.random() < S.tokVal('gather') ? 1 : 0);
     this.giveDrop(room.node, n, 'Topladın:', true);
     if (Math.random() < BAL_CHANCE) this.giveDrop('bal', 1, 'Bir arı kovanı! Topladın:', true);
     const seed = room.node === 'sifali_ot' ? 'ot_tohumu' : room.node === 'bogurtlen' ? 'bogurtlen_tohumu' : null;

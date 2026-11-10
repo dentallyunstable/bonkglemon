@@ -1,12 +1,12 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME } from './data.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx, setSound } from './audio.js';
 import { forgetLogin } from './login.js';
-import { iconUrl, hubMap, HUB_SPOTS } from './art.js';
+import { iconUrl, hubMap, HUB_SPOTS, todNow } from './art.js';
 import {
   PUL, refreshGoals, goals, goalDef, goalText, goalProgress, readyCount, addPul, clockOk, ACH, SECRET, ACH_GROUPS, TIER_NAMES, TIER_PTS, SECRET_PTS, achTier, achTargets, achPoints, achCount, ACH_TOTAL,
   TITLES, titleOf, ALBUM_RW, albumPct, todayRule, weekendNow, weekendKind, weekendEnds, weekendStarts, nextMidnight, nextMonday, fmtLeft, fullMoon, nextFullMoon,
@@ -27,6 +27,71 @@ function slotEl(s, label) {
   return d;
 }
 
+// 0.11 Mutfak: pisirirken kucuk zamanlama oyunu. Dogru anda "Cevir!" = lezzetli (Tok %20 uzun)
+function cookGame(done) {
+  if (document.querySelector('.cook-game')) return;
+  const host = UI.$('#panel');
+  const box = UI.el('div', 'cook-game');
+  box.appendChild(UI.el('div', 'cg-title', 'Tavayı doğru anda çevir!'));
+  const bar = UI.el('div', 'cg-bar');
+  const zone = UI.el('div', 'cg-zone');
+  const z0 = 0.2 + Math.random() * 0.55;
+  zone.style.left = `${z0 * 100}%`; zone.style.width = '20%';
+  const mark = UI.el('div', 'cg-mark');
+  bar.appendChild(zone); bar.appendChild(mark);
+  box.appendChild(bar);
+  const msg = UI.el('div', 'cg-msg', '');
+  let over = false; const t0 = performance.now(); let pos = 0;
+  const tick = () => {
+    if (over) return;
+    const t = (performance.now() - t0) / 1100;
+    pos = 1 - Math.abs(((t % 2) + 2) % 2 - 1);
+    mark.style.left = `${pos * 100}%`;
+    if (performance.now() - t0 > 4500) finish(false, 'Geç kaldın, normal pişti.');
+    else requestAnimationFrame(tick);
+  };
+  const finish = (good, text) => {
+    if (over) return; over = true;
+    msg.textContent = text; msg.className = 'cg-msg ' + (good ? 'good' : '');
+    btn.disabled = true;
+    sfx(good ? 'perfect' : 'click');
+    setTimeout(() => { box.remove(); done(good); }, 750);
+  };
+  const btn = UI.button('Çevir!', () => { const ok = pos >= z0 && pos <= z0 + 0.2; finish(ok, ok ? 'Lezzetli!' : 'Olmadı, normal pişti.'); }, 'primary');
+  box.appendChild(btn);
+  box.appendChild(msg);
+  host.appendChild(box);
+  requestAnimationFrame(tick);
+}
+
+function cook(w, r, n, render) {
+  const per = r.n || 1;
+  if (!S.fits(r.out, n * per) || !S.fits('yanmis_yemek', n * per)) { UI.feed('Çanta dolu!'); return; }
+  cookGame((tasty) => {
+    if (!canMake(r, n)) return;
+    for (const [id, k] of Object.entries(r.mats)) S.removeItem(id, k * n);
+    const lvl = S.level('ascilik');
+    let good = 0; let burnt = 0;
+    for (let i = 0; i < n * per; i++) { if (Math.random() < burnChance(lvl, r.lvl)) burnt++; else good++; }
+    if (good) S.addItem(r.out, good);
+    if (burnt) S.addItem('yanmis_yemek', burnt);
+    if (tasty && good && ITEMS[r.out].tok) S.save.tasty[r.out] = (S.save.tasty[r.out] || 0) + good;
+    S.save.stats.cooked = (S.save.stats.cooked || 0) + n;
+    S.save.stats.crafted += n;
+    sfx(burnt && !good ? 'hurt' : 'craft');
+    if (w.player) { w.player.play({ key: 'c_punch', timeScale: 1.4 }); w.player.once('animationcomplete', () => w.idle()); }
+    const xp = Math.round(r.xp * n * (good ? 1 : 0.3));
+    const parts = [];
+    if (good) parts.push(`<img class="ico-inline" src="${iconUrl(ITEMS[r.out].icon)}">${UI.itemName(r.out)}${good > 1 ? ` ×${good}` : ''}${tasty && ITEMS[r.out].tok ? ' (lezzetli!)' : ''}`);
+    if (burnt) parts.push(`${burnt} tanesi yandı`);
+    UI.feed(`Pişirdin: ${parts.join(', ')}. +${xp} Aşçılık XP`);
+    const ups = S.addXp({ ascilik: xp });
+    S.changed();
+    if (UI.panelOpen() && render) render();
+    for (const u of ups) w.levelUp(u);
+  });
+}
+
 function statLines(it) {
   const out = [];
   if (it.power) out.push(`${it.wt === 'yay' ? 'Yay' : it.wt === 'yumruk' ? 'Yumruk' : 'Kılıç'} gücü +${it.power}`);
@@ -37,7 +102,8 @@ function statLines(it) {
   if (it.spd) out.push(`Hız +${it.spd}`);
   if (it.pick) out.push(`Kazma gücü ${it.pick}`);
   if (it.heal) out.push(`Canın %${Math.round(it.heal * 100)}'ini doldurur`);
-  if (it.food && !it.strong) out.push('Savaşta yersen 3 tur saldırı +%10');
+  if (it.tok) out.push(`Tok ${it.tok[2]} dk: ${TOK[it.tok[0]].fmt(it.tok[1])}`);
+  if (it.food && !it.strong && !it.tok) out.push('Savaşta yersen 3 tur saldırı +%10');
   if (it.strong) out.push(`Savaşta yersen ${it.strong} tur saldırı +%30`);
   if (it.rod) {
     if (it.rod.box) out.push(`Yakalama kutusu +%${Math.round(it.rod.box * 100)}`);
@@ -159,34 +225,22 @@ export function openBag(w) {
           b.disabled = inBattle || !S.canEquip(id);
           btns.push(b);
         }
-        if (it.kind === 'tuketim' && it.heal && !it.battleOnly) {
-          const b = UI.button('Kullan', () => {
-            S.removeItem(id, 1);
-            const heal = Math.round(S.maxHp() * it.heal);
-            S.hp = Math.min(S.maxHp(), S.hp + heal);
-            if (it.warm) { S.save.warmUntil = Date.now() + 30 * 60 * 1000; UI.feed('Isındın: 30 dakika soğuktan etkilenmezsin.'); }
+        // 0.11: yemek, iksir, matara ve corbalar tek yerden (S.consume)
+        if (it.kind === 'tuketim' && (it.heal || it.warm || it.water || it.fireRes || it.tok) && !it.battleOnly) {
+          const b = UI.button(it.food ? 'Ye' : 'Kullan', () => {
+            const msgs = S.consume(id);
+            if (!msgs) return;
+            UI.feed(`${UI.itemName(id)}: ${msgs.join(' · ')}`);
             sfx('heal');
             S.changed();
+            if (w.refreshHud) w.refreshHud();
             if (!S.save.bag[sel.i]) sel = null;
             render();
           }, 'small red');
-          b.disabled = inBattle || (S.hp >= S.maxHp() && !it.warm);
+          b.disabled = inBattle || (S.hp >= S.maxHp() && !it.warm && !it.water && !it.fireRes && !it.tok);
           btns.push(b);
         }
-        if (it.fireRes) {
-          const b = UI.button('Kullan', () => {
-            S.removeItem(id, 1);
-            S.save.fireResUntil = Date.now() + 30 * 60 * 1000;
-            UI.feed('Ateş Direnci İksiri içtin: 30 dakika lav seni yakmaz.');
-            sfx('heal');
-            S.changed();
-            if (!S.save.bag[sel.i]) sel = null;
-            render();
-          }, 'small red');
-          b.disabled = inBattle;
-          btns.push(b);
-        }
-        if (it.water || it.bagPlus) {
+        if (it.bagPlus) {
           const b = UI.button('Kullan', () => {
             if (it.bagPlus) {
               if (S.bagSize() >= 40) { UI.feed('Çantan en büyük boyda (40).'); return; }
@@ -561,7 +615,7 @@ export function openMap(w) {
       if (opened) {
         const [a] = z.floors;
         for (const f of [a, a + 4, a + 9]) {
-          const b = UI.button(`Kat ${f}`, () => w.enterDungeon(f), f === a ? 'primary small' : 'small');
+          const b = UI.button(`Kat ${f}`, () => w.prepDungeon(f), f === a ? 'primary small' : 'small');
           b.disabled = (f > a && deepest < f) || !atkOk;
           if (!atkOk) b.title = `Saldırı gücün en az ${z.atk} olmalı`;
           else if (b.disabled) b.title = `Önce Kat ${f}'e ulaş`;
@@ -769,6 +823,7 @@ export function openAlbum(w, tab = 'glemon') {
       groups.push(['Efsaneviler (yumurtadan)', Object.values(EGGS)]);
       groups.push(['Su Glemonları (oltaya takılır)', WATER_GLEMONS.map(([k]) => k)]);
       groups.push(['Dolunay Gecesi', ['ay_tavsani']]);
+      groups.push(['Gece Glemonları (sadece gece Keşifte)', Object.keys(NIGHT_HOME)]);
       for (const [z, list] of groups) {
         body.appendChild(UI.el('h3', '', z));
         const grid = UI.el('div', 'album-grid');
@@ -844,6 +899,7 @@ const furnaceIdle = (f) => f.rid === null || f.rid === undefined || f.n <= 0;
 // 0.10.5: bazi mobilya tarifleri Us Puani ile acilir (en yuksek puana gore)
 const usLocked = (r) => r.us && (S.save.plot.bestScore || 0) < r.us;
 const unlocked = (r) => !!S.save.seen[Object.keys(r.mats)[0]] && !usLocked(r);
+const lvOf = (r) => S.level(r.station === 'mutfak' ? 'ascilik' : 'uretim');
 const canMake = (r, n = 1) => Object.entries(r.mats).every(([id, k]) => S.countItem(id) >= k * n);
 function maxMake(r) {
   return Math.min(...Object.entries(r.mats).map(([id, k]) => Math.floor(S.countItem(id) / k)));
@@ -852,12 +908,13 @@ function maxMake(r) {
 export function openStation(w, station) {
   const st = STATIONS[station];
   const list = RECIPES.filter((r) => r.station === station);
-  let sel = list.find((r) => unlocked(r) && S.level('uretim') >= r.lvl && canMake(r)) || list.find(unlocked) || null;
+  if (station === 'mutfak') list.sort((a, b) => a.lvl - b.lvl);
+  let sel = list.find((r) => unlocked(r) && lvOf(r) >= r.lvl && canMake(r)) || list.find(unlocked) || null;
   let timer = null;
   UI.openPanel(st.name, (body) => {
     const render = () => {
       body.innerHTML = '';
-      body.appendChild(UI.el('div', 'muted', `${st.desc} · Üretim seviyen: ${S.level('uretim')}`));
+      body.appendChild(UI.el('div', 'muted', `${st.desc} · ${station === 'mutfak' ? 'Aşçılık' : 'Üretim'} seviyen: ${S.level(station === 'mutfak' ? 'ascilik' : 'uretim')}`));
       if (station === 'firin') body.appendChild(furnaceBox(w, render));
       if (station === 'masa') { const ar = UI.el('div', 'choice-row'); ar.appendChild(UI.button('Örs: eşya yükselt', () => openAnvil(w), 'small purple')); body.appendChild(ar); }
       const lay = UI.el('div', 'craft');
@@ -876,7 +933,7 @@ export function openStation(w, station) {
           const nm = UI.el('span', 'nm', it.name);
           nm.style.color = RARITY[it.rarity].color;
           row.appendChild(nm);
-          if (S.level('uretim') < r.lvl) { row.classList.add('lvl'); row.appendChild(UI.el('span', 'lv', `Sv. ${r.lvl}`)); }
+          if (lvOf(r) < r.lvl) { row.classList.add('lvl'); row.appendChild(UI.el('span', 'lv', `Sv. ${r.lvl}`)); }
           else if (canMake(r)) row.appendChild(UI.el('span', 'ok', '●'));
         }
         if (sel === r) row.classList.add('sel');
@@ -928,7 +985,11 @@ function recipeDetail(w, station, r, render) {
   const nm = UI.el('div', 'nm', it.name + (r.n ? ` ×${r.n}` : ''));
   nm.style.color = RARITY[it.rarity].color;
   box.appendChild(nm);
-  box.appendChild(UI.el('div', 'muted', `${KIND[it.kind]} · +${r.xp} Üretim XP${station === 'firin' ? ' · 5 sn' : ''}`));
+  box.appendChild(UI.el('div', 'muted', `${KIND[it.kind]} · +${r.xp} ${station === 'mutfak' ? 'Aşçılık' : 'Üretim'} XP${station === 'firin' ? ' · 5 sn' : ''}`));
+  if (station === 'mutfak') {
+    const bc = burnChance(S.level('ascilik'), r.lvl);
+    box.appendChild(UI.el('div', 'muted', bc > 0 ? `Yanma ihtimali %${Math.round(bc * 100)} (seviyen arttıkça azalır)` : 'Bu yemek artık hiç yanmaz.'));
+  }
   if (BUILD[r.out]) box.appendChild(UI.el('div', '', `İnşa bloğu · koymak için İnşa ${BUILD[r.out].lvl}`));
   for (const l of statLines(it)) box.appendChild(UI.el('div', '', l));
   if (it.req) {
@@ -944,9 +1005,9 @@ function recipeDetail(w, station, r, render) {
     mats.appendChild(m);
   }
   box.appendChild(mats);
-  const lvlOk = S.level('uretim') >= r.lvl;
+  const lvlOk = lvOf(r) >= r.lvl;
   if (!lvlOk) {
-    const req = UI.el('div', '', `Gerekli: Üretim ${r.lvl}`);
+    const req = UI.el('div', '', `Gerekli: ${station === 'mutfak' ? 'Aşçılık' : 'Üretim'} ${r.lvl}`);
     req.style.color = '#ff6b5a';
     box.appendChild(req);
   }
@@ -960,9 +1021,9 @@ function recipeDetail(w, station, r, render) {
       const room = !furnaceIdle(f) && f.rid !== recipeId(r) ? 0 : FURNACE_MAX - (furnaceIdle(f) ? 0 : f.n);
       n = Math.min(n, room);
     }
-    const label = station === 'firin' ? (c === 'max' ? `Hepsini koy (${Math.max(0, n)})` : `Ateşe koy ×${c}`) : `Üret ×${c}`;
+    const label = station === 'firin' ? (c === 'max' ? `Hepsini koy (${Math.max(0, n)})` : `Ateşe koy ×${c}`) : station === 'mutfak' ? `Pişir ×${c}` : `Üret ×${c}`;
     const b = UI.button(label, () => {
-      make(w, station, r, n);
+      make(w, station, r, n, render);
       render();
     }, c === 1 ? 'primary small' : 'small');
     b.disabled = !lvlOk || n <= 0 || !canMake(r, n);
@@ -976,8 +1037,9 @@ function recipeDetail(w, station, r, render) {
   return box;
 }
 
-function make(w, station, r, n) {
-  if (n <= 0 || !canMake(r, n) || S.level('uretim') < r.lvl) return;
+function make(w, station, r, n, render) {
+  if (n <= 0 || !canMake(r, n) || lvOf(r) < r.lvl) return;
+  if (station === 'mutfak') { cook(w, r, n, render); return; }
   if (station === 'firin') {
     const f = S.save.furnace;
     const rid = recipeId(r);
@@ -1518,4 +1580,85 @@ export function openTrophies(w) {
     }
     body.appendChild(grid);
   });
+}
+
+// 0.11 Hazirlik ekrani: Kesife cikmadan once bolgenin tehlikesi, yaninda olmasi gerekenler ve yemek
+const PREP_NEED = {
+  col: { what: 'Sıcak', items: ['su_matarasi'], until: 'waterUntil', how: 'Simya Kazanı: Kaktüs suyu + Pul' },
+  buz: { what: 'Soğuk', items: ['sicak_corba', 'balik_corbasi'], until: 'warmUntil', how: 'Mutfak ya da Hancı Lale' },
+  kor: { what: 'Lav', items: ['ates_iksiri'], until: 'fireResUntil', how: 'Simya Kazanı ya da Hancı Lale' },
+  magara: { what: 'Karanlık', items: ['fener'], carry: true, how: 'Fener taşı (Üretim Masası)' },
+  golge: { what: 'Karanlık', items: ['fener'], carry: true, how: 'Fener taşı (Üretim Masası)' },
+};
+export function openPrep(w, floor) {
+  const z = zoneOf(floor);
+  UI.openPanel(`Hazırlık · ${z.name}, Kat ${floor}`, (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      const night = todNow() === 'gece';
+      if (night) { const n = UI.el('div', 'prep-night', '🌙 Gece: Glemonlar %15 güçlü ama %30 fazla XP ve eşya veriyor. Sadece gece çıkan Glemonlar var.'); body.appendChild(n); }
+      const grid = UI.el('div', 'prep-grid');
+      // tehlike
+      const need = PREP_NEED[z.key];
+      const hz = UI.el('div', 'prep-box');
+      hz.appendChild(UI.el('h3', '', 'Tehlike'));
+      if (!need) hz.appendChild(UI.el('div', 'prep-ok', 'Bu bölgede özel bir tehlike yok.'));
+      else {
+        hz.appendChild(UI.el('div', 'muted', z.hazard || need.what));
+        const safe = need.carry ? (S.darkproof() || S.countItem('fener') > 0) : (need.until === 'fireResUntil' && S.fireproof()) || Date.now() < (S.save[need.until] || 0);
+        if (safe) {
+          const left = !need.carry && !S.fireproof() ? Math.ceil(((S.save[need.until] || 0) - Date.now()) / 60000) : 0;
+          hz.appendChild(UI.el('div', 'prep-ok', `✓ Hazırsın${left > 0 ? ` (${left} dk korunuyorsun)` : need.carry ? ` (Fener ×${S.countItem('fener')})` : ''}`));
+        } else hz.appendChild(UI.el('div', 'prep-bad', `✗ ${need.what}a karşı korumasızsın.`));
+        if (!need.carry) {
+          for (const id of need.items) {
+            const n = S.countItem(id);
+            const row = UI.el('div', 'prep-row');
+            row.appendChild(UI.icon(ITEMS[id].icon));
+            row.appendChild(UI.el('span', '', `${ITEMS[id].name} ×${n}`));
+            const b = UI.button('İç (30 dk)', () => { const m = S.consume(id); if (m) { sfx('heal'); UI.feed(`${UI.itemName(id)}: ${m.join(' · ')}`); S.changed(); w.refreshHud(); } render(); }, 'small blue');
+            b.disabled = !n;
+            row.appendChild(b);
+            hz.appendChild(row);
+          }
+        }
+        if (!safe && !need.items.some((id) => S.countItem(id))) hz.appendChild(UI.el('div', 'muted', `Yapılışı: ${need.how}`));
+      }
+      grid.appendChild(hz);
+      // yemek (Tok)
+      const fb = UI.el('div', 'prep-box');
+      fb.appendChild(UI.el('h3', '', 'Yemek (Tok)'));
+      const left = S.tokLeft();
+      if (left) { const t = S.save.tok; fb.appendChild(UI.el('div', 'prep-ok', `✓ ${ITEMS[t.id].name}: ${TOK[t.k].fmt(t.v)} · ${Math.ceil(left / 60000)} dk`)); }
+      else fb.appendChild(UI.el('div', 'muted', 'Tok değilsin. Bir yemek ye: etkisi Keşif boyunca sürer.'));
+      const foods = [...new Set(S.save.bag.filter((x) => x && ITEMS[x.id].tok).map((x) => x.id))].slice(0, 4);
+      for (const id of foods) {
+        const row = UI.el('div', 'prep-row');
+        row.appendChild(UI.icon(ITEMS[id].icon));
+        row.appendChild(UI.el('span', '', `${ITEMS[id].name} ×${S.countItem(id)} · ${TOK[ITEMS[id].tok[0]].fmt(ITEMS[id].tok[1])}`));
+        row.appendChild(UI.button('Ye', () => { const m = S.consume(id); if (m) { sfx('heal'); UI.feed(`${UI.itemName(id)}: ${m.join(' · ')}`); S.changed(); w.refreshHud(); } render(); }, 'small red'));
+        fb.appendChild(row);
+      }
+      if (!foods.length) fb.appendChild(UI.el('div', 'muted', 'Çantanda Tok yemeği yok. Kamp ateşindeki Mutfak\'ta pişirebilirsin.'));
+      grid.appendChild(fb);
+      // can ve hizli kemer
+      const hb = UI.el('div', 'prep-box');
+      hb.appendChild(UI.el('h3', '', 'Can ve hızlı kemer'));
+      const pots = ['iksir_k', 'orta_iksir', 'buyuk_iksir'].map((id) => S.countItem(id)).reduce((a, b) => a + b, 0);
+      hb.appendChild(UI.el('div', pots ? 'prep-ok' : 'prep-bad', pots ? `✓ ${pots} can iksiri` : '✗ Can iksirin yok!'));
+      const uc = S.save.useCount || {};
+      const belt = Object.keys(uc).filter((id) => S.countItem(id) > 0).sort((a, b) => uc[b] - uc[a]).slice(0, 3);
+      const br = UI.el('div', 'prep-belt');
+      for (const id of belt) { const c = UI.el('div', 'prep-chip'); c.appendChild(UI.icon(ITEMS[id].icon)); c.appendChild(UI.el('span', '', `${S.countItem(id)}`)); br.appendChild(c); }
+      hb.appendChild(UI.el('div', 'muted', belt.length ? 'Savaşta tek dokunuşla:' : 'Savaşta en çok kullandığın 3 eşya burada, tek dokunuşla kullanılır.'));
+      if (belt.length) hb.appendChild(br);
+      grid.appendChild(hb);
+      body.appendChild(grid);
+      const row = UI.el('div', 'choice-row');
+      row.appendChild(UI.button('Yola çık!', () => w.enterDungeon(floor), 'primary'));
+      row.appendChild(UI.button('Geri', () => openHanci(w), 'small'));
+      body.appendChild(row);
+    };
+    render();
+  }, { wide: true });
 }
