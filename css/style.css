@@ -972,10 +972,13 @@ textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u
 #ui.fighting #feed { width: calc(140 * var(--u)); }
 #ui.fighting #banner { top: 16%; }
 
-/* 1.0.7 Kesif yol haritasi */
-.hubmap.kmap { width: calc(260 * var(--u)); aspect-ratio: 16 / 9; image-rendering: pixelated; }
-.kmap .map-spot { transform: translate(-50%, -50%); padding: 0.4cqw 1.2cqw; font-size: 2.1cqw; }
-.kmap .map-spot:hover { transform: translate(-50%, -55%); }
-.kmap .map-spot.sel { background: linear-gradient(#ffe48a, #f0b44a); }
-.kmap .map-spot.off { filter: grayscale(0.8) brightness(0.8); }
-.kmap .map-spot.kb { font-size: 1.6cqw; padding: 0.2cqw 0.8cqw; background: linear-gradient(#c8a0f0, #8a5ac8); color: #fff; border-color: #3a1f66; box-shadow: inset 0 0 0 0.25cqw #e0c8ff, 0 0.3cqw 0 #2a1440; }
+/* 1.0.8 Kesif: Eren'in biyom banner'lari, yumusak giris */
+.zlist { display: flex; flex-direction: column; gap: calc(2 * var(--u)); margin-bottom: calc(2 * var(--u)); }
+.zone.zbanner { position: relative; margin: 0; background-size: cover; background-position: center; min-height: calc(22 * var(--u)); border-radius: calc(2.5 * var(--u)); overflow: hidden;
+  box-shadow: inset 0 0 0 calc(1 * var(--u)) rgba(0,0,0,.55); animation: zIn .45s cubic-bezier(.2,.8,.25,1) both; }
+.zone.zbanner::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20,14,26,.82) 0%, rgba(20,14,26,.45) 45%, rgba(20,14,26,.15) 70%, rgba(20,14,26,.55) 100%); pointer-events: none; }
+.zone.zbanner > * { position: relative; }
+.zone.zbanner .zn { color: #fff4dc; text-shadow: 0 calc(1 * var(--u)) 0 #000, 0 0 calc(3 * var(--u)) #000; font-size: var(--fs-m, 1.05em); }
+.zone.zbanner .zf { color: #eadcc4; text-shadow: 0 calc(.6 * var(--u)) 0 #000; }
+.zone.zbanner.locked { filter: grayscale(.75) brightness(.7); }
+@keyframes zIn { from { opacity: 0; transform: translateX(calc(-18 * var(--u))) scale(.98); } to { opacity: 1; transform: none; } }

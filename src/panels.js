@@ -8,7 +8,6 @@ import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { tutFlag, openSettings } from './help.js';
 import { iconUrl, todNow } from './art.js';
-import { kesifMap, KMAP } from './mapart.js';
 import {
   PUL, refreshGoals, goals, goalDef, goalText, goalProgress, readyCount, addPul, clockOk, ACH, SECRET, ACH_GROUPS, TIER_NAMES, TIER_PTS, SECRET_PTS, achTier, achTargets, achPoints, achCount, ACH_TOTAL,
   TITLES, titleOf, ALBUM_RW, albumPct, todayRule, weekendNow, weekendKind, weekendEnds, weekendStarts, nextMidnight, nextMonday, fmtLeft, fullMoon, nextFullMoon,
@@ -648,13 +647,6 @@ export function openProfile(w) {
 }
 
 // ------------------------------------------------------------ harita
-let kesifSel = null;
-const KCACHE = {};
-function kesifMapCached(open, done) {
-  const k = [...open].join() + '|' + [...done].join();
-  if (!KCACHE[k]) { const m = kesifMap({ open, done }); KCACHE[k] = { url: m.canvas.toDataURL(), spots: m.spots }; }
-  return KCACHE[k];
-}
 function bonusInfo(w, z, ok) {
   UI.choice(`${z.name} · Bonus Patron`, ok
     ? 'Bu mağarada bölgenin bonus patronu yaşıyor. En az 2 oyuncuyla girilir (en fazla 3 oyuncu, her biri 2 Glemon). Patron takımla güçlenir ama takım daha hızlı güçlenir; birlikte girmek her zaman daha kolay. Arkadaş sistemi gelince açılacak.'
@@ -662,7 +654,7 @@ function bonusInfo(w, z, ok) {
 }
 export function openMap(w) {
   if (!w.home()) return;
-  UI.openPanel('Keşif Haritası', (body) => {
+  UI.openPanel('Keşif', (body) => {
     const deepest = S.save.stats.deepest || 0;
     const kills = S.save.stats.glemons || {};
     if (S.kadimOpen()) { // 1.0 oyun sonrasi Kadim zorluk
@@ -677,33 +669,17 @@ export function openMap(w) {
       kr.appendChild(kb);
       body.appendChild(kr);
     }
-    // 1.0.7 yol haritasi: biyomlar bir yolla bagli; dokununca alttaki kart o bolgeyi gosterir
-    const isOpen = (z) => z.open && (!z.after || kills[z.after] > 0);
-    const openSet = new Set(ZONES.filter(isOpen).map((z) => z.key));
-    const doneSet = new Set(ZONES.filter((z) => kills[z.boss] > 0).map((z) => z.key));
-    const km = kesifMapCached(openSet, doneSet);
-    if (!ZONES.some((z) => z.key === kesifSel && openSet.has(z.key))) kesifSel = [...openSet].pop() || 'orman';
-    const box = UI.el('div', 'hubmap wmap kmap');
-    box.style.backgroundImage = `url(${km.url})`;
-    const spot = (key, label, cls, fn, dy) => {
-      const [x, y] = km.spots[key];
-      const b = UI.el('button', 'map-spot ' + cls, label);
-      b.style.left = `${(x / KMAP.W) * 100}%`;
-      b.style.top = `${((y + dy) / KMAP.H) * 100}%`;
-      b.onclick = fn;
-      box.appendChild(b);
-    };
-    for (const z of ZONES) {
-      spot(z.key, (doneSet.has(z.key) ? '✓ ' : openSet.has(z.key) ? '' : '🔒 ') + z.name, 'kz' + (z.key === kesifSel ? ' sel' : '') + (openSet.has(z.key) ? '' : ' off'), () => { kesifSel = z.key; openMap(w); }, -15);
-      if (km.spots['b_' + z.key]) spot('b_' + z.key, doneSet.has(z.key) ? 'Bonus' : '🔒', 'kb' + (doneSet.has(z.key) ? '' : ' off'), () => bonusInfo(w, z, doneSet.has(z.key)), 4);
-    }
-    body.appendChild(box);
-    for (const z of ZONES.filter((x) => x.key === kesifSel)) {
+    // 1.0.8 (Eren): harita yok; her biyom Eren'in banner'li yatay dugmesi, yumusakca kayarak gelir
+    const list = UI.el('div', 'zlist');
+    body.appendChild(list);
+    ZONES.forEach((z, zi) => {
       const opened = z.open && (!z.after || kills[z.after] > 0);
       const atkOk = S.atk() >= z.atk;
-      const row = UI.el('div', 'zone' + (opened ? '' : ' locked'));
-      const left = UI.el('div');
-      left.appendChild(UI.el('div', 'zn', z.name));
+      const row = UI.el('div', 'zone zbanner' + (opened ? '' : ' locked'));
+      row.style.backgroundImage = `url(assets/banner/${z.key}.jpg)`;
+      row.style.animationDelay = `${zi * 70}ms`;
+      const left = UI.el('div', 'zl');
+      left.appendChild(UI.el('div', 'zn', (kills[z.boss] > 0 ? '✓ ' : opened ? '' : '🔒 ') + z.name));
       let info;
       if (!z.open) info = `Kat ${z.floors[0]}–${z.floors[1]} · ileride açılacak`;
       else if (!opened) info = `Kat ${z.floors[0]}–${z.floors[1]} · Önce ${GLEMONS[z.after].name}'ı yen`;
@@ -721,31 +697,16 @@ export function openMap(w) {
           else if (b.disabled) b.title = `Önce Kat ${f}'e ulaş`;
           btns.appendChild(b);
         }
+        if (z.key !== 'orman') { // bonus patron (Orman haric; onu Eren anlatacak)
+          const ok = kills[z.boss] > 0;
+          const bb = UI.button(ok ? 'Bonus' : '🔒 Bonus', () => bonusInfo(w, z, ok), 'small purple');
+          if (!ok) bb.classList.add('locked');
+          btns.appendChild(bb);
+        }
       }
       row.appendChild(btns);
-      body.appendChild(row);
-    }
-    const mine = UI.el('div', 'zone');
-    const ml = UI.el('div');
-    ml.appendChild(UI.el('div', 'zn', 'Maden Kuyusu'));
-    const sh = S.save.shaft;
-    ml.appendChild(UI.el('div', 'zf', sh ? `Kaldığın yer: ${Math.max(0, sh.pr + 1)}. sıra · En derin kazdığın: ${Math.max(0, (sh.low ?? -1) + 1)}. sıra` : 'Aşağı doğru sonsuz bir kuyu. Kaz, in, merdivenle çık.'));
-    mine.appendChild(ml);
-    const mb = UI.el('div', 'zb');
-    mb.appendChild(UI.button('Kuyuya git', () => w.enterMine(), 'blue small'));
-    if (sh) {
-      // yeni kuyu: 30 dakikada bir ya da 30. siraya kadar kazdiysan (define icin kuyu cevirme olmasin)
-      const ok = (sh.low ?? -1) >= 29 || Date.now() - (sh.t || 0) > 30 * 60 * 1000;
-      mb.appendChild(UI.button('Yeni kuyu aç', () => {
-        if (!ok) { UI.feed('Yeni kuyu için 30. sıraya kadar kaz ya da biraz bekle.'); return; }
-        S.save.shaft = newShaft();
-        S.changed();
-        UI.feed('Yeni bir kuyu açıldı. Eski kuyudaki merdiven ve meşaleler orada kaldı.');
-        w.enterMine();
-      }, 'small' + (ok ? '' : ' disabled')));
-    }
-    mine.appendChild(mb);
-    body.appendChild(mine);
+      list.appendChild(row);
+    });
     body.appendChild(UI.el('p', 'muted', 'Her bölgede 5. katta ara patron, 10. katta bölge patronu var. 5 ve 10. katlarda kısayol açılır.'));
   }, { wide: true });
 }

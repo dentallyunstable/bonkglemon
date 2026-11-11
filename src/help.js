@@ -74,7 +74,7 @@ const GUIDE_BY = Object.fromEntries(GUIDE.map((g) => [g.k, g]));
 // panel basligi (bas kismi) -> rehber konusu
 const HELP = [
   ['Hancı Lale', 'temel'], ['Köy Meydanı', 'temel'], ['Harita', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
-  ['Keşif Haritası', 'bolge'], ['Hazırlık', 'bolge'],
+  ['Keşif', 'bolge'], ['Hazırlık', 'bolge'],
   ['Çanta', 'esya'], ['Depo', 'esya'], ['Örs', 'esya'], ['Efsane Vitrini', 'esya'],
   ['Beceriler', 'beceri'], ['Yetenek Ağacı', 'sinif'], ['Sınıflar', 'sinif'],
   ['Albüm', 'glemon'], ['Ahır', 'glemon'], ['Kuluçka', 'glemon'],
