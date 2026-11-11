@@ -804,9 +804,9 @@ export const S = {
 
   // ------------------------------------------------ us (0.3)
   baseScore() {
-    const front = Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top || c.part ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0);
+    const front = Object.values(this.save.plot.cells).reduce((t, c) => t + (c.top || c.part || c.free ? 0 : (BUILD[c.id] ? BUILD[c.id].pts : 0)), 0);
     // 0.10.5: arka duvar bloklari yarim puan
-    const back = Object.values(this.save.plot.back || {}).reduce((t, c) => t + (BUILD[c.id] ? BUILD[c.id].pts / 2 : 0), 0);
+    const back = Object.values(this.save.plot.back || {}).reduce((t, c) => t + (!c.free && BUILD[c.id] ? BUILD[c.id].pts / 2 : 0), 0);
     return Math.round((front + back) * this.perk('usta_insa', 1.25, 1));
   },
   depoSize() { return DEPO_SIZE + 10 * Math.min(4, Object.values(this.save.plot.cells).filter((c) => c.id === 'depo_sandigi').length); },

@@ -1,7 +1,7 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5 } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5, STATION_LVL } from './data.js';
 import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
@@ -274,7 +274,7 @@ export function openBag(w) {
           b.disabled = inBattle;
           btns.push(b);
         }
-        if (w.mode === 'base') {
+        if (w.home()) {
           btns.push(UI.button('Depoya koy', () => {
             if (!S.moveSlot('bag', sel.i, 'depo')) UI.feed('Depo dolu.');
             sel = null; render();
@@ -311,7 +311,7 @@ function $battleVisible() {
 
 // ------------------------------------------------------------ depo
 export function openDepo(w) {
-  if (w.mode !== 'base' && w.mode !== 'plot') { UI.feed('Depo sadece üste.'); return; }
+  if (!w.home()) { UI.feed('Depo sadece evde.'); return; }
   UI.openPanel('Depo', (body) => {
     const render = () => {
       body.innerHTML = '';
@@ -459,6 +459,7 @@ export function openTree(tab = 'savas') {
 // Silah, zirh ve kazma +1..+3 Yildiz Demiriyle, +4 Usta Damgasiyla. Her arti %8. Asla basarisiz olmaz.
 const ANVIL_COST = [[['yildiz_demiri', 1]], [['yildiz_demiri', 2]], [['yildiz_demiri', 3]], [['yildiz_demiri', 2], ['usta_damgasi', 1]], ANVIL5]; // 1.0 +5 Kadim isciligi
 export function openAnvil(w) {
+  if (S.level('uretim') < STATION_LVL.ors) { UI.feed(`Örs, Üretim ${STATION_LVL.ors} olunca açılır. (Üretim seviyen: ${S.level('uretim')})`); return; }
   UI.openPanel('Örs', (body) => {
     const render = () => {
       body.innerHTML = '';
@@ -648,7 +649,7 @@ export function openProfile(w) {
 
 // ------------------------------------------------------------ harita
 export function openMap(w) {
-  if (w.mode !== 'base') return;
+  if (!w.home()) return;
   UI.openPanel('Keşif Haritası', (body) => {
     const deepest = S.save.stats.deepest || 0;
     const kills = S.save.stats.glemons || {};
@@ -1253,6 +1254,8 @@ function maxMake(r) {
 
 export function openStation(w, station) {
   const st = STATIONS[station];
+  const lk = STATION_LVL[station];
+  if (lk && S.level('uretim') < lk && !S.save.flags.stOld) { UI.feed(`${st.name}, Üretim ${lk} olunca açılır. (Üretim seviyen: ${S.level('uretim')})`); return; }
   const list = RECIPES.filter((r) => r.station === station);
   if (station === 'mutfak') list.sort((a, b) => a.lvl - b.lvl);
   let sel = list.find((r) => unlocked(r) && lvOf(r) >= r.lvl && canMake(r)) || list.find(unlocked) || null;
@@ -1262,7 +1265,7 @@ export function openStation(w, station) {
       body.innerHTML = '';
       body.appendChild(UI.el('div', 'muted', `${st.desc} · ${station === 'mutfak' ? 'Aşçılık' : 'Üretim'} seviyen: ${S.level(station === 'mutfak' ? 'ascilik' : 'uretim')}`));
       if (station === 'firin') body.appendChild(furnaceBox(w, render));
-      if (station === 'masa') { const ar = UI.el('div', 'choice-row'); ar.appendChild(UI.button('Örs: eşya yükselt', () => openAnvil(w), 'small purple')); body.appendChild(ar); }
+      if (station === 'masa') { const ar = UI.el('div', 'choice-row'); const ok = S.level('uretim') >= STATION_LVL.ors; const b = UI.button(ok ? 'Örs: eşya yükselt' : `Örs 🔒 Üretim ${STATION_LVL.ors}`, () => openAnvil(w), 'small purple'); b.disabled = !ok; ar.appendChild(b); body.appendChild(ar); }
       const lay = UI.el('div', 'craft');
       const ul = UI.el('div', 'recipes');
       for (const r of list) {
@@ -1491,7 +1494,7 @@ export function openShop(w) {
       UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[id].icon)}">${UI.itemName(id)} aldın! (−${price} ${CURRENCY})`);
       w.shopBusy = true;
       UI.closePanel();
-      w.tradeDone().then(() => { w.shopBusy = false; if (w.mode === 'base' && !UI.panelOpen()) openShop(w); else if (w.shopClosed) w.shopClosed(); });
+      w.tradeDone().then(() => { w.shopBusy = false; if (w.home() && !UI.panelOpen()) openShop(w); else if (w.shopClosed) w.shopClosed(); });
     };
     const sell = (id, n) => {
       const got = S.removeItem(id, n);
@@ -1531,7 +1534,7 @@ export function openCamp(w, rw) {
       UI.feed(`Kamp ödülünü topladın.${toDepo ? ' Çantaya sığmayanlar depoya kondu.' : ''}`);
       S.changed();
       UI.closePanel();
-      if (w.mode === 'base') w.player.play('c_cheer');
+      if (w.home()) w.player.play('c_cheer');
     }, 'primary'));
     body.appendChild(row);
   });
@@ -1594,7 +1597,7 @@ export function openKoy(w) {
       ['meydan', 'Köy Meydanı', 'primary', () => openMeydan(w), -14],
       ['gol', 'Göl', 'blue', () => { UI.closePanel(); w.enterPond(); }, 0],
       ['koru', 'Koru', 'green', () => { UI.closePanel(); w.enterKoru(); }, -8],
-      ['arsa', 'Arsa', 'green', () => { UI.closePanel(); w.enterPlot(); }, -18],
+      ['arsa', 'Evin (Arsa)', 'green', () => { UI.closePanel(); w.enterPlot(); }, -18],
       ['ahir', 'Ahır', 'green', () => openAhir(w), -14],
       ['maden', 'Maden', 'blue', () => { UI.closePanel(); w.enterMine(); }, 0],
     ]));
@@ -1782,10 +1785,10 @@ function openGoalChest(w, weekly) {
 
 // ------------------------------------------------------------ Zindan (0.6): sonsuz inis
 export function openZindan(w) {
-  if (w.mode !== 'base') return;
+  if (!w.home()) return;
   const best = S.save.stats.zindanBest || 0;
   UI.openPanel('Zindan', (body) => {
-    body.appendChild(UI.el('p', 'choice-text', 'Aşağı indikçe Glemonlar güçlenir; sonu yok. Her 5 katta bir ara patron ve büyüyen bir ödül sandığı var. Bayılırsan bu turda bulduklarının yarısı gider, "Üsse dön" dersen hepsi seninle.'));
+    body.appendChild(UI.el('p', 'choice-text', 'Aşağı indikçe Glemonlar güçlenir; sonu yok. Her 5 katta bir ara patron ve büyüyen bir ödül sandığı var. Bayılırsan bu turda bulduklarının yarısı gider, "Eve dön" dersen hepsi seninle.'));
     body.appendChild(UI.el('p', 'zf', `Rekorun: Kat ${best}. Arkadaşlarınla en derin kat yarışı!`));
     const row = UI.el('div', 'choice-row');
     row.appendChild(UI.button('Kat 1\'den başla', () => w.enterZindan(1), 'primary'));
@@ -1923,7 +1926,7 @@ export function openEventGate(w) {
     } else {
       row('Hafta sonu etkinliği', `Cuma 00:00'da açılır: ${weekendKind(weekendStarts(now)) === 'patron' ? 'Patron Koşusu' : 'Balık Turnuvası'}.`, `⏳ ${fmtLeft(weekendStarts(now) - now)}`, null, 'soon');
     }
-    if (merchantHere(now)) row('Gezgin Tüccar üste geldi!', `Kapının önünde duruyor. ${PUL} ile 6 özel eşya satıyor.`, null, UI.button('Vitrine bak', () => openMerchant(w), 'purple small'), 'merchant');
+    if (merchantHere(now)) row('Gezgin Tüccar evine geldi!', `Evinin önündeki patikada duruyor. ${PUL} ile 6 özel eşya satıyor.`, null, UI.button('Vitrine bak', () => openMerchant(w), 'purple small'), 'merchant');
     else row('Gezgin Tüccar', 'Cumartesi ve pazar gelir. Vitrini her hafta değişir.', `⏳ ${fmtLeft(merchantNext(now) - now)}`, null, 'soon');
     if (fullMoon(now)) row('Dolunay Gecesi!', 'Parlak Glemon şansı 2 kat, ay otu her yerde, Dolunay Tavşanı ortalarda. Üs Göletinde Ay Işığı Sazanı!', `⏳ ${fmtLeft(nextMidnight(now) - now)}`, null, 'moon');
     else row('Dolunay Gecesi', 'Takvimdeki dolunayda 24 saat sürer.', `⏳ ${fmtLeft(nextFullMoon(now) - now)}`, null, 'soon');
@@ -1993,7 +1996,7 @@ export function openTrophies(w) {
         c.appendChild(UI.el('span', 'muted', `En hızlı: ${b.best ? fmtSec(b.best) : '—'}${b.hn ? ` · Zor: ${b.hn} kez, ${fmtSec(b.bestH)}` : ''}`));
         const rares = Object.entries(b.rares).filter(([id]) => ITEMS[id]).map(([id, k]) => `${ITEMS[id].name}${k > 1 ? ` ×${k}` : ''}`);
         c.appendChild(UI.el('span', 'muted', rares.length ? `Düşürdü: ${rares.join(', ')}` : 'Henüz nadir bir şey düşürmedi.'));
-        if (w.mode === 'base') c.appendChild(UI.button('Zor mod', () => w.enterHardBoss(z.boss), 'small red'));
+        if (w.home()) c.appendChild(UI.button('Zor mod', () => w.enterHardBoss(z.boss), 'small red'));
       }
       grid.appendChild(c);
     }
@@ -2011,7 +2014,7 @@ export function openKule(w) {
     body.appendChild(info);
     body.appendChild(UI.el('p', 'muted', `Kurallar: ${KULE_RULES.map((r) => r.n).join(', ')}.`));
     const row = UI.el('div', 'choice-row');
-    if (w.mode !== 'base') row.appendChild(UI.el('div', 'muted', 'Kuleye sadece üsten girebilirsin.'));
+    if (!w.home()) row.appendChild(UI.el('div', 'muted', 'Kuleye sadece evden yola çıkabilirsin.'));
     else {
       row.appendChild(UI.button('Kat 1\'den başla', () => w.enterKule(1), k.cp ? 'small' : 'primary'));
       if (k.cp) row.appendChild(UI.button(`Kat ${k.cp + 1}'den devam`, () => w.enterKule(k.cp + 1), 'primary'));

@@ -9,9 +9,9 @@ import { forgetLogin } from './login.js';
 // Her konu birkac kisa paragraf. "?" dugmeleri de buradan okur.
 export const GUIDE = [
   { k: 'temel', t: 'İlk adımlar', p: [
-    'Üs senin evin. Hancı Lale her yere giden kapıdır: onun haritasında solda barışçıl Köy (Meydan, Göl, Koru, Arsa, Ahır, Maden), köprünün ötesinde tehlikeli yerler (Keşif, Zindan, Kule, Etkinlik) var.',
+    'Oyun evinde, arsanda başlar. Evin solunda kamp ateşi ve çalışma istasyonları var: Üretim Masası (Üretim 1), Fırın (5), Yem Tezgâhı (10), Simya Kazanı (15) ve Örs (15). Daha soldaki Köy yolu tabelası (ya da Harita düğmesi) haritayı açar: solda barışçıl Köy (Meydan, Göl, Koru, Arsa, Ahır, Maden), köprünün ötesinde tehlikeli yerler (Keşif, Zindan, Kule, Etkinlik). Hancı Lale Köy Meydanında.',
     'Keşif\'te odadan odaya ilerlersin. Her bölgenin 5. katında ara patron, 10. katında bölge patronu var. 5 ve 10. katlarda kısayol açılır.',
-    'İstediğin an "Üsse dön" diyebilirsin, topladıkların güvende kalır. Bayılırsan o turda kazandıklarının yarısı gider.',
+    'İstediğin an "Eve dön" diyebilirsin, topladıkların güvende kalır. Bayılırsan o turda kazandıklarının yarısı gider.',
     'Lale\'nin görevleri her gün ve her hafta yenilenir. Lale Pulu sadece görevlerden ve etkinliklerden gelir.',
   ] },
   { k: 'savas', t: 'Savaş', p: [
@@ -22,7 +22,7 @@ export const GUIDE = [
   ] },
   { k: 'beceri', t: 'Beceriler', p: [
     'Her beceri 1\'den 99\'a çıkar. Saldırı, Savunma, Can, Okçuluk ve Büyü savaşta; Madencilik, Toplama, Üretim, Aşçılık, İnşa, Balıkçılık, Şans ve Glemon Bağı kendi işlerinde artar.',
-    'Bir beceri 50 olunca Çırak Pelerini, 99 olunca o becerinin parlayan pelerini gelir. İlk 99\'unda üste altın bir heykelin dikilir.',
+    'Bir beceri 50 olunca Çırak Pelerini, 99 olunca o becerinin parlayan pelerini gelir. İlk 99\'unda evinin önüne altın bir heykelin dikilir.',
     '99\'dan sonra XP birikmeye devam eder ve 120\'ye kadar "sanal seviye" görünür. Bir beceride 120\'ye ulaşan Usta Pelerini kazanır.',
   ] },
   { k: 'uretim', t: 'Üretim ve istasyonlar', p: [
@@ -56,7 +56,7 @@ export const GUIDE = [
     'Becerilerin arttıkça yetenek puanı kazanırsın. Yetenek Ağacı\'nda bunları harcarsın, istersen ücretle sıfırlarsın.',
   ] },
   { k: 'insa', t: 'Üs, inşa ve diğer işler', p: [
-    'Topladığın blokları üsse ya da Arsa\'ya koyabilirsin. İnşa becerisi ve Üs Puanı böyle artar.',
+    'Topladığın blokları evinin arsasına koyabilirsin. İnşa becerisi ve Üs Puanı böyle artar.',
     'Maden Kuyusu aşağı doğru sonsuzdur. Koru\'da ağaç dikersin, Göl\'de balık tutarsın. Kamp ateşi, oyunu kapattığında 2 saate kadar küçük bir ödül biriktirir.',
   ] },
   { k: 'son', t: 'Hikâye ve oyun sonu', p: [
@@ -122,13 +122,13 @@ export function openGuide(k = 'temel') {
 // ---------------------------------------------------------------- ilk adimlar
 // Yeni oyuncuya sag ustte kucuk bir kart: siradaki adim. Yapinca kucuk odul ve sonraki adim.
 export const TUT = [
-  { t: 'Hancı Lale ile konuş', h: 'Üsteki Lale\'ye dokun. Her yere onun haritasından gidilir.', v: (s) => s.tut.f.lale, gold: 20 },
-  { t: 'Keşfe çık', h: 'Lale > Keşif > Kat 1. Odadan odaya ilerle.', v: (s) => (s.stats.deepest || 0) >= 1, gold: 30 },
+  { t: 'Haritayı aç', h: 'Evin solundaki Köy yolu tabelasına ya da Harita düğmesine dokun. Her yere haritadan gidilir.', v: (s) => s.tut.f.lale, gold: 20 },
+  { t: 'Keşfe çık', h: 'Harita > Keşif > Kat 1. Odadan odaya ilerle.', v: (s) => (s.stats.deepest || 0) >= 1, gold: 30 },
   { t: '3 Glemon yen', h: 'Savaşta Oto ya da Manuel seç. Manuel %20 daha çok XP verir.', v: (s) => s.stats.kills >= 3, gold: 40 },
   { t: 'Çantana bak', h: 'Alttaki Çanta düğmesi. Eşyaya dokununca ne işe yaradığı yazar.', v: (s) => s.tut.f.canta, gold: 20 },
   { t: 'Bir şey üret', h: 'Üsteki Üretim Masası\'na git. Ör. Tahta Kılıç ya da Fener.', v: (s) => (s.stats.crafted || 0) >= 1, gold: 50 },
   { t: 'Becerilerine bak', h: 'Alttaki Beceriler düğmesi. Her beceri 99\'a kadar çıkar.', v: (s) => s.tut.f.beceri, gold: 20 },
-  { t: 'Hikâyenin 1. bölümünü bitir', h: 'Lale > Hikâye. Bölüm 1 hedefi: Kat 3\'e in.', v: (s) => (s.story && s.story.ch) >= 1, gold: 100, item: ['iksir_k', 3] },
+  { t: 'Hikâyenin 1. bölümünü bitir', h: 'Harita > Köy Meydanı > Hikâye. Bölüm 1 hedefi: Kat 3\'e in.', v: (s) => (s.story && s.story.ch) >= 1, gold: 100, item: ['iksir_k', 3] },
 ];
 function tutState() {
   const s = S.save;

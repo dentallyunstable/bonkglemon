@@ -25,7 +25,7 @@ export function axePower() { return Math.max(0, ...S.save.bag.filter(Boolean).ma
 export const GroveMixin = {
   async enterKoru() {
     UI.closePanel();
-    if (this.busy || this.mode !== 'base') return;
+    if (this.busy || !this.home()) return;
     this.busy = true;
     this.walkTok++;
     UI.setActions([]);
@@ -49,7 +49,7 @@ export const GroveMixin = {
     this.resetPlayer();
     this.applyTod();
     UI.setLocation('Koru');
-    UI.setActions([{ label: 'Üsse dön', onClick: () => this.leaveKoru() }]);
+    UI.setActions([{ label: 'Eve dön', onClick: () => this.leaveKoru() }]);
   },
 
   drawKoru() {

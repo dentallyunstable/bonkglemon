@@ -374,7 +374,7 @@ export class Battle {
     if (t.hp <= 0) {
       t.alive = false;
       this.savePetHp();
-      feed(`${t.name} bayıldı! Üsse dönünce iyileşir.`);
+      feed(`${t.name} bayıldı! Eve dönünce iyileşir.`);
       floatText(t.sprite.x, this.petTop(t) - 12, 'Bayıldı!', 'warn');
       t.sprite.play(t.k('hasar'));
       this.scene.tweens.add({ targets: [t.sprite, t.shadow], alpha: 0, duration: 600, delay: 200 });

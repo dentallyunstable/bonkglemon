@@ -95,8 +95,8 @@ export const ShaftMixin = {
 
   async enterMine() {
     UI.closePanel();
-    if (!this.busy && this.mode === 'base') stopMusic();
-    if (this.busy || this.mode !== 'base') return;
+    if (!this.busy && this.home()) stopMusic();
+    if (this.busy || !this.home()) return;
     this.busy = true;
     this.time.delayedCall(1200, () => { if (this.mode === 'mine') playMusic('z_maden', false); });
     this.walkTok++;
@@ -294,7 +294,7 @@ export const ShaftMixin = {
       { label: `Merdiven (${lad})`, disabled: lad < 1 || v.pr < 0, onClick: () => this.shPlace('merdiven') },
       { label: `Meşale (${tor})`, disabled: tor < 1 || v.pr < 0, onClick: () => this.shPlace('mesale') },
       bombs > 0 ? { label: this.bombArmed ? 'Bomba: bloğa dokun' : `Bomba (${bombs})`, cls: 'purple', onClick: () => { this.bombArmed = !this.bombArmed; this.shActions(); } } : null,
-      { label: 'Üsse dön', onClick: () => this.leaveMine() },
+      { label: 'Eve dön', onClick: () => this.leaveMine() },
     ]);
   },
 

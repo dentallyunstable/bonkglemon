@@ -8,6 +8,7 @@ import {
   RANCH, ranchDropOf, SECRETS, stormNow, CLASS_RULES, WEAPON_SKILL, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
   RARITY, KULE, KULE_RULES, BOSS_P2, HARD, HARD_DROPS, LEGENDS,
   CAPE_COLORS,
+  STATION_LVL,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -16,10 +17,10 @@ import { sfx, playMusic, stopMusic, currentMusic, SYNTH_KEYS } from './audio.js'
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
-import { Pix, INK } from './pix.js';
+import { Pix, INK, mix, mul, pack, unpack } from './pix.js';
 import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, indoorStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
 import { refreshTut, tutInit, applySettings, openGuide, openSettings } from './help.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest, openCredits } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, openAnvil, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest, openCredits } from './panels.js';
 import { ranchReady, collectRanch, ranchLeft, heartsText, petDisplayName, shinyMastery } from './pets.js';
 import { ShaftMixin } from './shaft.js';
 import { GroveMixin } from './grove.js';
@@ -32,6 +33,9 @@ const WALK_MODES = ['base', 'plot', 'koru'];
 // 0.6 us yerlesimi (Eren, 2026-11-07): solda zanaat avlusu, ortada kamp atesi, sonra han, sagda zindan
 const ST = { masa: 24, firin: 56, kazan: 88, yem: 120, depo: 152 };
 const FIRE_X = 186;
+// 1.0.5 ev = arsa: soldan patika, kamp atesi, istasyonlar; insa alani YARD_W'den baslar
+const YARD_W = 336;
+const YX = { tabela: 22, ates: 68, masa: 120, firin: 158, kazan: 194, yem: 230, ors: 264, depo: 296, heykel: 322, tuccar: 44 };
 const INN_X = 198;
 const NPC_X = 246;
 const SIT_AFTER = 20000; // bu kadar hareketsiz kalinca oturur
@@ -65,7 +69,7 @@ export class WorldScene extends Phaser.Scene {
     this.stillMs = 0;
     this.battle = null;
     this.busy = false;
-    this.mode = 'base';
+    this.mode = 'plot';
     this.walkTok = 0;
     this.input.on('pointerdown', (ptr, over) => this.onTap(ptr, over));
     this.tod = todNow();
@@ -95,9 +99,10 @@ export class WorldScene extends Phaser.Scene {
     this.time.addEvent({ delay: 60000, loop: true, callback: () => { refreshGoals(); this.refreshHud(); if (this.mode === 'koru') this.koruTick(); } });
     window.__BG = this; // testler icin
     window.__goalTick = () => goalTick((kind, a) => this.goalNote(kind, a));
+    if (!S.save.flags.st105) { S.save.flags.st105 = 1; if (S.level('uretim') > 1 || (S.save.stats.placed || 0) > 0 || S.save.pets.length > 1) S.save.flags.stOld = 1; }
     this.goBase(false);
     UI.show('#loading', false);
-    UI.feed(`Hoş geldin, ${S.save.char}! Hancı Lale'ye dokun: Keşif, Zindan, görevler ve takas hep onda.`);
+    UI.feed(`Hoş geldin, ${S.save.char}! Evindesin. Haritayı açmak için soldaki Köy yolu tabelasına ya da Harita düğmesine dokun.`);
     if (S.loadNote) {
       const n = S.loadNote; S.loadNote = null;
       const lost = n.lost.map((l) => `${ITEMS[l.id].name} ×${l.n}`).concat(n.gold ? [`${n.gold} ${CURRENCY}`] : []).join(', ');
@@ -259,7 +264,7 @@ export class WorldScene extends Phaser.Scene {
 
   update(time, dt) {
     // 0.10.1: ussun disinda alt kisayollar kucuk ve profil kartinin altinda
-    const away = this.mode !== 'base';
+    const away = !this.home();
     if (away !== this._away) { this._away = away; UI.$('#ui').classList.toggle('away', away); }
     this.pShadow.x = this.player.x;
     // 0.10.5: genis arsada kamera karakteri izler; yazilar da kamerayla kayar
@@ -275,7 +280,7 @@ export class WorldScene extends Phaser.Scene {
       for (const l of this.labels) if (l._x !== undefined) l.style.left = UI.pctX(l._x - cam.scrollX);
     }
     // gunun saati: ustte (dis ve arsa) karakter de isiga gore boyanir
-    const outdoor = this.mode === 'base' || this.mode === 'plot' || this.mode === 'pond' || this.mode === 'koru';
+    const outdoor = this.mode === 'plot' || this.mode === 'pond' || this.mode === 'koru';
     const ptint = outdoor ? TOD[this.tod].tint : 0xffffff;
     if (this.player.tintTopLeft !== ptint) { if (ptint === 0xffffff) this.player.clearTint(); else this.player.setTint(ptint); }
     this.todTick = (this.todTick || 0) + dt;
@@ -300,7 +305,7 @@ export class WorldScene extends Phaser.Scene {
       this.gardenTick = (this.gardenTick || 0) + dt;
       if (this.gardenTick > 2000) { this.gardenTick = 0; this.refreshGarden(); }
     }
-    if (this.mode === 'base' && this.furnace) {
+    if (this.home() && this.furnace) {
       this.furnaceTick = (this.furnaceTick || 0) + dt;
       if (this.furnaceTick > 500) { this.furnaceTick = 0; this.refreshFurnace(); }
     }
@@ -354,8 +359,11 @@ export class WorldScene extends Phaser.Scene {
 
   // 0.8.9: Maden, Kesif ve Zindana yola cikis: karakter ussun sagindan yurur gider
   async travelOut() {
-    this.player.setFlipX(false);
-    await moveTo(this.player, GAME_W + 18, { speed: 120, anim: 'c_walk' });
+    const home = this.mode === 'plot';
+    if (home) this.stopBuild();
+    this.player.setFlipX(home);
+    await moveTo(this.player, home ? Math.max(-18, this.cameras.main.scrollX - 18) : GAME_W + 18, { speed: home ? 150 : 120, anim: home ? 'c_sprint' : 'c_walk' });
+    this.cameras.main.setScroll(0, 0);
     sfx('stairs');
     await this.fade(true);
     this.resetPlayer();
@@ -525,72 +533,115 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ us
-  // 0.6: ev yok. Uretim istasyonlari disarida (zanaat avlusu), Hanci Lale her yere kapi.
+  // 1.0.5 (Eren): ev = arsa. Oyun evin onunde baslar. Soldan patika (koy yolu, tabela
+  // haritayi acar), kamp atesi ve calisma istasyonlari; saginda insa alani (ev).
+  // Hanci Lale Koy Meydaninda, Etkinlik Kapisi haritada.
   goBase(from) {
-    this.mode = 'base';
     this.zz = null;
-    this.clearRoom();
-    this.tod = todNow();
-    this.bg.setTexture(this.todBg('bg_base'));
-    const G = GROUND_Y;
-    this.addObj(this.add.image(-9, G + 1, 'yard').setOrigin(0, 1).setDepth(2));
-    const station = (obj, sx, label, high, act) => this.addObj(obj.setOrigin(0.5, 1).setDepth(4), {
-      x: sx + 15, face: true, label, lx: sx, ly: high ? G - 46 : G - 24, act,
-    });
-    station(this.add.image(ST.masa, G + 1, 'workbench'), ST.masa, 'Üretim Masası', false, () => openStation(this, 'masa'));
-    this.furnace = this.add.sprite(ST.firin, G + 1, 'furnace', 0);
-    station(this.furnace, ST.firin, 'Fırın', true, () => openStation(this, 'firin'));
-    const caul = this.add.sprite(ST.kazan, G + 1, 'cauldron', 0);
-    caul.play('cauldron');
-    station(caul, ST.kazan, 'Simya Kazanı', false, () => openStation(this, 'kazan'));
-    station(this.add.image(ST.yem, G + 1, 'feedtable'), ST.yem, 'Yem Tezgâhı', true, () => openStation(this, 'yem'));
-    station(this.add.image(ST.depo, G + 1, 'chest'), ST.depo, 'Depo', false, () => openDepo(this));
-    const fire = this.add.sprite(FIRE_X, G + 1, 'fire').setOrigin(0.5, 1).setDepth(4);
-    fire.play('fire');
-    fire.noTint = true;
-    this.addObj(fire, {
-      x: FIRE_X - 16, face: false,
-      act: () => this.fireMenu(),
-    });
-    this.fireSpr = fire;
-    this.buildStatue();
-    if (Date.now() < (S.save.fireUntil || 0)) fire.setScale(1.3);
-    // Han: arkada harita, onde tezgah; Hanci Lale ikisinin arasinda durur
-    this.addObj(this.add.image(INN_X, G + 1, 'inn_back').setOrigin(0, 1).setDepth(2));
-    const npc = this.add.sprite(NPC_X, G - 4, 'hanci', 0).setOrigin(0.5, 1).setDepth(3); // ayaklari tezgahin arkasinda kalir
-    npc.play('npc_durma');
-    this.npc = npc;
-    this.addObj(npc, { x: NPC_X - 30, face: false, label: 'Hancı Lale', ly: G - 62, act: () => this.talkNpc() });
-    this.addObj(this.add.image(INN_X, G + 1, 'inn_counter').setOrigin(0, 1).setDepth(5));
-    // 0.8.9: eski maden girisi kalkti; yerine Etkinlik Kapisi (gidis yolu artik Hanci Lale'den)
-    const gate = this.add.sprite(MINE_X, G + 1, 'gate', 0).setOrigin(0.5, 1).setDepth(3);
-    gate.play('gate');
-    this.addObj(gate, { x: MINE_X - 30, face: true, label: 'Etkinlik Kapısı', ly: G - 86, act: () => openEventGate(this) });
-    // 0.9 Gezgin Tuccar: cumartesi ve pazar kapinin onunde
-    if (merchantHere()) {
-      const tc = this.add.sprite(MERCHANT_X, G + 1, 'tuccar', 0).setOrigin(0.5, 1).setDepth(6);
-      tc.play('tuccar_durma');
-      this.merchant = tc;
-      this.addObj(tc, { x: MERCHANT_X - 26, face: false, label: 'Gezgin Tüccar', ly: G - 58, act: () => { tc.play('tuccar_selam'); tc.once('animationcomplete', () => { if (tc.active) tc.play('tuccar_durma'); }); openMerchant(this); } });
-    } else this.merchant = null;
-    this.refreshFurnace();
-    if (!S.run) S.hp = S.maxHp(); // us guvenli yer: her donuste can dolar
+    this.cameras.main.setScroll(0, 0);
+    this.goPlot();
+    if (!S.run) S.hp = S.maxHp(); // ev guvenli yer: her donuste can dolar
     this.player.setFlipX(false);
-    this.player.x = from === 'dungeon' ? GAME_W - 16 : from === 'death' ? FIRE_X - 22 : from === 'plot' ? GAME_W - 16 : from === 'pond' ? -12 : FIRE_X - 18;
+    this.player.x = from === 'death' ? YX.ates + 20 : from === false ? YX.ates + 26 : -12;
     this.resetPlayer();
     this.idle();
-    UI.setLocation('Üs');
-    // 0.8.9: usse eylem dugmesi yok; her yere Hanci Lale'den gidilir, alttaki cubuk kisayollari tutar
-    UI.setActions([]);
     this.placeFollowers(this.player.x - 26);
-    this.refreshHud();
-    this.applyTod();
-    // ussun muzigi: her donuste (zindan, maden, bayilma, oyun acilisi) yeniden secilir;
-    // arsadan gelince calan parca devam eder
+    if (from && from !== 'death') { // patikadan eve yurur
+      this.busy = true;
+      moveTo(this.player, 44, { speed: 95, anim: 'c_walk' }).then(() => { this.idle(); this.busy = false; });
+    }
     const keep = from === 'plot' && this.baseTrack && currentMusic() === this.baseTrack;
     if (!keep) this.pickBaseMusic();
     const fs = furnaceState();
     if (fs.ready > 0) UI.feed(`Fırında ${fs.ready} ${ITEMS[fs.out].name} hazır! Fırına dokunup alabilirsin.`);
+  }
+
+  // 1.0.5: bos arsaya bir kez kucuk baslangic evi (bedava bloklar: puan vermez, kirinca esya vermez)
+  starterHut() {
+    const pl = S.save.plot;
+    if (S.save.flags.hut) return;
+    S.save.flags.hut = 1;
+    if (Object.keys(pl.cells).length || Object.keys(pl.back || {}).length) return;
+    const F = (id, o = {}) => ({ id, free: 1, ...o });
+    const put = (c, r, v) => { pl.cells[`${c},${r}`] = v; };
+    for (let r = 0; r < 3; r++) { put(1, r, F('kutuk')); put(7, r, F('kutuk')); }
+    for (const c of [2, 4, 5, 6]) put(c, 0, F('tahta_kalas'));
+    put(3, 0, F('ahsap_kapi')); put(3, 1, F('ahsap_kapi', { top: true }));
+    put(2, 1, F('pencere')); put(4, 1, F('tahta_kalas')); put(5, 1, F('pencere')); put(6, 1, F('tahta_kalas'));
+    for (let c = 2; c <= 6; c++) put(c, 2, F('tahta_kalas'));
+    put(0, 3, F('kiremit', { shape: 'kiremit_sol' })); put(8, 3, F('kiremit', { shape: 'kiremit_sag' }));
+    for (let c = 1; c <= 7; c++) put(c, 3, F('kiremit'));
+    put(1, 4, F('kiremit', { shape: 'kiremit_sol' })); put(7, 4, F('kiremit', { shape: 'kiremit_sag' }));
+    for (let c = 2; c <= 6; c++) put(c, 4, F('kiremit'));
+    put(2, 5, F('kiremit', { shape: 'kiremit_sol' })); put(6, 5, F('kiremit', { shape: 'kiremit_sag' }));
+    for (let c = 3; c <= 5; c++) put(c, 5, F('kiremit'));
+    pl.back = pl.back || {};
+    for (let r = 0; r < 3; r++) for (let c = 2; c <= 6; c++) pl.back[`${c},${r}`] = F('tahta_kalas');
+    S.changed();
+  }
+
+  stationOpen(k) { return S.level('uretim') >= STATION_LVL[k] || (k !== 'ors' && S.save.flags.stOld); }
+
+  // evin solu: patika, tabela, kamp atesi, istasyonlar, depo, heykel, tuccar
+  buildYard() {
+    const G = GROUND_Y;
+    this.furnace = null;
+    if (!this.textures.exists('patika')) {
+      const pc = new Pix(16, 16), gr = block('cimen'), dirt = block('toprak');
+      const grav = block('cakil');
+      for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+        let v = gr.get(x, y);
+        if (y < 4) { // ustte acik renk toprak patika, arada cakil taslari
+          v = dirt.get(x, y + 6);
+          const c = unpack(v); v = pack(mix(c.slice(0, 3), [196, 160, 112], y === 0 ? 0.5 : 0.35), 255);
+          if ((x * 5 + y * 3) % 11 === 0) v = grav.get(x, y + 2);
+          if (y === 3) { const c2 = unpack(v); v = pack(mul(c2.slice(0, 3), 0.8), 255); }
+        }
+        pc.set(x, y, v);
+      }
+      this.textures.addCanvas('patika', pc.canvas());
+    }
+    // patika: soldan eve (kapinin onune) kadar
+    for (let x = -16; x < YARD_W + 64; x += 16) this.roomObjs.push(this.add.image(x, G, 'patika').setOrigin(0, 0).setDepth(2.1));
+    const station = (k, obj, label, high) => {
+      const open = this.stationOpen(k);
+      if (!open) obj.setAlpha(0.55);
+      const x = obj.x;
+      return this.addObj(obj.setOrigin(0.5, 1).setDepth(4), {
+        x: x - 18, face: false, label: open ? label : `${label} 🔒`, lx: x, ly: high ? G - 46 : G - 26,
+        act: () => {
+          if (!this.stationOpen(k)) { UI.feed(`${label}, Üretim ${STATION_LVL[k]} olunca açılır. (Üretim seviyen: ${S.level('uretim')})`); this.sulk(); return; }
+          if (k === 'ors') openAnvil(this); else openStation(this, k);
+        },
+      });
+    };
+    // tabela: koy yolu (haritayi acar)
+    const sign = this.add.image(YX.tabela, G + 1, 'blocks', 'tabela').setOrigin(0.5, 1).setDepth(4);
+    this.addObj(sign, { x: YX.tabela + 14, face: true, label: 'Köy yolu', lx: YX.tabela, ly: G - 24, act: () => openHanci(this) });
+    // kucuk kamp atesi
+    const fire = this.add.sprite(YX.ates, G + 1, 'fire').setOrigin(0.5, 1).setDepth(4).setScale(0.8);
+    fire.play('fire');
+    fire.noTint = true;
+    this.addObj(fire, { x: YX.ates + 18, face: true, label: 'Kamp ateşi', lx: YX.ates, ly: G - 22, act: () => this.fireMenu() });
+    this.fireSpr = fire;
+    if (Date.now() < (S.save.fireUntil || 0)) fire.setScale(1.05);
+    station('masa', this.add.image(YX.masa, G + 1, 'workbench'), 'Üretim Masası', false);
+    this.furnace = this.add.sprite(YX.firin, G + 1, 'furnace', 0);
+    station('firin', this.furnace, 'Fırın', true);
+    const caul = this.add.sprite(YX.kazan, G + 1, 'cauldron', 0);
+    if (this.stationOpen('kazan')) caul.play('cauldron');
+    station('kazan', caul, 'Simya Kazanı', false);
+    station('yem', this.add.image(YX.yem, G + 1, 'feedtable'), 'Yem Tezgâhı', true);
+    station('ors', this.add.image(YX.ors, G + 1, 'blocks', 'ors').setScale(1.4), 'Örs', false);
+    this.addObj(this.add.image(YX.depo, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), { x: YX.depo - 18, face: false, label: 'Depo', lx: YX.depo, ly: G - 24, act: () => openDepo(this) });
+    this.buildStatue(YX.heykel);
+    if (merchantHere()) {
+      const tc = this.add.sprite(YX.tuccar, G + 1, 'tuccar', 0).setOrigin(0.5, 1).setDepth(6);
+      tc.play('tuccar_durma');
+      this.merchant = tc;
+      this.addObj(tc, { x: YX.tuccar + 24, face: true, label: 'Gezgin Tüccar', ly: G - 58, act: () => { tc.play('tuccar_selam'); tc.once('animationcomplete', () => { if (tc.active) tc.play('tuccar_durma'); }); openMerchant(this); } });
+    } else this.merchant = null;
+    this.refreshFurnace();
   }
 
   // 1.0 99 pelerinleri parlar: sirttan kucuk isiltilar dokulur (Usta Pelerini altin ve daha sik)
@@ -611,11 +662,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // 1.0 ilk 99'da depo ile ates arasinda karakterin altin heykeli; her 99 kaidede bir yildiz
-  buildStatue() {
+  buildStatue(X = 372) {
     const n = S.count99();
     if (!n) return;
     const G = GROUND_Y;
-    const X = 372;
     const g = this.add.graphics().setDepth(3);
     g.fillStyle(0x6a5a4a, 1).fillRect(X - 8, G - 6, 16, 7);
     g.fillStyle(0x8a7a64, 1).fillRect(X - 8, G - 6, 16, 2);
@@ -680,7 +730,7 @@ export class WorldScene extends Phaser.Scene {
   applyTod() {
     for (const g of this.glows) g.destroy();
     this.glows = [];
-    if (this.mode !== 'base' && this.mode !== 'plot' && this.mode !== 'pond' && this.mode !== 'koru') return;
+    if (this.mode !== 'plot' && this.mode !== 'pond' && this.mode !== 'koru') return;
     this.tod = todNow();
     this.bg.setTexture(this.todBg(this.mode === 'plot' || this.mode === 'koru' ? 'bg_plot' : this.mode === 'pond' ? 'bg_pond' : 'bg_base'));
     // 0.9 Dolunay Gecesi: aksam ve gece gokte kocaman ay
@@ -726,7 +776,7 @@ export class WorldScene extends Phaser.Scene {
   // takas paneli kapaninca ussun muzigi kaldigi yerden devam eder
   shopClosed() {
     this.time.delayedCall(150, () => {
-      if (this.shopBusy || UI.panelOpen() || this.mode !== 'base') return;
+      if (this.shopBusy || UI.panelOpen() || !this.home()) return;
       if (this.baseTrack) playMusic(this.baseTrack, false);
     });
   }
@@ -738,9 +788,11 @@ export class WorldScene extends Phaser.Scene {
   plotGeom() {
     const { cols, rows: r0 } = plotSize(S.level('insa'));
     const rows = r0 + (S.has('mimar') ? 1 : 0);
-    const x0 = 32;
-    return { cols, rows, x0, w: x0 * 2 + cols * 16 };
+    const x0 = YARD_W; // 1.0.5: solda patika + calisma alani, sonra insa alani
+    return { cols, rows, x0, w: x0 + cols * 16 + 32 };
   }
+
+  home() { return this.mode === 'base' || this.mode === 'plot'; }
 
   worldMaxX() { return this.mode === 'plot' ? this.plotGeom().w - 12 : GAME_W - 12; }
 
@@ -752,37 +804,12 @@ export class WorldScene extends Phaser.Scene {
     return { c, r, key: `${c},${r}` };
   }
 
+  // 1.0.5: arsa artik evin kendisi; haritadan "Arsa" eve dondurur
   async enterPlot() {
     UI.closePanel();
-    if (this.busy || this.mode !== 'base') return;
-    this.busy = true;
-    this.walkTok++;
-    UI.setActions([]);
-    await moveTo(this.player, GAME_W + 10, { speed: 190, anim: 'c_sprint' });
-    await this.fade(true);
-    this.goPlot();
-    this.player.x = -12;
-    await this.fade(false);
-    await moveTo(this.player, 40, { speed: 95, anim: 'c_walk' });
-    this.idle();
-    this.busy = false;
-    if (!S.save.flags.plot105) { S.save.flags.plot105 = 1; UI.feed('Arsan artık 64 blok genişliğinde! Yürüdükçe ekran kayar. İnşa ederken Ön/Arka seçerek duvarın arkasına da blok koyabilirsin; yatak, sandık, tabela ve kupa rafına dokununca işe yarar.'); }
-  }
-
-  async leavePlot() {
     if (this.busy || this.mode !== 'plot') return;
-    this.stopBuild();
-    this.busy = true;
-    this.walkTok++;
-    UI.setActions([]);
-    await moveTo(this.player, Math.max(-12, this.cameras.main.scrollX - 12), { speed: 220, anim: 'c_sprint' });
-    await this.fade(true);
-    this.cameras.main.setScroll(0, 0);
-    this.goBase('plot');
-    this.player.setFlipX(true);
-    await this.fade(false);
-    this.player.setFlipX(false);
-    this.busy = false;
+    const g = this.plotGeom();
+    this.walkThen(g.x0 + 40, null);
   }
 
   goPlot() {
@@ -799,6 +826,8 @@ export class WorldScene extends Phaser.Scene {
     this.plotBackImg = null;
     this.gardenSprites = {};
     this.buildLayer = this.buildLayer || 'on';
+    this.starterHut();
+    this.buildYard();
     this.drawPlot();
     this.refreshGarden();
     this.spawnRanch();
@@ -884,10 +913,10 @@ export class WorldScene extends Phaser.Scene {
 
   plotActions() {
     const g = this.plotGeom();
-    UI.setLocation(`Arsan · ${g.cols}×${g.rows} · Üs Puanı ${S.baseScore()}`);
+    UI.setLocation(`Evin · Üs Puanı ${S.baseScore()}`);
     UI.setActions([
       { label: 'İnşa et', cls: 'primary', onClick: () => this.startBuild() },
-      { label: 'Üsse dön', onClick: () => this.leavePlot() },
+      { label: 'Harita', cls: 'blue', onClick: () => openHanci(this) },
     ]);
   }
 
@@ -1246,13 +1275,13 @@ export class WorldScene extends Phaser.Scene {
     if (back) {
       const bc = S.save.plot.back[cell.key];
       if (!bc) return;
-      if (!S.fits(bc.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+      if (!bc.free && !S.fits(bc.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
       this.busy = true;
       await this.walkToCell(cell.c);
       await playAnim(this.player, 'c_punch', 1.6);
       sfx('break');
       delete S.save.plot.back[cell.key];
-      S.addItem(bc.id, 1);
+      if (!bc.free) S.addItem(bc.id, 1);
       this.drawPlot();
       S.changed();
       this.idle();
@@ -1273,7 +1302,7 @@ export class WorldScene extends Phaser.Scene {
       const items = S.save.depo.filter(Boolean);
       if (items.length > newSize) { UI.feed('Depon dolu: sandığı kaldırmadan önce Depo\'dan biraz eşya al.'); this.sulk(); return; }
     }
-    if (!S.fits(c.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
+    if (!c.free && !S.fits(c.id)) { UI.feed('Çanta dolu!'); this.sulk(); return; }
     this.busy = true;
     await this.walkToCell(o.c);
     await playAnim(this.player, 'c_punch', 1.6);
@@ -1288,7 +1317,7 @@ export class WorldScene extends Phaser.Scene {
     }
     this.drawPlot();
     if (def && def.glow) this.applyTod();
-    S.addItem(c.id, 1);
+    if (!c.free) S.addItem(c.id, 1);
     S.changed();
     this.idle();
     this.busy = false;
@@ -1453,7 +1482,7 @@ export class WorldScene extends Phaser.Scene {
   // Ussun arkasindaki kucuk gol: iskelenin ucunda balik tutulur.
   async enterPond() {
     UI.closePanel();
-    if (this.busy || this.mode !== 'base') return;
+    if (this.busy || !this.home()) return;
     this.busy = true;
     this.walkTok++;
     UI.setActions([]);
@@ -1514,7 +1543,7 @@ export class WorldScene extends Phaser.Scene {
     UI.setActions([
       { label: 'Olta at', cls: 'primary', onClick: () => this.cast() },
       { label: baitLabel(), cls: 'blue', onClick: () => { cycleBait(); this.pondActions(); } },
-      { label: 'Üsse dön', onClick: () => this.leavePond() },
+      { label: 'Eve dön', onClick: () => this.leavePond() },
     ]);
   }
 
@@ -1778,7 +1807,7 @@ export class WorldScene extends Phaser.Scene {
   }
   async enterKule(from = 1) {
     UI.closePanel();
-    if (this.busy || this.mode !== 'base') return;
+    if (this.busy || !this.home()) return;
     this.kuleWeek();
     this.busy = true;
     stopMusic();
@@ -1861,7 +1890,7 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ 0.13.5 zor mod patron
   async enterHardBoss(key) {
     UI.closePanel();
-    if (this.busy || this.mode !== 'base') return;
+    if (this.busy || !this.home()) return;
     const z = ZONES.find((x) => x.boss === key);
     if (!z || !(S.save.stats.glemons[key] > 0)) return;
     this.busy = true;
@@ -1923,7 +1952,7 @@ export class WorldScene extends Phaser.Scene {
   // 0.9 Etkinlik Kapisi: Gunun Zindani (5 kat, gunun kurali) ve Patron Kosusu (arka arkaya bolge patronlari)
   async enterEvent(kind) {
     UI.closePanel();
-    if (this.busy || this.mode !== 'base') return;
+    if (this.busy || !this.home()) return;
     this.busy = true;
     stopMusic();
     this.walkTok++;
@@ -1989,7 +2018,7 @@ export class WorldScene extends Phaser.Scene {
     S.changed();
     this.busy = false;
     room.cleared = true;
-    UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
+    UI.setActions([{ label: 'Eve dön', cls: 'primary', onClick: () => this.returnBase() }]);
   }
 
   zindanRooms(level) {
@@ -2335,7 +2364,7 @@ export class WorldScene extends Phaser.Scene {
   refreshRoomActions() {
     const room = this.rooms[this.roomIdx];
     if (!room || this.mode !== 'dungeon') return;
-    const back = { label: 'Üsse dön', onClick: () => this.returnBase() };
+    const back = { label: 'Eve dön', onClick: () => this.returnBase() };
     const next = { label: 'İlerle →', cls: ['sandik', 'kamp', 'maden', 'gol'].includes(room.type) ? '' : 'primary', onClick: () => this.nextRoom() };
     const g = this.gatherAction(room);
     if (room.type === 'sandik') {
@@ -2390,7 +2419,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   runRoom(room) {
-    const back = { label: 'Üsse dön', onClick: () => this.returnBase() };
+    const back = { label: 'Eve dön', onClick: () => this.returnBase() };
     this.afterVein = null;
     switch (room.type) {
       case 'savas':
@@ -2404,7 +2433,7 @@ export class WorldScene extends Phaser.Scene {
         else UI.setActions([{ label: 'Kule sandığını aç', cls: 'primary', onClick: () => this.kuleReward(room) }, back]);
         break;
       case 'evodul':
-        if (room.opened) UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
+        if (room.opened) UI.setActions([{ label: 'Eve dön', cls: 'primary', onClick: () => this.returnBase() }]);
         else UI.setActions([{ label: 'Etkinlik sandığını aç', cls: 'primary', onClick: () => this.eventReward(room) }]);
         break;
       case 'uyuyan':
@@ -2506,7 +2535,7 @@ export class WorldScene extends Phaser.Scene {
         this.idle();
         this.busy = false;
         room.cleared = true;
-        UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
+        UI.setActions([{ label: 'Eve dön', cls: 'primary', onClick: () => this.returnBase() }]);
       } else this.roomDone();
     } else if (res === 'lose') this.onDeath();
     else if (res === 'flee') this.afterFlee(room);
@@ -2609,7 +2638,7 @@ export class WorldScene extends Phaser.Scene {
           this.fight(room);
         },
       },
-      { label: 'Üsse dön', onClick: () => this.returnBase() },
+      { label: 'Eve dön', onClick: () => this.returnBase() },
     ]);
   }
 
@@ -2774,7 +2803,7 @@ export class WorldScene extends Phaser.Scene {
         acts.push({ label: `Aşağı in (Kat ${next.floors[0]}: ${next.name})`, cls: 'primary', onClick: () => this.descend() });
       }
     }
-    acts.push({ label: 'Üsse dön', cls: acts.length ? '' : 'primary', onClick: () => this.returnBase() });
+    acts.push({ label: 'Eve dön', cls: acts.length ? '' : 'primary', onClick: () => this.returnBase() });
     UI.setActions(acts);
   }
 
@@ -2788,7 +2817,7 @@ export class WorldScene extends Phaser.Scene {
     await this.playPool('sevinc', 2600);
     this.idle();
     this.busy = false;
-    const acts = [{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }];
+    const acts = [{ label: 'Eve dön', cls: 'primary', onClick: () => this.returnBase() }];
     UI.setActions(acts);
     openCredits(this, first);
   }
@@ -2806,7 +2835,7 @@ export class WorldScene extends Phaser.Scene {
     this.goBase('dungeon');
     this.player.alpha = 1;
     await this.fade(false);
-    UI.feed('Üsse döndün. Topladıkların güvende!');
+    UI.feed('Eve döndün. Topladıkların güvende!');
     this.busy = false;
   }
 
@@ -2826,9 +2855,9 @@ export class WorldScene extends Phaser.Scene {
       if (res.gold > 0) { const li = UI.el('li'); li.innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${res.gold} ${CURRENCY}`; ul.appendChild(li); }
       if (!res.lost.length && !res.gold) ul.appendChild(UI.el('li', '', 'Kaybedecek bir şey yoktu, şanslısın!'));
       body.appendChild(ul);
-      body.appendChild(UI.el('p', 'muted', 'İpucu: Canın azalınca "Üsse dön" ile her şeyini koruyabilirsin.'));
+      body.appendChild(UI.el('p', 'muted', 'İpucu: Canın azalınca "Eve dön" ile her şeyini koruyabilirsin.'));
       const row = UI.el('div', 'choice-row');
-      row.appendChild(UI.button('Üsse dön', () => UI.closePanel(), 'primary'));
+      row.appendChild(UI.button('Eve dön', () => UI.closePanel(), 'primary'));
       body.appendChild(row);
     }, { onClose: () => this.afterDeath() });
   }

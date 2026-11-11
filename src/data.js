@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0.4';
+export const VERSION = '1.0.5';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -1096,6 +1096,9 @@ export const BAL_CHANCE = 0.06;
 // Tarif, ilk malzemesini bir kez bulunca tarif defterinde acilir.
 export const FURNACE_MS = 5000;
 export const FURNACE_MAX = 20;
+// 1.0.5 (Eren): istasyonlar Uretim seviyesiyle acilir; Ors (esya yukseltme) Uretim 15'te.
+// Eski kayitlarda Masa/Firin/Kazan/Yem acik kalir (flags.stOld), Ors herkes icin 15.
+export const STATION_LVL = { masa: 1, firin: 5, yem: 10, kazan: 15, ors: 15 };
 export const STATIONS = {
   masa: { name: 'Üretim Masası', desc: 'Silah, kazma, zırh ve inşa blokları.' },
   firin: { name: 'Fırın', desc: 'Eritme ve pişirme. Her biri 5 saniye sürer, sen yokken de çalışır.' },
