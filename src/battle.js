@@ -1014,7 +1014,8 @@ export class Battle {
       await playAnim(p, B('bowshot'), 1.8);
       await Promise.all(targets.map((e) => this.arrow(e, ab && ab.key === 'atesli')));
     } else if (magic) {
-      await playAnim(p, B('punch'), 1.6);
+      // 1.0.3: asa ile buyu yaparken asa elde gorunur (b_cast = yumruk kareleri + asa)
+      await playAnim(p, B(wt === 'asa' && this.scene.anims.exists(B('cast')) ? 'cast' : 'punch'), 1.6);
       const col = elem ? elem[4] : ab && ab.key === 'alev_dalgasi' ? 0xff8a3a : 0xb08aff;
       await Promise.all(targets.map((e) => this.orb(e, col)));
     } else {

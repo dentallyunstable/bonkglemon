@@ -1427,8 +1427,14 @@ export function gearRamp(icon) {
   else { d = g('d'); m = g('m'); l = g('M'); }
   if (!m || !l) return null;
   if (!d) d = shadeRgb(m, 0.72);
-  const h = p.y && !icon.startsWith('gogus_magma') ? hexToRgb(p.y) : shadeRgb(l, 1.35);
-  return [d, m, l, h].map((c) => shadeRgb(c, 0.97));
+  // 1.0.3: zirhta 'y' sus rengidir (kristalde altin), parlak ton degil. Parlak ton hep
+  // acik rengin bir tik acigi; sus rengi 5. ton olarak sadece toka ve percinde kullanilir.
+  const armor = /^(kask|gogus|bot)_/.test(icon);
+  const set = icon.replace(/^(kask|bot)_/, 'gogus_');
+  const ya = p.y || (ICONS[set] && ICONS[set][1] && ICONS[set][1].y);
+  const h = !armor && p.y ? hexToRgb(p.y) : shadeRgb(l, 1.3);
+  const acc = armor && ya ? hexToRgb(ya) : shadeRgb(l, 1.45);
+  return [d, m, l, h, acc].map((c) => shadeRgb(c, 0.97));
 }
 
 // 0.8.9 Etkinlik Kapisi (Eren, 2026-11-10): ussun sagindaki eski maden girisinin yerinde.

@@ -37,7 +37,8 @@ export function initGear(scene, gearJson) {
   ctx = canvas.getContext('2d', { willReadFrequently: true });
   const pad = gearJson.meta.pad;
   for (const f of Object.values(frames)) {
-    ctx.drawImage(img, f.src.x, f.src.y, f.src.w, f.src.h, f.frame.x + pad, f.frame.y + pad, f.src.w, f.src.h);
+    const p = f.pad != null ? f.pad : pad;   // 1.0.3: eklenen aletli karelerin kenari daha genis
+    ctx.drawImage(img, f.src.x, f.src.y, f.src.w, f.src.h, f.frame.x + p, f.frame.y + p, f.src.w, f.src.h);
   }
   base = ctx.getImageData(0, 0, canvas.width, canvas.height);
   parts = pixels(scene, 'chargear');
@@ -54,7 +55,11 @@ function ramps() {
   const w = e.silah && ITEMS[e.silah];
   const isBow = w && w.wt === 'yay';
   // 7: pelerin (0.9). Pelerin yoksa sirttaki pikseller goguslugun rengini alir (yoksa oldugu gibi kalir)
-  return { 1: r(e.kask), 2: r(e.gogus), 3: r(e.bot), 4: isBow || (w && w.wt === 'asa') ? null : r(e.silah), 5: r(e.kazma), 6: isBow ? r(e.silah) : null, 7: r(e.pelerin), 8: r(e.pelerin) };
+  const isStaff = w && w.wt === 'asa';
+  const sword = isBow || isStaff ? null : r(e.silah);
+  // 9-11 (1.0.3): animasyonda olmayan aletler katmana eklenir: doner kesikte kilic,
+  // savasta arkadan yay ve asa ile buyu (b_cast)
+  return { 1: r(e.kask), 2: r(e.gogus), 3: r(e.bot), 4: sword, 5: r(e.kazma), 6: isBow ? r(e.silah) : null, 7: r(e.pelerin), 8: r(e.pelerin), 9: sword, 10: isBow ? r(e.silah) : null, 11: isStaff ? r(e.silah) : null };
 }
 
 export function gearKey() {
@@ -75,12 +80,12 @@ export function refreshGear() {
     if (!M) return;
     for (let i = 0; i < M.length; i += 4) {
       if (!M[i + 3]) continue;
-      const k = Math.round(M[i] / 30);
+      const k = Math.round(M[i] / 20);
       const ramp = R[k];
       if (!ramp) continue;
-      // silah pikselleri sadece kendi yerinde boyanir; zirh bos piksele de cizilir
+      // animasyondaki silah pikselleri sadece kendi yerinde boyanir; zirh ve eklenen aletler bos piksele de cizilir
       if (k >= 4 && k <= 6 && !d[i + 3]) continue;
-      const c = M[i + 2] === 255 ? ramp[0].map((v) => Math.round(v * 0.42)) : ramp[Math.min(3, Math.round(M[i + 1] / 80))];
+      const c = M[i + 2] === 255 ? ramp[0].map((v) => Math.round(v * 0.42)) : ramp[Math.min(ramp.length - 1, Math.round(M[i + 1] / 60))];
       d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255;
     }
   };
