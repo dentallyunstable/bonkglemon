@@ -8,6 +8,7 @@ import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { tutFlag, openSettings } from './help.js';
 import { iconUrl, todNow } from './art.js';
+import { kesifMap, KMAP } from './mapart.js';
 import {
   PUL, refreshGoals, goals, goalDef, goalText, goalProgress, readyCount, addPul, clockOk, ACH, SECRET, ACH_GROUPS, TIER_NAMES, TIER_PTS, SECRET_PTS, achTier, achTargets, achPoints, achCount, ACH_TOTAL,
   TITLES, titleOf, ALBUM_RW, albumPct, todayRule, weekendNow, weekendKind, weekendEnds, weekendStarts, nextMidnight, nextMonday, fmtLeft, fullMoon, nextFullMoon,
@@ -647,6 +648,18 @@ export function openProfile(w) {
 }
 
 // ------------------------------------------------------------ harita
+let kesifSel = null;
+const KCACHE = {};
+function kesifMapCached(open, done) {
+  const k = [...open].join() + '|' + [...done].join();
+  if (!KCACHE[k]) { const m = kesifMap({ open, done }); KCACHE[k] = { url: m.canvas.toDataURL(), spots: m.spots }; }
+  return KCACHE[k];
+}
+function bonusInfo(w, z, ok) {
+  UI.choice(`${z.name} · Bonus Patron`, ok
+    ? 'Bu mağarada bölgenin bonus patronu yaşıyor. En az 2 oyuncuyla girilir (en fazla 3 oyuncu, her biri 2 Glemon). Patron takımla güçlenir ama takım daha hızlı güçlenir; birlikte girmek her zaman daha kolay. Arkadaş sistemi gelince açılacak.'
+    : `Bonus mağarası, ${GLEMONS[z.boss].name} yenilince açılır. En az 2 oyuncu gerekir.`, [{ label: 'Haritaya dön', cls: 'primary', onClick: () => openMap(w) }]);
+}
 export function openMap(w) {
   if (!w.home()) return;
   UI.openPanel('Keşif Haritası', (body) => {
@@ -664,7 +677,28 @@ export function openMap(w) {
       kr.appendChild(kb);
       body.appendChild(kr);
     }
+    // 1.0.7 yol haritasi: biyomlar bir yolla bagli; dokununca alttaki kart o bolgeyi gosterir
+    const isOpen = (z) => z.open && (!z.after || kills[z.after] > 0);
+    const openSet = new Set(ZONES.filter(isOpen).map((z) => z.key));
+    const doneSet = new Set(ZONES.filter((z) => kills[z.boss] > 0).map((z) => z.key));
+    const km = kesifMapCached(openSet, doneSet);
+    if (!ZONES.some((z) => z.key === kesifSel && openSet.has(z.key))) kesifSel = [...openSet].pop() || 'orman';
+    const box = UI.el('div', 'hubmap wmap kmap');
+    box.style.backgroundImage = `url(${km.url})`;
+    const spot = (key, label, cls, fn, dy) => {
+      const [x, y] = km.spots[key];
+      const b = UI.el('button', 'map-spot ' + cls, label);
+      b.style.left = `${(x / KMAP.W) * 100}%`;
+      b.style.top = `${((y + dy) / KMAP.H) * 100}%`;
+      b.onclick = fn;
+      box.appendChild(b);
+    };
     for (const z of ZONES) {
+      spot(z.key, (doneSet.has(z.key) ? '✓ ' : openSet.has(z.key) ? '' : '🔒 ') + z.name, 'kz' + (z.key === kesifSel ? ' sel' : '') + (openSet.has(z.key) ? '' : ' off'), () => { kesifSel = z.key; openMap(w); }, -15);
+      if (km.spots['b_' + z.key]) spot('b_' + z.key, doneSet.has(z.key) ? 'Bonus' : '🔒', 'kb' + (doneSet.has(z.key) ? '' : ' off'), () => bonusInfo(w, z, doneSet.has(z.key)), 4);
+    }
+    body.appendChild(box);
+    for (const z of ZONES.filter((x) => x.key === kesifSel)) {
       const opened = z.open && (!z.after || kills[z.after] > 0);
       const atkOk = S.atk() >= z.atk;
       const row = UI.el('div', 'zone' + (opened ? '' : ' locked'));
