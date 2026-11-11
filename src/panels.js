@@ -7,7 +7,8 @@ import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { tutFlag, openSettings } from './help.js';
-import { iconUrl, hubMap, HUB_SPOTS, todNow } from './art.js';
+import { iconUrl, todNow } from './art.js';
+import { worldMap, koyMap, WORLD } from './mapart.js';
 import {
   PUL, refreshGoals, goals, goalDef, goalText, goalProgress, readyCount, addPul, clockOk, ACH, SECRET, ACH_GROUPS, TIER_NAMES, TIER_PTS, SECRET_PTS, achTier, achTargets, achPoints, achCount, ACH_TOTAL,
   TITLES, titleOf, ALBUM_RW, albumPct, todayRule, weekendNow, weekendKind, weekendEnds, weekendStarts, nextMidnight, nextMonday, fmtLeft, fullMoon, nextFullMoon,
@@ -1546,30 +1547,66 @@ const LALE_SAYS = [
   'Yorulduysan ateşin başına otur biraz.',
   'Yeni işlerim var, görevlere bir bak!',
 ];
-let hubMapUrl = null;
+// 1.1 (Eren): Lale'nin haritasi artik ~50 derece yukaridan bakilan bir ada. Solda barisci
+// Koy (dokununca yakin koy haritasi), koprunun otesinde tehlikeli bolgeler. Lale'nin kendi
+// isleri (takas, gorevler, hikaye...) Koy Meydani'nda.
+const MAPS = {};
+const mapUrl = (k) => MAPS[k] || (MAPS[k] = (k === 'koy' ? koyMap() : worldMap()));
+function mapBox(k, pins) {
+  const m = mapUrl(k);
+  const box = UI.el('div', 'hubmap wmap');
+  box.style.backgroundImage = `url(${m.url || (m.url = m.canvas.toDataURL())})`;
+  for (const [spot, label, cls, fn, dy = -10] of pins) {
+    const [x, y] = m.spots[spot];
+    const b = UI.button(label, fn, 'small pin ' + cls);
+    b.style.left = `${(x / WORLD.W) * 100}%`;
+    b.style.top = `${((y + dy) / WORLD.H) * 100}%`;
+    box.appendChild(b);
+  }
+  return box;
+}
+function legend(items) {
+  const row = UI.el('div', 'map-legend');
+  for (const [cls, t] of items) row.appendChild(UI.el('span', 'lg ' + cls, t));
+  return row;
+}
 export function openHanci(w) {
-  if (!hubMapUrl) hubMapUrl = hubMap().toDataURL();
   S.fillQuests();
   tutFlag('lale');
-  UI.openPanel('Hancı Lale', (body) => {
+  UI.openPanel('Harita', (body) => {
+    body.appendChild(UI.el('p', 'lale-says', `Lale: “${LALE_SAYS[Math.floor(Math.random() * LALE_SAYS.length)]}”`));
+    body.appendChild(mapBox('dunya', [
+      ['koy', 'Köy', 'green', () => openKoy(w), -16],
+      ['kesif', 'Keşif', 'red', () => openMap(w), -14],
+      ['zindan', 'Zindan', 'purple', () => openZindan(w), 12],
+      ['kule', 'Kule', 'purple', () => openKule(w), -8],
+      ['etkinlik', 'Etkinlik', 'red', () => openEventGate(w), -16],
+    ]));
+    body.appendChild(legend([['peace', 'Barışçıl: Köy (Meydan, Göl, Koru, Arsa, Ahır, Maden)'], ['danger', 'Tehlikeli: Keşif, Zindan, Kule, Etkinlik']]));
+    const row = UI.el('div', 'choice-row');
+    row.appendChild(UI.button('Köy Meydanı (Lale)', () => openMeydan(w), 'primary'));
+    body.appendChild(row);
+  }, { wide: true });
+}
+export function openKoy(w) {
+  UI.openPanel('Köy', (body) => {
+    body.appendChild(mapBox('koy', [
+      ['meydan', 'Köy Meydanı', 'primary', () => openMeydan(w), -14],
+      ['gol', 'Göl', 'blue', () => { UI.closePanel(); w.enterPond(); }, 0],
+      ['koru', 'Koru', 'green', () => { UI.closePanel(); w.enterKoru(); }, -8],
+      ['arsa', 'Arsa', 'green', () => { UI.closePanel(); w.enterPlot(); }, -18],
+      ['ahir', 'Ahır', 'green', () => openAhir(w), -14],
+      ['maden', 'Maden', 'blue', () => { UI.closePanel(); w.enterMine(); }, 0],
+    ]));
+    const row = UI.el('div', 'choice-row');
+    row.appendChild(UI.button('Dünya haritası', () => openHanci(w), 'small'));
+    body.appendChild(row);
+  }, { wide: true });
+}
+export function openMeydan(w) {
+  S.fillQuests();
+  UI.openPanel('Köy Meydanı · Hancı Lale', (body) => {
     body.appendChild(UI.el('p', 'lale-says', `“${LALE_SAYS[Math.floor(Math.random() * LALE_SAYS.length)]}”`));
-    const map = UI.el('div', 'hubmap');
-    map.style.backgroundImage = `url(${hubMapUrl})`;
-    const pin = (spot, label, cls, fn) => {
-      const [x, y] = HUB_SPOTS[spot];
-      const b = UI.button(label, fn, 'small pin ' + cls);
-      b.style.left = `${(x / 192) * 100}%`;
-      b.style.top = `${(y / 96) * 100}%`;
-      map.appendChild(b);
-    };
-    pin('kesif', 'Keşif', 'primary', () => openMap(w));
-    pin('zindan', 'Zindan', 'purple', () => openZindan(w));
-    pin('maden', 'Maden', 'blue', () => { UI.closePanel(); w.enterMine(); });
-    pin('arsa', 'Arsa', 'blue', () => { UI.closePanel(); w.enterPlot(); });
-    pin('koru', 'Koru', 'green', () => { UI.closePanel(); w.enterKoru(); });
-    pin('ahir', 'Ahır', 'green', () => openAhir(w));
-    pin('kule', 'Kule', 'purple', () => openKule(w));
-    body.appendChild(map);
     { // 1.0 hikaye satiri
       const ch = S.save.story.ch;
       const c = STORY[ch];
@@ -1586,7 +1623,6 @@ export function openHanci(w) {
     row.appendChild(UI.button('Takas', () => w.goShop(), 'primary'));
     row.appendChild(UI.button(done ? `Görevler (${done} hazır!)` : 'Görevler', () => openQuests(w), done ? 'green' : ''));
     row.appendChild(UI.button('Albüm', () => openAlbum(w), 'small'));
-    row.appendChild(UI.button('Göl', () => { UI.closePanel(); w.enterPond(); }, 'small blue'));
     row.appendChild(UI.button('Yetenekler', () => openTree(), 'small'));
     row.appendChild(UI.button('Patronlar', () => openTrophies(w), 'small'));
     row.appendChild(UI.button('Efsane Vitrini', () => openLegends(w), 'small'));
@@ -1596,6 +1632,8 @@ export function openHanci(w) {
       const canPick = !c && S.combatLevel() >= CLASS_RULES.unlock;
       row.appendChild(UI.button(canPick ? 'Sınıf seç!' : canSub ? 'Alt sınıf seç!' : c ? `Sınıf: ${c.name}` : 'Sınıflar', () => openClass(), canPick || canSub ? 'small green' : 'small'));
     }
+    row.appendChild(UI.button('Köy', () => openKoy(w), 'small green'));
+    row.appendChild(UI.button('Harita', () => openHanci(w), 'small blue'));
     body.appendChild(row);
   }, { wide: true });
 }
@@ -1666,7 +1704,7 @@ export function openQuests(w, tab = 'gunluk') {
       crow.appendChild(cb);
       body.appendChild(crow);
       const back = UI.el('div', 'choice-row');
-      back.appendChild(UI.button('Lale\'ye dön', () => openHanci(w), 'small'));
+      back.appendChild(UI.button('Lale\'ye dön', () => openMeydan(w), 'small'));
       body.appendChild(back);
     };
     const renderFree = () => {
@@ -1708,7 +1746,7 @@ export function openQuests(w, tab = 'gunluk') {
         body.appendChild(row);
       }
       const back = UI.el('div', 'choice-row');
-      back.appendChild(UI.button('Lale\'ye dön', () => openHanci(w), 'small'));
+      back.appendChild(UI.button('Lale\'ye dön', () => openMeydan(w), 'small'));
       body.appendChild(back);
     };
     render();

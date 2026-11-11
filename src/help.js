@@ -9,7 +9,7 @@ import { forgetLogin } from './login.js';
 // Her konu birkac kisa paragraf. "?" dugmeleri de buradan okur.
 export const GUIDE = [
   { k: 'temel', t: 'İlk adımlar', p: [
-    'Üs senin evin. Hancı Lale her yere giden kapıdır: Keşif, Zindan, Maden, Arsa, Koru, Ahır ve Kule onun haritasında.',
+    'Üs senin evin. Hancı Lale her yere giden kapıdır: onun haritasında solda barışçıl Köy (Meydan, Göl, Koru, Arsa, Ahır, Maden), köprünün ötesinde tehlikeli yerler (Keşif, Zindan, Kule, Etkinlik) var.',
     'Keşif\'te odadan odaya ilerlersin. Her bölgenin 5. katında ara patron, 10. katında bölge patronu var. 5 ve 10. katlarda kısayol açılır.',
     'İstediğin an "Üsse dön" diyebilirsin, topladıkların güvende kalır. Bayılırsan o turda kazandıklarının yarısı gider.',
     'Lale\'nin görevleri her gün ve her hafta yenilenir. Lale Pulu sadece görevlerden ve etkinliklerden gelir.',
@@ -73,7 +73,7 @@ export const GUIDE = [
 const GUIDE_BY = Object.fromEntries(GUIDE.map((g) => [g.k, g]));
 // panel basligi (bas kismi) -> rehber konusu
 const HELP = [
-  ['Hancı Lale', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
+  ['Hancı Lale', 'temel'], ['Köy Meydanı', 'temel'], ['Harita', 'temel'], ['Köy', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
   ['Keşif Haritası', 'bolge'], ['Hazırlık', 'bolge'],
   ['Çanta', 'esya'], ['Depo', 'esya'], ['Örs', 'esya'], ['Efsane Vitrini', 'esya'],
   ['Beceriler', 'beceri'], ['Yetenek Ağacı', 'sinif'], ['Sınıflar', 'sinif'],
