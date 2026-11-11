@@ -851,6 +851,109 @@ export function indoorStage(kind, level = 1, variant = 0) {
   return p.canvas();
 }
 
+// 1.0.11 (Eren): Kule'nin arka plani Zindan'dan farkli olsun. Bulutlarin ustunde yuvarlak bir
+// kulenin ici: egri tas duvar (ortasi aydinlik, yanlari karanlik), uzun kemerli pencerelerden
+// yildizli mor gece ve bulutlar, mor kristal isiklari, duvarda asili bayraklar.
+const KULE_DARK = '#120c1e';
+function towerWall(p, HZ, r, top = 0) {
+  const dark = KULE_DARK;
+  const s = 8;
+  for (let y = HZ - s; y > top - s; y -= s) for (let x = 0; x < GAME_W + s; x += s) {
+    const t = (x + 4) / GAME_W, curve = 0.55 + 0.5 * Math.sin(t * Math.PI); // yuvarlak duvar
+    const hh = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+    const moon = hh % 19 === 0;
+    putScaled(p, moon ? 'ay_tasi' : 'tas_duvar', x + ((Math.floor(y / s) % 2) ? 4 : 0) - 4, y, s, chain(shadeFn(curve * (moon ? 0.6 : 0.95)), fogFn(moon ? '#3a2a5a' : dark, moon ? 0.45 : 0.3)));
+  }
+  // pencereler: egri duvarda ortaya yakin genis, kenarlarda dar
+  const wins = [];
+  const n = 3, off = (r() - 0.5) * 30;
+  for (let i = 0; i < n; i++) {
+    const cx = Math.round(GAME_W * (0.2 + i * 0.3) + off);
+    const t = cx / GAME_W, w = 2 * Math.round(7 + 7 * Math.sin(t * Math.PI));
+    wins.push([cx, w]);
+    const wt = 34, wh = 62, R = w / 2;
+    const inside = (px, py) => (py >= wt + R ? Math.abs(px - cx) < R : Math.hypot(px - cx, py - (wt + R)) < R);
+    for (let py = wt - 6; py < wt + wh + 6; py++) for (let px = cx - R - 6; px < cx + R + 6; px++) {
+      if (px < 0 || px >= GAME_W || py < 0) continue;
+      const rim = py >= wt + R ? Math.abs(px - cx) < R + 5 && py < wt + wh + 5 : Math.hypot(px - cx, py - (wt + R)) < R + 5;
+      if (!rim) continue;
+      if (!inside(px, py) || py >= wt + wh) { const b = block('tas').d[(((py % B) + B) % B) * B + (((px % B) + B) % B)]; p.set(px, py, chain(shadeFn(0.92), fogFn(dark, 0.25))(b)); continue; }
+      // gokyuzu: ustte koyu lacivert, altta mor; altta bulut seridi
+      const k = (py - wt) / wh;
+      let c = mix(hex('#141a3a'), hex('#6a4a9a'), Math.pow(k, 1.3));
+      const cl = Math.sin(px * 0.35 + py * 0.08) * 3 + wt + wh * 0.72;
+      if (py > cl) c = mix(hex('#c8c0e0'), hex('#8a7ab8'), Math.min(1, (py - cl) / 14));
+      p.set(px, py, pack(c));
+    }
+    for (let k = 0; k < 6; k++) { const sx = cx - R + 2 + Math.floor(r() * (w - 4)), sy = wt + 4 + Math.floor(r() * wh * 0.5); p.set(sx, sy, pack(hex(r() < 0.5 ? '#ffffff' : '#ffe8a0'))); }
+    // pencere kafesi ve denizlik
+    for (let py = wt + 2; py < wt + wh; py++) if (inside(cx, py)) p.set(cx, py, pack(hex('#2a2238')));
+    for (let px = cx - R; px < cx + R; px++) if (inside(px, wt + R + 6)) p.set(px, wt + R + 6, pack(hex('#2a2238')));
+    for (let px = cx - R - 4; px < cx + R + 4; px++) { p.set(px, wt + wh, pack(hex('#8a8494'))); p.set(px, wt + wh + 1, pack(hex('#4a4454'))); }
+  }
+  // sol duvarda yukari kivrilan doner merdiven (basamaklar duvara gomulu)
+  for (let i = 0; i < 9; i++) {
+    const sx = 46 - i * 6, sy = HZ - 12 - i * 9, sw = 18 - i;
+    for (let y = 0; y < 9; y++) for (let x = 0; x < sw; x++) {
+      const px = sx + x, py = sy + y;
+      if (px < 0 || py < top) continue;
+      const b = block('kaldirim').d[(py & 15) * B + (px & 15)];
+      const f = y < 2 ? 1.12 : y > 6 ? 0.55 : 0.8;
+      p.set(px, py, chain(shadeFn(f * (0.75 + 0.03 * i)), fogFn(dark, 0.2 + i * 0.04))(b));
+    }
+    for (let x = 0; x < sw; x++) p.set(sx + x, sy + 9, pack(hex('#0e0a16')));
+  }
+  // pencereler arasinda asili mor bayraklar
+  for (let i = 0; i < wins.length - 1; i++) {
+    const bx = Math.round((wins[i][0] + wins[i + 1][0]) / 2) - 6;
+    for (let y = 30; y < 74; y++) for (let x = 0; x < 12; x++) {
+      if (y > 66 && Math.abs(x - 5.5) < (y - 66)) continue; // kirlangic kuyruk
+      const c = x < 2 ? '#3a1f66' : x > 9 ? '#4a2a80' : '#6a3fa8';
+      p.set(bx + x, y, pack(hex(c)));
+    }
+    for (let y = 40; y < 52; y++) for (let x = 3; x < 9; x++) if (Math.abs(x - 5.5) + Math.abs(y - 46) < 5) p.set(bx + x, y, pack(hex('#e0c060')));
+    for (let x = -2; x < 14; x++) p.set(bx + x, 29, pack(hex('#5a3a24')));
+  }
+  return wins;
+}
+function kuleLights(p, wins, y) {
+  for (let i = 0; i < wins.length - 1; i++) {
+    const x = Math.round((wins[i][0] + wins[i + 1][0]) / 2);
+    put(p, 'kristal_m', x - 8, y - 12, null);
+    glowAt(p, x, y - 4, 42, '#b48af0', 0.45);
+    glowAt(p, x, y - 6, 10, '#f0e0ff', 0.3);
+  }
+  for (const [cx] of wins) glowAt(p, cx, 70, 34, '#8a7ad0', 0.18); // pencereden giren ay isigi
+}
+export function kuleRoomBackground(level, variant = 0) {
+  const r = rng(level * 7919 + variant * 53 + 5);
+  const p = new Pix(GAME_W, GAME_H);
+  p.rect(0, 0, GAME_W, GAME_H, KULE_DARK);
+  const wins = towerWall(p, G, r);
+  darkenRows(p, 0, 26, 0.7, 0, KULE_DARK);
+  darkenRows(p, G - 8, G, 0, 0.3, KULE_DARK);
+  const nf = fogFn(KULE_DARK, 0.15);
+  for (let c = 0; c < GAME_W / B; c++) {
+    put(p, c % 3 === 1 ? 'ay_tasi' : 'kaldirim', c * B, G, nf);
+    put(p, 'tas', c * B, G + B, chain(shadeFn(0.7), nf));
+    put(p, 'tas_duvar', c * B, G + 2 * B, nf);
+  }
+  kuleLights(p, wins, G - 2);
+  return p.canvas();
+}
+export function kuleStage(level = 1, variant = 0) {
+  const r = rng(level * 7919 + variant * 53 + 11);
+  const HZ = 136;
+  const p = new Pix(GAME_W, GAME_H);
+  p.rect(0, 0, GAME_W, GAME_H, KULE_DARK);
+  const wins = towerWall(p, HZ, r);
+  darkenRows(p, 0, 26, 0.7, 0, KULE_DARK);
+  darkenRows(p, HZ - 10, HZ, 0.0, 0.4, KULE_DARK);
+  arenaGround(p, HZ, fogFn(KULE_DARK, 0.16), (onPath, c, row) => (onPath ? 'ay_tasi' : (c + row) % 2 ? 'kaldirim' : 'tas_duvar'), KULE_DARK);
+  kuleLights(p, wins, HZ);
+  return p.canvas();
+}
+
 // Hanci Lale'nin arkasindaki harita (panelde buyuk gosterilir): eski kagit uzerine
 // kucuk bloklarla bolgeler, us, maden, arsa ve zindan cukuru; aralarinda kesik yollar.
 export const HUB_SPOTS = {

@@ -18,7 +18,7 @@ import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK, mix, mul, pack, unpack } from './pix.js';
-import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, indoorStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
+import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, indoorStage, kuleRoomBackground, kuleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
 import { refreshTut, tutInit, applySettings, openGuide, openSettings } from './help.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, openAnvil, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest, openCredits } from './panels.js';
 import { ranchReady, collectRanch, ranchLeft, heartsText, petDisplayName, shinyMastery } from './pets.js';
@@ -2169,9 +2169,10 @@ export class WorldScene extends Phaser.Scene {
     const v = i % 3;
     const zone = this.zone();
     const zin = this.inZindan();
-    const key = zin ? `zbg_${Math.min(this.zLevel, 40)}_${v}` : `bg_${this.floor}_${v}${room.dark ? '_d' : ''}`;
+    const kule = zin && S.run && S.run.kule;
+    const key = zin ? `${kule ? 'kbg' : 'zbg'}_${Math.min(this.zLevel, 40)}_${v}` : `bg_${this.floor}_${v}${room.dark ? '_d' : ''}`;
     this.roomBg = null;
-    this.bgTex(key, () => (zin ? dungeonRoomBackground(Math.min(this.zLevel, 40), v) : zone.key === 'magara' ? caveRoomBackground(this.floor, v, !!room.dark)
+    this.bgTex(key, () => (kule ? kuleRoomBackground(Math.min(this.zLevel, 40), v) : zin ? dungeonRoomBackground(Math.min(this.zLevel, 40), v) : zone.key === 'magara' ? caveRoomBackground(this.floor, v, !!room.dark)
       : zone.key === 'col' ? desertRoomBackground(this.floor, v) : BIOME_KEYS.includes(zone.key) ? biomeRoomBackground(zone.key, this.floor, v) : forestBackground(this.floor, v)));
     this.bg.setTexture(key);
     this.player.setFlipX(false);
@@ -2561,10 +2562,10 @@ export class WorldScene extends Phaser.Scene {
     this.roomBg = this.bg.texture.key;
     // 0.8.9: savas odanin kendi manzarasinda, iki cimen tumsegi ustunde gecer
     // 1.1: Zindan/Kule ve Magara savaslari kendi kapali mekan sahnesinde (kemerler, mesaleler, perspektifli zemin)
-    const indoor = this.mode !== 'dungeon' ? null : this.inZindan() ? 'zindan' : (this.zone() || {}).key === 'magara' ? 'magara' : null;
+    const indoor = this.mode !== 'dungeon' ? null : this.inZindan() ? (S.run && S.run.kule ? 'kule' : 'zindan') : (this.zone() || {}).key === 'magara' ? 'magara' : null;
     const lv = this.inZindan() ? this.zLevel || 1 : this.floor;
     const key = indoor ? `stage_in_${indoor}_${lv % 6}` : `stage_${this.roomBg}`;
-    this.bgTex(key, () => battleStage(indoor ? indoorStage(indoor, lv % 6, lv % 3) : this.textures.get(this.roomBg).getSourceImage()));
+    this.bgTex(key, () => battleStage(indoor === 'kule' ? kuleStage(lv % 6, lv % 3) : indoor ? indoorStage(indoor, lv % 6, lv % 3) : this.textures.get(this.roomBg).getSourceImage()));
     this.bg.setTexture(key);
     this.hiddenObjs = this.roomObjs.filter((o) => o.visible);
     for (const o of this.hiddenObjs) o.setVisible(false);
