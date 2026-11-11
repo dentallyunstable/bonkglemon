@@ -262,6 +262,14 @@ def process(char_dir):
             if lt is None or not 4 <= B - lt <= 8:
                 lt = B - 5 if side else max(tt + 6, B - 6)   # kol bulunamadi (kollar havada)
             lt = max(tt + 4, min(lt, B - 3))
+            # oturma (1.0.14, Eren: oturunca zirh kotu duruyordu): bacaklar one uzanir. Goguslik
+            # ayaklarin one ciktigi satira kadar, bot sadece one uzanan ayaklarda.
+            sit = 'sit' in anims
+            feet = None
+            if sit:
+                feet = next((r for r in range(tt + 3, B + 1) if any(body(xx, r) for xx in range(x1 + 2, W))), None)
+                if feet is not None:
+                    lt = feet
             hand_rows = (lt - 2, lt - 1)
 
             # ---- kask (bakis acisina gore sablon)
@@ -365,7 +373,14 @@ def process(char_dir):
                         t = 0                                 # sirttaki ek yeri
                     put(2, xx, yy, t)
             # ---- bot: her sutunun en alt pikselinden 3 satir yukari (kalkan ayak da)
-            for xx in range(-1, W + 1):
+            if sit and feet is not None:
+                for yy in range(feet, H):
+                    for xx in range(cx + 2, W):
+                        if body(xx, yy):
+                            put(3, xx, yy, 2 if yy == feet else 0 if yy == B else 1)
+                            if not opaque(xx + 1, yy):
+                                put(3, xx + 1, yy, 1)
+            for xx in ([] if sit and feet is not None else range(-1, W + 1)):
                 ys = [yy for yy in range(lt, H) if body(xx, yy)]
                 if not ys:
                     continue

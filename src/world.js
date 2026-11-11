@@ -294,12 +294,31 @@ export class WorldScene extends Phaser.Scene {
     }
     this.updateFollower(dt);
     this.updateRanch(dt);
-    // uzun sure hareketsiz kalinca otur
+    // uzun sure hareketsiz kalinca otur (1.0.14, Eren: savas, balik tutma ve maden disinda her yerde;
+    // panel acikken de)
     const cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
-    if ((cur === 'c_idle' || cur === 'c_idlesway') && !this.busy && !this.battle && !UI.panelOpen()) {
+    if ((cur === 'c_idle' || cur === 'c_idlesway') && !this.busy && !this.battle && !this.inBattleView && this.mode !== 'mine') {
       this.stillMs += dt;
       if (this.stillMs > SIT_AFTER) { this.stillMs = 0; this.player.play('c_sit'); }
     } else if (cur !== 'c_sit') this.stillMs = 0;
+    // 1.0.14: evdeki idle cok hafif (2 kare); arada bir sallanir ki karakter canli dursun
+    if (cur === 'c_idle' && !this.busy) {
+      this.idleVar = (this.idleVar || 0) + dt;
+      if (this.idleVar > 5000 + Math.random() * 3000) {
+        this.idleVar = 0;
+        this.player.play('c_idlesway');
+        this.time.delayedCall((animDur.c_idlesway || 1000) * 2, () => {
+          const k = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
+          if (k === 'c_idlesway' && WALK_MODES.includes(this.mode) && !this.busy) this.player.play('c_idle');
+        });
+      }
+    } else if (cur !== 'c_idlesway') this.idleVar = 0;
+    // 1.0.14: bir animasyon bitip son karesinde takili kaldiysa beklemeye don
+    if (cur && !this.player.anims.isPlaying && !this.busy && !this.battle && !this.inBattleView && !this.player._moveTween
+      && cur !== 'c_sit' && !cur.startsWith('c_fish') && !cur.startsWith('c_b_') && this.player.visible && this.player.alpha > 0.5) {
+      this.stuckMs = (this.stuckMs || 0) + dt;
+      if (this.stuckMs > 600) { this.stuckMs = 0; this.idle(); }
+    } else this.stuckMs = 0;
     if (this.battle && !UI.panelOpen()) this.battle.update(dt);
     if (this.mode === 'plot') {
       this.gardenTick = (this.gardenTick || 0) + dt;

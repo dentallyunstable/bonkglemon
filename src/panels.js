@@ -1,4 +1,5 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
+import { playAnim } from './anim.js';
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
 import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE2, TREE_ROW_NEED, nodeCost, nodeDesc, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5, STATION_LVL } from './data.js';
@@ -1533,7 +1534,7 @@ export function openCamp(w, rw) {
       UI.feed(`Kamp ödülünü topladın.${toDepo ? ' Çantaya sığmayanlar depoya kondu.' : ''}`);
       S.changed();
       UI.closePanel();
-      if (w.home()) w.player.play('c_cheer');
+      if (w.home() && !w.busy) playAnim(w.player, 'c_cheer', 1).then(() => { if (!w.busy) w.idle(); });
     }, 'primary'));
     body.appendChild(row);
   });
