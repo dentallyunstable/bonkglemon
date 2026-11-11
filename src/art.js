@@ -160,55 +160,9 @@ function layer(p, fill, ol = 'dark', f = 0.55) {
 }
 
 // ------------------------------------------------------------------ orman (us + zindan odalari)
+// 1.0.12: yeni manzara sistemine (sceneRoom) devredildi
 export function forestBackground(floor, variant = 0, base = false, width = GAME_W, tod = null) {
-  const r = rng(floor * 7919 + variant * 104729 + (base ? 77 : 0));
-  const T = tod ? TOD[tod] : null;
-  const t = T ? T.t : base ? 0 : Math.min(1, (floor - 1) / 9) * 0.85;
-  const nf = T && T.warm ? chain(fogFn(T.warm[0], T.warm[1]), nightFn(t)) : nightFn(t);
-  const p = new Pix(width, GAME_H);
-  paintSky(p, G - 2 * B, t, r, T ? { stops: T.stops, sun: T.sun, warm: T.warm } : {});
-  const skyLow = toHex(skyColor(9, t, T && T.stops));
-  // en uzak: daglar (4 px bloklar) ve uzak orman (8 px bloklar), goge karisir
-  farMountains(p, r, G - 2 * B, 4, 8, 22, 'cimen_ust', 'tas', fogFn(skyLow, 0.8));
-  farTrees(p, r, G - 2 * B + 6, 6, fogFn(skyLow, 0.7));
-  farMountains(p, r, G - B, 8, 2, 6, 'cimen', 'toprak', fogFn(skyLow, 0.68), 0.4);
-  // uzak tepeler (gok rengine karismis) ve uzak agaclar
-  hillRow(p, r, G, 3, 5, fogFn(skyLow, 0.62), Math.floor(r() * B));
-  layer(p, (L) => {
-    for (let x = Math.floor(r() * 3) * B - B; x < width + B; x += B * (3 + Math.floor(r() * 3))) tree(L, x, G - B, 1 + Math.floor(r() * 2), fogFn(skyLow, 0.45), false);
-  }, null);
-  hillRow(p, r, G, 1, 2, fogFn(skyLow, 0.32), Math.floor(r() * B));
-  // orta agaclar (biraz koyu, koyu cizgili)
-  layer(p, (L) => {
-    const spots = [];
-    const n = base ? 2 : 3 + Math.floor(r() * 2);
-    for (let i = 0; i < n; i++) {
-      let c = Math.floor(r() * (width / B));
-      if (base) c = i === 0 ? 7 : 22;
-      spots.push(c * B);
-    }
-    spots.sort((a, b) => a - b);
-    for (const x of spots) tree(L, x, G, 3 + Math.floor(r() * 2), chain(shadeFn(0.86), nf));
-    // calilar: tek sira yaprak blogu
-    for (let c = Math.floor(r() * 4); c < width / B; c += 3 + Math.floor(r() * 5)) {
-      if (base && c > 0 && c < 23 && c !== 7 && c !== 8) continue;
-      const w = 1 + (r() < 0.4 ? 1 : 0);
-      for (let k = 0; k < w; k++) put(L, 'yaprak', (c + k) * B, G - B, chain(shadeFn(0.8), nf));
-    }
-  }, 'dark', 0.5);
-  // zemin: cimen sirasi + toprak, arada tas
-  for (let c = 0; c < width / B; c++) {
-    put(p, 'cimen', c * B, G, nf);
-    put(p, (c * 7 + variant) % 11 === 3 ? 'tas' : 'toprak', c * B, G + B, nf);
-    put(p, (c * 5 + variant + floor) % 7 < 2 ? 'tas' : (c * 3 + floor) % 13 === 0 ? 'komur' : 'toprak', c * B, G + 2 * B, nf);
-  }
-  // cicek ve ot tutamlari
-  for (let i = 0; i < 9; i++) {
-    const c = Math.floor(r() * (width / B));
-    const k = r();
-    put(p, k < 0.5 ? 'ot' : k < 0.75 ? 'cicek_k' : 'cicek_s', c * B, G - B + 1, nf);
-  }
-  return p.canvas();
+  return sceneRoom('orman', floor, variant, { base, width, tod });
 }
 
 // ------------------------------------------------------------------ savas ekrani
@@ -263,51 +217,90 @@ function forestArena(floor) {
 // Gokyuzu yok: arkada tas duvar, tavanda sarkitlar, yer yer mor ve mavi kristaller.
 // Karanlik odalar cok daha koyu (fenerle aydinlanir).
 const CAVE_DARK = '#120e1c';
+function caveWall(p, r, bottom, D, deep, variant = 0) {
+  const s = 8;
+  for (let y = bottom - s; y > -s; y -= s) for (let x = -4; x < GAME_W + s; x += s) {
+    const hh = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+    putScaled(p, 'tas_duvar', x + ((Math.floor(y / s) % 2) ? 4 : 0), y, s, chain(shadeFn(hh % 7 === 0 ? 0.8 : 0.9), fogFn(D, 0.34 + deep * 0.1)));
+  }
+  // uzak tunel agizlari: yamuk kenarli, ici derin
+  const off = Math.floor(r() * 60);
+  for (let a = off + 30; a < GAME_W; a += 150 + Math.floor(r() * 40)) {
+    const rx = 22 + Math.floor(r() * 10); const ry = 50 + Math.floor(r() * 12); const by = bottom;
+    for (let y = by - ry - 6; y < by; y++) for (let x = a - rx - 6; x <= a + rx + 6; x++) {
+      if (x < 0 || x >= GAME_W) continue;
+      const j = Math.sin(y * 0.6 + a) * 1.5 + Math.sin(x * 0.4) * 1.2;
+      const d = Math.hypot((x - a) / (rx + j), (y - by) / ry);
+      if (d < 1) p.set(x, y, pack(mix(hex('#030208'), hex('#1c1628'), Math.pow(Math.max(0, (y - (by - ry)) / ry), 1.8))));
+      else if (d < 1 + 6 / rx) { const b = block('tas').d[(((y % B) + B) % B) * B + (((x % B) + B) % B)]; p.set(x, y, chain(shadeFn(0.85), fogFn(D, 0.3))(b)); }
+    }
+  }
+  // duvarda kucuk kristal damarlari
+  for (let i = 0; i < 5; i++) {
+    const x = Math.floor(r() * GAME_W); const y = 50 + Math.floor(r() * (bottom - 90)); const blue = r() < 0.5;
+    putScaled(p, blue ? 'kristal_b' : 'kristal_m', x, y, 8, fogFn(D, 0.25));
+    glowAt(p, x + 4, y + 4, 22, blue ? '#7cc8f0' : '#b48ae0', 0.28);
+  }
+  darkenRows(p, 0, 60, 0.8, 0, D);
+}
 export function caveRoomBackground(floor, variant = 0, dark = false) {
+  // 1.0.12: Kule gibi derinlikli: uzak duvar 8 px, tunel kemerleri, sarkitlar, kristal isiklari
   const r = rng(floor * 6131 + variant * 911 + (dark ? 5 : 0));
-  const zf = floor - 10;
-  const deep = Math.min(1, (zf - 1) / 9);
-  const nf = fogFn(CAVE_DARK, (dark ? 0.62 : 0.18) + deep * 0.15);
+  const deep = Math.min(1, (floor - 11) / 9);
+  const D = CAVE_DARK;
+  const nf = fogFn(D, (dark ? 0.62 : 0.14) + deep * 0.12);
   const p = new Pix(GAME_W, GAME_H);
-  const cols = GAME_W / B;
-  const rowsUp = Math.ceil(G / B);
-  for (let c = 0; c < cols; c++) {
-    for (let k = 1; k <= rowsUp; k++) put(p, 'tas_duvar', c * B, G - k * B, nf);
+  p.rect(0, 0, GAME_W, GAME_H, D);
+  const s = 8;
+  caveWall(p, r, G, D, deep, variant);
+  // orta kaya sirti (8 px)
+  layer(p, (L) => ridge(L, r, G - 2, 8, 8, 28, 'tas', 'tas', chain(shadeFn(0.8), fogFn(D, 0.3)), 2, G), 'dark', 0.4);
+  darkenRows(p, G - 26, G, 0, 0.3, D);
+  // tavan: kaya sirasi + sarkitlar (8 ve 16 px)
+  layer(p, (L) => {
+    for (let x = 0; x < GAME_W; x += s) { const h = 1 + Math.round(1.5 + Math.sin(x * 0.05 + variant) * 1.2 + r()); for (let k = 0; k < h; k++) putScaled(L, 'tas', x, k * s, s, chain(shadeFn(0.66), nf)); if (r() < 0.22) putScaled(L, 'sarkit', x, h * s, s, chain(shadeFn(0.8), nf)); }
+    for (let i = 0; i < 4; i++) put(L, 'sarkit', Math.floor(r() * (GAME_W / B)) * B, 2 * s + Math.floor(r() * 2) * s, chain(shadeFn(0.75), nf));
+  }, 'dark', 0.5);
+  for (let c = 0; c < GAME_W / B; c++) {
     put(p, 'magara_zemin', c * B, G, nf);
     put(p, (c * 5 + variant) % 7 === 2 ? 'komur' : (c * 3 + floor) % 11 === 0 ? 'demir' : 'tas', c * B, G + B, chain(shadeFn(0.8), nf));
     put(p, 'kaldirim', c * B, G + 2 * B, chain(shadeFn(0.65), nf));
   }
-  // 1.1: arka duvarda blok kumeleri yerine uzak tunel agizlari ve yumusak kaya damarlari
-  for (let i = 0; i < 2; i++) {
-    const cx = 50 + i * 200 + Math.floor(r() * 80); const rx = 26 + Math.floor(r() * 12); const ry = 34 + Math.floor(r() * 10); const by = G;
-    for (let y = by - ry; y < by; y++) for (let x = cx - rx - 2; x <= cx + rx + 2; x++) {
-      const d = Math.hypot((x - cx) / (rx + Math.sin(y * 0.7 + i) * 1.5), (y - by) / ry);
-      if (d > 1 || x < 0 || x >= GAME_W) continue;
-      p.set(x, y, pack(mix(hex('#04030a'), hex(CAVE_DARK), Math.min(1, d * d * 0.9))));
-    }
-  }
-  layer(p, (L) => {
-    for (let c = 0, h = 1; c < cols; c++) {
-      if (r() < 0.5) h = Math.max(0, Math.min(2, h + (r() < 0.5 ? -1 : 1)));
-      for (let k = 0; k < h; k++) put(L, 'tas', c * B, G - (k + 1) * B, chain(shadeFn(0.7), nf));
-    }
-  }, 'dark', 0.5);
-  // tavan: tas sirasi ve sarkitlar
-  layer(p, (L) => {
-    for (let c = 0; c < cols; c++) {
-      put(L, 'tas', c * B, 0, chain(shadeFn(0.7), nf));
-      if (r() < 0.5) put(L, 'tas', c * B, B, chain(shadeFn(0.66), nf));
-      if (r() < 0.35) put(L, 'sarkit', c * B, r() < 0.5 ? B : 2 * B, chain(shadeFn(0.8), nf));
-    }
-  }, 'dark', 0.5);
-  // kristaller ve mantarlar zeminde
+  darkenRows(p, G + 6, GAME_H, 0, 0.35, D);
+  // kristaller: isik saciyor
   for (let i = 0; i < 4; i++) {
-    const c = Math.floor(r() * cols);
+    const c = Math.floor(r() * (GAME_W / B));
     const blue = r() < 0.5;
-    put(p, blue ? 'kristal_b' : 'kristal_m', c * B, G - B + 1, dark ? fogFn(CAVE_DARK, 0.35) : null);
-    if (!dark) glowAt(p, c * B + 8, G - 6, 26, blue ? '#7cc8f0' : '#b48ae0', 0.28);
+    put(p, blue ? 'kristal_b' : 'kristal_m', c * B, G - B + 1, dark ? fogFn(D, 0.35) : null);
+    if (!dark) { glowAt(p, c * B + 8, G - 6, 40, blue ? '#7cc8f0' : '#b48ae0', 0.38); glowAt(p, c * B + 8, G - 8, 10, '#f0f0ff', 0.25); }
   }
-  if (r() < 0.6) put(p, 'mantarlar', Math.floor(r() * cols) * B, G - B + 1, nf);
+  if (r() < 0.6) put(p, 'mantarlar', Math.floor(r() * (GAME_W / B)) * B, G - B + 1, nf);
+  return p.canvas();
+}
+
+// 1.0.12: Magara savasi: odadaki gibi duvar + perspektifli zemin
+export function caveStage(level = 1, variant = 0) {
+  const r = rng(level * 4513 + variant * 71 + 9);
+  const D = CAVE_DARK; const HZ = 136; const s = 8;
+  const p = new Pix(GAME_W, GAME_H);
+  p.rect(0, 0, GAME_W, GAME_H, D);
+  caveWall(p, r, HZ, D, 0.2, variant);
+  layer(p, (L) => ridge(L, r, HZ, 6, 6, 20, 'tas', 'tas', chain(shadeFn(0.8), fogFn(D, 0.32)), 2, HZ + 2), 'dark', 0.4);
+  darkenRows(p, HZ - 20, HZ, 0, 0.3, D);
+  arenaGround(p, HZ, fogFn(D, 0.14), (onPath, c, row) => (onPath ? 'kaldirim' : ((((c * 374761393) ^ (row * 668265263)) >>> 0) % 11 === 0 ? 'komur' : 'magara_zemin')), D);
+  layer(p, (L) => {
+    for (let x = 0; x < GAME_W; x += s) { const h = 1 + Math.round(1.5 + Math.sin(x * 0.05 + variant) * 1.2 + r()); for (let k = 0; k < h; k++) putScaled(L, 'tas', x, k * s, s, shadeFn(0.6)); if (r() < 0.25) putScaled(L, 'sarkit', x, h * s, s, shadeFn(0.75)); }
+    for (const x of [20, 150, 300]) putScaled(L, 'sarkit', x, 24, 24, shadeFn(0.7));
+  }, 'dark', 0.5);
+  const lights = [];
+  for (let i = 0; i < 5; i++) { const x = i % 2 ? 330 + Math.floor(r() * 50) : 20 + Math.floor(r() * 120); const y = HZ + 4 + Math.floor(r() * 30); lights.push([x, y, r() < 0.5]); }
+  const C = new Pix(GAME_W, GAME_H);
+  for (const [x, y, blue] of lights) putScaled(C, blue ? 'kristal_b' : 'kristal_m', x, y - Math.round(6 + (y - HZ) * 0.4), Math.round(6 + (y - HZ) * 0.4), null);
+  putScaled(C, 'kristal_m', GAME_W - 52, GAME_H - 40, 36, null);
+  C.outline('dark', 0.45);
+  p.draw(C, 0, 0, C.w);
+  for (const [x, y, blue] of lights) glowAt(p, x + 4, y - 6, 26, blue ? '#7cc8f0' : '#b48ae0', 0.4);
+  glowAt(p, GAME_W - 34, GAME_H - 22, 50, '#b48ae0', 0.35);
   return p.canvas();
 }
 
@@ -954,6 +947,322 @@ export function kuleStage(level = 1, variant = 0) {
   return p.canvas();
 }
 
+// ------------------------------------------------------------------ 1.0.12 Yeni manzaralar
+// Eren (2026-11-11): Kule/Zindan gibi derinlikli, yumusak-tatli piksel manzaralar istedi.
+// Uzaklik = daha kucuk blok + goge karisma (sis). Gok dither ile yumusak gecer, gunes/ay halesi,
+// yuvarlak bulutlar, ufukta pus, her bolgeye kendi isiklari. Savas sahnesi perspektif zeminli.
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function softSky(p, y0, y1, stops) {
+  const cs = stops.map(([k, h]) => [k, hex(h)]);
+  const at = (k) => {
+    for (let i = 1; i < cs.length; i++) if (k <= cs[i][0]) { const [ka, a] = cs[i - 1]; const [kb, b] = cs[i]; return mix(a, b, (k - ka) / Math.max(1e-6, kb - ka)); }
+    return cs[cs.length - 1][1];
+  };
+  const band = 6; const H = Math.max(1, y1 - y0);
+  for (let y = y0; y < y1; y++) {
+    const yy = y - y0; const b0 = Math.floor(yy / band) * band;
+    const ca = pack(at(b0 / H)); const cb = pack(at(Math.min(1, (b0 + band) / H)));
+    const f = (yy - b0) / band;
+    for (let x = 0; x < p.w; x++) p.set(x, y, f * 16 > BAYER[(y & 3) * 4 + (x & 3)] + 0.5 ? cb : ca);
+  }
+}
+// 2 piksellik izgarada daire: yumusak ama piksel
+function blobAt(p, cx, cy, R, colFn, g = 2) {
+  for (let y = Math.floor((cy - R) / g) * g; y <= cy + R; y += g) for (let x = Math.floor((cx - R) / g) * g; x <= cx + R; x += g) {
+    const d = Math.hypot(x + g / 2 - cx, y + g / 2 - cy) / R;
+    if (d > 1) continue;
+    const c = colFn(d, x - cx, y - cy);
+    if (c != null) p.rect(x, y, g, g, c);
+  }
+}
+function sunDisk(p, x, y, R, core, rim, halo, ha = 0.5) {
+  glowAt(p, x, y, R * 5, halo, ha);
+  glowAt(p, x, y, R * 2.2, '#fff6dc', ha * 0.6);
+  blobAt(p, x, y, R, (d, dx, dy) => (d > 0.78 ? rim : dx + dy < -R * 0.5 ? '#fffbea' : core));
+}
+function moonDisk(p, x, y, R, col, shade, halo) {
+  glowAt(p, x, y, R * 4, halo, 0.35);
+  blobAt(p, x, y, R, (d, dx, dy) => {
+    if (Math.hypot(dx + R * 0.55, dy - R * 0.35) < R * 0.85) return shade; // hilal golgesi
+    return (Math.abs(dx - 3) < 3 && Math.abs(dy + 2) < 3) || (Math.abs(dx - 6) < 2 && Math.abs(dy - 5) < 2) ? shade : col;
+  });
+}
+function puffCloud(p, x, y, w, light, mid, dark) {
+  const puffs = [];
+  const n = Math.max(2, Math.round(w / 12));
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0.5 : i / (n - 1);
+    const R = 6 + Math.round(Math.sin(t * Math.PI) * w * 0.16);
+    puffs.push([x + t * w, y - Math.sin(t * Math.PI) * R * 0.5, R]);
+  }
+  for (const [cx, cy, R] of puffs) blobAt(p, cx, cy, R, (d, dx, dy) => (dy > R * 0.25 ? dark : dy > -R * 0.2 ? mid : light));
+  p.rect(Math.round(x), Math.round(y + 2), Math.round(w), 4, dark); // duz alt
+}
+function stars(p, r, n, y1, cols) {
+  for (let i = 0; i < n; i++) {
+    const x = Math.floor(r() * p.w); const y = Math.floor(r() * y1); const c = cols[Math.floor(r() * cols.length)];
+    p.set(x, y, c);
+    if (r() < 0.12) { p.set(x - 1, y, c); p.set(x + 1, y, c); p.set(x, y - 1, c); p.set(x, y + 1, c); }
+  }
+}
+// yumusak sirt: sinus toplami, s pikselde basamak
+function ridge(p, r, baseY, s, minH, maxH, top, body, fn, freq = 1, bottom = null) {
+  const ph = [r() * 6.28, r() * 6.28, r() * 6.28];
+  const off = -Math.floor(r() * s);
+  for (let x = off; x < p.w + s; x += s) {
+    const n = 0.5 + 0.32 * Math.sin(x * 0.012 * freq + ph[0]) + 0.13 * Math.sin(x * 0.031 * freq + ph[1]) + 0.05 * Math.sin(x * 0.083 * freq + ph[2]);
+    const h = Math.max(1, Math.round((minH + (maxH - minH) * n) / s));
+    const yb = bottom == null ? baseY : bottom;
+    for (let yy = baseY - h * s, k = 0; yy < yb; yy += s, k++) putScaled(p, k === 0 ? top : body, x, yy, s, fn);
+  }
+}
+// olcekli yuvarlak agac (ya da cam)
+function roundTree(p, x, baseY, s, leaf, trunk, fn, pine = false, wood = 'kutuk') {
+  for (let k = 0; k < trunk; k++) putScaled(p, wood, x, baseY - (k + 1) * s, s, fn);
+  const top = baseY - trunk * s;
+  const rows = pine ? [[-2, 2], [-1, 1], [-1, 1], [0, 0]] : [[-1, 1], [-2, 2], [-2, 2], [-1, 1]];
+  rows.forEach(([a, b], j) => {
+    const f = [0.82, 0.94, 1.04, 1.12][j];
+    for (let i = a; i <= b; i++) putScaled(p, leaf, x + i * s, top - j * s, s, chain(shadeFn(f), fn));
+  });
+}
+function treeLine(p, r, baseY, s, leaf, fn, pine = false, gap = 2) {
+  for (let x = -Math.floor(r() * 3) * s; x < p.w + 2 * s; x += s * (gap + Math.floor(r() * 3))) roundTree(p, x, baseY + Math.floor(r() * 3) * 2, s, leaf, 1 + Math.floor(r() * 2), fn, pine);
+}
+function aurora(p, y, cols) {
+  for (let x = 0; x < p.w; x++) {
+    const yc = y + Math.sin(x * 0.03) * 8 + Math.sin(x * 0.011 + 1) * 6;
+    for (let k = 0; k < 26; k++) {
+      const yy = Math.round(yc + k); const a = 0.32 * (1 - k / 26) * (0.6 + 0.4 * Math.sin(x * 0.09 + k * 0.2));
+      const v = p.get(x, yy); if (!(v >>> 24)) continue;
+      const c = unpack(v); p.set(x, yy, pack(mix(c.slice(0, 3), hex(cols[k < 8 ? 0 : 1]), a)));
+    }
+  }
+}
+function nebula(p, r, n, cols, y1) {
+  for (let i = 0; i < n; i++) glowAt(p, Math.floor(r() * p.w), Math.floor(r() * y1), 30 + Math.floor(r() * 40), cols[i % cols.length], 0.28);
+}
+
+// Bolge temalari. sky: yukaridan asagi renk duraklari. ranges: [olcek, ust, govde, sis]
+function themeOf(zone, floor, tod) {
+  const deep = Math.min(1, ((Math.max(1, floor) - 1) % 10) / 9);
+  if (zone === 'orman') {
+    let sky; let body = 'sun'; let haze = '#dfe9e4'; let tint = null; let bx = 0.72; let starsN = 0; let cl = ['#ffffff', '#eef2f4', '#cfdbe4'];
+    const T = tod ? TOD[tod] : null;
+    const t = T ? T.t : Math.min(1, (floor - 1) / 9) * 0.85;
+    if (tod === 'gundogumu' || tod === 'gunbatimi') {
+      sky = [[0, T.stops[0]], [0.55, T.stops[1]], [1, T.stops[2]]]; haze = T.stops[2]; tint = fogFn(T.warm[0], T.warm[1]); bx = tod === 'gundogumu' ? 0.16 : 0.84; cl = ['#ffe2cc', '#f0b8a4', '#b8849a'];
+    } else if (t > 0.55) {
+      sky = [[0, '#141a3c'], [0.6, '#2c3666'], [1, '#56608a']]; body = 'moon'; haze = '#4a5480'; tint = nightFn(Math.min(1, t)); starsN = 70; cl = ['#5a6290', '#4a5280', '#3c4470'];
+    } else if (t > 0.3) {
+      sky = [[0, '#5a6aa0'], [0.55, '#c49ab0'], [1, '#f2c49a']]; haze = '#e8c0a4'; tint = fogFn('#e09070', 0.12); bx = 0.85; cl = ['#ffe2cc', '#f0b8a4', '#b8849a'];
+    } else sky = [[0, '#6f9cc8'], [0.55, '#a8cbe0'], [1, '#e8f0e4']];
+    return {
+      sky, body, bx, haze, tint, starsN, clouds: body === 'moon' ? 1 : 4, cloud: cl,
+      ranges: [[3, 'cimen_ust', 'tas', 0.8], [4, 'cimen_ust', 'tas', 0.66]], line: { leaf: 'yaprak', s: 6, fog: 0.55 }, hills: ['cimen_ust', 'cimen_ust'],
+      leaf: 'yaprak', ground: ['cimen', 'toprak', 'tas'], arena: { path: 'toprak', main: 'cimen_ust', alt: 'cimen_ust' },
+      props: ['ot', 'cicek_k', 'cicek_s', 'ot'], depth: [['tree', 'yaprak'], ['blk', 'cali'], ['tree', 'hus_yaprak', 'hus_kutuk']], fire: body === 'moon',
+    };
+  }
+  if (zone === 'col') {
+    const t = deep * 0.6;
+    const late = t > 0.3;
+    return {
+      sky: late ? [[0, '#4a4c84'], [0.5, '#c4848a'], [1, '#f2b878']] : [[0, '#7aa4cc'], [0.55, '#d6d0b4'], [1, '#f4dcaa']],
+      body: 'sun', bx: late ? 0.82 : 0.66, sunR: late ? 12 : 9, haze: late ? '#f0b888' : '#f2dcae', tint: fogFn('#e09050', 0.06 + t * 0.2), clouds: 1, cloud: ['#fff4e4', '#f4dcc4', '#d8b8a0'],
+      ranges: [[3, 'kum', 'kumtasi', 0.78], [4, 'kum', 'kumtasi', 0.62]], line: null, hills: ['kum', 'kumtasi'], mesa: true,
+      ground: ['kum', 'kum', 'kumtasi'], arena: { path: 'kumtasi', main: 'kum', alt: 'kumtasi' },
+      props: ['kaktus', 'kemik', 'kum_yigini'], depth: [['blk', 'kaktus'], ['blk', 'hurmalik', 2], ['blk', 'kum_yigini']],
+    };
+  }
+  if (zone === 'buz') return {
+    sky: [[0, '#5c78ac'], [0.55, '#a6c0dc'], [1, '#eef4f8']], body: 'sun', bx: 0.3, sunR: 7, haze: '#eef4f8', tint: nightFn(deep * 0.25), clouds: 3, cloud: ['#ffffff', '#e8f0f6', '#c4d4e4'],
+    aurora: deep > 0.4 ? ['#9af0c8', '#7ab8f0'] : null,
+    ranges: [[3, 'kar_ust', 'tas', 0.72], [4, 'kar_ust', 'buz', 0.58]], line: { leaf: 'karli_yaprak', s: 6, fog: 0.5, pine: true }, hills: ['kar', 'donmus_toprak'],
+    leaf: 'karli_yaprak', pine: true, ground: ['kar', 'donmus_toprak', 'tas'], arena: { path: 'buz', main: 'kar_ust', alt: 'buz' },
+    props: ['karli_cali', 'kristal_b', 'buz'], depth: [['tree', 'karli_yaprak', 'kutuk', true], ['blk', 'karli_cali'], ['blk', 'kristal_b']], snow: true,
+  };
+  if (zone === 'kor') return {
+    sky: [[0, '#1c0e14'], [0.5, '#5a2224'], [1, '#d8642e']], body: 'none', haze: '#c0502a', tint: fogFn('#40140c', 0.06 + deep * 0.1), clouds: 3, cloud: ['#7a3a34', '#5a2a2a', '#3a1c20'],
+    ranges: [[3, 'kor_kaya', 'bazalt', 0.6], [4, 'bazalt', 'bazalt', 0.45]], line: null, hills: ['bazalt', 'bazalt'], volcano: true,
+    ground: ['bazalt', 'kor_kaya', 'bazalt'], arena: { path: 'kor_kaya', main: 'bazalt', alt: 'lav' }, lava: true,
+    props: ['kor_kristal', 'olu_agac', 'biberlik'], depth: [['blk', 'olu_agac', 2], ['blk', 'kor_kristal'], ['blk', 'biberlik']], embers: true,
+  };
+  if (zone === 'golge') return {
+    sky: [[0, '#0a0614'], [0.55, '#241838'], [1, '#4a3666']], body: 'moon', bx: 0.7, moonR: 13, moon: ['#e8dcf4', '#a890c8', '#b48af0'], haze: '#3c2c58', tint: fogFn('#120c20', 0.1 + deep * 0.1), starsN: 90, starCols: ['#d8d4ec', '#c8a0f0'],
+    clouds: 2, cloud: ['#4a3a68', '#3a2c56', '#2c2044'],
+    ranges: [[3, 'golge_tas', 'golge_tas', 0.62], [4, 'golge_zemin', 'golge_tas', 0.5]], line: { leaf: 'golge_kristal', s: 6, fog: 0.45, crystal: true }, hills: ['golge_zemin', 'golge_tas'],
+    ground: ['golge_zemin', 'golge_tas', 'golge_tas'], arena: { path: 'golge_tas', main: 'golge_zemin', alt: 'golge_tas' },
+    props: ['golge_kristal', 'gece_mantarlari', 'olu_agac'], depth: [['blk', 'golge_kristal'], ['blk', 'gece_mantarlari'], ['blk', 'olu_agac', 2]], glowProps: { golge_kristal: '#b48af0', gece_mantarlari: '#7ab8f0' }, floaters: 'golge_tas',
+  };
+  return { // cekirdek
+    sky: [[0, '#03041a'], [0.55, '#121c4a'], [1, '#3a2a6a']], body: 'planet', haze: '#2a2a6a', tint: fogFn('#0a1030', 0.08 + deep * 0.1), starsN: 120, starCols: ['#fff0a0', '#d8d4ec', '#a0c8ff'],
+    clouds: 0, nebula: ['#c060c0', '#4080e0', '#60c0d0'],
+    ranges: [[3, 'yildiz_tas', 'yildiz_tas', 0.6], [4, 'yildiz_zemin', 'yildiz_tas', 0.48]], line: null, hills: ['yildiz_zemin', 'yildiz_tas'],
+    ground: ['yildiz_zemin', 'yildiz_tas', 'yildiz_tas'], arena: { path: 'yildiz_tas', main: 'yildiz_zemin', alt: 'yildiz_tas' },
+    props: ['yildiz_kristal', 'nebula_kristal', 'golge_kristal'], depth: [['blk', 'yildiz_kristal'], ['blk', 'nebula_kristal'], ['blk', 'yildiz_kristal']], glowProps: { yildiz_kristal: '#ffe080', nebula_kristal: '#e080f0', golge_kristal: '#b48af0' }, floaters: 'yildiz_tas',
+  };
+}
+
+// gok + uzak katmanlar (oda ve savas ortak). hz: ufuk cizgisi (uzak sirtlarin dibi)
+function sceneBack(p, th, r, hz, scale = 1) {
+  softSky(p, 0, p.h, th.sky);
+  const skyLow = th.sky[th.sky.length - 1][1];
+  if (th.nebula) nebula(p, r, 6, th.nebula, hz - 20);
+  if (th.aurora) aurora(p, 18, th.aurora);
+  if (th.starsN) stars(p, r, th.starsN, hz - 10, (th.starCols || ['#e8e6f4', '#c8cce8']).map((c) => pack(hex(c))));
+  const bx = Math.round(p.w * (th.bx ?? 0.7));
+  if (th.body === 'sun') sunDisk(p, bx, 30, th.sunR || 9, '#fff2b8', '#f6d88a', th.haze, 0.45);
+  else if (th.body === 'moon') { const m = th.moon || ['#f4f0e0', '#c8c4b4', '#a8b4e8']; moonDisk(p, bx, 30, th.moonR || 10, m[0], m[1], m[2]); }
+  else if (th.body === 'planet') {
+    const px = Math.round(p.w * 0.78); const py = 44; const R = 18;
+    glowAt(p, px, py, 64, '#6a5ac8', 0.35);
+    const ring = (front) => { for (let a = 0; a < 360; a += 1) { const t = a * Math.PI / 180; const x = px + Math.cos(t) * R * 1.7; const y = py + Math.sin(t) * R * 0.38; if ((Math.sin(t) > 0) !== front) continue; p.rect(Math.round(x / 2) * 2, Math.round(y / 2) * 2, 2, 2, Math.sin(t) > 0 ? '#f0d8a0' : '#b8a078'); } };
+    ring(false);
+    blobAt(p, px, py, R, (d, dx, dy) => { const l = (-dx - dy) / (R * 1.4); return d > 0.86 ? '#5a4ab8' : l > 0.45 ? '#d0c4fa' : l > 0.05 ? '#a090ec' : l > -0.45 ? '#7c6cd8' : '#4c3ca8'; });
+    for (const [ox, oy, rr] of [[-6, 4, 3], [5, -6, 2], [4, 7, 2]]) blobAt(p, px + ox, py + oy, rr, () => '#6a5ac4');
+    ring(true);
+  }
+  for (let i = 0; i < (th.clouds || 0); i++) {
+    const w = 30 + Math.floor(r() * 40); let x = Math.floor(r() * (p.w + 40)) - 30; const y = 20 + Math.floor(r() * 3) * 14 + (i % 2) * 8;
+    if (th.body !== 'none' && Math.abs(x + w / 2 - bx) < w / 2 + 24) x = (x + w / 2 < bx ? bx - w - 30 : bx + 30);
+    puffCloud(p, x, y, w, th.cloud[0], th.cloud[1], th.cloud[2]);
+  }
+  if (th.volcano) {
+    const vx = 90 + Math.floor(r() * 200); const vt = hz - 70;
+    for (let y = vt; y < hz; y += 4) { const half = 10 + (y - vt) * 1.3; for (let x = vx - half; x < vx + half; x += 4) putScaled(p, 'bazalt', Math.round(x / 4) * 4, y, 4, fogFn(skyLow, 0.55)); }
+    glowAt(p, vx, vt, 46, '#ff8a3a', 0.6);
+    for (let k = 0; k < 14; k++) p.rect(vx - 4 + Math.round(Math.sin(k) * 3), vt + k * 4, 2, 4, k % 2 ? '#ffb040' : '#ff6a2a');
+  }
+  const [s1, s2] = [th.ranges[0][0] * scale, th.ranges[1][0] * scale];
+  ridge(p, r, hz - 10, Math.max(2, Math.round(s1)), 26, 74, th.ranges[0][1], th.ranges[0][2], fogFn(skyLow, th.ranges[0][3]), 1, hz + 4);
+  darkenRows(p, hz - 50, hz + 4, 0, 0.35, th.haze);
+  ridge(p, r, hz - 2, Math.max(2, Math.round(s2)), 12, 44, th.ranges[1][1], th.ranges[1][2], fogFn(skyLow, th.ranges[1][3]), 1.4, hz + 4);
+  if (th.floaters) for (let i = 0; i < 3; i++) {
+    const fx = 20 + Math.floor(r() * (p.w * 0.55)); const fy = 30 + Math.floor(r() * (hz - 90)); const w = 4 + Math.floor(r() * 3);
+    for (let k = 0; k < w; k++) { putScaled(p, th.floaters, fx + k * 6, fy, 6, fogFn(skyLow, 0.45)); if (k > 0 && k < w - 1) putScaled(p, th.floaters, fx + k * 6, fy + 6, 6, fogFn(skyLow, 0.55)); }
+    putScaled(p, th.floaters, fx + Math.floor(w / 2) * 6, fy + 12, 6, fogFn(skyLow, 0.6));
+  }
+  if (th.line) {
+    const L = th.line;
+    if (L.crystal) for (let x = -4; x < p.w; x += 14 + Math.floor(r() * 30)) { putScaled(p, L.leaf, x, hz - 6 - L.s * 2, L.s * 2, fogFn(skyLow, L.fog)); glowAt(p, x + L.s, hz - 8, 14, '#b48af0', 0.2); }
+    else treeLine(p, r, hz + 2, L.s * scale, L.leaf, fogFn(skyLow, L.fog), L.pine);
+  }
+  darkenRows(p, hz - 22, hz + 4, 0, 0.3, th.haze);
+}
+// gok kismina kucuk isik noktalari (atesbocegi, kivilcim, kar)
+function sceneSparks(p, th, r, y0, y1) {
+  if (th.embers) for (let i = 0; i < 40; i++) { const x = Math.floor(r() * p.w); const y = y0 + Math.floor(r() * (y1 - y0)); p.set(x, y, r() < 0.5 ? '#ffb040' : '#ff7030'); }
+  if (th.snow) for (let i = 0; i < 70; i++) { const x = Math.floor(r() * p.w); const y = y0 + Math.floor(r() * (y1 - y0)); p.set(x, y, '#ffffff'); if (r() < 0.3) p.set(x + 1, y, '#e8f0f8'); }
+  if (th.fire) for (let i = 0; i < 12; i++) { const x = Math.floor(r() * p.w); const y = y0 + 30 + Math.floor(r() * (y1 - y0 - 30)); glowAt(p, x, y, 5, '#e8f070', 0.5); p.set(x, y, '#f8ffb0'); }
+}
+
+export const SCENE_ZONES = ['orman', 'col', 'buz', 'kor', 'golge', 'cekirdek'];
+// Kesif odasi (yandan): oyuncu G hizasinda yurur
+export function sceneRoom(zone, floor, variant = 0, opts = {}) {
+  const th = themeOf(zone, floor, opts.tod);
+  const r = rng(floor * 7919 + variant * 104729 + zone.length * 31 + (opts.base ? 77 : 0));
+  const W = opts.width || GAME_W;
+  const nf = th.tint;
+  const p = new Pix(W, GAME_H);
+  sceneBack(p, th, r, G - 30);
+  const skyLow = th.sky[th.sky.length - 1][1];
+  // orta tepeler (8 px) + kayaliklar
+  layer(p, (L) => {
+    ridge(L, r, G - 4, 8, 8, 30, th.hills[0], th.hills[1], chain(fogFn(skyLow, 0.36), nf), 2, G);
+    if (th.mesa) for (let i = 0; i < 2; i++) {
+      const c0 = Math.floor(r() * (W / 8 - 8)); const w = 4 + Math.floor(r() * 4); const h = 3 + Math.floor(r() * 3);
+      for (let c = 0; c < w; c++) for (let k = 0; k < h - (c === 0 || c === w - 1 ? 1 : 0); k++) putScaled(L, 'kumtasi', (c0 + c) * 8, G - (k + 1) * 8, 8, chain(fogFn(skyLow, 0.32), nf));
+    }
+  }, 'dark', 0.35);
+  if (th.leaf) layer(p, (L) => {
+    for (let x = Math.floor(r() * 3) * 10; x < W; x += 30 + Math.floor(r() * 40)) roundTree(L, x, G, 8, th.leaf, 2 + Math.floor(r() * 2), chain(fogFn(skyLow, 0.28), nf), th.pine);
+  }, 'dark', 0.35);
+  darkenRows(p, G - 30, G, 0, 0.22, th.haze);
+  sceneSparks(p, th, r, 0, G - 20);
+  // yakin agaclar (16 px)
+  const lit = [];
+  layer(p, (L) => {
+    if (th.leaf) {
+      const spots = [];
+      const n = opts.base ? 2 : 2 + Math.floor(r() * 2);
+      for (let i = 0; i < n; i++) spots.push(opts.base ? (i === 0 ? 7 : 22) * B : Math.floor(r() * (W / B)) * B);
+      for (const x of spots) tree(L, x, G, 3 + Math.floor(r() * 2), chain(shadeFn(0.92), nf), !th.pine, th.leaf);
+    }
+    for (let i = 0; i < 3; i++) {
+      const c = Math.floor(r() * (W / B));
+      if (opts.base && c > 0 && c < 23 && c !== 7 && c !== 8) continue;
+      const pr = th.props[Math.floor(r() * th.props.length)];
+      if (pr === 'ot' || pr === 'cicek_k' || pr === 'cicek_s') continue;
+      put(L, pr, c * B, G - B, nf);
+      lit.push([c * B, pr]);
+    }
+    if (zone === 'orman') for (let c = Math.floor(r() * 4); c < W / B; c += 3 + Math.floor(r() * 5)) {
+      if (opts.base && c > 0 && c < 23 && c !== 7 && c !== 8) continue;
+      put(L, 'yaprak', c * B, G - B, chain(shadeFn(0.82), nf));
+    }
+  }, 'dark', 0.5);
+  // zemin
+  for (let c = 0; c < W / B; c++) {
+    const pool = th.lava && (c * 7 + variant * 3 + floor) % 9 === 4;
+    put(p, pool ? 'lav' : th.ground[0], c * B, G, nf);
+    put(p, (c * 7 + variant) % 11 === 3 ? th.ground[2] : th.ground[1], c * B, G + B, chain(shadeFn(0.9), nf));
+    put(p, (c * 5 + variant + floor) % 7 < 2 ? th.ground[2] : th.ground[1], c * B, G + 2 * B, chain(shadeFn(0.8), nf));
+    if (pool) glowAt(p, c * B + 8, G + 2, 26, '#ff8a3a', 0.4);
+  }
+  darkenRows(p, G + 6, GAME_H, 0, 0.3, '#16121a');
+  for (let i = 0; i < 9; i++) {
+    const c = Math.floor(r() * (W / B)); const k = th.props[Math.floor(r() * th.props.length)];
+    if (zone !== 'orman' && r() < 0.6) continue;
+    put(p, zone === 'orman' ? (r() < 0.5 ? 'ot' : r() < 0.5 ? 'cicek_k' : 'cicek_s') : k, c * B, G - B + 1, nf);
+    if (zone !== 'orman') lit.push([c * B, k]);
+  }
+  if (th.glowProps) for (const [x, k] of lit) if (th.glowProps[k]) glowAt(p, x + 8, G - 6, 26, th.glowProps[k], 0.32);
+  return p.canvas();
+}
+
+// Kesif savasi: perspektifli zemin, ufukta katmanlar, yanlarda derinlikte olcekli susler
+export function sceneStage(zone, floor, variant = 0) {
+  const th = themeOf(zone, floor, null);
+  const r = rng(floor * 9173 + variant * 211 + zone.length * 17);
+  const HZ = 136;
+  const nf = th.tint;
+  const p = new Pix(GAME_W, GAME_H);
+  sceneBack(p, th, r, HZ, 0.75);
+  sceneSparks(p, th, r, 0, HZ - 10);
+  const a = th.arena;
+  arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? a.path : ((((c * 374761393) ^ (row * 668265263)) >>> 0) % 9 === 0 ? a.alt : a.main)), th.haze);
+  // derinlikte susler: uzak = kucuk, yakin = buyuk. Dusman tumsegi (sag orta) ve oyuncu (sol alt) bos kalir.
+  const items = [];
+  for (let i = 0; i < 7; i++) {
+    const y = HZ + 3 + Math.floor(r() * 22);
+    const left = i % 2 === 0;
+    const x = left ? 96 + Math.floor(r() * 50) - (y - HZ) * 2 : 362 + Math.floor(r() * 26);
+    items.push([x, y, th.depth[i % th.depth.length]]);
+  }
+  for (const x of [4, 60]) items.push([x, HZ + 2 + Math.floor(r() * 4), th.depth[0]]);
+  items.sort((u, v) => u[1] - v[1]);
+  const D = new Pix(GAME_W, GAME_H);
+  for (const [x, y, d] of items) {
+    const s = Math.round(4 + (y - HZ) * 0.45);
+    const fn = chain(fogFn(th.haze, Math.max(0, 0.45 - (y - HZ) * 0.015)), nf);
+    if (d[0] === 'tree') roundTree(D, x, y, s, d[1], 2, fn, !!d[3], d[2] || 'kutuk');
+    else { const k = d[2] || 1; for (let j = 0; j < k; j++) putScaled(D, d[1], x, y - (j + 1) * s * 1.5, Math.round(s * 1.5), fn); }
+  }
+  D.outline('dark', 0.45);
+  p.draw(D, 0, 0, D.w);
+  if (th.glowProps) for (const [x, y, d] of items) if (th.glowProps[d[1]]) glowAt(p, x + 4, y - 6, 18, th.glowProps[d[1]], 0.35);
+  if (th.lava) for (let i = 0; i < 5; i++) glowAt(p, Math.floor(r() * GAME_W), HZ + 10 + Math.floor(r() * 60), 30, '#ff7a30', 0.25);
+  // yakin cerceve: koseler
+  const N = new Pix(GAME_W, GAME_H);
+  putScaled(N, th.props[0], GAME_W - 46, GAME_H - 38, 36, chain(shadeFn(0.85), nf));
+  N.outline('dark', 0.5);
+  p.draw(N, 0, 0, N.w);
+  if (th.glowProps && th.glowProps[th.props[0]]) glowAt(p, GAME_W - 28, GAME_H - 20, 40, th.glowProps[th.props[0]], 0.3);
+  if (th.snow) sceneSparks(p, { snow: true }, r, HZ, GAME_H);
+  return p.canvas();
+}
+
 // Hanci Lale'nin arkasindaki harita (panelde buyuk gosterilir): eski kagit uzerine
 // kucuk bloklarla bolgeler, us, maden, arsa ve zindan cukuru; aralarinda kesik yollar.
 export const HUB_SPOTS = {
@@ -1088,8 +1397,11 @@ export function caveBackground(depth = 1) {
   const p = new Pix(GAME_W, GAME_H);
   const cols = GAME_W / B;
   const rowsUp = Math.ceil(G / B);
+  // 1.0.12: uzak duvar 8 px, sise karisan; fener isiklari
+  p.rect(0, 0, GAME_W, GAME_H, CAVE_DARK);
+  for (let y = G - 8; y > -8; y -= 8) for (let x = -4; x < GAME_W + 8; x += 8) putScaled(p, 'tas_duvar', x + ((Math.floor(y / 8) % 2) ? 4 : 0), y, 8, chain(shadeFn(0.92), nf, fogFn(CAVE_DARK, 0.28)));
+  darkenRows(p, 0, 50, 0.7, 0, CAVE_DARK);
   for (let c = 0; c < cols; c++) {
-    for (let k = 1; k <= rowsUp; k++) put(p, 'tas_duvar', c * B, G - k * B, nf);
     put(p, 'tas', c * B, G, nf); put(p, (c * 5) % 7 === 2 ? 'komur' : 'tas', c * B, G + B, chain(shadeFn(0.8), nf)); put(p, 'kaldirim', c * B, G + 2 * B, chain(shadeFn(0.7), nf));
     // tavan: tas sirasi, yer yer sarkit
     put(p, 'tas', c * B, G - rowsUp * B, chain(shadeFn(0.7), nf));
@@ -1105,6 +1417,8 @@ export function caveBackground(depth = 1) {
     for (let c = 0; c < W.x / B - 1; c++) put(L, 'ray', c * B, G - B, nf);
   }, OL);
   put(p, 'fener', 2 * B, G - 6 * B); put(p, 'fener', 4 * B, G - 6 * B);
+  for (const c of [2, 4]) glowAt(p, c * B + 8, G - 6 * B + 8, 46, '#ffb050', 0.4);
+  darkenRows(p, G + 6, GAME_H, 0, 0.3, CAVE_DARK);
   return p.canvas();
 }
 
