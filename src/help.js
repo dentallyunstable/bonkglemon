@@ -190,6 +190,30 @@ export function applySettings() {
   ui.classList.toggle('calm', !!st.calm);
 }
 const fmtDate = (t) => { const d = new Date(t); return `${d.toLocaleDateString('tr-TR')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+// claude.ai icinde dosya kaydetme 'downloads' izniyle olur; disarida (yerel test) normal indirme
+async function saveFile(text) {
+  const d = new Date();
+  const filename = `bonkglemon-${S.save.char}-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.json`;
+  if (window.claude && window.claude.use) {
+    const dl = await window.claude.use('downloads');
+    if (dl) {
+      try { await dl.save({ filename, data: text }); UI.feed('Yedek dosyası kaydedildi.'); } catch (e) {
+        if (e && e.code === 'declined') UI.feed('Kaydetme iptal edildi.');
+        else if (e && e.code === 'rate_limited') UI.feed('Biraz bekleyip tekrar dene.');
+        else UI.feed('Dosya burada kaydedilemedi. "Metin olarak > Kopyala" ile yedeği alabilirsin.');
+      }
+      return;
+    }
+    UI.feed('Dosya burada kaydedilemedi. "Metin olarak > Kopyala" ile yedeği alabilirsin.');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  UI.feed('Yedek dosyası indirildi.');
+}
 export function openSettings(w) {
   UI.openPanel('Ayarlar', (body) => {
     const render = () => {
@@ -220,14 +244,7 @@ export function openSettings(w) {
       body.appendChild(UI.el('h3', '', 'Kayıt ve yedek'));
       body.appendChild(UI.el('p', 'muted', 'Kayıt bu cihazın tarayıcısında. Günde bir kez otomatik yedek alınır. Başka cihaza taşımak için yedeği indirip orada yükle.'));
       row('Yedeği indir', 'Kaydın bir dosya olarak bilgisayarına ya da telefonuna iner.', [UI.button('İndir', () => {
-        const text = S.exportText();
-        const a = document.createElement('a');
-        const d = new Date();
-        a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-        a.download = `bonkglemon-${S.save.char}-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.json`;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-        UI.feed('Yedek dosyası indirildi.');
+        saveFile(S.exportText());
       }, 'small green')]);
       const file = document.createElement('input');
       file.type = 'file'; file.accept = '.json,application/json'; file.style.display = 'none';
