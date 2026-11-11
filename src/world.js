@@ -7,6 +7,7 @@ import {
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
   RANCH, ranchDropOf, SECRETS, stormNow, CLASS_RULES, WEAPON_SKILL, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
   RARITY, KULE, KULE_RULES, BOSS_P2, HARD, HARD_DROPS, LEGENDS,
+  CAPE_COLORS,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -17,6 +18,7 @@ import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
 import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
+import { refreshTut, tutInit, applySettings, openGuide, openSettings } from './help.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest, openCredits } from './panels.js';
 import { ranchReady, collectRanch, ranchLeft, heartsText, petDisplayName, shinyMastery } from './pets.js';
 import { ShaftMixin } from './shaft.js';
@@ -78,8 +80,14 @@ export class WorldScene extends Phaser.Scene {
       this.textures.addCanvas('glow', cv);
     }
     this.keys = this.input.keyboard.addKeys('LEFT,RIGHT,A,D');
+    tutInit();
+    applySettings();
     this.buildHud();
     S.onChange(() => this.refreshHud());
+    if (S.restoredFrom) this.time.delayedCall(1500, () => UI.feed(`<span style="color:#ffb04d">Kaydın okunamadı, ${new Date(S.restoredFrom).toLocaleString('tr-TR')} tarihli otomatik yedekten geri yüklendi.</span>`, 'gold'));
+    // 1.0 ilk adimlar karti (panel acilip kapaninca da guncellensin)
+    this.time.addEvent({ delay: 800, loop: true, callback: () => refreshTut(this) });
+    this.time.addEvent({ delay: 260, loop: true, callback: () => this.capeSparkle() });
     // 0.9: basarim, pelerin ve unvan bildirimleri (degisiklikler biriktirilip saniyede bir bakilir)
     refreshGoals();
     S.onChange(() => { if (this._gt) return; this._gt = setTimeout(() => { this._gt = null; goalTick((kind, a) => this.goalNote(kind, a)); }, 900); });
@@ -387,6 +395,8 @@ export class WorldScene extends Phaser.Scene {
     this.questBtn.appendChild(this.questBadge);
     item('dock_album', 'Albüm', () => openAlbum(this));
     item('dock_profil', 'Profil', () => openProfile(this));
+    item('dock_rehber', 'Rehber', () => openGuide());
+    item('dock_ayar', 'Ayarlar', () => openSettings(this));
     this.refreshHud();
   }
 
@@ -427,6 +437,7 @@ export class WorldScene extends Phaser.Scene {
       const t = S.save.tok;
       UI.$('#hud-gold').insertAdjacentHTML('beforeend', `<span class="hud-tok" title="${UI.escapeHtml(ITEMS[t.id].name)}: ${UI.escapeHtml(TOK[t.k].fmt(t.v))}"><img class="ico-inline" src="${iconUrl(ITEMS[t.id].icon)}">${Math.ceil(left / 60000)} dk</span>`);
     }
+    refreshTut(this);
   }
 
   say(text, ms = 3000) {
@@ -540,6 +551,7 @@ export class WorldScene extends Phaser.Scene {
       act: () => this.fireMenu(),
     });
     this.fireSpr = fire;
+    this.buildStatue();
     if (Date.now() < (S.save.fireUntil || 0)) fire.setScale(1.3);
     // Han: arkada harita, onde tezgah; Hanci Lale ikisinin arasinda durur
     this.addObj(this.add.image(INN_X, G + 1, 'inn_back').setOrigin(0, 1).setDepth(2));
@@ -577,6 +589,67 @@ export class WorldScene extends Phaser.Scene {
     if (!keep) this.pickBaseMusic();
     const fs = furnaceState();
     if (fs.ready > 0) UI.feed(`Fırında ${fs.ready} ${ITEMS[fs.out].name} hazır! Fırına dokunup alabilirsin.`);
+  }
+
+  // 1.0 99 pelerinleri parlar: sirttan kucuk isiltilar dokulur (Usta Pelerini altin ve daha sik)
+  capeSparkle() {
+    const id = S.save && S.save.equip.pelerin;
+    const it = id && ITEMS[id];
+    if (!it || !it.cape || this.battle || this.inBattleView || S.save.settings.calm) return;
+    const p = this.player;
+    if (!p || !p.visible || p.alpha < 0.5) return;
+    const usta = it.cape === 'usta';
+    if (!usta && Math.random() < 0.45) return;
+    const col = usta ? 0xffe070 : Phaser.Display.Color.HexStringToColor(CAPE_COLORS[it.cape] ? CAPE_COLORS[it.cape][3] : '#ffffff').color;
+    const back = p.flipX ? 1 : -1;
+    const x = p.x + back * (3 + Math.random() * 6);
+    const y = p.y - 8 - Math.random() * 16;
+    const s = this.add.rectangle(x, y, 1, 1, col).setDepth(11).setAlpha(0.95);
+    this.tweens.add({ targets: s, y: y + 8 + Math.random() * 6, x: x + back * Math.random() * 4, alpha: 0, duration: 700 + Math.random() * 400, onComplete: () => s.destroy() });
+  }
+
+  // 1.0 ilk 99'da depo ile ates arasinda karakterin altin heykeli; her 99 kaidede bir yildiz
+  buildStatue() {
+    const n = S.count99();
+    if (!n) return;
+    const G = GROUND_Y;
+    const X = 372;
+    const g = this.add.graphics().setDepth(3);
+    g.fillStyle(0x6a5a4a, 1).fillRect(X - 8, G - 6, 16, 7);
+    g.fillStyle(0x8a7a64, 1).fillRect(X - 8, G - 6, 16, 2);
+    g.fillStyle(0x4a3e34, 1).fillRect(X - 9, G - 1, 18, 2);
+    for (let i = 0; i < Math.min(n, 5); i++) g.fillStyle(0xffd04d, 1).fillRect(X - 6 + i * 3, G - 3, 2, 2);
+    this.addObj(g);
+    // karakterin kendi karesinden altin renkli heykel dokusu (parlakliga gore 5 tonlu altin)
+    const key = `statue_${S.save.char}`;
+    if (!this.textures.exists(key)) {
+      const fr = this.textures.getFrame('char', this.charMeta.anims.idle.frames[0]);
+      const cv = document.createElement('canvas');
+      cv.width = fr.cutWidth; cv.height = fr.cutHeight;
+      const cx = cv.getContext('2d', { willReadFrequently: true });
+      cx.drawImage(fr.source.image, fr.cutX, fr.cutY, fr.cutWidth, fr.cutHeight, 0, 0, fr.cutWidth, fr.cutHeight);
+      const img = cx.getImageData(0, 0, cv.width, cv.height);
+      const d = img.data;
+      const ramp = [[74, 46, 14], [138, 92, 26], [200, 146, 42], [240, 196, 80], [255, 236, 160]];
+      for (let k = 0; k < d.length; k += 4) {
+        if (!d[k + 3]) continue;
+        const l = (0.3 * d[k] + 0.59 * d[k + 1] + 0.11 * d[k + 2]) / 255;
+        const c = ramp[Math.min(4, Math.floor(Math.pow(l, 0.8) * 5.2))];
+        d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
+      }
+      cx.putImageData(img, 0, 0);
+      this.textures.addCanvas(key, cv);
+    }
+    const glow = this.add.image(X, G - 12, 'glow').setScale(0.6).setAlpha(0.35).setDepth(2);
+    glow.noTint = true;
+    this.addObj(glow);
+    // karakter kareleri ortalanmis (oyuncu gibi): ayaklar karenin ortasinda
+    const st = this.add.image(X, G - 6, key).setOrigin(0.5, 0.5).setScale(0.6).setDepth(3);
+    st.noTint = true;
+    this.addObj(st, { x: X - 16, face: false, label: n > 1 ? `Heykel ✦${n}` : 'Heykel', lx: X - 14, ly: G - 34, act: () => {
+      const list = SKILLS.filter((s) => !s.soon && S.level(s.key) >= 99).map((s) => `${s.name} ${S.vlevel(s.key) > 99 ? `(sanal ${S.vlevel(s.key)})` : ''}`);
+      UI.feed(`<span style="color:#ffd04d">✦ Altın heykelin. 99 olan becerilerin: ${list.join(', ')}</span>`, 'gold');
+    } });
   }
 
   // Hanci Lale: el sallar, sonra her yere giden panel acilir
@@ -2789,8 +2862,17 @@ export class WorldScene extends Phaser.Scene {
     const sk = SKILLS.find((s) => s.key === up.skill);
     if (up.skill === 'can') S.hp = Math.min(S.maxHp(), S.hp + 10);
     sfx('levelup');
+    if (up.virt) { // 1.0 sanal seviye
+      UI.bubble(this.player.x, GROUND_Y - 44, `<b>${sk.name}</b> sanal ${up.level}!`, 2600);
+      UI.feed(`<span style="color:#ffd04d">✦ ${sk.name} sanal seviyen ${up.level}${up.level >= 120 ? ': gerçek bir USTA oldun!' : ''}</span>`, 'gold');
+      return;
+    }
     UI.bubble(this.player.x, GROUND_Y - 44, `<b>${sk.name}</b> ${up.level}. seviye!`, 2600);
     UI.feed(`<span style="color:#ffd04d">★ ${sk.name} seviyen ${up.level} oldu!</span>`, 'gold');
+    if (up.level === 99) {
+      UI.banner(`${sk.name} 99!`, 'Pelerinin çantanda. Üsteki heykelin de parlıyor.', 3200, 'gold');
+      if (S.count99() === 1) UI.feed('<span style="color:#ffd04d">✦ İlk 99\'un! Üste altın bir heykelin dikildi. 99\'dan sonra XP birikir, sanal seviye 120\'ye kadar çıkar.</span>', 'gold');
+    }
     const gear = Object.values(ITEMS).filter((it) => it.req && it.req[0] === up.skill && it.req[1] === up.level);
     if (gear.length) UI.feed(`Artık kuşanabilirsin: ${gear.map((it) => it.name).join(', ')}`);
     for (const [wt, list] of Object.entries(ABILITIES)) {

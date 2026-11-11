@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0 (Hikâye ve Son)';
+export const VERSION = '1.0 (Rehber ve Ayarlar)';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -1973,3 +1973,9 @@ export const STORY = [
 // Oyun sonrasi: Kadim zorluk (Kesif'te butun bolgeler)
 export const KADIM = { hp: 1.7, atk: 1.45, def: 1.25, xp: 1.6, drop: 1.5, oz: 0.03, ozBoss: 1 };
 export const ANVIL5 = [['kadim_oz', 3], ['meteor_tasi', 4], ['usta_damgasi', 1]];
+
+// ---------------------------------------------------------------- 1.0 parca 2: 99 odulleri
+// 99'dan sonra XP birikir, 120'ye kadar sanal seviye gorunur. Bir beceride 120 olan Usta Pelerini alir.
+export const VMAX = 120;
+CAPE_COLORS.usta = ['#5a3a12', '#c89a2a', '#ffe070', '#ffffff'];
+ITEMS.usta_pelerini = { name: 'Usta Pelerini', kind: 'pelerin', rarity: 'efsanevi', icon: 'pelerin_usta', def: 10, hp: 60, spd: 10, cape: 'usta', desc: 'Bir beceride sanal 120\'ye ulaşan gerçek ustalara. Altın gibi parlar. Savunma +10, Can +60, Hız +10.' };

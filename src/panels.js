@@ -5,8 +5,8 @@ import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSIO
 import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
-import { sfx, setSound } from './audio.js';
-import { forgetLogin } from './login.js';
+import { sfx } from './audio.js';
+import { tutFlag, openSettings } from './help.js';
 import { iconUrl, hubMap, HUB_SPOTS, todNow } from './art.js';
 import {
   PUL, refreshGoals, goals, goalDef, goalText, goalProgress, readyCount, addPul, clockOk, ACH, SECRET, ACH_GROUPS, TIER_NAMES, TIER_PTS, SECRET_PTS, achTier, achTargets, achPoints, achCount, ACH_TOTAL,
@@ -164,6 +164,7 @@ function detailBox(id, buttons, x = null) {
 
 // ------------------------------------------------------------ canta
 export function openBag(w) {
+  tutFlag('canta');
   let sel = null;
   let confirmDrop = false;
   const inBattle = !!(w.battle && !w.battle.over && $battleVisible());
@@ -343,6 +344,7 @@ export function openDepo(w) {
 
 // ------------------------------------------------------------ beceriler
 export function openSkills() {
+  tutFlag('beceri');
   UI.openPanel(`Beceriler · Toplam ${S.totalLevel()}`, (body) => {
     const free = Object.keys(TREE).reduce((t, b) => t + Math.max(0, S.treePoints(b) - S.treeSpent(b)), 0);
     const tb = UI.el('div', 'choice-row');
@@ -352,17 +354,20 @@ export function openSkills() {
       const row = UI.el('div', 'skill-row' + (s.soon ? ' soon' : ''));
       row.appendChild(UI.el('div', '', s.name));
       const lv = S.level(s.key);
-      row.appendChild(UI.el('div', 'lv', `${lv}/99`));
+      const vl = S.vlevel(s.key);
+      row.appendChild(UI.el('div', 'lv' + (lv >= 99 ? ' max' : ''), lv >= 99 ? `99 ✦${vl > 99 ? ` (${vl})` : ''}` : `${lv}/99`));
       if (s.soon) {
         row.appendChild(UI.el('div', 'muted', `${s.soon} sürümünde gelecek`));
       } else {
         const xp = S.save.skills[s.key];
-        const a = xpForLevel(lv); const b = xpForLevel(lv + 1);
-        const bar = UI.el('div', 'bar xp');
+        // 1.0: 99'dan sonra sanal seviyeye (120) dogru dolar
+        const cur = lv >= 99 ? vl : lv;
+        const a = xpForLevel(cur); const b = xpForLevel(cur + 1);
+        const bar = UI.el('div', 'bar xp' + (lv >= 99 ? ' virt' : ''));
         const f = UI.el('div', 'fill');
-        f.style.width = lv >= 99 ? '100%' : `${((xp - a) / (b - a)) * 100}%`;
+        f.style.width = cur >= 120 ? '100%' : `${((xp - a) / (b - a)) * 100}%`;
         bar.appendChild(f);
-        bar.appendChild(UI.el('span', '', lv >= 99 ? 'MAKS' : `${Math.floor(xp)} / ${b} XP`));
+        bar.appendChild(UI.el('span', '', cur >= 120 ? 'USTA (120)' : lv >= 99 ? `Sanal ${cur + 1}: ${Math.floor(xp)} / ${b} XP` : `${Math.floor(xp)} / ${b} XP`));
         row.appendChild(bar);
         row.appendChild(UI.el('div', 'desc', s.desc));
       }
@@ -630,24 +635,7 @@ export function openProfile(w) {
       row.style.display = 'flex';
       row.style.gap = 'calc(4 * var(--u))';
       row.style.marginTop = 'calc(5 * var(--u))';
-      row.appendChild(UI.button(S.save.settings.sound ? 'Ses: açık' : 'Ses: kapalı', () => {
-        S.save.settings.sound = !S.save.settings.sound;
-        setSound(S.save.settings.sound);
-        S.persist();
-        render();
-      }, 'small blue'));
-      // 0.8.9: vurus sarsintisi kapatilabilir
-      row.appendChild(UI.button(S.save.settings.shake === false ? 'Sarsıntı: kapalı' : 'Sarsıntı: açık', () => {
-        S.save.settings.shake = S.save.settings.shake === false;
-        S.persist();
-        render();
-      }, 'small blue'));
-      row.appendChild(UI.button('Çıkış yap', () => {
-        UI.choice('Çıkış', 'Bu cihazdan çıkış yapılsın mı? Tekrar girerken kodun gerekecek. İlerlemen silinmez.', [
-          { label: 'Çıkış yap', cls: 'red', onClick: () => { S.persist(); forgetLogin(); location.reload(); } },
-          { label: 'Vazgeç', onClick: () => openProfile(w) },
-        ]);
-      }, 'small red'));
+      row.appendChild(UI.button('Ayarlar ve yedek', () => openSettings(w), 'small blue'));
       info.appendChild(row);
       info.appendChild(UI.el('p', 'muted', `Bonkglemon · sürüm ${VERSION}`));
       pr.appendChild(info);
@@ -1562,6 +1550,7 @@ let hubMapUrl = null;
 export function openHanci(w) {
   if (!hubMapUrl) hubMapUrl = hubMap().toDataURL();
   S.fillQuests();
+  tutFlag('lale');
   UI.openPanel('Hancı Lale', (body) => {
     body.appendChild(UI.el('p', 'lale-says', `“${LALE_SAYS[Math.floor(Math.random() * LALE_SAYS.length)]}”`));
     const map = UI.el('div', 'hubmap');

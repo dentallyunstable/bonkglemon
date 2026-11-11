@@ -307,6 +307,7 @@ export function goalTick(notify) {
     if (S.level(sk.key) >= 99 && !s.capes[sk.key]) { s.capes[sk.key] = true; give(capeFor(sk.key)); }
   }
   if (!s.capes.cirak && SKILLS.some((sk) => S.level(sk.key) >= 50)) { s.capes.cirak = true; give('cirak_pelerini'); }
+  if (!s.capes.usta && SKILLS.some((sk) => S.vlevel(sk.key) >= 120)) { s.capes.usta = true; give('usta_pelerini'); }
   // balik turnuvasi hafta sonu baslarken sayac baslar
   if (weekendNow() && weekendKind() === 'balik' && s.ev.tourWeek !== weekNum() && clockOk()) {
     s.ev.tourWeek = weekNum(); s.ev.tourBase = s.stats.fished || 0; s.ev.tour = [];

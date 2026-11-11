@@ -99,6 +99,24 @@ function storageSet(key, val) {
   try { localStorage.setItem(key, val); return true; } catch (e) { return false; }
 }
 
+// 1.0 kayit surumu ve yedekler
+export const SAVE_V = 2;
+const BAK_PREFIX = 'bonkglemon.bak.';
+const BAK_MAX = 3;
+const BAK_EVERY = 20 * 3600 * 1000;
+// sv eski olan kayitlar sirayla bu adimlardan gecer (index = hedef surum - 2)
+const MIGRATIONS = [
+  (d) => { if (!d.settings) d.settings = { sound: true, auto: false }; }, // 1 -> 2: 1.0 ayarlar + yedek
+];
+function readBackups(char) {
+  try { const a = JSON.parse(storageGet(BAK_PREFIX + char) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+// kaydin oyuna ait ve o karaktere ait oldugunu kontrol et (sifre/kod kayitta yok)
+function validSave(d, char) {
+  return !!d && typeof d === 'object' && d.char === char && d.skills && typeof d.skills === 'object' &&
+    d.stats && typeof d.stats === 'object' && Array.isArray(d.bag) && d.equip && typeof d.equip === 'object';
+}
+
 export const S = {
   save: null,     // kalici kayit
   run: null,      // aktif dungeon turu (kaydedilmez)
@@ -111,7 +129,17 @@ export const S = {
     if (raw) {
       try { data = JSON.parse(raw); } catch (e) { data = null; }
     }
+    this.restoredFrom = 0;
+    // 1.0: kayit bozulduysa en yeni otomatik yedege don
+    if (raw && !validSave(data, char)) {
+      for (const b of readBackups(char).sort((x, y) => y.t - x.t)) {
+        let d = null; try { d = JSON.parse(b.raw); } catch (e) { d = null; }
+        if (validSave(d, char)) { data = d; this.restoredFrom = b.t; break; }
+      }
+    }
     if (!data || data.char !== char) data = freshSave(char);
+    for (let v = (data.sv || 1) + 1; v <= SAVE_V; v++) { const m = MIGRATIONS[v - 2]; if (m) m(data); }
+    data.sv = SAVE_V;
     // eski kayitlarda eksik alanlari tamamla
     const fresh = freshSave(char);
     for (const k of Object.keys(fresh)) if (data[k] === undefined) data[k] = fresh[k];
@@ -197,11 +225,55 @@ export const S = {
       data.run = null;
     }
     storageSet('bonkglemon.last', char);
+    this.autoBackup();
     this.changed();
   },
 
-  persist() {
+  // ------------------------------------------------ 1.0 yedekler
+  // gunde bir kez bu cihazda otomatik yedek (son 3 tane)
+  autoBackup(force = false) {
     if (!this.save) return;
+    const list = readBackups(this.save.char);
+    const last = list.reduce((m, b) => Math.max(m, b.t || 0), 0);
+    if (!force && Date.now() - last < BAK_EVERY) return;
+    list.push({ t: Date.now(), raw: JSON.stringify(this.save) });
+    list.sort((x, y) => y.t - x.t);
+    if (!storageSet(BAK_PREFIX + this.save.char, JSON.stringify(list.slice(0, BAK_MAX)))) storageSet(BAK_PREFIX + this.save.char, JSON.stringify(list.slice(0, 1)));
+  },
+  backups() { return this.save ? readBackups(this.save.char).sort((x, y) => y.t - x.t).map((b) => ({ t: b.t })) : []; },
+  // yedege don: once su anki hali de yedeklenir, sonra sayfa yenilenir
+  restoreBackup(t) {
+    const b = readBackups(this.save.char).find((x) => x.t === t);
+    if (!b) return false;
+    let d = null; try { d = JSON.parse(b.raw); } catch (e) { return false; }
+    if (!validSave(d, this.save.char)) return false;
+    this.persist();
+    this.autoBackup(true);
+    this.frozen = true; // sayfa yenilenene kadar eski hal yazilmasin
+    return storageSet(SAVE_PREFIX + d.char, b.raw);
+  },
+  // indirilecek yedek dosyasinin metni
+  exportText() {
+    this.persist();
+    return JSON.stringify({ game: 'bonkglemon', sv: SAVE_V, t: Date.now(), char: this.save.char, save: this.save });
+  },
+  // dosyadan yukle: sadece ayni karakterin kaydi kabul edilir
+  importText(text) {
+    let o = null;
+    try { o = JSON.parse(text); } catch (e) { return 'Bu dosya okunamadı. Bonkglemon yedeği mi?'; }
+    if (!o || o.game !== 'bonkglemon' || !o.save) return 'Bu bir Bonkglemon yedeği değil.';
+    if (o.char !== this.save.char || !validSave(o.save, this.save.char)) return `Bu yedek başka bir karaktere ait (${String(o.char || '?').slice(0, 20)}). Sadece kendi yedeğini yükleyebilirsin.`;
+    if ((o.save.sv || 1) > SAVE_V) return 'Bu yedek oyunun daha yeni bir sürümünden. Önce oyunu güncelle.';
+    this.persist();
+    this.autoBackup(true);
+    o.save.run = null;
+    this.frozen = true;
+    if (!storageSet(SAVE_PREFIX + o.char, JSON.stringify(o.save))) return 'Kayıt yazılamadı (tarayıcı alanı dolu olabilir).';
+    return null;
+  },
+
+  persist() {
+    if (!this.save || this.frozen) return;
     if (this._pt) { clearTimeout(this._pt); this._pt = null; }
     storageSet(SAVE_PREFIX + this.save.char, JSON.stringify(this.save));
   },
@@ -220,6 +292,16 @@ export const S = {
 
   // ------------------------------------------------ beceriler
   level(skill) { return levelFromXp(this.save.skills[skill] || 0); },
+  // 1.0 sanal seviye: 99'dan sonra 120'ye kadar (sadece gosterim ve Usta Pelerini)
+  vlevel(skill) {
+    const xp = this.save.skills[skill] || 0;
+    let l = levelFromXp(xp);
+    if (l < 99) return l;
+    while (l < 120 && xpForLevel(l + 1) <= xp) l++;
+    return l;
+  },
+  vlevelOf(xp) { let l = 99; while (l < 120 && xpForLevel(l + 1) <= xp) l++; return l; },
+  count99() { return SKILLS.filter((s) => !s.soon && this.level(s.key) >= 99).length; },
   totalLevel() { return SKILLS.reduce((t, s) => t + this.level(s.key), 0); },
 
   // XP ekler, seviye atlayan becerileri dondurur
@@ -234,6 +316,11 @@ export const S = {
       this.save.skills[skill] = (this.save.skills[skill] || 0) + Math.round(amount);
       const after = this.level(skill);
       if (after > before) ups.push({ skill, level: after });
+      else if (before >= 99 && amount > 0) { // 1.0 sanal seviye
+        const vb = levelFromXp(this.save.skills[skill] - Math.round(amount)) >= 99 ? this.vlevelOf(this.save.skills[skill] - Math.round(amount)) : 99;
+        const va = this.vlevel(skill);
+        if (va > vb) ups.push({ skill, level: va, virt: true });
+      }
     }
     return ups;
   },

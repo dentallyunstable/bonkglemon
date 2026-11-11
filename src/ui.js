@@ -96,6 +96,8 @@ export function setLocation(text) { $('#loc').textContent = text; }
 
 // ------------------------------------------------------------ paneller
 let panelClose = null;
+let helpHook = null;
+export function setHelpHook(fn) { helpHook = fn; }
 export function openPanel(title, build, { wide = false, onClose = null } = {}) {
   closePanel();
   const wrap = $('#panel');
@@ -104,8 +106,11 @@ export function openPanel(title, build, { wide = false, onClose = null } = {}) {
   const box = el('div', 'panel-box');
   const head = el('div', 'panel-head');
   head.appendChild(el('div', 'panel-title', title));
-  head.appendChild(button('✕', () => closePanel(), 'close'));
   const body = el('div', 'panel-body');
+  // 1.0: "?" yardim dugmesi (konusu olan panellerde)
+  const help = helpHook && helpHook(title);
+  if (help) head.appendChild(button('?', () => help(body), 'help'));
+  head.appendChild(button('✕', () => closePanel(), 'close'));
   box.appendChild(head); box.appendChild(body);
   wrap.appendChild(box);
   panelClose = onClose;

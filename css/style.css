@@ -894,3 +894,32 @@ html, body {
 .credits .cr-p { color: #e8e4f8; margin: calc(3 * var(--u)) 0; }
 .credits .cr-s { color: #ffd04d; font-size: 0.85em; margin-top: calc(5 * var(--u)); letter-spacing: 0.08em; text-transform: uppercase; }
 .credits .cr-n { color: #ffffff; font-weight: 800; font-size: 1.15em; }
+
+/* 1.0 parca 2: yardim, rehber, ilk adimlar, ayarlar */
+.btn.help { --btn: #3a6a9a; --btn-light: #5a8ac0; --btn-dark: #1e3a5a; border-radius: 50%; width: calc(13 * var(--u)); height: calc(13 * var(--u)); padding: 0; font-size: var(--fs-s); margin-right: calc(3 * var(--u)); }
+.help-box { background: #1e2a3e; border: calc(0.6 * var(--u)) solid #5a8ac0; border-radius: calc(2 * var(--u)); padding: calc(2.5 * var(--u)) calc(4 * var(--u)); margin-bottom: calc(3 * var(--u)); }
+.help-box .hb-t { color: #a8d8ff; font-weight: 800; margin-bottom: calc(1.5 * var(--u)); }
+.help-box p { margin: 0 0 calc(1.5 * var(--u)); color: #e4e8f0; font-size: var(--fs-s); line-height: 1.35; }
+.guide { display: flex; gap: calc(4 * var(--u)); align-items: flex-start; }
+.guide-nav { display: flex; flex-direction: column; gap: calc(1.5 * var(--u)); flex: 0 0 calc(70 * var(--u)); }
+.guide-nav .btn { text-align: left; }
+.guide-page { flex: 1; background: #2a2232; border-radius: calc(2 * var(--u)); padding: calc(3 * var(--u)) calc(5 * var(--u)); }
+.guide-page h3 { color: #ffe8a0; margin: 0 0 calc(2 * var(--u)); }
+.guide-page p { margin: 0 0 calc(2.5 * var(--u)); line-height: 1.4; }
+#tut { position: absolute; top: calc(22 * var(--u)); right: calc(4 * var(--u)); width: calc(100 * var(--u)); background: rgba(30, 24, 40, 0.92); border: calc(0.6 * var(--u)) solid #8ad08a; border-radius: calc(3 * var(--u)); padding: calc(2.5 * var(--u)) calc(3.5 * var(--u)); pointer-events: auto; }
+#tut.hidden { display: none; }
+#tut .tut-h { color: #8ad08a; font-size: var(--fs-s); }
+#tut .tut-t { color: #fff4c8; font-weight: 800; margin: calc(0.5 * var(--u)) 0; }
+#tut .tut-d { color: #d8d4e4; font-size: var(--fs-s); line-height: 1.3; }
+#tut .btn { margin-top: calc(1.5 * var(--u)); }
+.set-row { display: flex; align-items: center; gap: calc(4 * var(--u)); padding: calc(2 * var(--u)) 0; border-bottom: calc(0.4 * var(--u)) solid #3a3048; }
+.set-l { flex: 1; }
+.set-n { font-weight: 800; }
+.set-d { color: #b8b0c8; font-size: var(--fs-s); }
+.set-c { display: flex; gap: calc(1.5 * var(--u)); flex-wrap: wrap; justify-content: flex-end; max-width: 60%; }
+#ui.fs-small { --fs-s: calc(5.8 * var(--u)); --fs-m: calc(6.8 * var(--u)); --fs-l: calc(9 * var(--u)); }
+#ui.fs-big { --fs-s: calc(7.4 * var(--u)); --fs-m: calc(8.8 * var(--u)); --fs-l: calc(11.4 * var(--u)); }
+#ui.calm .float, #ui.calm #banner, #ui.calm .feed-msg { animation-duration: 0.01s !important; }
+.btn.off { --btn: #5a5266; --btn-light: #7a7088; --btn-dark: #3a3444; color: #d8d0e4; }
+textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u)); font-family: monospace; font-size: calc(5 * var(--u)); background: #1a1422; color: #e8e4f0; border: calc(0.6 * var(--u)) solid #6a5a8a; border-radius: calc(2 * var(--u)); pointer-events: auto; margin-top: calc(2 * var(--u)); box-sizing: border-box; }
+.save-text .btn { margin-top: calc(2 * var(--u)); }

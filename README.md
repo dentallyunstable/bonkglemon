@@ -180,3 +180,10 @@ python3 -m http.server 8000
 - **Son bölge Yıldız Çekirdeği (Kat 61-70):** Boşluk Bekçisi'nden sonra açılır (Saldırı 100). Yeni tür Yıldız (Gölge ve Ay'a güçlü, asaya zayıf). 4 yeni Glemon: Yıldız Tozu, Nebula Kedisi, Meteor Kaplumbağası, Takımyıldız Geyiği (nadir). Yıldız Havuzu'nda 2 yeni balık.
 - **Son patron Kadim Bonk:** 3 aşamalı (%66'da Süpernova, %33'te Kara Delik). Yenince jenerik akar, "Efsane" unvanı açılır.
 - **Kadim zorluk:** Kadim Bonk'tan sonra Keşif Haritası'nda açılıp kapanır. Glemonlar daha güçlü, XP ve eşya daha bol; Kadim Öz düşer. Örs'te +5 (Kadim işçiliği).
+
+## 1.0 Tam Sürüm, 2. parça: Rehber, Ayarlar ve 99 Ödülleri
+- **İlk adımlar:** yeni oyuncuya sağ üstte 7 adımlık küçük kart, her adımda küçük ödül. Eski oyuncular görmez; Ayarlar ya da Rehber'den tekrar açılır.
+- **"?" düğmeleri:** çoğu panelin başlığında; o konunun kısa anlatımını açar. Alttaki **Rehber** düğmesi 12 konuluk kitabı açar.
+- **Ayarlar:** ses, ekran sarsıntısı, yazı boyutu, sakin ekran, savaş başlangıcı, ilk adımlar, çıkış.
+- **Kayıt ve yedek:** yedeği dosya olarak indir / dosyadan yükle (sadece aynı karakter), cihazda günlük otomatik yedek (son 3), kayıt bozulursa en yeni yedekten kendiliğinden döner. Kayıt sürümü (sv) ve sırayla çalışan geçişler.
+- **99 ödülleri:** 99 pelerinleri parıldar; ilk 99'da üsse altın heykel; 99'dan sonra 120'ye kadar sanal seviye; bir beceride 120 olunca altın parlayan Usta Pelerini.
