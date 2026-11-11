@@ -479,8 +479,10 @@ export class WorldScene extends Phaser.Scene {
     }
     if (opts.label) {
       const l = UI.el('div', 'objlabel', opts.label);
-      l._x = opts.lx ?? obj.x;
-      l.style.left = UI.pctX(opts.lx ?? obj.x);
+      // 1.1 cila: ekranin sol kenarindaki yazilar (Uretim Masasi) kesilmesin
+      const lx = Math.max(32, opts.lx ?? obj.x);
+      l._x = lx;
+      l.style.left = UI.pctX(lx - (UI.view.x || 0));
       l.style.top = UI.pctY(opts.ly);
       UI.$('#floats').appendChild(l);
       this.labels.push(l);
@@ -2486,6 +2488,9 @@ export class WorldScene extends Phaser.Scene {
     this.busy = false;
     // 0.13.5 patron gunlugu: kac kez, en hizli sure (zor mod ayri)
     if (res === 'win' && bt && bt.bossWin) S.bossWin(bt.bossWin, !!room.hard, Date.now() - bt.t0);
+    // 1.1 cila: Kule kati savas kazanilinca sayilir (eskiden ancak bir sonraki kata inince sayiliyordu,
+    // 5. katta ara patronu yenip usse donen kontrol noktasini alamiyordu)
+    if (res === 'win' && this.inKule() && S.run.kf < this.zLevel) { S.run.kf = this.zLevel; this.kuleCleared(this.zLevel); }
     if (res === 'win') {
       if (room.type === 'boss') this.bossDefeated();
       else if (room.hard) {

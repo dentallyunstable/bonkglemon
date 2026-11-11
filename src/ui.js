@@ -5,6 +5,13 @@ import { iconUrl } from './art.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 
+// 1.1 cila: giveSafe sonucu (Depo'ya gitti / hic yer yok)
+export function giveNote(r) {
+  if (!r) return;
+  if (r.depo) feed(`Çanta dolu: ${itemName(r.id, false)} ×${r.depo} Depo'ya kondu.`);
+  if (r.lost) feed(`Çanta ve Depo dolu! ${itemName(r.id, false)} ×${r.lost} sığmadı.`);
+}
+
 export function el(tag, cls, text, attrs) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -260,7 +267,8 @@ export function dodgePrompt(ms = 900, count = 1, label = 'KAÇ!') {
       box.addEventListener('pointerdown', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
-        if (done) return;
+        if (done || box._hit) return; // 1.1 cila: ayni dugmeye iki kez basmak iki sayilmasin
+        box._hit = true;
         if (performance.now() - t0 > ms * 0.5) perfect = false;
         clearTimeout(timer);
         left--;

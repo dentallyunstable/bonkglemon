@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0';
+export const VERSION = '1.0.1';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -748,6 +748,7 @@ export const CAPE_COLORS = {
   bag: ['#4a2a6a', '#7448a0', '#a880d0', '#f0e0ff'], cirak: ['#4a4038', '#6e6254', '#9a8c7a', '#d8ccb8'],
   tuccar: ['#1e3e3a', '#2e6a5e', '#c89a3a', '#ffe8a0'],
   buyu: ['#2a2a6a', '#4a48a8', '#8a88e0', '#e0f0ff'],
+  ascilik: ['#6a3a1a', '#c0602a', '#f0a050', '#fff4e0'], // 1.1 cila: eksikti (dal simgesi cikiyordu)
   // 0.13 sinif pelerinleri
   savasci: ['#5a2420', '#94382c', '#c8604a', '#e8c070'], nisanci: ['#24402a', '#3a6a3a', '#6a9a50', '#d8e8a0'],
   buyucu: ['#2a1e5a', '#46329a', '#7a5ad0', '#b8f0ff'], destek: ['#5a4a22', '#9a8040', '#e0d0a0', '#fff8e0'],

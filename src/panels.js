@@ -1419,7 +1419,7 @@ function make(w, station, r, n, render) {
   if (keep) UI.feed(`Tutumlu: ${keep} kez malzemen gitmedi!`);
   if (extra) UI.feed(`Çifte Üretim: ${extra * per} tane fazla çıktı!`);
   // Usta Damgasi: Uretim 75+ iken her uretimde %2
-  if (S.level('uretim') >= 75) { let st = 0; for (let i = 0; i < n; i++) if (Math.random() < 0.02) st++; if (st) { S.addItem('usta_damgasi', st); UI.feed(`<span style="color:#c08cff">Usta Damgası buldun! (×${st})</span>`, 'epic'); } }
+  if (S.level('uretim') >= 75) { let st = 0; for (let i = 0; i < n; i++) if (Math.random() < 0.02) st++; if (st) { UI.giveNote(S.giveSafe('usta_damgasi', st)); UI.feed(`<span style="color:#c08cff">Usta Damgası buldun! (×${st})</span>`, 'epic'); } }
   S.save.stats.crafted += n;
   sfx('craft');
   // masada ve kazanda elle calisir (punch)
@@ -2156,9 +2156,9 @@ export function openClass() {
               const gifts = [];
               const cape = `pelerin_${k}`;
               const owns = (id) => S.countItem(id) > 0 || Object.values(S.save.equip).includes(id) || S.save.depo.some((x) => x && x.id === id);
-              if (!owns(cape)) { S.addItem(cape, 1); gifts.push(ITEMS[cape].name); }
+              if (!owns(cape)) { UI.giveNote(S.giveSafe(cape, 1)); gifts.push(ITEMS[cape].name); }
               const hasWpn = [...S.save.bag, ...S.save.depo, { id: S.save.equip.silah }].some((x) => x && x.id && ITEMS[x.id] && ITEMS[x.id].kind === 'silah' && d.wt.includes(ITEMS[x.id].wt || 'kilic'));
-              if (!hasWpn) { S.addItem(d.start, 1); gifts.push(ITEMS[d.start].name); }
+              if (!hasWpn) { UI.giveNote(S.giveSafe(d.start, 1)); gifts.push(ITEMS[d.start].name); }
               S.changed();
               sfx('levelup');
               UI.banner(`${d.name}!`, d.ult.name, 2200, 'gold');
@@ -2215,7 +2215,7 @@ export function openStory(w) {
             S.save.story.ch++;
             S.addGold(c.rw.gold);
             if (c.rw.pul) addPul(c.rw.pul);
-            if (c.rw.item) S.addItem(c.rw.item[0], c.rw.item[1], 'bag', 0);
+            if (c.rw.item) UI.giveNote(S.giveSafe(c.rw.item[0], c.rw.item[1]));
             S.changed();
             sfx('levelup');
             UI.banner(`Bölüm ${i + 1} tamam!`, c.t, 2200, 'gold');

@@ -695,6 +695,14 @@ export const S = {
     this.changed();
     return true;
   },
+  // 1.1 cila: odul/hediye cantaya sigmazsa Depo'ya gider (kaybolmasin). Kalan = ikisine de sigmayan
+  giveSafe(id, n = 1, boost = 0) {
+    let left = this.addItem(id, n, 'bag', boost);
+    let depo = 0;
+    if (left > 0) { const l2 = this.addItemRaw(id, left, 'depo'); depo = left - l2; left = l2; }
+    this.lastGive = { id, depo, lost: left };
+    return this.lastGive;
+  },
   addItemRaw(id, n, where) {
     const run = this.run; this.run = null;
     const left = this.addItem(id, n, where, 0);

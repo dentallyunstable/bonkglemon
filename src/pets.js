@@ -5,6 +5,7 @@ import {
   ranchDropOf, favOf, passiveOf, ZONES, ZONE_DONE, masteryOf, EGG_BATTLES,
 } from './data.js';
 import { S } from './state.js';
+import { giveNote } from './ui.js';
 
 // ------------------------------------------------------------ Glemon'un yuvasi (bolgesi)
 const HOME = {};
@@ -66,7 +67,7 @@ export function fightBond(p, mult = 1) {
 
 // ------------------------------------------------------------ aksesuar
 export function equipAcc(p, id) {
-  if (p.acc) S.addItem(p.acc, 1);
+  if (p.acc) giveNote(S.giveSafe(p.acc, 1)); // 1.1 cila: canta doluysa Depo'ya
   p.acc = null;
   if (id && S.removeItem(id, 1) >= 1) p.acc = id;
 }

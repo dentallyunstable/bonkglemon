@@ -106,7 +106,7 @@ export const ShaftMixin = {
     if (!S.save.shaft || typeof S.save.shaft.seed !== 'number') { S.save.shaft = newShaft(); first = true; }
     if (!S.save.flags.shaftKit) {
       S.save.flags.shaftKit = 1;
-      S.addItem('merdiven', 8); S.addItem('mesale', 8);
+      UI.giveNote(S.giveSafe('merdiven', 8)); UI.giveNote(S.giveSafe('mesale', 8));
       first = true;
     }
     this.goShaft();

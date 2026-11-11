@@ -160,7 +160,7 @@ export function refreshTut(w) {
     const st = TUT[t.i];
     tutBusy = true;
     S.addGold(st.gold);
-    if (st.item) S.addItem(st.item[0], st.item[1], 'bag', 0);
+    if (st.item) UI.giveNote(S.giveSafe(st.item[0], st.item[1]));
     UI.feed(`<span style="color:#8ad08a">✓ İlk adım: ${UI.escapeHtml(st.t)} (+${st.gold} ${CURRENCY}${st.item ? `, ${st.item[1]} ${ITEMS[st.item[0]].name}` : ''})</span>`, 'good');
     sfx('coin');
     t.i++;
