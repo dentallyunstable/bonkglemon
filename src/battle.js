@@ -527,10 +527,10 @@ export class Battle {
     }
     me.appendChild(this.statusEl);
     this.acts = el('div', 'b-acts');
-    const autoWrap = el('div', 'b-auto');
-    this.autoBtn = button('', () => this.toggleAuto(), 'small');
-    autoWrap.appendChild(this.autoBtn);
-    b.appendChild(me); b.appendChild(this.acts); b.appendChild(autoWrap);
+    // 1.1: Oto dugmesi kendi kartinin icinde (saga ayri bir dugme olarak sarkmasin)
+    this.autoBtn = button('', () => this.toggleAuto(), 'tiny auto-btn');
+    me.appendChild(this.autoBtn);
+    b.appendChild(me); b.appendChild(this.acts);
     this.renderMe();
     this.renderAuto();
     this.renderStatus();
@@ -734,53 +734,61 @@ export class Battle {
   showMenu() {
     this.phase = 'menu';
     this.acts.innerHTML = '';
+    // 1.1 (Eren): savas dugmeleri tek sirada, simgeli ve ayni boyda; ek hamleler ustte kucuk sirada
+    const ab = (label, ic, fn, cls) => {
+      const b = button('', fn, `act-btn ${cls}`);
+      b.appendChild(icon(ic));
+      b.appendChild(el('span', 'lbl', label));
+      return b;
+    };
     this.acts.appendChild(el('div', 'hint', this.streak > 0 ? `Sıra sende! · Seri ×${this.streak}` : 'Sıra sende!'));
+    const extra = el('div', 'b-extra');
+    const main = el('div', 'b-main');
     const fin = this.finishables();
-    if (fin.length) this.acts.appendChild(button('Bitir!', () => this.onFinish(), 'primary finish'));
-    if (S.cls() && this.ult >= 100) this.acts.appendChild(button(`★ ${S.cls().ult.name}`, () => this.useUlt(false), 'primary ult-btn'));
+    if (fin.length) extra.appendChild(button('Bitir!', () => this.onFinish(), 'small primary finish'));
+    if (S.cls() && this.ult >= 100) extra.appendChild(button(`★ ${S.cls().ult.name}`, () => this.useUlt(false), 'small primary ult-btn'));
     const basic = BASIC[this.wt];
     const bonk = this.wt === 'asa' && this.mana < MAGIC.basicCost;
     const atkName = this.wt === 'kilic' ? 'Saldır' : bonk ? 'Asa Darbesi' : basic.name;
-    this.acts.appendChild(button(atkName, () => this.onAttack(), 'primary'));
+    const wid = S.save.equip.silah;
+    main.appendChild(ab(atkName, wid && ITEMS[wid] ? ITEMS[wid].icon : 'kilic_pas', () => this.onAttack(), 'primary'));
     const sk = this.skills();
     const first = ABILITIES[this.wt][0];
     const skillName = SKILLS.find((x) => x.key === WEAPON_SKILL[this.wt]).name;
-    const sb = button(sk.length ? 'Yetenek' : `${first.name} (${skillName} ${first.lvl})`, () => this.skillMenu(), 'purple');
+    const sb = ab(sk.length === 1 ? this.readyText(sk[0]) : 'Yetenek', 'kivilcim', () => this.skillMenu(), 'purple');
     sb.disabled = !sk.some((a) => this.ready(a));
-    if (sk.length === 1) sb.textContent = this.readyText(sk[0]);
-    this.acts.appendChild(sb);
+    if (!sk.length) sb.title = `${first.name}: ${skillName} ${first.lvl}`;
+    main.appendChild(sb);
     if (M('sifa')) {
       const cost = this.sifaCost();
-      const hb = button(this.cd.sifa > 0 ? `Şifa (${this.cd.sifa})` : `Şifa (${cost})`, () => this.castSifa(false), 'green');
+      const hb = ab(this.cd.sifa > 0 ? `Şifa (${this.cd.sifa})` : `Şifa (${cost})`, 'kalp', () => this.castSifa(false), 'green');
       hb.disabled = this.cd.sifa > 0 || this.mana < cost;
-      this.acts.appendChild(hb);
+      main.appendChild(hb);
     }
-    if (M('aimOn') && this.wt === 'yay' && !this.aim) this.acts.appendChild(button('Nişan Al', () => this.aimTurn(), 'blue'));
+    if (M('aimOn') && this.wt === 'yay' && !this.aim) extra.appendChild(button('Nişan Al', () => this.aimTurn(), 'small blue'));
     const usable = BATTLE_ITEMS.filter((id) => S.countItem(id) > 0);
     const pots = S.countItem('iksir_k');
-    const pb = button(usable.length > 1 || (usable.length === 1 && usable[0] !== 'iksir_k') ? 'Eşya' : `İksir (${pots})`, () => this.itemMenu(), 'red');
+    const pb = ab(usable.length > 1 || (usable.length === 1 && usable[0] !== 'iksir_k') ? 'Eşya' : `İksir (${pots})`, 'iksir', () => this.itemMenu(), 'red');
     pb.disabled = usable.length === 0;
-    this.acts.appendChild(pb);
-    if (this.tameables().length) this.acts.appendChild(button('Yem ver', () => this.onFeed(), 'green'));
-    this.acts.appendChild(button('Savun', () => this.defend(), 'blue'));
-    if (this.swapWeapons().length) this.acts.appendChild(button('Silah', () => this.swapMenu(), 'small'));
-    const fb = button('Kaç', () => this.flee(), 'small');
+    main.appendChild(pb);
+    if (this.tameables().length) extra.appendChild(button('Yem ver', () => this.onFeed(), 'small green'));
+    main.appendChild(ab('Savun', 'kask_demir', () => this.defend(), 'blue'));
+    if (this.swapWeapons().length) extra.appendChild(button('Silah değiş', () => this.swapMenu(), 'small'));
+    const fb = ab('Kaç', 'bot_tahta', () => this.flee(), 'flee');
     fb.disabled = !!this.opts.boss || this.enemies.some((e) => e.golden);
-    this.acts.appendChild(fb);
+    main.appendChild(fb);
     // 0.11 Hizli kemer: en cok kullandigin 3 esya tek dokunusla
     const belt = this.beltItems();
-    if (belt.length) {
-      const row = el('div', 'belt');
-      for (const id of belt) {
-        const b = button('', () => this.useItem(id, false), 'belt-btn');
-        b.appendChild(icon(ITEMS[id].icon));
-        b.appendChild(el('span', '', `${S.countItem(id)}`));
-        b.title = ITEMS[id].name;
-        if (ITEMS[id].heal && !ITEMS[id].golden && !ITEMS[id].tok && S.hp >= S.maxHp()) b.disabled = true;
-        row.appendChild(b);
-      }
-      this.acts.appendChild(row);
+    for (const id of belt) {
+      const b = button('', () => this.useItem(id, false), 'belt-btn');
+      b.appendChild(icon(ITEMS[id].icon));
+      b.appendChild(el('span', '', `${S.countItem(id)}`));
+      b.title = ITEMS[id].name;
+      if (ITEMS[id].heal && !ITEMS[id].golden && !ITEMS[id].tok && S.hp >= S.maxHp()) b.disabled = true;
+      extra.appendChild(b);
     }
+    if (extra.childNodes.length) this.acts.appendChild(extra);
+    this.acts.appendChild(main);
   }
 
   beltItems() {

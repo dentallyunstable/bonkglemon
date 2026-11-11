@@ -277,11 +277,19 @@ export function caveRoomBackground(floor, variant = 0, dark = false) {
     put(p, (c * 5 + variant) % 7 === 2 ? 'komur' : (c * 3 + floor) % 11 === 0 ? 'demir' : 'tas', c * B, G + B, chain(shadeFn(0.8), nf));
     put(p, 'kaldirim', c * B, G + 2 * B, chain(shadeFn(0.65), nf));
   }
-  // arka duvarda daha acik tas kumeleri (derinlik)
+  // 1.1: arka duvarda blok kumeleri yerine uzak tunel agizlari ve yumusak kaya damarlari
+  for (let i = 0; i < 2; i++) {
+    const cx = 50 + i * 200 + Math.floor(r() * 80); const rx = 26 + Math.floor(r() * 12); const ry = 34 + Math.floor(r() * 10); const by = G;
+    for (let y = by - ry; y < by; y++) for (let x = cx - rx - 2; x <= cx + rx + 2; x++) {
+      const d = Math.hypot((x - cx) / (rx + Math.sin(y * 0.7 + i) * 1.5), (y - by) / ry);
+      if (d > 1 || x < 0 || x >= GAME_W) continue;
+      p.set(x, y, pack(mix(hex('#04030a'), hex(CAVE_DARK), Math.min(1, d * d * 0.9))));
+    }
+  }
   layer(p, (L) => {
-    for (let c = 0; c < cols; c++) {
-      const h = 1 + Math.floor(r() * 3);
-      if (r() < 0.45) for (let k = 0; k < h; k++) put(L, 'tas', c * B, G - (k + 1) * B, chain(shadeFn(0.62), nf));
+    for (let c = 0, h = 1; c < cols; c++) {
+      if (r() < 0.5) h = Math.max(0, Math.min(2, h + (r() < 0.5 ? -1 : 1)));
+      for (let k = 0; k < h; k++) put(L, 'tas', c * B, G - (k + 1) * B, chain(shadeFn(0.7), nf));
     }
   }, 'dark', 0.5);
   // tavan: tas sirasi ve sarkitlar
@@ -295,7 +303,9 @@ export function caveRoomBackground(floor, variant = 0, dark = false) {
   // kristaller ve mantarlar zeminde
   for (let i = 0; i < 4; i++) {
     const c = Math.floor(r() * cols);
-    put(p, r() < 0.5 ? 'kristal_m' : 'kristal_b', c * B, G - B + 1, dark ? fogFn(CAVE_DARK, 0.35) : null);
+    const blue = r() < 0.5;
+    put(p, blue ? 'kristal_b' : 'kristal_m', c * B, G - B + 1, dark ? fogFn(CAVE_DARK, 0.35) : null);
+    if (!dark) glowAt(p, c * B + 8, G - 6, 26, blue ? '#7cc8f0' : '#b48ae0', 0.28);
   }
   if (r() < 0.6) put(p, 'mantarlar', Math.floor(r() * cols) * B, G - B + 1, nf);
   return p.canvas();
@@ -686,26 +696,157 @@ export function innCounter() {
 
 // Zindan odasi: koyu tas tugla duvar, mesaleler, kaldirim zemin. Derinlestikce kararir.
 export function dungeonRoomBackground(level, variant = 0) {
+  // 1.1: duvar yeniden: tugla, sutunlar, derin kemerler ve mesale isigi (eskiden duz duvar + siyah kutular)
   const r = rng(level * 9173 + variant * 37);
-  const dk = Math.min(0.55, 0.15 + level * 0.012);
-  const nf = fogFn('#0e0b14', dk);
+  const dk = Math.min(0.5, 0.12 + level * 0.01);
+  const dark = '#0e0b14';
+  const nf = fogFn(dark, dk);
   const p = new Pix(GAME_W, GAME_H);
-  p.rect(0, 0, GAME_W, GAME_H, '#120e18');
-  // arka: uzak kemerler (8 px) ve yakin duvar (16 px)
-  for (let y = 0; y < G - 2 * B; y += 8) for (let x = 0; x < GAME_W; x += 8) putScaled(p, 'tas_duvar', x, y, 8, fogFn('#0e0b14', 0.45));
-  for (let a = Math.floor(r() * 3) * 48 - 24; a < GAME_W; a += 96) {
-    for (let k = 0; k < 5; k++) { putScaled(p, 'tugla', a, G - 2 * B - k * 8, 8, fogFn('#0e0b14', 0.5)); putScaled(p, 'tugla', a + 40, G - 2 * B - k * 8, 8, fogFn('#0e0b14', 0.5)); }
-    for (let x = a; x < a + 48; x += 8) putScaled(p, 'tugla', x, G - 2 * B - 40, 8, fogFn('#0e0b14', 0.5));
-    p.rect(a + 8, G - 2 * B - 32, 32, 32, '#07050a');
+  p.rect(0, 0, GAME_W, GAME_H, dark);
+  for (let y = G - 16; y > -16; y -= 16) for (let x = 0; x < GAME_W; x += 16) put(p, 'tugla', x, y, chain(shadeFn(0.82), fogFn(dark, 0.3 + dk * 0.5)));
+  const off = Math.floor(r() * 3) * 16 + 16;
+  const cols = [];
+  for (let a = off - 128; a < GAME_W + 64; a += 128) {
+    archway(p, a + 32, G - 80, 64, 80, dark, 12);
+    cols.push(a);
   }
-  layer(p, (L) => {
-    for (let c = 0; c < GAME_W / B; c++) for (let k = 1; k <= 2; k++) put(L, (c * 3 + k + variant) % 7 === 0 ? 'tas' : 'tugla', c * B, G - k * B, chain(shadeFn(0.62), nf));
-    for (let c = 1 + (variant % 3); c < GAME_W / B; c += 6) put(L, 'fener', c * B, G - 3 * B + 6, null);
-  }, 'dark', 0.5);
+  for (const a of cols) {
+    const cx = a - 16;
+    for (let y = 0; y < G; y += 16) for (let k = 0; k < 2; k++) put(p, 'tas', cx + k * 16, y, chain(shadeFn(k ? 0.8 : 1.02), fogFn(dark, 0.15 + dk * 0.4)));
+    for (let y = 0; y < G; y++) { p.set(cx - 1, y, pack(hex('#08060c'))); p.set(cx + 32, y, pack(hex('#08060c'))); }
+    for (let k = -1; k < 3; k++) put(p, 'kaldirim', cx + k * 16 - 0, G - 16, chain(shadeFn(0.9), nf));
+    for (let k = -1; k < 3; k++) put(p, 'kaldirim', cx + k * 16, 40, chain(shadeFn(0.85), nf));
+  }
+  for (let x = 0; x < GAME_W; x += 16) put(p, 'tas', x, 24, chain(shadeFn(0.8), fogFn(dark, 0.3)));
+  darkenRows(p, 0, 70, 0.75, 0, dark);
+  darkenRows(p, G - 8, G, 0, 0.35, dark);
   for (let c = 0; c < GAME_W / B; c++) {
     put(p, 'kaldirim', c * B, G, nf);
     put(p, 'tas', c * B, G + B, chain(shadeFn(0.7), nf));
     put(p, 'tas_duvar', c * B, G + 2 * B, nf);
+  }
+  for (const a of cols) wallTorch(p, a, 112, '#ff9a40');
+  return p.canvas();
+}
+
+// ------------------------------------------------------------------ 1.1 kapali mekan duvarlari
+// Eren (2026-11-11): zindan ve magara duvarlari kotu duruyordu (duz tugla, simsiyah kutular).
+// Yeni: uzak duvar 8 px bloklar, sutunlar, derinligi olan kemerler, mesale isigi; ustu karanlik.
+function glowAt(p, cx, cy, r, col, a) {
+  const c2 = hex(col);
+  for (let y = Math.max(0, Math.floor(cy - r)); y < Math.min(p.h, Math.ceil(cy + r)); y++) {
+    for (let x = Math.max(0, Math.floor(cx - r)); x < Math.min(p.w, Math.ceil(cx + r)); x++) {
+      const d = Math.hypot(x - cx, y - cy) / r;
+      if (d >= 1) continue;
+      const v = p.get(x, y);
+      if (!(v >>> 24)) continue;
+      const c = unpack(v);
+      const t = a * (1 - d) * (1 - d);
+      // isik: renge karis + biraz parlat
+      p.set(x, y, pack(mix(c.slice(0, 3), c2, t).map((k, i) => Math.min(255, Math.round(k + c2[i] * t * 0.35)))));
+    }
+  }
+}
+function darkenRows(p, y0, y1, f0, f1, to) {
+  for (let y = y0; y < y1; y++) {
+    const t = f0 + ((f1 - f0) * (y - y0)) / Math.max(1, y1 - y0);
+    const fn = fogFn(to, t);
+    for (let x = 0; x < p.w; x++) { const v = p.get(x, y); if (v >>> 24) p.set(x, y, fn(v)); }
+  }
+}
+// kemerli girinti: ici yukaridan asagi koyulasan bir derinlik, tas kenar, dipte hafif isik
+function archway(p, x, top, w, h, dark, s = 8) {
+  const R = w / 2;
+  const inside = (px, py) => (py >= top + R ? px >= x && px < x + w : Math.hypot(px - (x + R - 0.5), py - (top + R)) < R);
+  // kenar taslari (bir blok kalinliginda)
+  for (let py = top - s; py < top + h; py++) for (let px = x - s; px < x + w + s; px++) {
+    const out = (py >= top + R ? px >= x - s && px < x + w + s : Math.hypot(px - (x + R - 0.5), py - (top + R)) < R + s);
+    if (!out || inside(px, py) || py >= top + h) continue;
+    const b = block('tas').d[(((py % B) + B) % B) * B + (((px % B) + B) % B)];
+    p.set(px, py, chain(shadeFn(0.95), fogFn(dark, 0.35))(b));
+  }
+  for (let py = top; py < top + h; py++) for (let px = x; px < x + w; px++) {
+    if (!inside(px, py)) continue;
+    const t = (py - top) / h;
+    const deep = mix(hex('#050308'), hex('#2a2030'), Math.pow(t, 1.6));
+    const side = Math.min(px - x, x + w - 1 - px);
+    const c = side < 3 ? mul(deep, 0.6) : deep; // ic kenar golgesi
+    p.set(px, py, pack(c));
+  }
+}
+function wallTorch(p, x, y, warm) {
+  put(p, 'mesale', x - 8, y - 8, null);
+  glowAt(p, x, y - 2, 40, warm, 0.45);
+  glowAt(p, x, y - 4, 9, '#fff0b0', 0.35);
+}
+// kind: 'zindan' | 'magara'. Savas sahnesi (battleStage) icin kaynak resim; zemini perspektifli.
+export function indoorStage(kind, level = 1, variant = 0) {
+  const r = rng(level * 4513 + variant * 71 + (kind === 'magara' ? 9 : 0));
+  const dark = kind === 'magara' ? CAVE_DARK : '#0e0b14';
+  const HZ = 136; // duvarin dibi = zeminin ufku
+  const s = 8;
+  const p = new Pix(GAME_W, GAME_H);
+  p.rect(0, 0, GAME_W, GAME_H, dark);
+  if (kind === 'zindan') {
+    for (let y = HZ - 16; y > -16; y -= 16) for (let x = 0; x < GAME_W; x += 16) put(p, 'tugla', x, y, chain(shadeFn(0.8), fogFn(dark, 0.42)));
+    const off = Math.floor(r() * 3) * 16;
+    for (let a = off - 48; a < GAME_W + 48; a += 96) {
+      archway(p, a + 24, HZ - 64, 48, 64, dark);
+      // sutun: 16 px, yanlari golgeli
+      for (let y = 0; y < HZ; y += s) for (let k = 0; k < 3; k++) putScaled(p, 'tas', a - 12 + k * s, y, s, chain(shadeFn([0.72, 1.05, 0.86][k]), fogFn(dark, 0.18)));
+      for (let y = 0; y < HZ; y++) { p.set(a - 13, y, pack(hex('#0a0810'))); p.set(a + 12, y, pack(hex('#0a0810'))); }
+      for (let k = -1; k < 3; k++) putScaled(p, 'kaldirim', a - 8 + k * s, HZ - s, s, fogFn(dark, 0.2)); // sutun ayagi
+      for (let k = -1; k < 3; k++) putScaled(p, 'kaldirim', a - 8 + k * s, 40, s, fogFn(dark, 0.25)); // sutun basligi
+    }
+    // duvarin ustunde kalin bir korniş
+    for (let x = 0; x < GAME_W; x += s) putScaled(p, 'tas', x, 32, s, chain(shadeFn(0.85), fogFn(dark, 0.3)));
+  } else {
+    for (let y = HZ - 16; y > -16; y -= 16) for (let x = 0; x < GAME_W; x += 16) put(p, 'tas_duvar', x, y, fogFn(dark, 0.42));
+    // uzak tunel agizlari: duzensiz, ici derinlesen karanlik
+    for (let i = 0; i < 2; i++) {
+      const cx = 60 + i * 190 + Math.floor(r() * 70); const rx = 22 + Math.floor(r() * 10); const ry = 26 + Math.floor(r() * 8); const by = HZ - 30;
+      for (let y = by - ry; y < by; y++) for (let x = cx - rx - 2; x <= cx + rx + 2; x++) {
+        const wob = Math.sin(y * 0.7 + i) * 1.5;
+        const d = Math.hypot((x - cx) / (rx + wob), (y - by) / ry);
+        if (d > 1 || x < 0 || x >= GAME_W) continue;
+        p.set(x, y, pack(mix(hex('#04030a'), hex(dark), Math.min(1, d * d * 0.9))));
+      }
+    }
+    // tavandan sarkan kaya kutleleri (daha yakin)
+    const roof = new Pix(GAME_W, GAME_H);
+    for (let x = 0, h = 1; x < GAME_W; x += 16) {
+      if (r() < 0.6) h = Math.max(0, Math.min(3, h + (r() < 0.5 ? -1 : 1)));
+      for (let k = 0; k < h; k++) put(roof, 'tas', x, k * 16, chain(shadeFn(0.78), fogFn(dark, 0.32)));
+      if (h && r() < 0.5) put(roof, 'sarkit', x, h * 16, chain(shadeFn(0.8), fogFn(dark, 0.3)));
+    }
+    roof.outline('dark', 0.55);
+    p.draw(roof, 0, 0, roof.w);
+    // kaya cikintilari (daha yakin, 16 px)
+    const rock = new Pix(GAME_W, GAME_H);
+    for (let x = 0, h = 2; x < GAME_W; x += 16) {
+      if (r() < 0.5) h = Math.max(1, Math.min(2, h + (r() < 0.5 ? -1 : 1)));
+      for (let k = 0; k < h; k++) put(rock, 'tas', x, HZ - (k + 1) * 16, chain(shadeFn(0.8 - k * 0.05), fogFn(dark, 0.3)));
+    }
+    rock.outline('dark', 0.55);
+    p.draw(rock, 0, 0, rock.w);
+  }
+  // tavan karanligi ve ufuk golgesi
+  darkenRows(p, 0, 70, 0.78, 0.0, dark);
+  darkenRows(p, HZ - 10, HZ, 0.0, 0.45, dark);
+  arenaGround(p, HZ, fogFn(dark, kind === 'magara' ? 0.22 : 0.18),
+    kind === 'magara' ? (onPath, c, row) => (onPath ? 'kaldirim' : (c * 13 + row * 7) % 11 === 0 ? 'komur' : 'magara_zemin')
+      : (onPath) => (onPath ? 'kaldirim' : 'tas_duvar'), dark);
+  if (kind === 'zindan') {
+    const off = Math.floor(rng(level * 4513 + variant * 71)() * 3) * 16;
+    for (let a = off - 48; a < GAME_W + 48; a += 96) wallTorch(p, a, 92, '#ff9a40');
+  } else {
+    // kristaller ve mantarlar duvar dibinde, kendi isiklariyla; tepeden sarkitlar
+    for (let i = 0; i < 5; i++) {
+      const x = 12 + Math.floor(r() * (GAME_W - 24));
+      const blue = r() < 0.5;
+      put(p, blue ? 'kristal_b' : 'kristal_m', x - 8, HZ - 17, null);
+      glowAt(p, x, HZ - 8, 30, blue ? '#7cc8f0' : '#b48ae0', 0.35);
+    }
   }
   return p.canvas();
 }

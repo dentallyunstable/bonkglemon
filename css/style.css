@@ -939,3 +939,23 @@ textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u
 @supports (padding: env(safe-area-inset-left)) {
   #dock { left: calc(3 * var(--u) + env(safe-area-inset-left)); }
 }
+
+/* ---- 1.1 savas dugmeleri (Eren, 2026-11-11): ust kisayol cubugu gibi simgeli, ayni boyda, tek sira */
+.b-acts { flex-wrap: wrap; align-items: flex-end; gap: calc(2.5 * var(--u)); margin-left: calc(100 * var(--u)); }
+.b-acts .hint { flex-basis: 100%; text-shadow: 0 calc(0.8 * var(--u)) 0 #000, calc(0.8 * var(--u)) 0 0 #000, calc(-0.8 * var(--u)) 0 0 #000, 0 calc(-0.8 * var(--u)) 0 #000; }
+.b-extra { flex-basis: 100%; }
+.b-main, .b-extra { display: flex; gap: calc(2.5 * var(--u)); justify-content: center; align-items: flex-end; flex-wrap: wrap; pointer-events: auto; }
+.b-main { background: rgba(42, 28, 20, 0.82); border-radius: calc(5 * var(--u)); padding: calc(2.5 * var(--u)); box-shadow: 0 0 0 calc(1 * var(--u)) var(--wood-dark), inset 0 0 0 calc(1 * var(--u)) var(--trim), 0 calc(1.5 * var(--u)) 0 rgba(0, 0, 0, 0.3); }
+.btn.act-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: calc(31 * var(--u)); min-width: 0; height: calc(27 * var(--u)); padding: calc(1 * var(--u)) calc(1 * var(--u)) calc(3 * var(--u)); border-radius: calc(4 * var(--u)); }
+.btn.act-btn .ico { width: calc(12 * var(--u)); height: calc(12 * var(--u)); image-rendering: pixelated; filter: drop-shadow(0 calc(0.6 * var(--u)) 0 rgba(0, 0, 0, 0.35)); }
+.btn.act-btn .lbl { font-size: calc(5.6 * var(--u)); line-height: 1.05; margin-top: calc(0.8 * var(--u)); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.btn.act-btn.flee { --btn: #7a5a44; --btn-light: #a07a5e; --btn-dark: #4a3424; }
+.b-acts .btn.act-btn { min-width: 0; }
+.b-extra .btn { font-size: var(--fs-s); }
+.b-extra .belt-btn { padding: calc(1 * var(--u)) calc(3 * var(--u)) calc(2 * var(--u)); }
+.b-me .btn.auto-btn { display: block; width: 100%; margin-top: calc(2 * var(--u)); font-size: calc(5.6 * var(--u)); padding: calc(1 * var(--u)) 0 calc(2 * var(--u)); border-radius: calc(3 * var(--u)); --btn: #6a4a34; --btn-light: #93694a; --btn-dark: #3e2a1e; }
+.b-me .btn.auto-btn.auto-on { --btn: #4a9a3e; --btn-light: #7cc85e; --btn-dark: #2c6424; }
+/* savasta eski mesajlar savas alanini kapatmasin: en yeni 2 tanesi, kucuk */
+#ui.fighting #feed .feed-msg:nth-last-child(n+3) { display: none; }
+#ui.fighting #feed { width: calc(140 * var(--u)); }
+#ui.fighting #banner { top: 16%; }

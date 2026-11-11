@@ -17,7 +17,7 @@ import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
-import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
+import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, indoorStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
 import { refreshTut, tutInit, applySettings, openGuide, openSettings } from './help.js';
 import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest, openCredits } from './panels.js';
 import { ranchReady, collectRanch, ranchLeft, heartsText, petDisplayName, shinyMastery } from './pets.js';
@@ -576,7 +576,7 @@ export class WorldScene extends Phaser.Scene {
     this.refreshFurnace();
     if (!S.run) S.hp = S.maxHp(); // us guvenli yer: her donuste can dolar
     this.player.setFlipX(false);
-    this.player.x = from === 'dungeon' ? GAME_W - 16 : from === 'death' ? FIRE_X - 22 : from === 'plot' ? GAME_W - 16 : FIRE_X - 18;
+    this.player.x = from === 'dungeon' ? GAME_W - 16 : from === 'death' ? FIRE_X - 22 : from === 'plot' ? GAME_W - 16 : from === 'pond' ? -12 : FIRE_X - 18;
     this.resetPlayer();
     this.idle();
     UI.setLocation('Üs');
@@ -1463,8 +1463,9 @@ export class WorldScene extends Phaser.Scene {
     this.goPond();
     this.player.x = -12;
     await this.fade(false);
+    await moveTo(this.player, 172, { speed: 95, anim: 'c_walk' });
+    this.player.y = POND.deck + 1; // 1.1: iskeleye cikinca, yurumenin sonunda degil
     await moveTo(this.player, POND.standX, { speed: 95, anim: 'c_walk' });
-    this.player.y = POND.deck + 1;
     this.idle();
     this.busy = false;
     this.pondActions();
@@ -1521,13 +1522,18 @@ export class WorldScene extends Phaser.Scene {
     if (this.busy || this.mode !== 'pond') return;
     this.busy = true;
     UI.setActions([]);
+    // 1.1 (Eren): gole soldan gelinir, donus de iskeleden sola dogru (suyun ustunden saga yurumesin)
+    this.player.y = POND.deck + 1;
+    this.player.setFlipX(true);
+    await moveTo(this.player, 172, { speed: 150, anim: 'c_run' }); // iskelenin basi
     this.player.y = GROUND_Y;
-    this.player.setFlipX(false);
-    await moveTo(this.player, GAME_W + 12, { speed: 190, anim: 'c_sprint' });
+    await moveTo(this.player, -12, { speed: 150, anim: 'c_run' });
     await this.fade(true);
     this.goBase('pond');
-    this.player.x = 12;
+    this.player.setFlipX(false);
     await this.fade(false);
+    await moveTo(this.player, 34, { speed: 120, anim: 'c_walk' });
+    this.idle();
     this.busy = false;
   }
 
@@ -2525,8 +2531,11 @@ export class WorldScene extends Phaser.Scene {
     await this.fade(true);
     this.roomBg = this.bg.texture.key;
     // 0.8.9: savas odanin kendi manzarasinda, iki cimen tumsegi ustunde gecer
-    const key = `stage_${this.roomBg}`;
-    this.bgTex(key, () => battleStage(this.textures.get(this.roomBg).getSourceImage()));
+    // 1.1: Zindan/Kule ve Magara savaslari kendi kapali mekan sahnesinde (kemerler, mesaleler, perspektifli zemin)
+    const indoor = this.mode !== 'dungeon' ? null : this.inZindan() ? 'zindan' : (this.zone() || {}).key === 'magara' ? 'magara' : null;
+    const lv = this.inZindan() ? this.zLevel || 1 : this.floor;
+    const key = indoor ? `stage_in_${indoor}_${lv % 6}` : `stage_${this.roomBg}`;
+    this.bgTex(key, () => battleStage(indoor ? indoorStage(indoor, lv % 6, lv % 3) : this.textures.get(this.roomBg).getSourceImage()));
     this.bg.setTexture(key);
     this.hiddenObjs = this.roomObjs.filter((o) => o.visible);
     for (const o of this.hiddenObjs) o.setVisible(false);
