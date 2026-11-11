@@ -17,7 +17,7 @@ import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
 import { Pix, INK } from './pix.js';
 import { TOD, TOD_SKIP, todNow, forestBackground, caveBackground, battleStage, caveRoomBackground, desertRoomBackground, dungeonRoomBackground, biomeRoomBackground, BIOME_KEYS, iconUrl, MINE_WALL, POND, pondOverlay, bobber } from './art.js';
-import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest } from './panels.js';
+import { openBag, openDepo, openSkills, openProfile, openMap, openStation, furnaceState, openShop, openCamp, openAhir, openAlbum, openHanci, openZindan, openQuests, openEventGate, openMerchant, openTrophies, openPrep, openNest, openCredits } from './panels.js';
 import { ranchReady, collectRanch, ranchLeft, heartsText, petDisplayName, shinyMastery } from './pets.js';
 import { ShaftMixin } from './shaft.js';
 import { GroveMixin } from './grove.js';
@@ -1651,6 +1651,7 @@ export class WorldScene extends Phaser.Scene {
     UI.setActions([]);
     await this.travelOut();
     S.startRun(floor);
+    if (S.kadimOn()) S.run.kadim = true; // 1.0 oyun sonrasi Kadim zorluk
     S.hp = S.maxHp();
     this.mode = 'dungeon';
     this.zz = null;
@@ -2119,7 +2120,7 @@ export class WorldScene extends Phaser.Scene {
     if (Date.now() < (S.save.fireResUntil || 0) || S.fireproof()) return;
     if (!this.toldLava) { this.toldLava = true; UI.feed(S.countItem('ates_iksiri') ? 'Lav yakıyor! Çantandan Ateş Direnci İksiri iç, yoksa savaşlara yanarak başlarsın.' : 'Kor Diyarı yakıyor! Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın. (Simya Kazanı ya da Hancı Lale)'); }
   }
-  battleOpts(room) { return { floor: this.floor, dark: this.unlit(room), cold: this.cold(), burn: this.burning(), night: this.isNight() }; }
+  battleOpts(room) { return { floor: this.floor, dark: this.unlit(room), cold: this.cold(), burn: this.burning(), night: this.isNight(), kadim: !!(S.run && S.run.kadim && !this.inZindan()) }; }
   // 0.11 gece tehlikesi: sadece Kesifte (Zindan ve etkinlikler haric), gercek saatle gece
   isNight() { return this.mode === 'dungeon' && !this.inZindan() && !(S.run && S.run.ev) && todNow() === 'gece'; }
 
@@ -2207,6 +2208,7 @@ export class WorldScene extends Phaser.Scene {
             : zk === 'magara' ? [['tas', 40], ['komur', 30], ['demir', 30], ['define', 3]]
               : zk === 'buz' ? [['tas', 30], ['demir', 25], ['altin', 25], ['kristal', 18], ['define', 4]]
                 : zk === 'kor' ? [['tas', 25], ['komur', 25], ['altin', 20], ['kor', 25], ['define', 4]]
+                  : zk === 'cekirdek' ? [['tas', 20], ['kristal', 20], ['golge', 25], ['yildiz', 15], ['bonkit', 2], ['define', 6]]
                   : zk === 'golge' ? [['tas', 25], ['kristal', 20], ['kor', 20], ['golge', 20], ['bonkit', 1], ['define', 5]]
                     : [['kum', 35], ['tas', 30], ['demir', 25], ['define', 4]];
           room.vein = [[258, G - 8], [274, G - 8], [266, G - 24]].map(([x, y]) => ({ kind: weighted(w), x, y }));
@@ -2658,6 +2660,7 @@ export class WorldScene extends Phaser.Scene {
     const next = ZONES[ZONES.indexOf(z) + 1];
     S.logDrop(null, GLEMONS[z.boss].name, { note: `yenildi! ${z.name} temizlendi` });
     S.changed();
+    if (z.boss === 'kadim_bonk' && !(S.run && S.run.kadim)) { await this.finale(); return; }
     const nextOpen = next && next.open;
     UI.banner(`${z.name} temizlendi!`, nextOpen ? `${next.name} açıldı!` : 'Bütün Keşif bölgelerini bitirdin! Zindan seni bekliyor.', 3500, 'gold');
     sfx('rare');
@@ -2675,6 +2678,21 @@ export class WorldScene extends Phaser.Scene {
     }
     acts.push({ label: 'Üsse dön', cls: acts.length ? '' : 'primary', onClick: () => this.returnBase() });
     UI.setActions(acts);
+  }
+
+  // 1.0 final: Kadim Bonk uyandi. Jenerik, Efsane unvani, Kadim zorluk acilir
+  async finale() {
+    const first = !S.save.ending;
+    S.save.ending = S.save.ending || Date.now();
+    S.changed();
+    UI.banner('Kadim Bonk uyandı!', 'Bonkit yeniden parlıyor', 3500, 'gold');
+    sfx('rare');
+    await this.playPool('sevinc', 2600);
+    this.idle();
+    this.busy = false;
+    const acts = [{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }];
+    UI.setActions(acts);
+    openCredits(this, first);
   }
 
   // ------------------------------------------------------------ donus ve bayilma

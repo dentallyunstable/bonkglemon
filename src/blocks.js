@@ -659,6 +659,19 @@ function voidFloor() {
   for (const [x, y] of [[3, 4], [11, 9], [6, 13]]) { t.set(x, y, '#8ae8e0'); t.set(x + 1, y, '#5ab8b8'); }
   return t;
 }
+// 1.0 Yildiz Cekirdegi: koyu lacivert kristal tas, yildiz benekli zemin
+const STARS = ['#28346e', '#323e80', '#202a5a', '#3a4890', '#4a5aa8'];
+function starStone(seed = 71) {
+  const r = rng(seed); const t = T(STARS[0]);
+  blobs(t, r, STARS.slice(1, 4), 22, 1, 3); speckle(t, r, [STARS[4], '#5a6ab8'], 4);
+  return soften(t, 0.4, 0.2);
+}
+function starFloor() {
+  const t = starStone(72);
+  for (const [x, y] of [[3, 4], [11, 9], [6, 13], [13, 2]]) { t.set(x, y, '#fff0a0'); }
+  for (const [x, y] of [[8, 6], [1, 10]]) { t.set(x, y, '#c8d8ff'); }
+  return t;
+}
 function snowLeaves() {
   const r = rng(61); const t = tintTo(leaves(), '#2e5040', 0.35);
   for (let x = 0; x < B; x++) { const h = 2 + Math.floor(r() * 3); for (let y = 0; y < h; y++) t.set(x, y, SNOW[Math.floor(r() * 3)]); }
@@ -822,7 +835,7 @@ const SOLID = {
   tas_duvar: darkStone, karanlik: dark, bulut: cloud, raf: shelf, tezgah: workbench,
   kumtasi: sandstone, magara_zemin: caveFloor,
   kar: snowSide, kar_ust: snowTop, donmus_toprak: () => frozenDirt(62), buz: ice, bazalt: () => basalt(), kor_kaya: emberRock, lav: lava,
-  golge_tas: () => voidStone(), golge_zemin: voidFloor, karli_yaprak: snowLeaves,
+  golge_tas: () => voidStone(), golge_zemin: voidFloor, yildiz_tas: () => starStone(), yildiz_zemin: starFloor, karli_yaprak: snowLeaves,
   altin: () => ore(23, ['#d8b048', '#b88a30', '#ecd070', '#fff0a0']),
   kristal: () => ore(24, ['#7cc0e0', '#a8d8f0', '#5aa0c8', '#e8f8ff']),
   kor: () => ore(25, ['#d8561e', '#ec7a30', '#f8a840', '#ffe080']),
@@ -920,7 +933,7 @@ const PROPS = {
   bitki: herb, filiz: () => sprout(0), fide: () => sprout(1), cali: berryBush, dallar: branches, crack1: () => crack(1), crack2: () => crack(2), crack3: () => crack(3),
   kristal_m: () => crystal('#9a6cc8', '#6e4c9a', '#c8a0ec'), kristal_b: () => crystal('#7cb4d8', '#4e84a8', '#c8e6f8'),
   karli_cali: snowBerry, biberlik: pepperPlant, gece_mantarlari: nightShrooms, buz_sarkit: iceSpike, olu_agac: deadTree,
-  kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'),
+  kor_kristal: () => crystal('#e0602a', '#a83a14', '#ffb040'), golge_kristal: () => crystal('#7a5ab0', '#4a3a6a', '#c8a0f0'), yildiz_kristal: () => crystal('#e8d070', '#8a7a3a', '#fff8c8'), nebula_kristal: () => crystal('#c06ad8', '#5a2a7a', '#f8c8ff'),
   sarkit: stalactite, mantarlar: shrooms, kaktus: cactus, hurmalik: palm, kum_yigini: sandPile, kemik: bones,
   silahlik_ust: () => weaponRack('ust'), silahlik_alt: () => weaponRack('alt'), zirh_ust: () => armorStand('ust'), zirh_alt: () => armorStand('alt'),
   nilufer: lilyPad, saz: reeds, ay_otu: moonHerb, mavi_fener: () => tintTo(lantern(), '#90c8ff', 0.4), antik: oldChest, merdiven: ladder, mesale: torch,

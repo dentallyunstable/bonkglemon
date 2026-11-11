@@ -60,6 +60,9 @@ function freshSave(char) {
     eqx: {},
     kule: { wk: 0, best: 0, all: 0, cp: 0, chests: [], k50: false },
     bossLog: {},
+    story: { ch: 0 }, // 1.0 Lale'nin hikayesi: alinan bolum odulu sayisi
+    kadimMode: false, // 1.0 oyun sonrasi Kadim zorluk (Kesif)
+    ending: 0, // Kadim Bonk ilk kez yenildigi an
     combos: {},
     // 0.5
     bagBonus: 0,
@@ -176,6 +179,9 @@ export const S = {
     if (!data.eqx || typeof data.eqx !== 'object') data.eqx = {};
     for (const k of Object.keys(data.eqx)) if (!data.equip[k] || !data.eqx[k] || !Array.isArray(data.eqx[k].a)) delete data.eqx[k];
     if (!data.kule || typeof data.kule !== 'object') data.kule = freshSave(char).kule;
+    if (!data.story || typeof data.story !== 'object' || !Number.isFinite(data.story.ch)) data.story = { ch: 0 };
+    data.kadimMode = !!data.kadimMode;
+    if (!Number.isFinite(data.ending)) data.ending = 0;
     this.save = data;
     this.hp = this.maxHp();
     // 0.8.6: savasin ortasinda oyunu kapatmak bayilma cezasindan kurtarmaz
@@ -646,6 +652,9 @@ export const S = {
   },
 
   // 0.13.5 patron gunlugu
+  // 1.0 Kadim zorluk ancak Kadim Bonk yenildikten sonra
+  kadimOpen() { return (this.save.stats.glemons.kadim_bonk || 0) > 0; },
+  kadimOn() { return this.kadimOpen() && !!this.save.kadimMode; },
   bossLogOf(key) {
     const L = this.save.bossLog;
     return (L[key] = L[key] || { n: 0, hn: 0, best: 0, bestH: 0, rares: {} });

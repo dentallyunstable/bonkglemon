@@ -869,3 +869,28 @@ html, body {
 .detail .affix { font-weight: 800; }
 .trophies.journal .trophy span { font-size: calc(5 * var(--u)); }
 .trophies.journal .trophy .btn { margin-top: calc(1 * var(--u)); }
+
+/* 1.0 hikaye ve jenerik */
+.story-row { display: flex; align-items: center; gap: calc(3 * var(--u)); background: #2a2232; border: calc(0.6 * var(--u)) solid #6a5a8a; border-radius: calc(2 * var(--u)); padding: calc(2 * var(--u)) calc(3 * var(--u)); margin: calc(2 * var(--u)) 0; }
+.story-row.ready { border-color: #ffd04d; box-shadow: 0 0 calc(3 * var(--u)) #ffd04d66; }
+.story-row .st-t { font-weight: 800; color: #ffe8a0; }
+.story-row .st-g { flex: 1; color: #d8d0e8; font-size: 0.9em; }
+.story-book { display: flex; flex-direction: column; gap: calc(1.5 * var(--u)); }
+.story-ch { background: #2a2232; border-radius: calc(2 * var(--u)); padding: calc(2 * var(--u)) calc(3 * var(--u)); }
+.story-ch .sc-t { font-weight: 800; }
+.story-ch.done .sc-t { color: #8ad08a; }
+.story-ch.cur { border: calc(0.6 * var(--u)) solid #ffd04d; }
+.story-ch.cur .sc-t { color: #ffe8a0; margin-bottom: calc(2 * var(--u)); }
+.story-ch.locked { opacity: 0.45; }
+.story-ch .lale-says { margin: 0 0 calc(1.5 * var(--u)); }
+.story-ch .qbar { height: calc(3 * var(--u)); background: #1a1422; margin: calc(1.5 * var(--u)) 0; width: 100%; border-radius: calc(1.5 * var(--u)); overflow: hidden; }
+.story-ch .qfill { height: 100%; background: #ffd04d; }
+.story-ch .btn { margin-top: calc(2 * var(--u)); }
+.zone.kadim { border: calc(0.6 * var(--u)) solid #6a5a8a; }
+.zone.kadim.on { border-color: #ffd04d; background: #3a2a1a; }
+.credits { height: calc(130 * var(--u)); overflow: hidden; position: relative; background: radial-gradient(ellipse at center, #1a2460 0%, #070a1e 80%); border-radius: calc(2 * var(--u)); margin-bottom: calc(3 * var(--u)); }
+.credits .roll { position: absolute; left: 0; right: 0; top: 0; text-align: center; padding: 0 calc(6 * var(--u)); }
+.credits .cr-h { color: #ffd04d; font-size: 1.8em; margin: 0 0 calc(4 * var(--u)); }
+.credits .cr-p { color: #e8e4f8; margin: calc(3 * var(--u)) 0; }
+.credits .cr-s { color: #ffd04d; font-size: 0.85em; margin-top: calc(5 * var(--u)); letter-spacing: 0.08em; text-transform: uppercase; }
+.credits .cr-n { color: #ffffff; font-weight: 800; font-size: 1.15em; }

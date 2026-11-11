@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.13.5';
+export const VERSION = '1.0 (Hikâye ve Son)';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -1879,3 +1879,97 @@ export const BOSS_PHASE = { at: 0.5, atk: 1.2, spd: 15 };
 // Zor mod: patronu bir kez yenince acilir
 export const HARD = { hp: 1.8, atk: 1.35, def: 1.2, gold: 3, xp: 2.5, kadim: [0.03, 0.035, 0.04, 0.05, 0.06, 0.08] };
 export const HARD_DROPS = [['yildiz_demiri', 0.35], ['usta_damgasi', 0.12], ['efsane_pul', 0.15], ['altin_elma', 0.5]];
+
+// ---------------------------------------------------------------- 1.0 parca 1: Hikaye ve Son
+// Son bolge: Yildiz Cekirdegi (Kat 61-70). Golge Boslugu'nun altinda, yildiz isigiyla parlayan kristal dunya.
+TYPE_STRONG['Yıldız'] = ['Gölge', 'Ay'];
+TYPE_STRONG['Taş'].push('Yıldız');
+STYLE['Yıldız'] = ['asa', 'yay'];
+Object.assign(GLEMONS, {
+  yildiz_tozu: {
+    name: 'Yıldız Tozu', from: "Yıldız Tozu'ndan", rarity: 'siradan', type: 'Yıldız', fly: true,
+    hp: 15, atk: 4.1, def: 2.4, spd: 125,
+    special: { name: 'Göz Kamaştırma', mult: 0.9, status: ['karanlik', 2], telegraph: true }, every: 3,
+    drops: [['yildiz_parcasi', 0.3]],
+  },
+  nebula_kedisi: {
+    name: 'Nebula Kedisi', from: "Nebula Kedisi'nden", rarity: 'siradan', type: 'Yıldız',
+    hp: 17, atk: 4.3, def: 2.6, spd: 130,
+    special: { name: 'Yıldız Pençesi', mult: 1.7, telegraph: true }, every: 3,
+    drops: [['nebula_tuyu', 0.3]],
+  },
+  meteor_kaplumbaga: {
+    name: 'Meteor Kaplumbağası', from: "Meteor Kaplumbağası'ndan", rarity: 'siradan', type: 'Yıldız',
+    hp: 24, atk: 3.5, def: 5.2, spd: 75,
+    special: { name: 'Meteor Kabuğu', shell: 2 }, every: 3,
+    drops: [['meteor_tasi', 0.3]],
+  },
+  takimyildiz_geyigi: {
+    name: 'Takımyıldız Geyiği', from: "Takımyıldız Geyiği'nden", rarity: 'nadir', type: 'Yıldız',
+    hp: 22, atk: 4.6, def: 3.6, spd: 110,
+    special: { name: 'Yıldız Yağmuru', mult: 1.0, aoe: true, telegraph: true }, every: 3,
+    drops: [['takimyildiz_boynuzu', 0.25], ['yildiz_parcasi', 0.3]],
+  },
+  kadim_bonk: {
+    name: 'Kadim Bonk', from: "Kadim Bonk'tan", rarity: 'efsanevi', type: 'Yıldız', boss: true,
+    hp: 175, atk: 6.4, def: 5.2, spd: 105,
+    pattern: ['normal', 'yagmur', 'normal', 'cagir', 'normal', 'darbe', 'normal', 'kalkan'],
+    specials: {
+      yagmur: { name: 'Yıldız Yağmuru', mult: 1.0, aoe: true, telegraph: true, status: ['karanlik', 2] },
+      darbe: { name: 'Kadim Darbe', mult: 2.6, telegraph: true },
+      cagir: { name: 'Yıldız Tozu Çağrısı', summon: 'yildiz_tozu' },
+      kalkan: { name: 'Kristal Kabuk', shell: 2 },
+    },
+    drops: [['kadim_kalp', 1], ['cekirdek_kristali', 0.5], ['efsane_pul', 0.3], ['altin_elma', 0.5]],
+  },
+});
+ZONES.push({ key: 'cekirdek', name: 'Yıldız Çekirdeği', floors: [61, 70], open: true, boss: 'kadim_bonk', type: 'Yıldız', atk: 100, after: 'bosluk_bekcisi', hazard: 'Hikâyenin son bölgesi. En dipte Kadim Bonk uyuyor.' });
+ZONE_SPAWNS.cekirdek = [['yildiz_tozu', 0.3], ['nebula_kedisi', 0.3], ['meteor_kaplumbaga', 0.25], ['takimyildiz_geyigi', 0.15]];
+NIGHT_SPAWNS.cekirdek = [['isilbocek', 0.3], ['gece_kelebegi', 0.4], ['ruya_kuzusu', 0.3]];
+ZONE_GATHER.cekirdek = [['ay_otu', 30], ['gece_mantari', 40], ['sifali_ot', 30]];
+ZONE_CHEST.cekirdek = { mats: ['yildiz_parcasi', 'nebula_tuyu', 'meteor_tasi', 'golge_tasi', 'cekirdek_kristali'], gear: [['golge_kilic', 0.5], ['golge_yay', 0.5], ['golge_asa', 0.5], ['buyuk_iksir', 2]] };
+FOODS.cekirdek = ['ay_pastasi', 'aurora_sekeri'];
+WATERS.cekirdek = { name: 'Yıldız Havuzu' };
+FISH.yildiz_sazani = { name: 'Yıldız Sazanı', water: 'cekirdek', lvl: 70, diff: 7, w: 60, rarity: 'nadir', col: ['#3a4a9a', '#c8d8ff', '#1a2050', '#fff0a0'] };
+FISH.nebula_baligi = { name: 'Nebula Balığı', water: 'cekirdek', lvl: 80, diff: 8, w: 40, rarity: 'epik', col: ['#7a4ab0', '#f0c8ff', '#3a1a5a', '#7af0e0'] };
+for (const k of ['yildiz_sazani', 'nebula_baligi']) {
+  const f = FISH[k];
+  ITEMS[k] = { name: f.name, kind: 'malzeme', rarity: f.rarity, icon: `balik_${k}`, fish: true, desc: `Yıldız Havuzu balığı (Balıkçılık ${f.lvl}). Fırında pişer ya da satılır.` };
+  SELL[k] = Math.round((2 + f.lvl * 0.6) * (f.rarity === 'nadir' ? 2 : 3));
+}
+Object.assign(ITEMS, {
+  yildiz_parcasi: { name: 'Yıldız parçası', kind: 'malzeme', rarity: 'nadir', icon: 'yildiz_parcasi', desc: 'Yıldız Çekirdeği Glemonlarından düşer. Kadim Örs işçiliğinde kullanılır.' },
+  nebula_tuyu: { name: 'Nebula tüyü', kind: 'malzeme', rarity: 'nadir', icon: 'nebula_tuyu', desc: 'Nebula Kedisi\'nden düşer. Satılır ya da saklanır.' },
+  meteor_tasi: { name: 'Meteor taşı', kind: 'malzeme', rarity: 'nadir', icon: 'meteor_tasi', desc: 'Meteor Kaplumbağası\'ndan düşer. Örs +5 malzemesi.' },
+  takimyildiz_boynuzu: { name: 'Takımyıldız boynuzu', kind: 'malzeme', rarity: 'epik', icon: 'takimyildiz_boynuzu', desc: 'Takımyıldız Geyiği\'nden düşer. Çok değerli.' },
+  kadim_kalp: { name: 'Kadim Kalp', kind: 'malzeme', rarity: 'efsanevi', icon: 'kadim_kalp', desc: 'Kadim Bonk\'un ışıyan kalbi. Kupa gibi saklanır; Örs +5 işçiliğinde de kullanılır.' },
+  kadim_oz: { name: 'Kadim Öz', kind: 'malzeme', rarity: 'epik', icon: 'kadim_oz', desc: 'Sadece Kadim zorlukta düşer. Örste eşyayı +5 (Kadim işçiliği) yapar.' },
+});
+Object.assign(SELL, { yildiz_parcasi: 30, nebula_tuyu: 30, meteor_tasi: 35, takimyildiz_boynuzu: 120, kadim_oz: 200 });
+HARD.kadim.push(0.1);
+BOSS_P2.kadim_bonk = { key: 'supernova', sp: { name: 'Süpernova', mult: 1.7, aoe: true, telegraph: true, status: ['yanma', 3] }, pattern: ['darbe', 'supernova', 'normal', 'yagmur', 'cagir', 'supernova'] };
+// son patron 3 asamali: %66 ve %33
+export const BOSS_PHASES = {
+  kadim_bonk: [
+    { at: 0.66, ...BOSS_P2.kadim_bonk },
+    { at: 0.33, key: 'kara_delik', sp: { name: 'Kara Delik', mult: 2.2, aoe: true, telegraph: true, status: ['sersem', 1] }, pattern: ['kara_delik', 'darbe', 'supernova', 'normal', 'kara_delik', 'yagmur'], heal: 0.1 },
+  ],
+};
+
+// Hikaye: Hanci Lale'nin ana gorev zinciri (her bolum kisa bir konusma + tek hedef)
+const bossDone = (k) => (s) => ((s.stats.glemons || {})[k] > 0 ? 1 : 0);
+export const STORY = [
+  { t: 'Sönen Işıklar', say: ['Hoş geldin! Ben Lale, bu hanın sahibiyim.', 'Son günlerde Bonkit kristalleri sönüyor ve Glemonlar huysuzlaştı. Kimse nedenini bilmiyor.', 'Önce Yabani Orman\'a in, etrafa bir bak. Kat 3\'e kadar git yeter.'], goal: 'Keşifte Kat 3\'e in', v: (s) => s.stats.deepest || 0, n: 3, rw: { gold: 100, item: ['iksir_k', 3] } },
+  { t: 'Ağaçbaşı\'nın Kökleri', say: ['Orman\'ın derininde Ağaçbaşı uyanmış, kökleri her yeri sarıyor.', 'Onu yenersen orman sakinleşir. Kat 10\'da bekliyor.'], goal: 'Ağaçbaşı\'nı yen', v: bossDone('agacbasi'), n: 1, rw: { gold: 300, pul: 2 } },
+  { t: 'İlk Dost', say: ['Ağaçbaşı yenildi ama yalnız devam etmek zor.', 'Bir Glemonun canı azalınca onu evcilleştirebilirsin. Bir yol arkadaşı edin!'], goal: 'Bir Glemon evcilleştir', v: (s) => Object.keys((s.album && s.album.tamed) || {}).length, n: 1, rw: { gold: 200, item: ['parlak_yem', 1] } },
+  { t: 'Yankılanan Taşlar', say: ['Mağaralardan garip bir gümbürtü geliyor.', 'Taş Golemi uyanmış. Fenerini al, Yankı Mağaraları\'na in.'], goal: 'Taş Golemi\'ni yen', v: bossDone('tas_golemi'), n: 1, rw: { gold: 600, pul: 2 } },
+  { t: 'Kum Fırtınası', say: ['Çölde fırtına hiç dinmiyor. Kervanlar yolunu kaybetti.', 'Fırtınanın ortasında bir çakal uluyormuş. Su mataranı unutma!'], goal: 'Fırtına Çakalı\'nı yen', v: bossDone('firtina_cakali'), n: 1, rw: { gold: 1000, pul: 3 } },
+  { t: 'Donmuş Yürek', say: ['Zirvedeki buzlar eriyeceğine büyüyor.', 'Buzul Ayısı\'nın yüreği donmuş olmalı. Sıcak çorba iç, sonra git.'], goal: 'Buzul Ayısı\'nı yen', v: bossDone('buzul_ayisi'), n: 1, rw: { gold: 1500, pul: 3 } },
+  { t: 'Kızgın Kabuk', say: ['Kor Diyarı\'nda lav yükseliyor.', 'Magma Kaplumbağası huzursuz. Ateş Direnci İksiri olmadan sakın gitme!'], goal: 'Magma Kaplumbağası\'nı yen', v: bossDone('magma_kaplumbaga'), n: 1, rw: { gold: 2200, pul: 4 } },
+  { t: 'Boşluğun Bekçisi', say: ['Bütün izler Gölge Boşluğu\'na çıkıyor.', 'Orada bir bekçi bir kapıyı koruyormuş. Kapının ardında ne var, merak ediyorum…'], goal: 'Boşluk Bekçisi\'ni yen', v: bossDone('bosluk_bekcisi'), n: 1, rw: { gold: 3000, pul: 5 } },
+  { t: 'Yıldız Çekirdeği', say: ['Bekçinin kapısı açıldı! Altında yıldızlarla dolu bir dünya var: Yıldız Çekirdeği.', 'Büyükannem anlatırdı: ilk Glemon, Kadim Bonk, dünyanın kalbinde uyurmuş. Bonkit onun ışığıymış.', 'Kâbus görüyorsa, Glemonların huysuzluğu ondan. Uyandır onu!'], goal: 'Kadim Bonk\'u yen', v: bossDone('kadim_bonk'), n: 1, rw: { gold: 6000, pul: 10 } },
+  { t: 'Kadim Yol', say: ['Başardın! Kadim Bonk uyandı, Bonkit yeniden parlıyor.', 'Ama kâbusun izleri bölgelerde kaldı. Haritada Kadim zorluğu açtım: daha güçlü Glemonlar, yeni ödüller.', 'Bir bölge patronunu Kadim zorlukta yen, sana bir sürprizim var.'], goal: 'Kadim zorlukta bir bölge patronu yen', v: (s) => s.stats.kadimBoss || 0, n: 1, rw: { gold: 5000, pul: 10, item: ['kadim_oz', 3] } },
+];
+// Oyun sonrasi: Kadim zorluk (Kesif'te butun bolgeler)
+export const KADIM = { hp: 1.7, atk: 1.45, def: 1.25, xp: 1.6, drop: 1.5, oz: 0.03, ozBoss: 1 };
+export const ANVIL5 = [['kadim_oz', 3], ['meteor_tasi', 4], ['usta_damgasi', 1]];

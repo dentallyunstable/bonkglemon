@@ -1,7 +1,7 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5 } from './data.js';
 import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
@@ -451,12 +451,12 @@ export function openTree(tab = 'savas') {
 
 // ------------------------------------------------------------ Ors (0.8.5)
 // Silah, zirh ve kazma +1..+3 Yildiz Demiriyle, +4 Usta Damgasiyla. Her arti %8. Asla basarisiz olmaz.
-const ANVIL_COST = [[['yildiz_demiri', 1]], [['yildiz_demiri', 2]], [['yildiz_demiri', 3]], [['yildiz_demiri', 2], ['usta_damgasi', 1]]];
+const ANVIL_COST = [[['yildiz_demiri', 1]], [['yildiz_demiri', 2]], [['yildiz_demiri', 3]], [['yildiz_demiri', 2], ['usta_damgasi', 1]], ANVIL5]; // 1.0 +5 Kadim isciligi
 export function openAnvil(w) {
   UI.openPanel('Örs', (body) => {
     const render = () => {
       body.innerHTML = '';
-      body.appendChild(UI.el('p', 'muted', 'Kuşandığın bir eşyayı yükselt. +1, +2, +3 Yıldız Demiri ister, +4 Usta Damgası da ister. Her artı %8 güç verir. Yükseltme asla başarısız olmaz, eşya kırılmaz.'));
+      body.appendChild(UI.el('p', 'muted', 'Kuşandığın bir eşyayı yükselt. +1, +2, +3 Yıldız Demiri ister, +4 Usta Damgası da ister, +5 (Kadim işçiliği) Kadim Öz ister. Her artı %8 güç verir. Yükseltme asla başarısız olmaz, eşya kırılmaz.'));
       const slots = SLOTS.filter(([k]) => S.save.equip[k] && ['silah', 'kask', 'gogus', 'bot', 'kazma'].includes(k));
       if (!slots.length) body.appendChild(UI.el('p', '', 'Kuşanılmış silah, zırh ya da kazma yok.'));
       for (const [k, label] of slots) {
@@ -468,7 +468,7 @@ export function openAnvil(w) {
         const nm = UI.el('div', 'shop-nm', `${label}: ${it.name}${u ? ` +${u}` : ''}`);
         nm.style.color = RARITY[it.rarity].color;
         row.appendChild(nm);
-        if (u >= 4) { row.appendChild(UI.el('div', 'muted', 'En üst seviye')); list(row); continue; }
+        if (u >= ANVIL_COST.length) { row.appendChild(UI.el('div', 'muted', 'En üst seviye')); list(row); continue; }
         const cost = ANVIL_COST[u];
         const ok = cost.every(([m, n]) => S.countItem(m) >= n);
         const b = UI.button(`+${u + 1}: ${cost.map(([m, n]) => `${ITEMS[m].name} ×${n}`).join(', ')}`, () => {
@@ -663,6 +663,18 @@ export function openMap(w) {
   UI.openPanel('Keşif Haritası', (body) => {
     const deepest = S.save.stats.deepest || 0;
     const kills = S.save.stats.glemons || {};
+    if (S.kadimOpen()) { // 1.0 oyun sonrasi Kadim zorluk
+      const on = S.save.kadimMode;
+      const kr = UI.el('div', 'zone kadim' + (on ? ' on' : ''));
+      const kl = UI.el('div');
+      kl.appendChild(UI.el('div', 'zn', `Kadim zorluk: ${on ? 'AÇIK' : 'kapalı'}`));
+      kl.appendChild(UI.el('div', 'zf', `Glemonlar can ×${KADIM.hp}, saldırı ×${KADIM.atk}. XP ×${KADIM.xp}, eşya ×${KADIM.drop}. Kadim Öz düşer (patron her zaman 2).`));
+      kr.appendChild(kl);
+      const kb = UI.el('div', 'zb');
+      kb.appendChild(UI.button(on ? 'Kapat' : 'Aç', () => { S.save.kadimMode = !on; S.changed(); openMap(w); }, on ? 'small' : 'small purple'));
+      kr.appendChild(kb);
+      body.appendChild(kr);
+    }
     for (const z of ZONES) {
       const opened = z.open && (!z.after || kills[z.after] > 0);
       const atkOk = S.atk() >= z.atk;
@@ -1569,6 +1581,16 @@ export function openHanci(w) {
     pin('ahir', 'Ahır', 'green', () => openAhir(w));
     pin('kule', 'Kule', 'purple', () => openKule(w));
     body.appendChild(map);
+    { // 1.0 hikaye satiri
+      const ch = S.save.story.ch;
+      const c = STORY[ch];
+      const ready = c && storyProg(c) >= c.n;
+      const srow = UI.el('div', 'story-row' + (ready ? ' ready' : ''));
+      srow.appendChild(UI.el('span', 'st-t', c ? `Hikâye · Bölüm ${ch + 1}: ${c.t}` : 'Hikâye tamamlandı ✦'));
+      srow.appendChild(UI.el('span', 'st-g', c ? (ready ? 'Ödül hazır!' : c.goal) : 'Lale sana minnettar.'));
+      srow.appendChild(UI.button(ready ? 'Ödülü al!' : 'Hikâye', () => openStory(w), ready ? 'small green' : 'small primary'));
+      body.appendChild(srow);
+    }
     const row = UI.el('div', 'choice-row');
     refreshGoals();
     const done = S.save.quests.list.filter((q) => S.questProgress(q) >= q.target).length + readyCount();
@@ -1713,7 +1735,7 @@ function openGoalChest(w, weekly) {
   if (weekly) g.wchest = true; else g.dchest = true;
   sfx('chest');
   const zs = ZONES.filter((z) => z.open && (!z.after || (S.save.stats.glemons[z.after] || 0) > 0));
-  const mats = (z) => ({ orman: ['dal', 'mantar', 'diken', 'sifali_ot', 'komur'], magara: ['komur', 'ham_kristal', 'demir_cevheri'], col: ['pul', 'hurma', 'demir_kulcesi'], buz: ['buz_kristali', 'kar_tuyu', 'altin_kulcesi'], kor: ['kor_pulu', 'kivilcim', 'kor_tasi'], golge: ['golge_ozu', 'gece_mantari', 'golge_tasi'] }[z.key] || ['dal']);
+  const mats = (z) => ({ orman: ['dal', 'mantar', 'diken', 'sifali_ot', 'komur'], magara: ['komur', 'ham_kristal', 'demir_cevheri'], col: ['pul', 'hurma', 'demir_kulcesi'], buz: ['buz_kristali', 'kar_tuyu', 'altin_kulcesi'], kor: ['kor_pulu', 'kivilcim', 'kor_tasi'], golge: ['golge_ozu', 'gece_mantari', 'golge_tasi'], cekirdek: ['yildiz_parcasi', 'meteor_tasi', 'cekirdek_kristali'] }[z.key] || ['dal']);
   const from = weekly ? 'Haftalık Sandıktan' : 'Günün sandığından';
   for (let i = 0; i < (weekly ? 4 : 3); i++) {
     const z = zs[Math.floor(Math.random() * zs.length)];
@@ -2173,5 +2195,81 @@ export function openClass() {
       body.appendChild(r2);
     };
     render();
+  }, { wide: true });
+}
+
+// ---------------------------------------------------------------- 1.0 Lale'nin hikayesi
+const storyProg = (c) => Math.min(c.n, c.v(S.save) || 0);
+export function storyReady() { const c = STORY[S.save.story.ch]; return !!c && storyProg(c) >= c.n; }
+export function openStory(w) {
+  UI.openPanel('Lale\'nin hikâyesi', (body) => {
+    const render = () => {
+      body.innerHTML = '';
+      const ch = S.save.story.ch;
+      const book = UI.el('div', 'story-book');
+      STORY.forEach((c, i) => {
+        const done = i < ch;
+        const cur = i === ch;
+        const el = UI.el('div', 'story-ch' + (done ? ' done' : cur ? ' cur' : ' locked'));
+        el.appendChild(UI.el('div', 'sc-t', `${done ? '✓' : cur ? '▶' : '🔒'} Bölüm ${i + 1}${i === STORY.length - 1 ? ' (oyun sonrası)' : ''}: ${i <= ch ? c.t : '???'}`));
+        if (cur) {
+          for (const line of c.say) el.appendChild(UI.el('p', 'lale-says', `“${line}”`));
+          const prog = storyProg(c);
+          el.appendChild(UI.el('div', 'zf', `Hedef: ${c.goal} (${prog} / ${c.n})`));
+          const bar = UI.el('div', 'qbar'); const fill = UI.el('div', 'qfill'); fill.style.width = `${(prog / c.n) * 100}%`; bar.appendChild(fill); el.appendChild(bar);
+          const rw = [`${c.rw.gold} ${CURRENCY}`];
+          if (c.rw.pul) rw.push(`${c.rw.pul} ${PUL}`);
+          if (c.rw.item) rw.push(`${c.rw.item[1]} ${ITEMS[c.rw.item[0]].name}`);
+          el.appendChild(UI.el('div', 'zf', `Ödül: ${rw.join(', ')}`));
+          if (prog >= c.n) el.appendChild(UI.button('Ödülü al', () => {
+            if (S.save.story.ch !== i) return;
+            S.save.story.ch++;
+            S.addGold(c.rw.gold);
+            if (c.rw.pul) addPul(c.rw.pul);
+            if (c.rw.item) S.addItem(c.rw.item[0], c.rw.item[1], 'bag', 0);
+            S.changed();
+            sfx('levelup');
+            UI.banner(`Bölüm ${i + 1} tamam!`, c.t, 2200, 'gold');
+            UI.feed(`<span style="color:#ffd04d">★ Hikâye: "${c.t}" bitti! +${c.rw.gold} ${CURRENCY}${c.rw.pul ? `, +${c.rw.pul} ${PUL}` : ''}</span>`, 'gold');
+            render();
+          }, 'primary'));
+        }
+        book.appendChild(el);
+        if (cur) setTimeout(() => el.scrollIntoView({ block: 'nearest' }), 30);
+      });
+      body.appendChild(book);
+      if (ch >= STORY.length) body.appendChild(UI.el('p', 'lale-says', '“Bütün hikâye bitti. Sen olmasan Bonkit sönerdi. Hanımın kapısı sana her zaman açık!”'));
+      if (S.save.ending) body.appendChild(UI.button('Jeneriği tekrar izle', () => openCredits(w, false), 'small'));
+    };
+    render();
+  }, { wide: true });
+}
+
+// 1.0 jenerik
+export function openCredits(w, first) {
+  UI.openPanel('Son', (body) => {
+    const box = UI.el('div', 'credits');
+    const roll = UI.el('div', 'roll');
+    const lines = [
+      ['h', 'Bonkglemon'],
+      ['p', 'Kadim Bonk uyandı. Kâbuslar dağıldı, Bonkit kristalleri yeniden parlıyor.'],
+      ['p', 'Glemonlar sakinleşti. Han yine şarkılarla doldu.'],
+      ['s', 'Fikir ve tasarım'], ['n', 'Eren (dunstable)'],
+      ['s', 'Yol arkadaşları'], ['n', 'Chegn · Bonkgle'],
+      ['s', 'Hancı'], ['n', 'Lale'],
+      ['s', 'Kod ve çizim'], ['n', 'Claude'],
+      ['s', 'Glemonlar'], ['n', `${Object.keys(GLEMONS).length} tür, hepsi bu dünyaya özgü`],
+      ['s', 'Teşekkürler'], ['n', 'Oynadığın için!'],
+      ['p', first ? '“Efsane” unvanını kazandın. Haritada Kadim zorluk açıldı.' : 'Macera Kadim zorlukta sürüyor…'],
+    ];
+    for (const [k, t] of lines) roll.appendChild(UI.el(k === 'h' ? 'h2' : 'div', 'cr-' + k, t));
+    box.appendChild(roll);
+    body.appendChild(box);
+    // yazilar asagidan yukari akar, son satir gorununce durur
+    requestAnimationFrame(() => {
+      const H = box.clientHeight; const h = roll.scrollHeight;
+      if (roll.animate) roll.animate([{ transform: `translateY(${H}px)` }, { transform: `translateY(${Math.min(0, H - h - 16)}px)` }], { duration: 22000, fill: 'forwards', easing: 'linear' });
+    });
+    body.appendChild(UI.button('Kapat', () => UI.closePanel(), 'primary'));
   }, { wide: true });
 }

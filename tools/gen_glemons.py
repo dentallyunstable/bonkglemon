@@ -1420,6 +1420,104 @@ SPECIES['magma_kaplumbaga'] = boss_kaplumbaga()
 SPECIES['bosluk_bekcisi'] = boss_bekci()
 
 
+# ---------------------------------------------------------------- 1.0 Yildiz Cekirdegi
+def boss_kadim():
+    """Kadim Bonk (Yildiz Cekirdegi 70. kat): ilk Glemon. Yildiz tacli, gogsunde pembe kalp kristali olan yuvarlak kozmik dev."""
+    half = _pad([
+        ".......y.y",
+        "......yYyY",
+        ".....bbbbb",
+        "...bbBBBBB",
+        "..bBBBsBBB",
+        ".bBBBBBBBB",
+        ".bBwwkBBBB",
+        "bBBwkkBBBB",
+        "bBBkkkBBBB",
+        "bBpBBBBBBB",
+        "bBBBBBBBcc",
+        "bBBsBBBcCC",
+        ".bBBBBBBcc",
+        ".bBBBBBBBB",
+        "..bBBsBBBB",
+        "AAbbBBBBBB",
+        "aA..bbbbbb",
+        "....d..d.d",
+    ])
+    pal = {'b': '#2a3478', 'B': '#4a5ab8', 's': '#fff0a0', 'y': '#ffd04d', 'Y': '#fff0a0', 'w': '#ffffff',
+           'k': '#100c14', 'p': '#e07ab0', 'c': '#e05aa0', 'C': '#ffa8d8', 'A': '#c8d8ff', 'a': '#7a8ad8',
+           'd': '#1a2050'}
+    return {'pal': pal, 'map': mirror(half), 'fx': 'star', 'fxcol': ('#fff0a0', '#ffa8d8'), 'boss': True, 'ts': 3}
+
+
+SPECIES.update({
+    'yildiz_tozu': {  # gulumseyen bes koseli kucuk yildiz, ucar
+        'pal': {'y': '#e8c850', 'Y': '#fff0a0', 'w': '#ffffff', 'k': '#100c14', 'm': '#e07a8a'},
+        'map': [
+            "....yy....",
+            "...yYYy...",
+            "yyyYYYYyyy",
+            ".yYwkYwkY.",
+            "..YkkYkkY.",
+            "..yYmYmYy.",
+            ".yYYYYYYYy",
+            ".yYy..yYy.",
+            "yy......yy",
+        ],
+        'fx': 'star', 'accent': '#fff0a0', 'fly': True,
+    },
+    'nebula_kedisi': {  # tuyleri mor nebula, uzerinde yildiz benekleri olan kedi
+        'pal': {'n': '#5a3a8a', 'N': '#9a6ad0', 's': '#fff0a0', 'w': '#ffffff', 'k': '#100c14', 'p': '#f0a0c0',
+                't': '#c8a0f0', 'd': '#3a2a5a'},
+        'map': [
+            ".n......n...",
+            ".nN....nN...",
+            ".nNnnnnNNn..",
+            "nNwkNNNwkNn.",
+            "nNkkNpNkkNn.",
+            "nNNNsNNNsNn.",
+            ".nNNNNNNNn.t",
+            "..nNsNNNNntt",
+            "..nNNNNNNnt.",
+            "..d.d..d.d..",
+        ],
+        'fx': 'thorn', 'fxcol': ('#f0c8ff', '#9a6ad0'), 'accent': '#c8a0f0',
+    },
+    'meteor_kaplumbaga': {  # kabugu kizgin catlakli meteor tasi olan kaplumbaga
+        'pal': {'r': '#3a3036', 'R': '#5a4a4e', 'o': '#ffb040', 'g': '#6a8ab0', 'G': '#9ab8d8', 'w': '#ffffff',
+                'k': '#100c14'},
+        'map': [
+            "...rrrrrr....",
+            "..rRoRRRRr...",
+            ".rRRRRoRRRr..",
+            ".rRoRRRRRoRgg",
+            "rrrrrrrrrrgwk",
+            ".gGGGGGGGGgkk",
+            ".gg.gg..gg.g.",
+        ],
+        'fx': 'slam', 'accent': '#ffb040',
+    },
+    'takimyildiz_geyigi': {  # boynuzlari takimyildiz gibi parlayan lacivert geyik (nadir)
+        'pal': {'y': '#ffd04d', 'Y': '#fff0a0', 'b': '#2a3478', 'B': '#4a5ab8', 's': '#fff0a0', 'w': '#ffffff',
+                'k': '#100c14', 'p': '#e07ab0', 'd': '#1a2050'},
+        'map': [
+            "y.y....y.y..",
+            ".yY....Yy...",
+            "..YyyyyY....",
+            "...bbbb.....",
+            "..bwkbb.....",
+            "..bkkbbbbbb.",
+            "..bpbBBsBBbb",
+            "...bBBBBsBBb",
+            "....bBBBBBb.",
+            "....b.b.b.b.",
+            "....d.d.d.d.",
+        ],
+        'fx': 'star', 'accent': '#fff0a0',
+    },
+})
+SPECIES['kadim_bonk'] = boss_kadim()
+
+
 # ---------------------------------------------------------------- evrim (0.4)
 def lighten(h, f=1.3):
     c = hx(h)

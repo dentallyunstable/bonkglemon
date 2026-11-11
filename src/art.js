@@ -464,12 +464,18 @@ const BIOME = {
     ground: ['golge_zemin', 'golge_tas', 'golge_tas'], props: ['golge_kristal', 'gece_mantarlari', 'olu_agac'],
     arena: { path: 'golge_tas', main: 'golge_zemin', alt: 'golge_tas', near: ['golge_kristal', 'gece_mantarlari'] },
   },
+  cekirdek: { // 1.0 Yildiz Cekirdegi
+    stops: ['#04061a', '#121c4a', '#3a2a6a'], t: 0.9, clouds: 0, stars: true, starCol: '#fff0a0',
+    far: ['yildiz_tas', 'yildiz_tas'], mid: ['yildiz_zemin', 'yildiz_tas'], hill: ['yildiz_zemin', 'yildiz_tas'],
+    ground: ['yildiz_zemin', 'yildiz_tas', 'yildiz_tas'], props: ['yildiz_kristal', 'nebula_kristal', 'golge_kristal'],
+    arena: { path: 'yildiz_tas', main: 'yildiz_zemin', alt: 'yildiz_tas', near: ['yildiz_kristal', 'nebula_kristal'] },
+  },
 };
 export const BIOME_KEYS = Object.keys(BIOME);
 function biomeSky(p, b, bottom, r) {
   paintSky(p, bottom, 0, r, { stops: b.stops, clouds: b.clouds, sun: b.sun });
   if (b.stars) {
-    for (let i = 0; i < 40; i++) p.set(Math.floor(r() * p.w), Math.floor(r() * bottom * 0.75), r() < 0.3 ? '#c8a0f0' : '#d8d4ec');
+    for (let i = 0; i < 40; i++) p.set(Math.floor(r() * p.w), Math.floor(r() * bottom * 0.75), r() < 0.3 ? (b.starCol || '#c8a0f0') : '#d8d4ec');
   }
   if (b.sun === 'left') {
     // kor diyarinda gunes yerine kizgin pus: ufukta parlak bant
@@ -483,7 +489,7 @@ export function biomeRoomBackground(zone, floor, variant = 0) {
   const b = BIOME[zone];
   const r = rng(floor * 5309 + variant * 787 + zone.length * 31);
   const deep = Math.min(1, ((floor - 1) % 10) / 9);
-  const nf = b.t > 0.5 ? fogFn('#120c20', 0.12 + deep * 0.1) : zone === 'kor' ? fogFn('#40140c', 0.08 + deep * 0.12) : nightFn(deep * 0.3);
+  const nf = b.t > 0.5 ? fogFn(zone === 'cekirdek' ? '#0a1030' : '#120c20', 0.12 + deep * 0.1) : zone === 'kor' ? fogFn('#40140c', 0.08 + deep * 0.12) : nightFn(deep * 0.3);
   const p = new Pix(GAME_W, GAME_H);
   biomeSky(p, b, G - 2 * B, r);
   const skyLow = toHex(skyColor(9, 0, b.stops));
@@ -518,7 +524,7 @@ function biomeArena(floor, zone) {
   const a = b.arena;
   const HZ = ARENA.horizon;
   const r = rng(floor * 9173 + zone.length);
-  const nf = zone === 'golge' ? fogFn('#120c20', 0.15) : zone === 'kor' ? fogFn('#40140c', 0.12) : null;
+  const nf = zone === 'golge' ? fogFn('#120c20', 0.15) : zone === 'cekirdek' ? fogFn('#0a1030', 0.12) : zone === 'kor' ? fogFn('#40140c', 0.12) : null;
   const p = new Pix(GAME_W, GAME_H);
   biomeSky(p, b, HZ, r);
   const skyLow = toHex(skyColor(5, 0, b.stops));
@@ -531,7 +537,7 @@ function biomeArena(floor, zone) {
   }
   far.outline('dark', 0.6);
   p.draw(far, 0, 0, far.w);
-  const fog = zone === 'buz' ? '#dce6ee' : zone === 'kor' ? '#8a3a22' : '#2a1e40';
+  const fog = zone === 'buz' ? '#dce6ee' : zone === 'kor' ? '#8a3a22' : zone === 'cekirdek' ? '#1a2460' : '#2a1e40';
   arenaGround(p, HZ, nf, (onPath, c, row) => (onPath ? a.path : (c * 13 + row * 7) % 13 === 0 ? a.alt : a.main), fog);
   const near = new Pix(GAME_W, GAME_H);
   putScaled(near, a.near[0], GAME_W - 66, GAME_H - 40, 40, nf);
@@ -549,7 +555,7 @@ function biomeArena(floor, zone) {
 export const POND = { x0: 13 * B, x1: 22 * B, surf: G + 6, deck: G - 4, standX: 232, bobX: 300 };
 const WATER_TINT = {
   us: null, orman: null, magara: ['#20344c', 0.4], col: ['#3aa8a0', 0.35], buz: ['#a8c8e0', 0.3],
-  kor: 'lav', golge: ['#2a1e48', 0.5],
+  kor: 'lav', golge: ['#2a1e48', 0.5], cekirdek: ['#1a2a6a', 0.45],
 };
 export function pondOverlay(kind = 'us', bridge = false) {
   const p = new Pix(GAME_W, GAME_H - G + B);
@@ -559,7 +565,7 @@ export function pondOverlay(kind = 'us', bridge = false) {
   const Y = B; // overlay G-B'den baslar
   const { x0, x1 } = POND;
   // kiyi: iki yanda egimli camur / kum
-  const bank = kind === 'col' ? 'kum' : kind === 'buz' ? 'kar' : kind === 'kor' ? 'bazalt' : kind === 'golge' ? 'golge_tas' : kind === 'magara' ? 'magara_zemin' : 'toprak';
+  const bank = kind === 'col' ? 'kum' : kind === 'buz' ? 'kar' : kind === 'kor' ? 'bazalt' : kind === 'golge' ? 'golge_tas' : kind === 'cekirdek' ? 'yildiz_tas' : kind === 'magara' ? 'magara_zemin' : 'toprak';
   for (let x = x0; x < x1; x += B) {
     for (let j = 0; j < 3; j++) put(p, bank, x, Y + j * B, shadeFn(0.55));
     put(p, lava ? 'lav' : 'su_ust', x, Y + 6, fn);
@@ -1461,3 +1467,13 @@ export function bigMoon() {
     ICONS[`asa_${t}`] = [STAFF, { W: l, B: m, P: d, h: x }];
   }
 }
+
+// 1.0 Yildiz Cekirdegi malzemeleri
+Object.assign(ICONS, {
+  yildiz_parcasi: like('kristal', { c: '#e8c850', C: '#fff0a0', v: '#ffffff', d: '#8a6a2a' }),
+  nebula_tuyu: like('parlak_tuy', { y: '#b06ad8', Y: '#f8c8ff', s: '#3a2a6a' }),
+  meteor_tasi: like('cekirdek', { s: '#3a3036', S: '#5a4a4e', p: '#e0602a', P: '#ffb040', v: '#fff0a0' }),
+  takimyildiz_boynuzu: like('dis', { w: '#3a4a9a', v: '#fff0a0', d: '#c8d8ff' }),
+  kadim_kalp: like('cekirdek', { s: '#6a2a50', S: '#a83a7a', p: '#ffd04d', P: '#fff0a0', v: '#ffffff' }),
+  kadim_oz: like('kristal_tozu', { c: '#e8c850', C: '#fff8d0', d: '#3a4a9a', D: '#5a6ab8' }),
+});

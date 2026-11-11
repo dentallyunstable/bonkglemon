@@ -4,7 +4,7 @@
 import {
   passiveOf, SECRET_HOME, GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
   typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
-  MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS, BOSS_P2, BOSS_PHASE, HARD, KULE,
+  MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS, BOSS_P2, BOSS_PHASE, HARD, KULE, BOSS_PHASES, KADIM,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -42,6 +42,8 @@ const ZONE_OF_KEY = {};
 for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) ZONE_OF_KEY[k] = z;
 for (const [k] of WATER_GLEMONS) ZONE_OF_KEY[k] = 'su';
 Object.assign(ZONE_OF_KEY, NIGHT_HOME, SECRET_HOME);
+// 1.0 patron asamalari: BOSS_PHASES (cok asamali) ya da BOSS_P2 (tek ek asama)
+const phasesOf = (k) => BOSS_PHASES[k] || (BOSS_P2[k] ? [{ at: BOSS_PHASE.at, ...BOSS_P2[k] }] : []);
 const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0, lanet: 0 });
 const M = (k) => S.cmod(k);
 
@@ -144,6 +146,7 @@ export class Battle {
     // 0.13.5 zor mod patronu ve Kule kurallari
     if (data.boss && this.opts.hard) { e.maxHp = Math.round(e.maxHp * HARD.hp); e.atk *= HARD.atk; e.defense *= HARD.def; e.name = `${data.name} (Zor)`; }
     if (S.run && S.run.kule) { e.maxHp = Math.round(e.maxHp * KULE.hp); e.atk *= KULE.atk; }
+    if (this.opts.kadim) { e.maxHp = Math.round(e.maxHp * KADIM.hp); e.atk *= KADIM.atk; e.defense *= KADIM.def; e.name = `${e.name} (Kadim)`; }
     if (this.kr() === 'hizli') e.spd = Math.round(e.spd * 1.4);
     if (this.kr() === 'zirhli') e.defense *= 1.6;
     e.hp = e.maxHp;
@@ -1565,14 +1568,19 @@ export class Battle {
 
   // 0.13.5 patron canı yarıya inince 2. aşama
   checkPhase(e) {
-    if (!e.alive || !e.data.boss || e.p2 || !BOSS_P2[e.key] || e.hp > e.maxHp * BOSS_PHASE.at) return;
+    if (!e.alive || !e.data.boss) return;
+    const phs = phasesOf(e.key);
+    const ph = phs[e.ph || 0];
+    if (!ph || e.hp > e.maxHp * ph.at) return;
+    e.ph = (e.ph || 0) + 1;
     e.p2 = true;
     e.acts = 0;
     e.atk *= BOSS_PHASE.atk;
     e.spd += BOSS_PHASE.spd;
     e.st.shell = 0;
-    banner(`${e.data.name}: 2. AŞAMA`, BOSS_P2[e.key].sp.name + '!', 1800, 'boss');
-    feed(`<span style="color:#ff6b5a">${e.data.name} öfkelendi! Saldırı düzeni değişti, artık ${BOSS_P2[e.key].sp.name} yapıyor.</span>`);
+    if (ph.heal) e.hp = Math.min(e.maxHp, e.hp + Math.round(e.maxHp * ph.heal));
+    banner(`${e.data.name}: ${e.ph + 1}. AŞAMA`, ph.sp.name + '!', 1800, 'boss');
+    feed(`<span style="color:#ff6b5a">${e.data.name} öfkelendi! Saldırı düzeni değişti, artık ${ph.sp.name} yapıyor.</span>`);
     sfx('roar');
     if (S.save.settings.shake !== false) this.scene.cameras.main.shake(400, 0.012);
     if (e.sprite.active) { e.sprite.setTint(0xff9a8a); this.scene.time.delayedCall(260, () => { if (e.sprite.active) e.sprite.clearTint(); }); }
@@ -1614,6 +1622,7 @@ export class Battle {
     if (this.opts.night) gold = Math.round(gold * NIGHT.reward);
     if (e.data.boss) gold = (150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50)) * (this.opts.hard ? HARD.gold : 1);
     if (e.data.boss && this.opts.hard) xp *= HARD.xp;
+    if (this.opts.kadim) xp *= KADIM.xp;
     if (e.data.boss) this.bossWin = e.key;
     if (S.run && S.run.goldX) gold = Math.round(gold * S.run.goldX); // 0.9 Altin Gunu
     gold = Math.round(gold * (1 + this.aura.gold));
@@ -1640,7 +1649,7 @@ export class Battle {
     }
     const manual = this.manualActs >= this.autoActs;
     for (const [id, ch] of e.data.drops) {
-      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + this.aura.luck) * (1 + 0.3 * e.stage) * (this.opts.night ? NIGHT.reward : 1);
+      let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + this.aura.luck) * (1 + 0.3 * e.stage) * (this.opts.night ? NIGHT.reward : 1) * (this.opts.kadim ? KADIM.drop : 1);
       if (ch >= 1) c = 1;
       if (Math.random() < Math.min(1, c)) {
         this.w.giveDrop(id, 1, e.from, false, e.data.boss ? (this.opts.hard ? 3 : 2) : 1);
@@ -1648,6 +1657,11 @@ export class Battle {
         if (e.data.boss && ch < 1) S.bossDrop(e.key, id);
         if (ITEMS[id].rarity !== 'siradan' && ch < 1) this.luckXp += 20 * Math.pow(this.floor, 0.8) * (RMULT[ITEMS[id].rarity] || 1);
       }
+    }
+    // 1.0 Kadim zorluk: Kadim Oz dusurur, patron her zaman
+    if (this.opts.kadim && (e.data.boss || Math.random() < KADIM.oz * S.dropMult())) {
+      this.w.giveDrop('kadim_oz', e.data.boss ? 2 : 1, e.from, false, 0);
+      if (e.data.boss) st.kadimBoss = (st.kadimBoss || 0) + 1;
     }
   }
 
@@ -1871,10 +1885,14 @@ export class Battle {
     const d = e.data;
     if (d.boss) {
       // 0.13.5 ikinci asama: yeni duzen ve yeni ozel hamle
-      const p2 = e.p2 && BOSS_P2[e.key];
-      const pat = p2 ? p2.pattern : d.pattern;
+      const phs = phasesOf(e.key);
+      const cur = e.ph ? phs[e.ph - 1] : null;
+      const pat = cur ? cur.pattern : d.pattern;
       const step = pat[(n - 1) % pat.length];
-      if (step !== 'normal') return { ...(p2 && step === p2.key ? p2.sp : d.specials[step]) };
+      if (step !== 'normal') {
+        const ph = phs.find((x) => x.key === step);
+        return { ...(ph ? ph.sp : d.specials[step]) };
+      }
     } else if (d.special && n % d.every === 0) return { ...d.special };
     return { mult: 1 };
   }

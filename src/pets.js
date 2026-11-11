@@ -13,7 +13,7 @@ for (const [k] of WATER_GLEMONS) HOME[k] = 'su';
 Object.assign(HOME, NIGHT_HOME, SECRET_HOME, { ay_tavsani: 'golge' });
 for (const [z, k] of Object.entries(EGGS)) HOME[k] = z;
 export const homeOf = (key) => HOME[key] || null;
-export const ZONE_LABEL = { orman: 'Yabani Orman', magara: 'Yankı Mağaraları', col: 'Kavurucu Çöl', buz: 'Donmuş Zirve', kor: 'Kor Diyarı', golge: 'Gölge Boşluğu', su: 'Su' };
+export const ZONE_LABEL = { orman: 'Yabani Orman', magara: 'Yankı Mağaraları', col: 'Kavurucu Çöl', buz: 'Donmuş Zirve', kor: 'Kor Diyarı', golge: 'Gölge Boşluğu', cekirdek: 'Yıldız Çekirdeği', su: 'Su' };
 
 // ------------------------------------------------------------ ikili takim
 export function teamInfo(pets) {

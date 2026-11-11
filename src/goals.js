@@ -236,7 +236,7 @@ export const TITLES = [
   { k: 'basarim', n: 'Başarım Avcısı', req: '300 başarım puanı', ok: () => achPoints() >= 300 },
   { k: 'yapici', n: 'Usta Yapıcı', req: 'Üs Puanı 250', ok: () => (S.save.plot.bestScore || 0) >= 250 },
   { k: 'buyuk_mimar', n: 'Büyük Mimar', req: 'Üs Puanı 1000', ok: () => (S.save.plot.bestScore || 0) >= 1000 },
-  { k: 'efsane', n: 'Efsane', req: 'Bir beceride 99', ok: () => SKILLS.some((s) => S.level(s.key) >= 99) },
+  { k: 'efsane', n: 'Efsane', req: 'Kadim Bonk\'u yen ya da bir beceride 99', ok: () => (S.save.stats.glemons.kadim_bonk || 0) > 0 || SKILLS.some((s) => S.level(s.key) >= 99) },
 ];
 export function titleOf() { return TITLES.find((t) => t.k === S.save.title) || null; }
 // state.addXp bu kancayi kullanir: secili unvan o beceriye XP bonusu verir

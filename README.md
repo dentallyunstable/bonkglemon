@@ -174,3 +174,9 @@ python3 -m http.server 8000
 - `assets/chars/` karakter animasyonları (`tools/convert_chars.py` ile GIF'lerden)
 - `assets/glemons/` Glemon çizimleri (`tools/gen_glemons.py` ile üretilir)
 - Font: Pixelify Sans (SIL Open Font License, `vendor/fonts/`)
+
+## 1.0 Tam Sürüm, 1. parça: Hikâye ve Son
+- **Lale'nin hikâyesi:** Lale'de "Hikâye" satırı. 9 bölüm + 1 oyun sonrası bölüm; her bölümün kısa konuşması, tek hedefi ve ödülü var.
+- **Son bölge Yıldız Çekirdeği (Kat 61-70):** Boşluk Bekçisi'nden sonra açılır (Saldırı 100). Yeni tür Yıldız (Gölge ve Ay'a güçlü, asaya zayıf). 4 yeni Glemon: Yıldız Tozu, Nebula Kedisi, Meteor Kaplumbağası, Takımyıldız Geyiği (nadir). Yıldız Havuzu'nda 2 yeni balık.
+- **Son patron Kadim Bonk:** 3 aşamalı (%66'da Süpernova, %33'te Kara Delik). Yenince jenerik akar, "Efsane" unvanı açılır.
+- **Kadim zorluk:** Kadim Bonk'tan sonra Keşif Haritası'nda açılıp kapanır. Glemonlar daha güçlü, XP ve eşya daha bol; Kadim Öz düşer. Örs'te +5 (Kadim işçiliği).
