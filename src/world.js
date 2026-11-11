@@ -5,7 +5,7 @@ import {
   ORES, MINE_COLS, MINE_ROWS, DEFINE_CHANCE, oreWeights, mineXpMult, mineHardBonus,
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
-  RANCH, ranchDropOf, SECRETS, stormNow, CLASS_RULES, WEAPON_SKILL, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
+  RANCH, ranchDropOf, SECRETS, stormNow, CLASS_RULES, WEAPON_SKILL, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, TREE2, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
   RARITY, KULE, KULE_RULES, BOSS_P2, HARD, HARD_DROPS, LEGENDS,
   CAPE_COLORS,
   STATION_LVL,
@@ -2953,11 +2953,10 @@ export class WorldScene extends Phaser.Scene {
     }
     // her 10 seviye bir kilometre tasi: buyuk yazi ve yetenek agaci puani hatirlatmasi
     if (up.level % 10 === 0) UI.banner(`${sk.name} ${up.level}!`, up.level === 99 ? 'En üst seviye!' : 'Kilometre taşı', 2200, 'gold');
-    const br = Object.entries(TREE).find(([, t]) => t.skills.includes(up.skill));
+    const br = Object.entries(TREE2).find(([, t]) => t.skills.includes(up.skill));
     if (br) {
       const free = S.treePoints(br[0]) - S.treeSpent(br[0]);
-      const sum = br[1].skills.reduce((t, k) => t + S.level(k), 0);
-      if (free > 0 && sum % 10 === 0) UI.feed(`<span style="color:#9ce08a">Yetenek Ağacı: ${br[1].name} dalında ${free} boş puanın var. (Beceriler → Yetenek Ağacı)</span>`);
+      if (free > 0) UI.feed(`<span style="color:#9ce08a">+1 yetenek puanı: ${br[1].name} dalında ${free} boş puanın var. (Beceriler → Yetenek Ağacı)</span>`);
     }
     if (!this.inBattleView) {
       await playAnim(this.player, 'c_levelup', 1);

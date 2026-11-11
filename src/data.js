@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0.12';
+export const VERSION = '1.0.13';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -444,7 +444,8 @@ export const FOODS = {
 };
 export const PET_MAX_LVL = 50;
 export const EVOLVE_AT = [15, 35];
-export const petXpFor = (lvl) => (lvl <= 1 ? 0 : Math.floor(30 * Math.pow(lvl - 1, 2.1)));
+// 1.0.13: basta hizli, sonda yavas (eski: 30 * (L-1)^2.1)
+export const petXpFor = (lvl) => (lvl <= 1 ? 0 : Math.floor(6.76 * Math.pow(lvl - 1, 2) * Math.pow(2, (lvl - 1) / 15.3)));
 export const petStatMult = (lvl, stage) => (1 + 0.2 * (lvl - 1)) * STAGE_STAT[stage] * 1.5;
 export const ahirSize = (insaLvl) => Math.min(30, 6 + Math.floor(insaLvl / 10) * 3);
 export const petCap = (bagLvl) => Math.min(PET_MAX_LVL, Math.max(5, Math.floor(bagLvl / 2)));
@@ -542,22 +543,22 @@ export const ITEMS = {
   pasli_kilic: { name: 'Paslı Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_pas', power: 4, desc: 'Herkesin ilk kılıcı.' },
   tahta_kilic: { name: 'Tahta Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_tahta', power: 6, desc: 'Kütükçükten düşer ya da Üretim Masasında yapılır.' },
   diken_kilici: { name: 'Diken Kılıcı', kind: 'silah', rarity: 'nadir', icon: 'kilic_diken', power: 9, req: ['saldiri', 5], desc: 'Dikentavşandan çok nadir düşer.' },
-  tas_kilic: { name: 'Taş Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_tas', power: 10, req: ['saldiri', 10], desc: 'Üretim Masasında yapılır.' },
-  demir_kilic: { name: 'Demir Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_demir', power: 15, req: ['saldiri', 20], desc: 'Üretim Masasında yapılır.' },
+  tas_kilic: { name: 'Taş Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_tas', power: 10, req: ['saldiri', 5], desc: 'Üretim Masasında yapılır.' },
+  demir_kilic: { name: 'Demir Kılıç', kind: 'silah', rarity: 'siradan', icon: 'kilic_demir', power: 15, req: ['saldiri', 15], desc: 'Üretim Masasında yapılır.' },
   // ---- kazmalar
   tahta_kazma: { name: 'Tahta Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_tahta', pick: 1, desc: 'Herkesin ilk kazması.' },
-  tas_kazma: { name: 'Taş Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_tas', pick: 2, req: ['madencilik', 10], desc: 'İki kat hızlı kazar.' },
-  demir_kazma: { name: 'Demir Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_demir', pick: 4, req: ['madencilik', 20], desc: 'Dört kat hızlı kazar.' },
+  tas_kazma: { name: 'Taş Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_tas', pick: 2, req: ['madencilik', 5], desc: 'İki kat hızlı kazar.' },
+  demir_kazma: { name: 'Demir Kazma', kind: 'kazma', rarity: 'siradan', icon: 'kazma_demir', pick: 4, req: ['madencilik', 15], desc: 'Dört kat hızlı kazar.' },
   // ---- zirhlar
   tahta_kask: { name: 'Tahta Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_tahta', def: 2, set: 'tahta', desc: 'Üretim Masasında yapılır.' },
   tahta_gogus: { name: 'Tahta Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_tahta', def: 3, set: 'tahta', desc: 'Üretim Masasında yapılır.' },
   tahta_bot: { name: 'Tahta Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_tahta', def: 1, set: 'tahta', desc: 'Üretim Masasında yapılır.' },
-  tas_kask: { name: 'Taş Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_tas', def: 3, set: 'tas', req: ['savunma', 10], desc: 'Üretim Masasında yapılır.' },
-  tas_gogus: { name: 'Taş Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_tas', def: 6, set: 'tas', req: ['savunma', 10], desc: 'Üretim Masasında yapılır.' },
-  tas_bot: { name: 'Taş Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_tas', def: 3, set: 'tas', req: ['savunma', 10], desc: 'Üretim Masasında yapılır.' },
-  demir_kask: { name: 'Demir Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_demir', def: 5, set: 'demir', req: ['savunma', 20], desc: 'Üretim Masasında yapılır.' },
-  demir_gogus: { name: 'Demir Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_demir', def: 10, set: 'demir', req: ['savunma', 20], desc: 'Üretim Masasında yapılır.' },
-  demir_bot: { name: 'Demir Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_demir', def: 5, set: 'demir', req: ['savunma', 20], desc: 'Üretim Masasında yapılır.' },
+  tas_kask: { name: 'Taş Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_tas', def: 3, set: 'tas', req: ['savunma', 5], desc: 'Üretim Masasında yapılır.' },
+  tas_gogus: { name: 'Taş Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_tas', def: 6, set: 'tas', req: ['savunma', 5], desc: 'Üretim Masasında yapılır.' },
+  tas_bot: { name: 'Taş Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_tas', def: 3, set: 'tas', req: ['savunma', 5], desc: 'Üretim Masasında yapılır.' },
+  demir_kask: { name: 'Demir Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_demir', def: 5, set: 'demir', req: ['savunma', 15], desc: 'Üretim Masasında yapılır.' },
+  demir_gogus: { name: 'Demir Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_demir', def: 10, set: 'demir', req: ['savunma', 15], desc: 'Üretim Masasında yapılır.' },
+  demir_bot: { name: 'Demir Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_demir', def: 5, set: 'demir', req: ['savunma', 15], desc: 'Üretim Masasında yapılır.' },
   yosun_kask: { name: 'Yosun Kask', kind: 'kask', rarity: 'siradan', icon: 'kask_yosun', def: 2, set: 'yosun', desc: 'Yosunbabadan düşer, sandıklarda da çıkabilir.' },
   yosun_gogus: { name: 'Yosun Göğüslük', kind: 'gogus', rarity: 'siradan', icon: 'gogus_yosun', def: 4, set: 'yosun', desc: 'Yosunbabadan düşer, sandıklarda da çıkabilir.' },
   yosun_bot: { name: 'Yosun Bot', kind: 'bot', rarity: 'siradan', icon: 'bot_yosun', def: 2, spd: 5, set: 'yosun', desc: 'Sandıklarda bulunur.' },
@@ -590,8 +591,8 @@ export const ITEMS = {
   canta_eki: { name: 'Çanta Eki', kind: 'tuketim', rarity: 'nadir', icon: 'canta', bagPlus: 5, desc: 'Kullanınca çantan 5 yuva büyür (en fazla 40 yuva).' },
   // ---- 0.5 yaylar (Okculuk) ve yumruk
   tahta_yay: { name: 'Tahta Yay', kind: 'silah', wt: 'yay', rarity: 'siradan', icon: 'yay_tahta', power: 5, desc: 'İlk yay. Uçan Glemonlara tam hasar vurur, savaşa önde başlarsın.' },
-  tas_yay: { name: 'Taş Yay', kind: 'silah', wt: 'yay', rarity: 'siradan', icon: 'yay_tas', power: 9, req: ['okculuk', 10], desc: 'Üretim Masasında yapılır.' },
-  demir_yay: { name: 'Demir Yay', kind: 'silah', wt: 'yay', rarity: 'siradan', icon: 'yay_demir', power: 14, req: ['okculuk', 20], desc: 'Üretim Masasında yapılır.' },
+  tas_yay: { name: 'Taş Yay', kind: 'silah', wt: 'yay', rarity: 'siradan', icon: 'yay_tas', power: 9, req: ['okculuk', 5], desc: 'Üretim Masasında yapılır.' },
+  demir_yay: { name: 'Demir Yay', kind: 'silah', wt: 'yay', rarity: 'siradan', icon: 'yay_demir', power: 14, req: ['okculuk', 15], desc: 'Üretim Masasında yapılır.' },
   firtina_yayi: { name: 'Fırtına Yayı', kind: 'silah', wt: 'yay', rarity: 'nadir', icon: 'yay_firtina', power: 20, req: ['okculuk', 25], desc: 'Fırtına Dişiyle yapılır. Çok güçlü.' },
   cakal_yayi: { name: 'Çakal Yayı', kind: 'silah', wt: 'yay', rarity: 'epik', icon: 'yay_cakal', power: 22, spd: 10, req: ['okculuk', 20], desc: 'Fırtına Çakalından çok nadir düşer. Hız +10.' },
   golem_kilici: { name: 'Golem Kılıcı', kind: 'silah', rarity: 'nadir', icon: 'kilic_golem', power: 20, req: ['saldiri', 25], desc: 'Golem Çekirdeğiyle yapılır. Çok güçlü.' },
@@ -1660,8 +1661,8 @@ Object.assign(STATUS_NAMES, { lanet: 'Lanet' });
 
 Object.assign(ITEMS, {
   cirak_asasi: { name: 'Çırak Asası', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_cirak', power: 5, mana: 5, desc: 'İlk asa. Büyü Oku mana harcar, mana her turunda dolar. Manan bitince asayla vurursun (zayıf).' },
-  tas_asa: { name: 'Taş Asa', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_tas', power: 9, mana: 8, req: ['buyu', 10], desc: 'Üretim Masasında yapılır. Mana +8.' },
-  demir_asa: { name: 'Demir Asa', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_demir', power: 14, mana: 12, req: ['buyu', 20], desc: 'Üretim Masasında yapılır. Mana +12.' },
+  tas_asa: { name: 'Taş Asa', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_tas', power: 9, mana: 8, req: ['buyu', 5], desc: 'Üretim Masasında yapılır. Mana +8.' },
+  demir_asa: { name: 'Demir Asa', kind: 'silah', wt: 'asa', rarity: 'siradan', icon: 'asa_demir', power: 14, mana: 12, req: ['buyu', 15], desc: 'Üretim Masasında yapılır. Mana +12.' },
   run_tasi: { name: 'Rün Taşı', kind: 'malzeme', rarity: 'nadir', icon: 'run_tasi', desc: 'Simya Kazanında yapılır. Asaların ve rün tılsımlarının malzemesi.' },
   ates_runu: { name: 'Ateş Rünü', kind: 'tilsim', rarity: 'nadir', icon: 'run_ates', magic: 0.12, desc: 'Büyü hasarın +%12.' },
   buz_runu: { name: 'Buz Rünü', kind: 'tilsim', rarity: 'nadir', icon: 'run_buz', mana: 20, def: 3, desc: 'Mana +20, Savunma +3.' },
@@ -1787,6 +1788,68 @@ TREE.savas.name = 'Sınıf';
 TREE.savas.skills = ['saldiri', 'savunma', 'can', 'okculuk', 'buyu'];
 TREE.savas.tiers = [];
 TREE_COST.push(8, 8);
+
+// ================================================================ 1.0.13 Yetenek Agaci 2.0 (Eren)
+// Dalin becerilerinde her seviye atlayisin o dala 1 puan verir. Her sira bir oncekinden pahali:
+// kucuk yeteneklerin her kademesi sira numarasi kadar puan (1, 2, 3...), buyuk yetenekler tek seferlik.
+// Bir sira, o dala yeterince puan harcayinca acilir. Butun yetenekler alinabilir (ikiden biri yok).
+// bon: esya bonusu gibi isler (atkPct, hp, defPct, crit, dodge, spd, luck, xpPct, mana, xp_<beceri>)
+// mods: sinif etkileri gibi isler (S.cmod). Eski yetenek anahtarlari (keskin_kilic, tutumlu...) korunur.
+export const TREE_ROW_NEED = [0, 3, 10, 25, 50, 90];
+const small = (key, name, max, bon, txt) => ({ key, name, max, bon, txt });
+const big = (pk, mult = 3) => ({ ...pk, max: 1, big: mult });
+const findOld = (k) => Object.values(TREE).flatMap((b) => b.tiers.flat()).find((x) => x.key === k);
+export const TREE2 = {
+  savas: {
+    name: 'Sınıf', skills: ['saldiri', 'savunma', 'can', 'okculuk', 'buyu'],
+    rows: [
+      [small('guc', 'Güç', 5, { atkPct: 0.01 }, 'Saldırı +%1'), small('dayaniklilik', 'Dayanıklılık', 5, { hp: 4 }, 'Can +4'), small('zirh_bilgisi', 'Zırh Bilgisi', 5, { defPct: 0.01 }, 'Savunma +%1')],
+      [small('keskin_goz', 'Keskin Göz', 5, { crit: 0.01 }, 'Kritik +%1'), small('ceviklik', 'Çeviklik', 5, { dodge: 0.02 }, 'Kaçınma süresi +%2'), small('savas_deneyimi', 'Savaş Deneyimi', 5, { xpPct: 0.02 }, 'Savaş XP +%2')],
+      [small('hiz', 'Hız', 5, { spd: 2 }, 'Hız +2'), small('mana_akisi', 'Mana Akışı', 5, { mana: 4 }, 'Mana +4')],
+      [small('olumcul', 'Ölümcül', 3, { crit: 0.02 }, 'Kritik +%2'), small('kale_duvari', 'Kale Duvarı', 3, { defPct: 0.02 }, 'Savunma +%2')],
+      [small('kudret', 'Kudret', 3, { atkPct: 0.03 }, 'Saldırı +%3'), small('can_pinari', 'Can Pınarı', 3, { hp: 15 }, 'Can +15')],
+      [small('usta_savasci', 'Usta Savaşçı', 2, { atkPct: 0.05, hp: 20 }, 'Saldırı +%5, Can +20')],
+    ],
+  },
+  toplayici: {
+    name: 'Toplayıcı', skills: ['madencilik', 'toplama', 'balikcilik'],
+    rows: [
+      [small('madenci', 'Madenci', 5, { xp_madencilik: 0.03 }, 'Madencilik XP +%3'), small('toplayici', 'Toplayıcı', 5, { xp_toplama: 0.03 }, 'Toplama XP +%3'), small('balikci', 'Balıkçı', 5, { xp_balikcilik: 0.03 }, 'Balıkçılık XP +%3')],
+      [big(findOld('hizli_kazma')), big(findOld('sabirli_olta')), small('sansli_el', 'Şanslı El', 5, { luck: 1 }, 'Şans +1')],
+      [big(findOld('damar_bulucu')), big(findOld('genis_ag')), small('usta_madenci', 'Usta Madenci', 3, { xp_madencilik: 0.04 }, 'Madencilik XP +%4'), small('doga_dostu', 'Doğa Dostu', 3, { xp_toplama: 0.04 }, 'Toplama XP +%4'), small('derin_su', 'Derin Su', 3, { xp_balikcilik: 0.04 }, 'Balıkçılık XP +%4')],
+      [big(findOld('derin_kazi')), big(findOld('efsane_avcisi')), small('bereket', 'Bereket', 3, { luck: 2 }, 'Şans +2')],
+      [small('toprak_ana', 'Toprak Ana', 5, { xp_madencilik: 0.05, xp_toplama: 0.05, xp_balikcilik: 0.05 }, 'Madencilik, Toplama ve Balıkçılık XP +%5')],
+      [small('usta_toplayici', 'Usta Toplayıcı', 5, { xp_madencilik: 0.05, xp_toplama: 0.05, xp_balikcilik: 0.05, luck: 1 }, 'Üç toplayıcı becerisinde XP +%5, Şans +1')],
+    ],
+  },
+  zanaat: {
+    name: 'Zanaat', skills: ['uretim', 'insa', 'ascilik'],
+    rows: [
+      [small('usta_eller', 'Usta Eller', 5, { xp_uretim: 0.03 }, 'Üretim XP +%3'), small('mimar_eli', 'Mimar Eli', 5, { xp_insa: 0.03 }, 'İnşa XP +%3'), small('tadimci', 'Tadımcı', 5, { xp_ascilik: 0.03 }, 'Aşçılık XP +%3')],
+      [big(findOld('tutumlu')), big(findOld('sicak_firin')), small('ates_bekcisi', 'Ateş Bekçisi', 5, { xp_ascilik: 0.03, xp_uretim: 0.02 }, 'Aşçılık XP +%3, Üretim XP +%2')],
+      [big(findOld('cifte_uretim')), big(findOld('usta_insa')), small('usta_zanaatkar', 'Usta Zanaatkâr', 3, { xp_uretim: 0.03, xp_insa: 0.03 }, 'Üretim ve İnşa XP +%3')],
+      [big(findOld('usta_isi')), big(findOld('mimar'))],
+      [small('zanaat_ustasi', 'Zanaat Ustası', 5, { xp_uretim: 0.05, xp_insa: 0.05, xp_ascilik: 0.05 }, 'Üretim, İnşa ve Aşçılık XP +%5')],
+    ],
+  },
+  glemon: {
+    name: 'Glemon', skills: ['bag', 'sans'],
+    rows: [
+      [small('bakici', 'Bakıcı', 5, { xp_bag: 0.03 }, 'Bağ XP +%3'), small('sans_tilsimi', 'Şans Tılsımı', 5, { luck: 1 }, 'Şans +1')],
+      [big(findOld('yem_ustasi')), big(findOld('sansli_dogan')), { key: 'dost_gucu', name: 'Dost Gücü', max: 5, mods: { petAtk: 0.02 }, txt: 'Glemonlarının saldırısı +%2' }],
+      [big(findOld('sadik_dost')), big(findOld('parlak_goz')), { key: 'kalin_post', name: 'Kalın Post', max: 5, mods: { petHp: 0.03 }, txt: 'Glemonlarının canı +%3' }],
+      [big(findOld('yumurta_bakicisi')), big(findOld('hazine_avcisi'))],
+      [{ key: 'suru_ruhu', name: 'Sürü Ruhu', max: 3, mods: { petAtk: 0.04, petHp: 0.04 }, txt: 'Glemonlarının saldırısı ve canı +%4' }],
+    ],
+  },
+};
+// Sinif dalinda secilen sinifin yetenekleri 2.-4. siraya, alt sinifinkiler 5.-6. siraya eklenir
+export const CLASS_ROW = [1, 2, 3];
+export const SUB_ROW = [4, 5];
+// bir yetenegin bir kademesinin puan bedeli (sira 0'dan sayilir)
+export const nodeCost = (node, row) => (row + 1) * (node.big || 1);
+export const nodeDesc = (node) => node.desc || node.txt;
+
 // Sifa (Destek sinifinin buyusu)
 export const SIFA = { mana: 12, cd: 2, heal: 0.25, pet: 0.2 };
 // Manuel savas 2.0

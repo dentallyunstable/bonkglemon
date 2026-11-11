@@ -1,7 +1,7 @@
 // Paneller: canta + ekipman, depo, beceriler, profil karti, harita.
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE, TREE_COST, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5, STATION_LVL } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE2, TREE_ROW_NEED, nodeCost, nodeDesc, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5, STATION_LVL } from './data.js';
 import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
@@ -346,7 +346,7 @@ export function openDepo(w) {
 export function openSkills() {
   tutFlag('beceri');
   UI.openPanel(`Beceriler · Toplam ${S.totalLevel()}`, (body) => {
-    const free = Object.keys(TREE).reduce((t, b) => t + Math.max(0, S.treePoints(b) - S.treeSpent(b)), 0);
+    const free = Object.keys(TREE2).reduce((t, b) => t + Math.max(0, S.treePoints(b) - S.treeSpent(b)), 0);
     const tb = UI.el('div', 'choice-row');
     tb.appendChild(UI.button(free ? `Yetenek Ağacı (${free} puan)` : 'Yetenek Ağacı', () => openTree(), free ? 'green' : 'primary'));
     body.appendChild(tb);
@@ -377,68 +377,73 @@ export function openSkills() {
   });
 }
 
-// ------------------------------------------------------------ yetenek agaci (0.8.5)
+// ------------------------------------------------------------ yetenek agaci 2.0 (1.0.13)
+// Dalin becerilerinde her seviye 1 puan. 1. siradaki yetenekler kademe basi 1 puan, sonra 2, 3...
+// Buyuk yetenekler tek seferlik ve daha pahali. Siralar o dala puan harcadikca acilir.
 export function openTree(tab = 'savas') {
+  if (!TREE2[tab]) tab = 'savas';
   UI.openPanel('Yetenek Ağacı', (body) => {
     const render = () => {
       body.innerHTML = '';
       const tabs = UI.el('div', 'choice-row');
-      for (const [b, def] of Object.entries(TREE)) {
+      for (const [b, def] of Object.entries(TREE2)) {
         const free = S.treePoints(b) - S.treeSpent(b);
         tabs.appendChild(UI.button(`${def.name}${free > 0 ? ` (${free})` : ''}`, () => { tab = b; render(); }, tab === b ? 'primary small' : 'small'));
       }
       body.appendChild(tabs);
-      const def = TREE[tab];
+      const def = TREE2[tab];
       const pts = S.treePoints(tab); const spent = S.treeSpent(tab);
       const names = def.skills.map((k) => SKILLS.find((s) => s.key === k).name).join(', ');
-      body.appendChild(UI.el('p', 'muted', `${names} becerilerinde her 10 seviye 1 puan verir. Puan: ${pts} · Harcanan: ${spent} · Boş: ${pts - spent}. Her katta 2 yetenekten birini seçersin.`));
-      // 0.13 Sinif dali: secilen sinifin 3 kati + alt sinifin 2 kati
+      body.appendChild(UI.el('p', 'muted', `${names}: her seviye 1 puan. Boş puan: ${pts - spent} · Harcanan: ${spent}`));
       if (tab === 'savas') {
         const c = S.cls(); const sb = S.sub();
-        if (S.save.flags.sinifIade) body.appendChild(UI.el('p', 'lale-says', 'Eski Savaş dalına harcadığın puanlar geri geldi. Sınıfını seçince burada yeniden harcayabilirsin.'));
         const r = UI.el('div', 'choice-row');
-        r.appendChild(UI.button(c ? `Sınıf: ${c.name}${sb ? ` · ${sb.name}` : ''}` : 'Sınıf seç', () => openClass(), c ? 'small' : 'green'));
+        r.appendChild(UI.button(c ? `Sınıf: ${c.name}${sb ? ` · ${sb.name}` : ''}` : 'Sınıf seç', () => openClass(), !c && S.combatLevel() >= CLASS_RULES.unlock ? 'green small' : 'small'));
         body.appendChild(r);
-        if (!c) {
-          body.appendChild(UI.el('p', 'muted', S.combatLevel() >= CLASS_RULES.unlock ? 'Bu dalın yetenekleri sınıfına göre değişir. Önce sınıfını seç.' : `Saldırı, Okçuluk ya da Büyü ${CLASS_RULES.unlock} olunca sınıf seçebilirsin (şu an en yükseği ${S.combatLevel()}).`));
-          return;
-        }
+        if (!c) body.appendChild(UI.el('p', 'muted', S.combatLevel() >= CLASS_RULES.unlock ? 'Sınıfını seçince sınıfının yetenekleri de bu dalda açılır.' : `Saldırı, Okçuluk ya da Büyü ${CLASS_RULES.unlock} olunca sınıf seçebilirsin; sınıf yetenekleri de bu dala gelir.`));
       }
-      const sel = S.save.perks[tab] || [];
-      S.treeTiers(tab).forEach((pair, i) => {
-        const need = TREE_COST.slice(0, i).reduce((a, b) => a + b, 0);
-        if (tab === 'savas' && i === 3) body.appendChild(UI.el('p', 'muted', `${S.sub().name} katları`));
-        body.appendChild(UI.el('h3', '', `${i + 1}. kat · ${TREE_COST[i]} puan${i ? ` (önce ${need} puan harcamış olmalısın)` : ''}`));
-        const row = UI.el('div', 'tree-row');
-        pair.forEach((pk, j) => {
-          const picked = sel[i] === j;
-          const other = sel[i] != null && !picked;
-          const card = UI.el('div', 'tree-card' + (picked ? ' picked' : other ? ' off' : ''));
-          card.appendChild(UI.el('div', 'zn', (picked ? '✔ ' : '') + pk.name));
-          card.appendChild(UI.el('div', 'muted', pk.desc));
-          if (!picked && !other) {
-            const b = UI.button('Seç', () => {
-              if (S.pickPerk(tab, i, j)) { sfx('levelup'); UI.feed(`<span style="color:#ffd04d">★ Yeni yetenek: ${pk.name}</span>`, 'gold'); render(); }
+      S.treeRows(tab).forEach((row, i) => {
+        const open = S.rowOpen(tab, i);
+        const h = UI.el('h3', 'tree-h' + (open ? '' : ' locked'), `${i + 1}. sıra · kademe başı ${i + 1} puan${row.some((n) => n.big) ? `, büyük yetenekler ${(i + 1) * 3} puan` : ''}`);
+        if (!open) h.appendChild(UI.el('span', 'muted', ` 🔒 bu dala ${TREE_ROW_NEED[i]} puan harca (${spent}/${TREE_ROW_NEED[i]})`));
+        body.appendChild(h);
+        const rowEl = UI.el('div', 'tree-row');
+        for (const n of row) {
+          const rk = S.treeRank(tab, n.key);
+          const full = rk >= n.max;
+          const cost = nodeCost(n, i);
+          const card = UI.el('div', 'tree-card' + (full ? ' picked' : rk ? ' part' : '') + (open ? '' : ' off') + (n.big ? ' big' : ''));
+          const top = UI.el('div', 'zn', (full ? '✔ ' : '') + n.name);
+          if (n.max > 1) top.appendChild(UI.el('span', 'rank', ` ${rk}/${n.max}`));
+          card.appendChild(top);
+          if (n.cls) card.appendChild(UI.el('div', 'tag', 'Sınıf yeteneği'));
+          card.appendChild(UI.el('div', 'muted', n.max > 1 ? `Her kademe: ${nodeDesc(n)}` : nodeDesc(n)));
+          if (!full) {
+            const b = UI.button(`${rk ? '+1 kademe' : 'Al'} · ${cost} puan`, () => {
+              if (S.buyNode(tab, i, n)) {
+                sfx('levelup');
+                UI.feed(`<span style="color:#ffd04d">★ ${n.name}${n.max > 1 ? ` ${S.treeRank(tab, n.key)}/${n.max}` : ''}</span>`, 'gold');
+                render();
+              }
             }, 'small green');
-            b.disabled = !S.canPick(tab, i);
+            b.disabled = !S.canBuy(tab, i, n);
             card.appendChild(b);
           }
-          row.appendChild(card);
-        });
-        body.appendChild(row);
+          rowEl.appendChild(card);
+        }
+        body.appendChild(rowEl);
       });
       // sifirlama: Hanci Lale'nin isi; Cimen Blogu ya da Sifirlama Tasi
-      const total = Object.keys(TREE).reduce((t, b) => t + S.treeSpent(b), 0);
+      const total = Object.keys(TREE2).reduce((t, b) => t + S.treeSpent(b), 0);
       if (total > 0) {
-        const cost = respecCost(total);
+        const cost = respecCost(Math.round(total / 4));
         const r = UI.el('div', 'choice-row');
         const stone = S.countItem('sifirlama_tasi') > 0;
         const b = UI.button(stone ? 'Lale ile sıfırla (Sıfırlama Taşı)' : `Lale ile sıfırla (${cost} ${CURRENCY})`, () => {
           if (stone) S.removeItem('sifirlama_tasi', 1);
           else if (S.save.gold >= cost) S.save.gold -= cost;
           else return;
-          S.save.perks = {};
-          S.save.flags.sinifIade = false;
+          S.save.tree = {};
           S.hp = Math.min(S.hp, S.maxHp());
           S.changed();
           sfx('coin');

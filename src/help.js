@@ -53,7 +53,7 @@ export const GUIDE = [
   ] },
   { k: 'sinif', t: 'Sınıflar ve yetenek ağacı', p: [
     'Bir savaş becerisi 20 olunca Lale\'den sınıf seçersin: Savaşçı, Nişancı, Büyücü ya da Destek. 50\'de alt sınıf açılır.',
-    'Becerilerin arttıkça yetenek puanı kazanırsın. Yetenek Ağacı\'nda bunları harcarsın, istersen ücretle sıfırlarsın.',
+    'Bir dalın becerilerinde her seviye atladığında o dala 1 yetenek puanı gelir. 1. sıradaki yetenekler kademe başı 1 puan, 2. sıradakiler 2 puan… diye gider. Bir dala puan harcadıkça yeni sıralar açılır. Hepsini alabilirsin; istersen Lale\'ye ücretle sıfırlatırsın.',
   ] },
   { k: 'insa', t: 'Üs, inşa ve diğer işler', p: [
     'Topladığın blokları evinin arsasına koyabilirsin. İnşa becerisi ve Üs Puanı böyle artar.',

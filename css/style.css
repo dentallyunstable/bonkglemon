@@ -543,7 +543,13 @@ html, body {
 }
 
 /* 0.8.5 yetenek agaci */
-.tree-row { display: flex; gap: calc(4 * var(--u)); margin-bottom: calc(4 * var(--u)); }
+.tree-row { display: flex; flex-wrap: wrap; gap: calc(4 * var(--u)); margin-bottom: calc(4 * var(--u)); }
+.tree-row .tree-card { flex: 1 1 calc(30% - 4 * var(--u)); min-width: calc(80 * var(--u)); }
+.tree-card.part { border-color: #9ce08a; background: rgba(156, 224, 138, 0.08); }
+.tree-card.big { box-shadow: inset 0 0 0 calc(1 * var(--u)) rgba(180, 138, 240, 0.5); }
+.tree-card .rank { color: #9ce08a; }
+.tree-card .tag { color: #c8a0f0; font-size: var(--fs-s); }
+.tree-h.locked { opacity: 0.6; }
 .tree-card { flex: 1; padding: calc(4 * var(--u)); border: calc(1 * var(--u)) solid #3a3448; border-radius: calc(3 * var(--u)); background: rgba(255, 255, 255, 0.04); }
 .tree-card.picked { border-color: #ffd04d; background: rgba(255, 208, 77, 0.12); }
 .tree-card.off { opacity: 0.45; }
