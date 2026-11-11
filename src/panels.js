@@ -576,17 +576,19 @@ function ago(t) {
 }
 
 export function openProfile(w) {
+  // 1.0.16 (Eren): sade profil. Solda kart + beceri seviyeleri, sagda kategorili istatistik kutulari, dusus gunlugu filtre simgesiyle
   let logFilter = 'hepsi';
-  UI.openPanel('Profil kartı', (body) => {
+  let filterOpen = false;
+  const FILTERS = [['hepsi', 'Hepsi'], ['nadir', 'Nadir+'], ['epik', 'Epik+'], ['ozel', 'Özel anlar']];
+  const SHORT = { madencilik: 'Maden', balikcilik: 'Balık', bag: 'Bağ' };
+  UI.openPanel('Profil', (body) => {
     const render = () => {
       body.innerHTML = '';
       const pr = UI.el('div', 'profile');
       const card = UI.el('div', 'card');
       card.appendChild(UI.el('div', 'nm', S.save.char));
-      // 0.9: unvan, basarim puani ve pelerin karta yazilir
       const tt = titleOf();
       if (tt) card.appendChild(UI.el('div', 'title-tag', `“${tt.n}”`));
-      card.appendChild(UI.el('div', 'tl', `Toplam seviye ${S.totalLevel()} · ★ ${achPoints()} puan`));
       const pv = gearPreview('idle/0');
       const pb = S.save.equip.pelerin && gearPreview('b_idlesway/0');
       if (pv) {
@@ -602,29 +604,74 @@ export function openProfile(w) {
         if (id) gear.appendChild(UI.icon(ITEMS[id].icon, ''));
       }
       card.appendChild(gear);
+      // beceri seviyeleri, karakterin altinda
+      card.appendChild(UI.el('div', 'pf-sub', `Beceriler · Toplam ${S.totalLevel()}`));
+      const sg = UI.el('div', 'pf-skills');
+      for (const sk of SKILLS) {
+        if (sk.soon) continue;
+        const c = UI.el('div', 'pf-sk');
+        c.appendChild(UI.el('span', 'n', SHORT[sk.key] || sk.name));
+        c.appendChild(UI.el('span', 'v' + (S.level(sk.key) >= 99 ? ' max' : ''), String(S.level(sk.key))));
+        sg.appendChild(c);
+      }
+      card.appendChild(sg);
       pr.appendChild(card);
 
       const info = UI.el('div', 'info');
       const st = S.save.stats;
-      const hours = (st.playMs / 3600000).toFixed(1);
-      info.innerHTML = `
-        <b>Keşif en derin:</b> ${st.deepest || 0} &nbsp; <b>Zindan rekoru:</b> Kat ${st.zindanBest || 0} &nbsp; <b>Kule:</b> bu hafta Kat ${(S.save.kule && S.save.kule.wk === weekNum() && S.save.kule.best) || 0}, en iyi ${(S.save.kule && S.save.kule.all) || 0} &nbsp; <b>Yenilen Glemon:</b> ${st.kills}<br>
-        <b>Patron:</b> ${st.bossKills} &nbsp; <b>Parlak:</b> ${st.shiny} &nbsp; <b>Bayılma:</b> ${st.deaths}<br>
-        <b>Saldırı</b> ${S.level('saldiri')} · <b>Savunma</b> ${S.level('savunma')} · <b>Can</b> ${S.level('can')} &nbsp; <b>${CURRENCY}:</b> ${S.save.gold}<br>
-        <b>Üs Puanı:</b> ${S.baseScore()} &nbsp; <b>İnşa</b> ${S.level('insa')}<br>
-        <b>Albüm:</b> %${Math.round((Object.keys(S.save.album.seen).length / Object.keys(GLEMONS).length) * 100)} &nbsp; <b>Evcil:</b> ${S.save.pets.length} &nbsp; <b>Bağ</b> ${S.level('bag')}<br>
-        <b>Oyun süresi:</b> ${hours} sa`;
-      const prow = UI.el('div', 'choice-row');
-      prow.style.justifyContent = 'flex-start';
-      prow.appendChild(UI.button(`Başarımlar (${achCount()}/${ACH_TOTAL})`, () => openAchievements(w), 'small primary'));
+      const kule = S.save.kule || {};
+      const box = (title, items) => {
+        const bx = UI.el('div', 'pf-box');
+        bx.appendChild(UI.el('div', 'pf-h', title));
+        const g = UI.el('div', 'pf-grid');
+        for (const [k, v] of items) {
+          const c = UI.el('div', 'pf-stat');
+          c.appendChild(UI.el('div', 'v', String(v)));
+          c.appendChild(UI.el('div', 'k', k));
+          g.appendChild(c);
+        }
+        bx.appendChild(g);
+        return bx;
+      };
+      const boxes = UI.el('div', 'pf-boxes');
+      boxes.appendChild(box('Savaş', [
+        ['Keşif en derin', `Kat ${st.deepest || 0}`],
+        ['Zindan rekoru', `Kat ${st.zindanBest || 0}`],
+        ['Kule (en iyi)', `Kat ${kule.all || 0}`],
+        ['Yenilen Glemon', st.kills],
+        ['Patron', st.bossKills],
+        ['Bayılma', st.deaths],
+      ]));
+      boxes.appendChild(box('Koleksiyon', [
+        ['Albüm', `%${Math.round((Object.keys(S.save.album.seen).length / Object.keys(GLEMONS).length) * 100)}`],
+        ['Parlak', st.shiny],
+        ['Evcil', S.save.pets.length],
+        ['Başarım', `${achCount()}/${ACH_TOTAL}`],
+      ]));
+      boxes.appendChild(box('Üs', [
+        ['Üs Puanı', S.baseScore()],
+        [CURRENCY, S.save.gold],
+        ['Oyun süresi', `${(st.playMs / 3600000).toFixed(1)} sa`],
+      ]));
+      info.appendChild(boxes);
+      const prow = UI.el('div', 'pf-btns');
+      prow.appendChild(UI.button(`★ Başarımlar · ${achPoints()} puan`, () => openAchievements(w), 'small primary'));
       prow.appendChild(UI.button('Unvan seç', () => openTitles(w), 'small purple'));
       prow.appendChild(UI.button('Albüm', () => openAlbum(w), 'small blue'));
       info.appendChild(prow);
-      // 0.9: dusus gunlugu 30 kayit, nadirlige gore suzulur
+
+      // dusus gunlugu: suzgecler filtre simgesinin altinda
       const lh = UI.el('div', 'log-head');
       lh.appendChild(UI.el('h3', '', 'Düşüş günlüğü'));
-      for (const [k, label] of [['hepsi', 'Hepsi'], ['nadir', 'Nadir+'], ['epik', 'Epik+'], ['ozel', 'Özel anlar']]) {
-        lh.appendChild(UI.button(label, () => { logFilter = k; render(); }, logFilter === k ? 'tiny primary' : 'tiny'));
+      const fb = UI.button('', () => { filterOpen = !filterOpen; render(); }, 'tiny pf-filter' + (logFilter !== 'hepsi' ? ' on' : ''));
+      fb.title = 'Süz';
+      fb.appendChild(UI.icon('ui_filtre', 'ico'));
+      fb.appendChild(UI.el('span', '', FILTERS.find((f) => f[0] === logFilter)[1]));
+      lh.appendChild(fb);
+      if (filterOpen) {
+        const menu = UI.el('div', 'pf-fmenu');
+        for (const [k, label] of FILTERS) menu.appendChild(UI.button(label, () => { logFilter = k; filterOpen = false; render(); }, logFilter === k ? 'tiny primary' : 'tiny'));
+        lh.appendChild(menu);
       }
       info.appendChild(lh);
       const ul = UI.el('ul', 'droplog');
@@ -639,13 +686,6 @@ export function openProfile(w) {
         ul.appendChild(li);
       }
       info.appendChild(ul);
-      const row = UI.el('div', 'row');
-      row.style.display = 'flex';
-      row.style.gap = 'calc(4 * var(--u))';
-      row.style.marginTop = 'calc(5 * var(--u))';
-      row.appendChild(UI.button('Ayarlar ve yedek', () => openSettings(w), 'small blue'));
-      info.appendChild(row);
-      info.appendChild(UI.el('p', 'muted', `Bonkglemon · sürüm ${VERSION}`));
       pr.appendChild(info);
       body.appendChild(pr);
     };

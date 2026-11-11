@@ -1904,6 +1904,8 @@ Object.assign(ICONS, {
     { H: '#6e4a3a', s: '#f0be98', k: '#2a1f1a', p: '#e8867a', C: '#4a8a4a' }],
   dock_rehber: [['............', '.RRRRR.BBBB.', '.RrrrrRBbbB.', '.RrWWrRBbbB.', '.RrrrrRBbbB.', '.RrWWrRBbbB.', '.RrrrrRBbbB.', '.RrrrrRBbbB.', '.RRRRRRBBBB.', '.wwwwwwwwww.', '..........yy', '............'],
     { R: '#8a3a2a', r: '#c85a3a', W: '#f4e4bc', B: '#2a4a7a', b: '#4a7ab0', w: '#e8e0d0', y: '#ffd04d' }],
+  ui_filtre: [['............', '.dddddddddd.', '.dWWWWWWWWd.', '..dWWWWWWd..', '...dWWWWd...', '....dWWd....', '....dWWd....', '....dWWd....', '....dWWd....', '....ddWd....', '......dd....', '............'],
+    { d: '#3e2a1e', W: '#f4e4bc' }],
   dock_ayar: [['............', '.....gg.....', '..g.gGGg.g..', '..gGGGGGGg..', '...GGddGG...', '.gGGd..dGGg.', '.gGGd..dGGg.', '...GGddGG...', '..gGGGGGGg..', '..g.gGGg.g..', '.....gg.....', '............'],
     { g: '#6a6a7a', G: '#b8bccc', d: '#4a4a5a' }],
   dock_harita: [['............', '.YYY.YYY.YY.', 'YyyyYyyyYyyY', 'YyryYyyyYyyY', 'YyyyYyryYyyY', 'YyyyYyyyYryY', 'YyryYyyyYyyY', 'YyyyYyyyYyyY', 'YyyyYyryYyyY', 'YyyyYyyyYyyY', '.YYY.YYY.YY.', '............'],
