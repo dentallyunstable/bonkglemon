@@ -964,3 +964,47 @@ textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u
 .zone.zbanner .zf { color: #eadcc4; text-shadow: 0 calc(.6 * var(--u)) 0 #000; }
 .zone.zbanner.locked { filter: grayscale(.75) brightness(.7); }
 @keyframes zIn { from { opacity: 0; transform: translateX(calc(-18 * var(--u))) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* ================= 1.0.15 (Eren): sade ust bilgi. Kucuk kart [isim + para / piksel can], yaninda ayni boyda Canta ================= */
+#hud-left { display: flex; align-items: stretch; gap: calc(2 * var(--u)); pointer-events: none; }
+#hud-me.hud-card {
+  min-width: calc(64 * var(--u)); border-radius: calc(2 * var(--u));
+  padding: calc(1.5 * var(--u)) calc(3 * var(--u)) calc(2.5 * var(--u));
+  font-size: calc(var(--fs-s) * 0.92); line-height: 1.05;
+}
+#hud-me .hud-row { align-items: center; gap: calc(4 * var(--u)); }
+#hud-name { white-space: nowrap; }
+#hud-me .hud-title { font-size: calc(var(--fs-s) * 0.8); margin-left: calc(1.5 * var(--u)); }
+#hud-gold { color: var(--gold); display: flex; align-items: center; gap: calc(2 * var(--u)); white-space: nowrap; }
+#hud-gold .ico-inline { width: calc(7 * var(--u)); height: calc(7 * var(--u)); margin-right: calc(0.8 * var(--u)); }
+.hud-coin { display: inline-flex; align-items: center; }
+#hud-me .hud-tok { margin-left: 0; }
+/* piksel can kutusu: koseler dik, kalin koyu cerceve, basamakli parlaklik, ince bolmeler */
+#hud-me .bar.hp {
+  height: calc(6 * var(--u)); margin-top: calc(1.5 * var(--u)); border-radius: 0;
+  background: #3a2230;
+  box-shadow: 0 0 0 calc(1 * var(--u)) #140c12, inset 0 calc(1 * var(--u)) 0 #24141c;
+}
+#hud-me .bar.hp .fill {
+  border-radius: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 calc(5 * var(--u)), rgba(0,0,0,0.22) calc(5 * var(--u)) calc(6 * var(--u))),
+    linear-gradient(180deg, #ff8a8a 0 calc(1 * var(--u)), #e04848 calc(1 * var(--u)) calc(4 * var(--u)), #a82c3c calc(4 * var(--u)));
+  box-shadow: none;
+}
+#hud-me .bar.hp span {
+  line-height: calc(6 * var(--u)); font-size: calc(var(--fs-s) * 0.82); color: #fff;
+  text-shadow: calc(0.6 * var(--u)) 0 0 #140c12, calc(-0.6 * var(--u)) 0 0 #140c12, 0 calc(0.6 * var(--u)) 0 #140c12, 0 calc(-0.6 * var(--u)) 0 #140c12;
+}
+#hud-bag { display: flex; pointer-events: auto; }
+.btn.hud-bag-btn {
+  --btn: #6a4a34; --btn-light: #93694a; --btn-dark: #3e2a1e;
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; aspect-ratio: 1 / 1; min-width: calc(17 * var(--u)); padding: 0 0 calc(1.5 * var(--u));
+  border-radius: calc(2 * var(--u));
+}
+.hud-bag-btn .ico { width: calc(12 * var(--u)); height: calc(12 * var(--u)); image-rendering: pixelated; }
+#ui.fighting #hud-bag { display: none; }
+#feed { top: calc(26 * var(--u)); }
+#ui.away #dock { top: calc(26 * var(--u)); }
+#ui.away #feed { top: calc(43 * var(--u)); }

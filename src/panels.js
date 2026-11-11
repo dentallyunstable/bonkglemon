@@ -618,6 +618,7 @@ export function openProfile(w) {
       prow.style.justifyContent = 'flex-start';
       prow.appendChild(UI.button(`Başarımlar (${achCount()}/${ACH_TOTAL})`, () => openAchievements(w), 'small primary'));
       prow.appendChild(UI.button('Unvan seç', () => openTitles(w), 'small purple'));
+      prow.appendChild(UI.button('Albüm', () => openAlbum(w), 'small blue'));
       info.appendChild(prow);
       // 0.9: dusus gunlugu 30 kayit, nadirlige gore suzulur
       const lh = UI.el('div', 'log-head');

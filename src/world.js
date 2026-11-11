@@ -415,14 +415,18 @@ export class WorldScene extends Phaser.Scene {
       dock.appendChild(b);
       return b;
     };
-    item('dock_canta', 'Çanta', () => openBag(this));
+    // 1.0.15 (Eren): Canta profil kartinin hemen yaninda, ayni boyda
+    const bagBox = UI.$('#hud-bag');
+    bagBox.innerHTML = '';
+    const bag = UI.button('', () => openBag(this), 'hud-bag-btn');
+    bag.title = 'Çanta';
+    bag.appendChild(UI.icon('dock_canta', 'ico'));
+    bagBox.appendChild(bag);
     item('dock_beceri', 'Beceriler', () => openSkills(this));
     this.questBtn = item('dock_gorev', 'Görevler', () => openQuests(this));
     this.questBadge = UI.el('span', 'dock-badge hidden', '');
     this.questBtn.appendChild(this.questBadge);
-    item('dock_album', 'Albüm', () => openAlbum(this));
     item('dock_profil', 'Profil', () => openProfile(this));
-    item('dock_rehber', 'Rehber', () => openGuide());
     item('dock_ayar', 'Ayarlar', () => openSettings(this));
     this.refreshHud();
   }
@@ -454,10 +458,9 @@ export class WorldScene extends Phaser.Scene {
     UI.$('#hud-name').innerHTML = `${UI.escapeHtml(S.save.char)}${tt && tt.k !== 'caylak' ? `<span class="hud-title">${UI.escapeHtml(tt.n)}</span>` : ''}`;
     // 0.9: hazir gorev sayisi Gorevler dugmesinde
     if (this.questBadge) { const n = readyCount(); this.questBadge.textContent = n; this.questBadge.classList.toggle('hidden', !n); }
-    UI.$('#hud-lvl').textContent = `Toplam Sv. ${S.totalLevel()}`;
     UI.$('#hud-hp').style.width = `${(S.hp / max) * 100}%`;
     UI.$('#hud-hp-text').textContent = `${S.hp} / ${max}`;
-    UI.$('#hud-gold').innerHTML = `<img class="ico-inline" src="${this.coinUrl}">${S.save.gold} ${CURRENCY}`;
+    UI.$('#hud-gold').innerHTML = `<span class="hud-coin" title="${CURRENCY}"><img class="ico-inline" src="${this.coinUrl}">${S.save.gold}</span>`;
     // 0.11 Tok: kucuk simge ve kalan dakika
     const left = S.tokLeft();
     if (left) {
