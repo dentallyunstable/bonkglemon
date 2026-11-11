@@ -1,6 +1,6 @@
 # 1.0.9 (Eren): arayuz simgeleri (kilit, yildiz, kalp, tik...) piksel olsun.
 # Pixelify Sans'ta olmayan simgeler icin kucuk bir piksel yazi tipi uretir: vendor/fonts/bonk-sym.woff2
-# Her simge 7 satir piksel; 1 piksel = 128 birim (Tiny5 ile ayni izgara).
+# Her simge 7 satir piksel; 1 piksel = 84 birim (Jersey 15 buyuk harf boyuna yakin).
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 import os
@@ -24,7 +24,7 @@ G = {
  '🎁': ['.##.##.', '...#...', '#######', '#..#..#', '#######', '#..#..#', '#######'],
 }
 G['✔'] = G['✓']; G['✕'] = G['✗']
-U, L = 128, 0
+U, L = 84, 0
 names = ['.notdef', 'space'] + ['s%x' % ord(c) for c in G]
 fb = FontBuilder(1024, isTTF=True)
 fb.setupGlyphOrder(names)
@@ -40,7 +40,7 @@ for c, rows in G.items():
     p = TTGlyphPen(None)
     w = max(len(r) for r in rows)
     for j, r in enumerate(rows):
-        y0 = (len(rows) - 1 - j) * U - U
+        y0 = (len(rows) - 1 - j) * U - 20
         for i, ch in enumerate(r):
             if ch != '#': continue
             x0 = L + i * U

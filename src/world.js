@@ -854,7 +854,7 @@ export class WorldScene extends Phaser.Scene {
         .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(7).setScale(p.stage === 2 ? 0.8 : 1).setFlipX(Math.random() < 0.5);
       sp.play(k('durma'));
       const sh = this.add.image(x, GROUND_Y + 1, 'shadow').setDepth(6.9).setScale((meta.bodyW * sp.scale) / 18, 1);
-      const mark = this.add.text(x, GROUND_Y - meta.ay * sp.scale - 4, '!', { fontFamily: 'BonkSym, Tiny5', fontStyle: 'normal', fontSize: '11px', color: '#ffd04d', stroke: '#16121a', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(7.5);
+      const mark = this.add.text(x, GROUND_Y - meta.ay * sp.scale - 4, '!', { fontFamily: 'BonkSym, "Jersey 15"', fontStyle: 'normal', fontSize: '11px', color: '#ffd04d', stroke: '#16121a', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(7.5);
       const r = { p, sp, sh, mark, k, meta, tx: x, wait: 1000 + Math.random() * 4000 };
       sp.ranchPet = true;
       sp.setInteractive({ useHandCursor: true });
@@ -904,7 +904,7 @@ export class WorldScene extends Phaser.Scene {
       UI.feed(`${petDisplayName(r.p)} mutlu görünüyor. Bir sonraki ${ITEMS[ranchDropOf(r.p.key)].name}: ${m >= 60 ? `${Math.floor(m / 60)} sa ${m % 60} dk` : `${m} dk`}.`);
     }
     for (let i = 0; i < 3; i++) {
-      const h = this.add.text(r.sp.x + (Math.random() - 0.5) * 14, top, '♥', { fontFamily: 'BonkSym, Tiny5', fontSize: '9px', color: '#ff7a9a' }).setDepth(8);
+      const h = this.add.text(r.sp.x + (Math.random() - 0.5) * 14, top, '♥', { fontFamily: 'BonkSym, "Jersey 15"', fontSize: '9px', color: '#ff7a9a' }).setDepth(8);
       this.tweens.add({ targets: h, y: h.y - 16, alpha: 0, duration: 800, delay: i * 120, onComplete: () => h.destroy() });
     }
     r.sp.play(r.k('saldiri'));

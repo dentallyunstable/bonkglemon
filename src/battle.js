@@ -1460,7 +1460,7 @@ export class Battle {
     if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
     sfx('levelup');
     for (let i = 0; i < 5; i++) {
-      const h = this.scene.add.text(e.sprite.x + (Math.random() - 0.5) * 20, this.topY(e) + 6, '♥', { fontFamily: 'BonkSym, Tiny5', fontSize: '10px', color: '#ff7a9a' }).setDepth(22);
+      const h = this.scene.add.text(e.sprite.x + (Math.random() - 0.5) * 20, this.topY(e) + 6, '♥', { fontFamily: 'BonkSym, "Jersey 15"', fontSize: '10px', color: '#ff7a9a' }).setDepth(22);
       this.scene.tweens.add({ targets: h, y: h.y - 22, alpha: 0, duration: 900, delay: i * 120, onComplete: () => h.destroy() });
     }
     this.scene.tweens.add({ targets: [e.sprite, e.shadow], alpha: 0, duration: 700, delay: 500, onComplete: () => { e.sprite.destroy(); e.shadow.destroy(); } });
