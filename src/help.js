@@ -9,7 +9,7 @@ import { forgetLogin } from './login.js';
 // Her konu birkac kisa paragraf. "?" dugmeleri de buradan okur.
 export const GUIDE = [
   { k: 'temel', t: 'İlk adımlar', p: [
-    'Oyun evinde, arsanda başlar. Evin solunda kamp ateşi ve çalışma istasyonları var: Üretim Masası (Üretim 1), Fırın (5), Yem Tezgâhı (10), Simya Kazanı (15) ve Örs (15). Daha soldaki Köy yolu tabelası (ya da Harita düğmesi) haritayı açar: solda barışçıl Köy (Meydan, Göl, Koru, Arsa, Ahır, Maden), köprünün ötesinde tehlikeli yerler (Keşif, Zindan, Kule, Etkinlik). Hancı Lale Köy Meydanında.',
+    'Oyun evinde, arsanda başlar. Evin solunda kamp ateşi ve çalışma istasyonları var: Üretim Masası (Üretim 1), Fırın (5), Yem Tezgâhı (10), Simya Kazanı (15) ve Örs (15). Daha soldaki Köy yolu tabelası (ya da Harita düğmesi) haritayı açar. Haritadaki yazılara dokununca oraya gidersin: surların içinde Köy Meydanı, Arsa, Ahır, Göl, Koru ve Maden; surların dışında Keşif, Zindan, Kule ve Etkinlik. Hancı Lale Köy Meydanında.',
     'Keşif\'te odadan odaya ilerlersin. Her bölgenin 5. katında ara patron, 10. katında bölge patronu var. 5 ve 10. katlarda kısayol açılır.',
     'İstediğin an "Eve dön" diyebilirsin, topladıkların güvende kalır. Bayılırsan o turda kazandıklarının yarısı gider.',
     'Lale\'nin görevleri her gün ve her hafta yenilenir. Lale Pulu sadece görevlerden ve etkinliklerden gelir.',
@@ -73,7 +73,7 @@ export const GUIDE = [
 const GUIDE_BY = Object.fromEntries(GUIDE.map((g) => [g.k, g]));
 // panel basligi (bas kismi) -> rehber konusu
 const HELP = [
-  ['Hancı Lale', 'temel'], ['Köy Meydanı', 'temel'], ['Harita', 'temel'], ['Köy', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
+  ['Hancı Lale', 'temel'], ['Köy Meydanı', 'temel'], ['Harita', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
   ['Keşif Haritası', 'bolge'], ['Hazırlık', 'bolge'],
   ['Çanta', 'esya'], ['Depo', 'esya'], ['Örs', 'esya'], ['Efsane Vitrini', 'esya'],
   ['Beceriler', 'beceri'], ['Yetenek Ağacı', 'sinif'], ['Sınıflar', 'sinif'],
