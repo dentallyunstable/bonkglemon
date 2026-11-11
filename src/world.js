@@ -12,7 +12,7 @@ import {
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
-import { sfx, playMusic, stopMusic, currentMusic } from './audio.js';
+import { sfx, playMusic, stopMusic, currentMusic, SYNTH_KEYS } from './audio.js';
 import { playAnim, moveTo, wait, animDur } from './anim.js';
 import { Battle, BPOS } from './battle.js';
 import { block } from './blocks.js';
@@ -2128,6 +2128,7 @@ export class WorldScene extends Phaser.Scene {
     this.clearRoom();
     this.roomIdx = i;
     const room = this.rooms[i];
+    this.exploreMusic();
     const v = i % 3;
     const zone = this.zone();
     const zin = this.inZindan();
@@ -2536,12 +2537,22 @@ export class WorldScene extends Phaser.Scene {
     await this.fade(false);
   }
 
+  // 1.0 kesif muzigi: bolgenin, Zindan'in ya da Kule'nin kendi sarkisi
+  exploreMusic() {
+    if (this.inBattleView) return;
+    if (this.mode === 'mine') { playMusic('z_maden', false); return; }
+    if (this.mode !== 'dungeon') return;
+    const k = this.inKule() ? 'z_kule' : this.inZindan() ? 'z_zindan' : `z_${this.zone().key}`;
+    playMusic(SYNTH_KEYS.includes(k) ? k : 'z_zindan', false);
+  }
+
   async exitBattleView(show = true) {
     if (!this.inBattleView) return;
     S.setFight(false);
     stopMusic();
     if (show) await this.fade(true);
     this.inBattleView = false;
+    this.exploreMusic();
     UI.$('#ui').classList.remove('fighting');
     const p = this.player;
     if (this.roomBg) this.bg.setTexture(this.roomBg);

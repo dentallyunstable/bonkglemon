@@ -122,7 +122,10 @@ function syncMusic() {
     if (hiddenPause) { cancelAnimationFrame(a._fade); a.volume = 0; a.pause(); } // arka sekmede rAF calismaz: hemen durdur
     else if (key !== want || !enabled) fadeTo(a, 0, 400, () => a.pause());
   }
+  // 1.0 bolge muzikleri sentezle calar
+  if (!want || !enabled || hiddenPause || !SONGS[want]) synthStop();
   if (!want || !enabled || hiddenPause) return;
+  if (SONGS[want]) { synthStart(want); return; }
   const a = track(want);
   const p = a.play();
   if (p && p.catch) p.catch(() => { /* izin yok: ilk dokunusu bekle */ });
@@ -143,7 +146,158 @@ export function stopMusic() { want = null; syncMusic(); }
 // ilk dokunusta (tarayici izni) bekleyen muzigi baslat
 ['pointerdown', 'keydown'].forEach((ev) => window.addEventListener(ev, () => {
   if (want && enabled && tracks[want] && tracks[want].paused) syncMusic();
+  if (want && enabled && SONGS[want] && !seq) { ac(); setTimeout(syncMusic, 50); }
 }, true));
 
 // testler icin
-window.__music = () => ({ want, playing: Object.entries(tracks).filter(([, a]) => !a.paused).map(([k]) => k) });
+window.__music = () => ({ want, synth: seq ? seq.key : null, playing: Object.entries(tracks).filter(([, a]) => !a.paused).map(([k]) => k) });
+
+// ------------------------------------------------------------ 1.0 bolge muzikleri (dosyasiz, tarayicida calinir)
+// Her bolgenin kendi gamı, hizi ve sesi var. Melodi sabit bir tohumdan uretilir: her acilista ayni sarki.
+// Yapi: 4 akorlu dongu, 8 olcu (A A B A), her olcu 8 adim. Bas, arpej, melodi ve hafif davul.
+const SCALES = {
+  major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10], dorian: [0, 2, 3, 5, 7, 9, 10],
+  hijaz: [0, 1, 4, 5, 7, 8, 10], lydian: [0, 2, 4, 6, 7, 9, 11], harm: [0, 2, 3, 5, 7, 8, 11], mixo: [0, 2, 4, 5, 7, 9, 10],
+  penta: [0, 2, 4, 7, 9, 12, 14],
+};
+// prog: akor kok derecesi (gam icinde), lead/bass/arp: dalga turu, echo: yanki, drum: 0-2
+const SONGS = {
+  z_orman: { root: 60, scale: 'major', bpm: 108, prog: [0, 3, 4, 0], lead: 'triangle', arp: 'square', echo: 0.15, drum: 1, seed: 11 },
+  z_magara: { root: 57, scale: 'minor', bpm: 88, prog: [0, 5, 3, 4], lead: 'sine', arp: 'triangle', echo: 0.35, drum: 0, seed: 23 },
+  z_col: { root: 62, scale: 'hijaz', bpm: 112, prog: [0, 1, 0, 6], lead: 'square', arp: 'triangle', echo: 0.12, drum: 2, seed: 37 },
+  z_buz: { root: 64, scale: 'lydian', bpm: 84, prog: [0, 1, 4, 0], lead: 'sine', arp: 'sine', echo: 0.4, drum: 0, seed: 41 },
+  z_kor: { root: 55, scale: 'harm', bpm: 132, prog: [0, 5, 3, 4], lead: 'sawtooth', arp: 'square', echo: 0.1, drum: 2, seed: 53 },
+  z_golge: { root: 53, scale: 'dorian', bpm: 76, prog: [0, 3, 5, 4], lead: 'triangle', arp: 'sine', echo: 0.45, drum: 0, seed: 67 },
+  z_cekirdek: { root: 62, scale: 'lydian', bpm: 96, prog: [0, 4, 5, 1], lead: 'sine', arp: 'triangle', echo: 0.4, drum: 1, seed: 79 },
+  z_zindan: { root: 52, scale: 'minor', bpm: 100, prog: [0, 6, 5, 4], lead: 'square', arp: 'triangle', echo: 0.2, drum: 1, seed: 83 },
+  z_kule: { root: 57, scale: 'mixo', bpm: 116, prog: [0, 6, 3, 0], lead: 'square', arp: 'square', echo: 0.18, drum: 2, seed: 97 },
+  z_maden: { root: 50, scale: 'dorian', bpm: 92, prog: [0, 3, 0, 4], lead: 'triangle', arp: 'triangle', echo: 0.3, drum: 1, seed: 101 },
+};
+export const SYNTH_KEYS = Object.keys(SONGS);
+const SYNTH_VOL = 2.4; // mp3 parcalarla ayni duyulsun
+function srng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+const midi = (m) => 440 * Math.pow(2, (m - 69) / 12);
+// sarkiyi notalara cevir: [{step, m, dur, v, kind}]
+function compose(sg) {
+  const sc = SCALES[sg.scale];
+  const deg = (d) => { const o = Math.floor(d / sc.length); return sg.root + sc[((d % sc.length) + sc.length) % sc.length] + 12 * o; };
+  const r = srng(sg.seed);
+  const motif = (chord) => { // bir olculuk melodi: guclu vuruslarda akor sesi
+    const out = []; let d = chord + 7 + Math.floor(r() * 3);
+    for (let i = 0; i < 8; i++) {
+      if (i % 4 === 0) d = chord + 7 + [0, 2, 4][Math.floor(r() * 3)];
+      else d += [-1, 1, 1, -1, 2, -2, 0][Math.floor(r() * 7)];
+      const rest = i % 2 === 1 && r() < 0.35;
+      out.push(rest ? null : d);
+    }
+    return out;
+  };
+  const A = sg.prog.map((c) => motif(c));
+  const B = sg.prog.map((c) => motif(c + 2));
+  const bars = [...A, ...A.map((m, i) => (i === 3 ? motif(sg.prog[3]) : m)), ...B, ...A];
+  const prog = [...sg.prog, ...sg.prog, ...sg.prog.map((c) => c + 2), ...sg.prog];
+  const notes = [];
+  bars.forEach((bar, b) => {
+    const ch = prog[b];
+    bar.forEach((d, i) => {
+      const step = b * 8 + i;
+      if (d !== null) { const long = i < 7 && bar[i + 1] === null; notes.push({ step, m: deg(d), dur: long ? 2 : 1, v: 0.05, kind: 'lead' }); }
+      notes.push({ step, m: deg(ch + [0, 2, 4, 2][i % 4] + 7), dur: 0.5, v: 0.018, kind: 'arp' });
+      if (i % 4 === 0) notes.push({ step, m: deg(ch) - 12, dur: 3.5, v: 0.06, kind: 'bass' });
+      if (sg.drum && i % 4 === 0) notes.push({ step, kind: 'kick' });
+      if (sg.drum > 1 && i % 4 === 2) notes.push({ step, kind: 'hat' });
+      if (sg.drum && i % 8 === 4) notes.push({ step, kind: 'snare' });
+    });
+  });
+  return { notes, len: bars.length * 8 };
+}
+const composed = {};
+let seq = null; // calan sarki: {key, t0, next, timer, out}
+function synthStart(key) {
+  const a = ac(); if (!a) return;
+  if (seq && seq.key === key) return;
+  synthStop();
+  const sg = SONGS[key];
+  const c = composed[key] || (composed[key] = compose(sg));
+  const out = a.createGain(); out.gain.value = 0;
+  out.gain.linearRampToValueAtTime(SYNTH_VOL, a.currentTime + 1.2);
+  out.connect(a.destination);
+  let fx = out;
+  if (sg.echo) { // basit yanki
+    const dl = a.createDelay(1); dl.delayTime.value = (60 / sg.bpm) * 0.75;
+    const fb = a.createGain(); fb.gain.value = sg.echo;
+    const mixIn = a.createGain();
+    mixIn.connect(out); mixIn.connect(dl); dl.connect(fb).connect(dl); dl.connect(out);
+    fx = mixIn;
+  }
+  const stepT = 60 / sg.bpm / 2;
+  seq = { key, t0: a.currentTime + 0.1, next: 0, out, fx, stepT, c, sg };
+  const tick = () => {
+    if (!seq) return;
+    const until = a.currentTime + 0.3;
+    while (seq.t0 + seq.next * stepT < until) {
+      const s = seq.next % c.len;
+      const t = seq.t0 + seq.next * stepT;
+      for (const n of c.notes) if (n.step === s) playNote(a, n, t, stepT, seq.sg, seq.out, seq.fx);
+      seq.next++;
+    }
+  };
+  tick();
+  seq.timer = setInterval(tick, 100);
+}
+function playNote(a, n, t, stepT, sg, out, fxIn) {
+  if (n.kind === 'kick' || n.kind === 'snare' || n.kind === 'hat') {
+    if (n.kind === 'kick') {
+      const o = a.createOscillator(); const g = a.createGain();
+      o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.12);
+      g.gain.setValueAtTime(0.09, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+      o.connect(g).connect(out); o.start(t); o.stop(t + 0.17);
+      return;
+    }
+    const dur = n.kind === 'hat' ? 0.04 : 0.12;
+    const len = Math.floor(a.sampleRate * dur);
+    const buf = a.createBuffer(1, len, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = a.createBufferSource(); s.buffer = buf;
+    const f = a.createBiquadFilter(); f.type = n.kind === 'hat' ? 'highpass' : 'bandpass'; f.frequency.value = n.kind === 'hat' ? 6000 : 1800;
+    const g = a.createGain(); g.gain.value = n.kind === 'hat' ? 0.025 : 0.05;
+    s.connect(f).connect(g).connect(out); s.start(t);
+    return;
+  }
+  const o = a.createOscillator(); const g = a.createGain();
+  o.type = n.kind === 'lead' ? sg.lead : n.kind === 'arp' ? sg.arp : 'triangle';
+  o.frequency.setValueAtTime(midi(n.m), t);
+  const dur = n.dur * stepT;
+  const vol = n.v * (o.type === 'square' || o.type === 'sawtooth' ? 0.55 : 1);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(vol, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.95);
+  o.connect(g).connect(n.kind === 'bass' ? out : fxIn);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function synthStop() {
+  if (!seq) return;
+  const s = seq; seq = null;
+  clearInterval(s.timer);
+  try {
+    const a = ac();
+    s.out.gain.cancelScheduledValues(a.currentTime);
+    s.out.gain.setValueAtTime(s.out.gain.value, a.currentTime);
+    s.out.gain.linearRampToValueAtTime(0, a.currentTime + 0.5);
+    setTimeout(() => { try { s.out.disconnect(); } catch (e) { /* zaten kopuk */ } }, 2500);
+  } catch (e) { /* ses yok */ }
+}
+
+// testler ve onizleme icin: sarkiyi sessizce bir ses tamponuna cal
+window.__renderSong = async (key, secs = 30) => {
+  const sg = SONGS[key]; const c = compose(sg);
+  const a = new OfflineAudioContext(1, 44100 * secs, 44100);
+  const out = a.createGain(); out.gain.value = SYNTH_VOL; out.connect(a.destination);
+  let fx = out;
+  if (sg.echo) { const dl = a.createDelay(1); dl.delayTime.value = (60 / sg.bpm) * 0.75; const fb = a.createGain(); fb.gain.value = sg.echo; const mi = a.createGain(); mi.connect(out); mi.connect(dl); dl.connect(fb).connect(dl); dl.connect(out); fx = mi; }
+  const stepT = 60 / sg.bpm / 2;
+  for (let k = 0; k * stepT < secs; k++) for (const n of c.notes) if (n.step === k % c.len) playNote(a, n, k * stepT, stepT, sg, out, fx);
+  const buf = await a.startRendering();
+  return Array.from(buf.getChannelData(0));
+};

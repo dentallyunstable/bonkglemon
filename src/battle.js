@@ -950,7 +950,9 @@ export class Battle {
     const aoe = sk.find((a) => a.aoe);
     if (alive.length >= 2 && aoe) return this.doAttack(null, true, aoe);
     const single = sk.find((a) => !a.aoe && !a.self && a.key !== 'patlat');
-    const target = alive.reduce((a, b) => (a.hp <= b.hp ? a : b));
+    // 1.0: oto savas dikeni acik Glemona vurmamaya calisir
+    const safe = alive.filter((e) => !(e.st.reflect > 0));
+    const target = (safe.length ? safe : alive).reduce((a, b) => (a.hp <= b.hp ? a : b));
     if (single && target.hp > S.atk() * 1.2) return this.doAttack(target, true, single);
     return this.doAttack(target, true);
   }

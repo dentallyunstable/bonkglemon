@@ -8,7 +8,7 @@ import {
 } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
-import { sfx, stopMusic } from './audio.js';
+import { sfx, stopMusic, playMusic } from './audio.js';
 import { playAnim, wait } from './anim.js';
 import { Battle } from './battle.js';
 import { caveBackground } from './art.js';
@@ -98,6 +98,7 @@ export const ShaftMixin = {
     if (!this.busy && this.mode === 'base') stopMusic();
     if (this.busy || this.mode !== 'base') return;
     this.busy = true;
+    this.time.delayedCall(1200, () => { if (this.mode === 'mine') playMusic('z_maden', false); });
     this.walkTok++;
     UI.setActions([]);
     await this.travelOut();

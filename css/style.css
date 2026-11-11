@@ -923,3 +923,19 @@ html, body {
 .btn.off { --btn: #5a5266; --btn-light: #7a7088; --btn-dark: #3a3444; color: #d8d0e4; }
 textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u)); font-family: monospace; font-size: calc(5 * var(--u)); background: #1a1422; color: #e8e4f0; border: calc(0.6 * var(--u)) solid #6a5a8a; border-radius: calc(2 * var(--u)); pointer-events: auto; margin-top: calc(2 * var(--u)); box-sizing: border-box; }
 .save-text .btn { margin-top: calc(2 * var(--u)); }
+
+/* 1.0 parca 3: telefon (yatay, kucuk ekran, parmakla dokunma). Yazilar biraz buyur, dugmeler kalinlasir. */
+@media (max-height: 500px) and (pointer: coarse), (max-height: 420px) {
+  :root { --fs-s: calc(7.4 * var(--u)); --fs-m: calc(8.6 * var(--u)); --fs-l: calc(11 * var(--u)); }
+  #ui.fs-small { --fs-s: calc(6.6 * var(--u)); --fs-m: calc(7.6 * var(--u)); --fs-l: calc(10 * var(--u)); }
+  #ui.fs-big { --fs-s: calc(8.4 * var(--u)); --fs-m: calc(9.8 * var(--u)); --fs-l: calc(12.4 * var(--u)); }
+  .btn.small { padding: calc(3 * var(--u)) calc(6 * var(--u)) calc(4.2 * var(--u)); }
+  .btn.tiny { padding: calc(2.4 * var(--u)) calc(4.5 * var(--u)) calc(3.2 * var(--u)); }
+  .btn.close, .btn.help { width: calc(17 * var(--u)); height: calc(17 * var(--u)); }
+  #tut { width: calc(92 * var(--u)); top: calc(20 * var(--u)); }
+  #tut .tut-d { display: none; }
+}
+/* telefonda centik ve yuvarlak koseler: alt cubuk ve eylem dugmeleri guvenli alanda */
+@supports (padding: env(safe-area-inset-left)) {
+  #dock { left: calc(3 * var(--u) + env(safe-area-inset-left)); }
+}

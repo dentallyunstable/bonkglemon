@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0 (Rehber ve Ayarlar)';
+export const VERSION = '1.0';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -495,7 +495,7 @@ export const SPAWN_TABLE = [
 ];
 export const SHINY_CHANCE = 1 / 500;
 
-export const floorMult = (floor) => 1 + 0.22 * (floor - 1);
+export const floorMult = (floor) => 1 + 0.2 * (floor - 1);
 
 // ---------------------------------------------------------------- Esyalar
 // kind: malzeme | tuketim | silah | kask | gogus | bot | tilsim | kazma | olta

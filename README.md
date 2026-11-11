@@ -187,3 +187,9 @@ python3 -m http.server 8000
 - **Ayarlar:** ses, ekran sarsıntısı, yazı boyutu, sakin ekran, savaş başlangıcı, ilk adımlar, çıkış.
 - **Kayıt ve yedek:** yedeği dosya olarak indir / dosyadan yükle (sadece aynı karakter), cihazda günlük otomatik yedek (son 3), kayıt bozulursa en yeni yedekten kendiliğinden döner. Kayıt sürümü (sv) ve sırayla çalışan geçişler.
 - **99 ödülleri:** 99 pelerinleri parıldar; ilk 99'da üsse altın heykel; 99'dan sonra 120'ye kadar sanal seviye; bir beceride 120 olunca altın parlayan Usta Pelerini.
+
+## 1.0 Tam Sürüm, 3. parça: Müzik, Telefon, Denge
+- **Bölge müzikleri:** Keşif'te her bölgenin, Zindan'ın, Kule'nin ve Maden'in kendi şarkısı (src/audio.js SONGS; tarayıcıda sentezlenir, dosya yok). Savaş ve üs müzikleri Eren'in parçaları.
+- **Müzik dosyaları küçüldü:** 16 MB → 4,4 MB (tek kanal, 40 kbps). Orijinaller proje klasöründe: bonkglemon-src/muzik-orijinal.
+- **Telefon:** yatay telefonda yazılar büyür, düğmeler kalınlaşır, ilk adımlar kartı kısalır.
+- **Denge:** kat başına Glemon güç artışı %22 → %20; oto savaş dikeni açık Glemona vurmaktan kaçınır.
