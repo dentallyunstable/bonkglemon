@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '0.13.1';
+export const VERSION = '0.13.5';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -1787,3 +1787,95 @@ TREE_COST.push(8, 8);
 export const SIFA = { mana: 12, cd: 2, heal: 0.25, pet: 0.2 };
 // Manuel savas 2.0
 export const MANUAL2 = { streakMax: 5, streakStep: 0.1, parryMs: 650, parryCounter: 0.8, finishAt: 0.1, finishBoss: 0.05, finishXp: 0.15, ultAct: 18, ultHit: 8, ultPet: 5 };
+
+// ---------------------------------------------------------------- 0.13.5 Ustalik (Siniflar ve Savas 2. parca)
+// Esya kalitesi: silah, zirh ve tilsimlar bazen Nadir (1 ek ozellik) ya da Epik (2 ek ozellik) cikar.
+// Kalite esyanin kendisinde durur (canta yuvasi .x, kusaninca S.save.eqx[yuva]); eski esyalar Siradan.
+export const QUALITY_KINDS = ['silah', 'kask', 'gogus', 'bot', 'tilsim'];
+export const QUALITY = { nadir: 1, epik: 2, efsanevi: 3 };
+export const QUALITY_ROLL = { nadir: 0.12, epik: 0.03 };
+const pc = (v) => Math.round(v * 100);
+export const AFFIX = {
+  atkPct: { n: (v) => `Saldırı +%${pc(v)}`, r: [0.04, 0.09], kinds: ['silah'] },
+  crit: { n: (v) => `Kritik +%${pc(v)}`, r: [0.02, 0.05], kinds: ['silah', 'tilsim', 'kask'] },
+  gece: { n: (v) => `Gece hasarı +%${pc(v)}`, r: [0.08, 0.16], kinds: ['silah', 'tilsim'] },
+  mana: { n: (v) => `Mana +${v}`, r: [4, 10], int: true, kinds: ['silah', 'tilsim', 'kask'] },
+  hp: { n: (v) => `Can +${v}`, r: [6, 18], int: true, kinds: ['kask', 'gogus', 'bot', 'tilsim'] },
+  defPct: { n: (v) => `Savunma +%${pc(v)}`, r: [0.04, 0.08], kinds: ['kask', 'gogus', 'bot'] },
+  dodge: { n: (v) => `Kaçınma süresi +%${pc(v)}`, r: [0.04, 0.08], kinds: ['bot', 'kask'] },
+  spd: { n: (v) => `Hız +${v}`, r: [3, 8], int: true, kinds: ['bot'] },
+  luck: { n: (v) => `Şans +${v}`, r: [2, 6], int: true, kinds: ['tilsim', 'kask', 'bot', 'gogus'] },
+  xpPct: { n: (v) => `Savaş XP +%${pc(v)}`, r: [0.03, 0.06], kinds: ['tilsim', 'gogus'] },
+};
+
+// Set bonuslari 2 kademe: 2 parcada kucuk, 3 parcada tam (ikisi toplanir)
+const SETS2 = {
+  tahta: { two: { hp: 4 }, full: { xpPct: 0.05 } },
+  yosun: { two: { hp: 6 }, full: { hp: 10 } },
+  tas: { two: { hp: 4 }, full: { defPct: 0.05 } },
+  demir: { two: { hp: 8 }, full: { defPct: 0.1 } },
+  kristal: { two: { mana: 8 }, full: { hp: 20 } },
+  kor: { two: { atkPct: 0.05 }, full: { fireproof: true } },
+  bonkit: { two: { luck: 5 }, full: { crit: 0.1 } },
+  golge: { two: { dodge: 0.08 }, full: { darkproof: true } },
+};
+export function bonusText(b) {
+  return Object.entries(b).map(([k, v]) => (k === 'fireproof' ? 'Yanma işlemez' : k === 'darkproof' ? 'Karanlık işlemez' : AFFIX[k].n(v))).join(', ');
+}
+for (const [k, st] of Object.entries(SETS)) {
+  const s2 = SETS2[k];
+  if (!s2) continue;
+  st.two = s2.two; st.full = s2.full;
+  st.bonus = `2 parça: ${bonusText(s2.two)} · 3 parça: ${bonusText(s2.full)}`;
+}
+
+// Efsanevi silahlar: 3 yol, ayni guc, farkli gorunus (Uret, Dusur, Topla)
+export const LEGENDS = {
+  yildiz: { name: 'Yıldız', path: 'Üret', how: 'Üretim Masasında yapılır (Üretim 80, Çekirdek Kristali, Yıldız Demiri, Efsane Pul ve bir Gölge silahı).' },
+  kadim: { name: 'Kadim', path: 'Düşür', how: 'Zor mod patronlarından ve Sonsuz Kule\'nin 30. katından sonraki sandıklardan düşer. Kule 50. kat sandığı ilk seferde garanti verir.' },
+  sanli: { name: 'Şanlı', path: 'Topla', how: `Hancı Lale\'nin Efsane Vitrininde Lale Pulu ile alınır (300 başarım puanı gerekir).` },
+};
+export const LEGEND_FX = [['atkPct', 0.08], ['crit', 0.05], ['hp', 15]];
+export const LEGEND_PUL = 60;
+export const LEGEND_ACH = 300;
+for (const [p, L] of Object.entries(LEGENDS)) {
+  ITEMS[`${p}_kilic`] = { name: `${L.name} Kılıcı`, kind: 'silah', rarity: 'efsanevi', icon: `kilic_${p}`, power: 64, legend: p, fx: LEGEND_FX, req: ['saldiri', 80], desc: `Efsanevi (${L.path}). ${L.how}` };
+  ITEMS[`${p}_yay`] = { name: `${L.name} Yayı`, kind: 'silah', wt: 'yay', rarity: 'efsanevi', icon: `yay_${p}`, power: 61, legend: p, fx: LEGEND_FX, req: ['okculuk', 80], desc: `Efsanevi (${L.path}). ${L.how}` };
+  ITEMS[`${p}_asa`] = { name: `${L.name} Asası`, kind: 'silah', wt: 'asa', rarity: 'efsanevi', icon: `asa_${p}`, power: 61, mana: 34, legend: p, fx: LEGEND_FX, req: ['buyu', 80], desc: `Efsanevi (${L.path}). Mana +34. ${L.how}` };
+  SELL[`${p}_kilic`] = 2500; SELL[`${p}_yay`] = 2500; SELL[`${p}_asa`] = 2500;
+}
+for (const w of ['kilic', 'yay', 'asa']) {
+  RECIPES.push({ out: `yildiz_${w}`, mats: { cekirdek_kristali: 3, yildiz_demiri: 4, efsane_pul: 2, [`golge_${w}`]: 1 }, station: 'masa', lvl: 80, xp: 4000 });
+}
+
+// Sonsuz Kule: her kat tek savas ve bir kural, 5 katta ara patron, 10 katta sandik. Haftalik sifirlanir.
+export const KULE = { eff: (f) => Math.round(4 + f * 1.3), hp: 1.5, atk: 1.5, heal: 0.1, mini: 5, chest: 10, kadimFrom: 30 };
+export const KULE_RULES = [
+  { k: 'sifa', n: 'Yarım Şifa', d: 'İyileşmeler yarı etkili.' },
+  { k: 'hizli', n: 'Hızlı Glemonlar', d: 'Glemonlar %40 hızlı.' },
+  { k: 'zirhli', n: 'Zırhlı Glemonlar', d: 'Glemonların savunması %60 fazla.' },
+  { k: 'cam', n: 'Cam Top', d: 'Herkes 2 kat hasar verir ve alır.' },
+  { k: 'yalniz', n: 'Yalnız Kurt', d: 'Yoldaş Glemonların bu katta savaşamaz.' },
+  { k: 'manasiz', n: 'Kuru Mana', d: 'Mana tur başında dolmaz.' },
+  { k: 'kilic', n: 'Kılıç Katı', d: 'Kılıçla +%40, diğer silahlarla −%30 hasar.' },
+  { k: 'yay', n: 'Yay Katı', d: 'Yayla +%40, diğer silahlarla −%30 hasar.' },
+  { k: 'asa', n: 'Asa Katı', d: 'Asayla +%40, diğer silahlarla −%30 hasar.' },
+  { k: 'zehir', n: 'Zehirli Hava', d: 'Her turunda canının %4\'ü gider.' },
+  { k: 'kalabalik', n: 'Kalabalık', d: 'Bir Glemon fazla gelir.' },
+  { k: 'dev', n: 'Devler', d: 'Bütün Glemonlar Usta.' },
+  { k: 'bol', n: 'Bol Ödül', d: 'Kural yok: bu katta 2 kat XP.' },
+];
+
+// Patron yenilemesi: canı yarıya inince 2. asama (yeni ozel hamle ve daha sert duzen)
+export const BOSS_P2 = {
+  agacbasi: { key: 'koktufan', sp: { name: 'Kök Tufanı', mult: 1.5, aoe: true, telegraph: true, status: ['sersem', 1] }, pattern: ['normal', 'koktufan', 'recine', 'normal', 'darbe', 'cagir'] },
+  tas_golemi: { key: 'kayacigi', sp: { name: 'Kaya Çığı', mult: 1.9, aoe: true, telegraph: true }, pattern: ['sarsinti', 'normal', 'kayacigi', 'kabuk', 'normal', 'kayacigi'] },
+  firtina_cakali: { key: 'hortum', sp: { name: 'Kum Hortumu', mult: 1.5, aoe: true, telegraph: true, status: ['karanlik', 2] }, pattern: ['isirik', 'hortum', 'normal', 'isirik', 'cagir', 'normal'] },
+  buzul_ayisi: { key: 'buzul', sp: { name: 'Buzul Çarpması', mult: 2.2, telegraph: true, status: ['donma', 1] }, pattern: ['pence', 'normal', 'buzul', 'nefes', 'normal', 'pence'] },
+  magma_kaplumbaga: { key: 'yanardag', sp: { name: 'Yanardağ', mult: 1.6, aoe: true, telegraph: true, status: ['yanma', 3] }, pattern: ['lav', 'yanardag', 'normal', 'kizgin', 'normal', 'yanardag'] },
+  bosluk_bekcisi: { key: 'yutan', sp: { name: 'Yutan Boşluk', mult: 2.1, aoe: true, telegraph: true, status: ['karanlik', 2] }, pattern: ['darbe', 'yutan', 'normal', 'karanlik', 'kopya', 'yutan'] },
+};
+export const BOSS_PHASE = { at: 0.5, atk: 1.2, spd: 15 };
+// Zor mod: patronu bir kez yenince acilir
+export const HARD = { hp: 1.8, atk: 1.35, def: 1.2, gold: 3, xp: 2.5, kadim: [0.03, 0.035, 0.04, 0.05, 0.06, 0.08] };
+export const HARD_DROPS = [['yildiz_demiri', 0.35], ['usta_damgasi', 0.12], ['efsane_pul', 0.15], ['altin_elma', 0.5]];

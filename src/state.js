@@ -1,6 +1,8 @@
 // Oyuncu kaydi: beceriler, canta, ekipman, istatistikler.
 // 0.1'de kayit bu cihazin tarayicisinda tutulur (localStorage).
 // 0.6'da Firebase ile buluta tasinacak.
+import { QUALITY_KINDS, QUALITY_ROLL, AFFIX, LEGEND_FX } from './data.js';
+import { todNow } from './art.js';
 import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, RECIPES, TOK, TASTY_BONUS, TRAITS, RANCH, BOND, TEAM, passiveOf, CLASSES, SUBCLASSES, CLASS_TREE, SUB_TREE, CLASS_RULES, MAGIC } from './data.js';
 
 const CRAFTABLE = new Set(RECIPES.map((r) => r.out));
@@ -54,6 +56,10 @@ function freshSave(char) {
     eggs: [], nest: [null, null, null], zoneDone: {},
     // 0.13: sinif { c: savasci|nisanci|buyucu|destek, sub: alt sinif, ch: kac kez degisti }
     cls: { c: null, sub: null, ch: 0 },
+    // 0.13.5: kusanilan esyalarin kalitesi, Sonsuz Kule, patron gunlugu
+    eqx: {},
+    kule: { wk: 0, best: 0, all: 0, cp: 0, chests: [], k50: false },
+    bossLog: {},
     combos: {},
     // 0.5
     bagBonus: 0,
@@ -166,6 +172,10 @@ export const S = {
     data.gold = Math.floor(data.gold);
     for (const k of Object.keys(data.skills)) if (!(data.skills[k] >= 0)) data.skills[k] = 0;
     for (const k of Object.keys(data.upg)) if (!ITEMS[k]) delete data.upg[k];
+    // 0.13.5: kalite bilgisi sadece kusanili yuvada durur
+    if (!data.eqx || typeof data.eqx !== 'object') data.eqx = {};
+    for (const k of Object.keys(data.eqx)) if (!data.equip[k] || !data.eqx[k] || !Array.isArray(data.eqx[k].a)) delete data.eqx[k];
+    if (!data.kule || typeof data.kule !== 'object') data.kule = freshSave(char).kule;
     this.save = data;
     this.hp = this.maxHp();
     // 0.8.6: savasin ortasinda oyunu kapatmak bayilma cezasindan kurtarmaz
@@ -284,7 +294,7 @@ export const S = {
   },
   // mana (0.13 Buyu)
   maxMana() {
-    return Math.round(MAGIC.base + this.level('buyu') * MAGIC.perLvl + this.gear().reduce((t, it) => t + (it.mana || 0), 0) + this.cmod('manaMax'));
+    return Math.round(MAGIC.base + this.level('buyu') * MAGIC.perLvl + this.gear().reduce((t, it) => t + (it.mana || 0), 0) + this.cmod('manaMax') + this.bonus('mana'));
   },
   perk(key, val = true, def = false) { return this.has(key) ? val : def; },
   canPick(branch, tier) {
@@ -309,21 +319,69 @@ export const S = {
   gear() {
     return Object.values(this.save.equip).filter(Boolean).map((id) => ITEMS[id]);
   },
+  // 0.13.5 esya kalitesi: Nadir 1, Epik 2 ek ozellik
+  rollX(id, boost = 1) {
+    const it = ITEMS[id];
+    if (!it || !QUALITY_KINDS.includes(it.kind) || it.legend || it.revive || it.bound) return null;
+    const r = Math.random();
+    const m = boost * this.dropMult();
+    const q = r < QUALITY_ROLL.epik * m ? 'epik' : r < (QUALITY_ROLL.epik + QUALITY_ROLL.nadir) * m ? 'nadir' : null;
+    if (!q) return null;
+    const pool = Object.keys(AFFIX).filter((k) => AFFIX[k].kinds.includes(it.kind));
+    const a = [];
+    for (let i = 0; i < (q === 'epik' ? 2 : 1) && pool.length; i++) {
+      const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+      const [lo, hi] = AFFIX[k].r;
+      // epik ozellikler araligin ust yarisindan
+      const t = q === 'epik' ? 0.5 + Math.random() * 0.5 : Math.random();
+      const v = AFFIX[k].int ? Math.round(lo + (hi - lo) * t) : Math.round((lo + (hi - lo) * t) * 100) / 100;
+      a.push([k, v]);
+    }
+    return { q, a };
+  },
+  // esyanin gorunen nadirligi (kalitesi daha yuksekse o)
+  rarityOf(id, x) {
+    const base = ITEMS[id].rarity;
+    if (!x) return base;
+    const order = ['siradan', 'nadir', 'epik', 'efsanevi'];
+    return order.indexOf(x.q) > order.indexOf(base) ? x.q : base;
+  },
+  // kusanili esyalarin ek ozellikleri + efsanevi ozellikler + set bonuslari
+  bonus(k) {
+    let t = 0;
+    for (const [slot, x] of Object.entries(this.save.eqx || {})) {
+      if (!x || !this.save.equip[slot]) continue;
+      for (const [ak, v] of x.a) if (ak === k) t += v;
+    }
+    for (const it of this.gear()) if (it.fx) for (const [ak, v] of it.fx) if (ak === k) t += v;
+    for (const st of this.activeSets()) if (typeof st[k] === 'number') t += st[k];
+    return t;
+  },
   // Ors (0.8.5): her arti %8 guc; esya turune islenir
   upg(id) { return (this.save.upg && this.save.upg[id]) || 0; },
   upMult(id) { return 1 + 0.08 * this.upg(id) + (CRAFTABLE.has(id) && this.has('usta_isi') ? 0.05 : 0); },
   gearStat(key) { return Object.values(this.save.equip).filter(Boolean).reduce((t, id) => t + (ITEMS[id][key] || 0) * (key === 'def' ? this.upMult(id) : 1), 0); },
-  dodgeBonus() { return this.gear().reduce((t, it) => t + (it.dodge || 0), 0) + this.perk('refleks', 0.2, 0); },
+  dodgeBonus() { return this.gear().reduce((t, it) => t + (it.dodge || 0), 0) + this.perk('refleks', 0.2, 0) + this.bonus('dodge'); },
   activeSets() {
     const counts = {};
     for (const it of this.gear()) if (it.set) counts[it.set] = (counts[it.set] || 0) + 1;
-    return Object.entries(counts).filter(([set, n]) => n >= SETS[set].pieces).map(([set]) => SETS[set]);
+    // 0.13.5: 2 parca = kucuk bonus, 3 parca = tam bonus (ikisi toplanir)
+    const out = [];
+    for (const [set, n] of Object.entries(counts)) {
+      const st = SETS[set];
+      if (!st) continue;
+      if (st.two) {
+        if (n >= 2) out.push({ ...st.two, set, tier: 2, name: st.name });
+        if (n >= 3) out.push({ ...st.full, set, tier: 3, name: st.name });
+      } else if (n >= st.pieces) out.push(st);
+    }
+    return out;
   },
   setBonusHp() {
-    return this.activeSets().reduce((t, st) => t + (st.hp || 0), 0);
+    return 0; // 0.13.5: bonus('hp') icinde
   },
   maxHp() {
-    return Math.round((50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.setBonusHp()) * (1 + this.tokVal('hp')));
+    return Math.round((50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.bonus('hp')) * (1 + this.tokVal('hp')));
   },
   // ------------------------------------------------ 0.11 Tok guclendirmesi (ayni anda bir tane)
   tokVal(k) {
@@ -366,7 +424,8 @@ export const S = {
   atk() {
     const wt = this.weaponType();
     const m = wt === 'yay' ? this.perk('kartal_gozu', 1.08, 1) : this.perk('keskin_kilic', 1.08, 1);
-    return Math.round(this.atkBase() * m * (1 + this.tokVal('atk')));
+    const gece = todNow() === 'gece' ? this.bonus('gece') : 0;
+    return Math.round(this.atkBase() * m * (1 + this.tokVal('atk')) * (1 + this.bonus('atkPct') + gece));
   },
   atkBase() {
     const id = this.save.equip.silah;
@@ -374,13 +433,13 @@ export const S = {
     return this.level(this.atkSkill()) + w;
   },
   // Sans: nadir dusme ve parlak Glemon (seviye + tilsim)
-  luck() { return this.tokVal('luck') + this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0) + this.perk('sansli_dogan', 8, 0); },
+  luck() { return this.tokVal('luck') + this.level('sans') + this.gear().reduce((t, it) => t + (it.luck || 0), 0) + this.perk('sansli_dogan', 8, 0) + this.bonus('luck'); },
   dropMult() { return 1 + this.luck() * 0.006; },
   shinyChance() { return (this.shinyMult ? this.shinyMult() : 1) * this.perk('parlak_goz', 1.5, 1) / Math.max(200, 500 - this.luck() * 2.5); },
   bagSize() { return BAG_SIZE + (this.save.bagBonus || 0); },
   def() {
     const base = this.level('savunma') + this.gearStat('def');
-    const pct = this.activeSets().reduce((t, st) => t + (st.defPct || 0), 0) + this.cmod('defPct');
+    const pct = this.bonus('defPct') + this.cmod('defPct');
     return Math.round(base * (1 + pct) * (1 + this.tokVal('def')));
   },
   pick() {
@@ -392,9 +451,9 @@ export const S = {
     return id ? ITEMS[id].rod : null;
   },
   spd() {
-    return Math.round((100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0)) * (1 + this.tokVal('spd')));
+    return Math.round((100 + this.gear().reduce((t, it) => t + (it.spd || 0), 0) + this.bonus('spd')) * (1 + this.tokVal('spd')));
   },
-  crit() { return (this.hp < this.maxHp() * 0.3 ? this.perk('ofke', 0.2, 0) : 0) + 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.activeSets().reduce((t, st) => t + (st.crit || 0), 0) + this.cmod('crit'); },
+  crit() { return (this.hp < this.maxHp() * 0.3 ? this.perk('ofke', 0.2, 0) : 0) + 0.05 + this.gear().reduce((t, it) => t + (it.crit || 0), 0) + this.bonus('crit') + this.cmod('crit'); },
   // 0.8: Kor seti / Magma Goguslugu yanmaz, Golge seti / Bekci Pelerini karanlikta gorur
   fireproof() { return this.gear().some((it) => it.fireproof) || this.activeSets().some((st) => st.fireproof); },
   darkproof() { return this.gear().some((it) => it.darkproof) || this.activeSets().some((st) => st.darkproof); },
@@ -435,8 +494,9 @@ export const S = {
   },
 
   // Esya ekler. Sigmayan miktari dondurur (0 = hepsi sigdi).
-  addItem(id, n = 1, where = 'bag') {
+  addItem(id, n = 1, where = 'bag', boost = 1) {
     const list = this.save[where];
+    this.lastRoll = null;
     const stackable = ITEMS[id].kind === 'malzeme' || ITEMS[id].kind === 'tuketim';
     this.save.seen[id] = true;
     let left = n;
@@ -453,6 +513,8 @@ export const S = {
       if (!list[i]) {
         const add = stackable ? Math.min(STACK, left) : 1;
         list[i] = { id, n: add };
+        // 0.13.5: yeni silah/zirh/tilsim bazen Nadir ya da Epik cikar (dukkan ve tasima haric: boost 0)
+        if (!stackable && boost > 0) { const x = this.rollX(id, boost); if (x) { list[i].x = x; this.lastRoll = x; } }
         left -= add;
       }
     }
@@ -465,7 +527,10 @@ export const S = {
   removeItem(id, n = 1, where = 'bag') {
     const list = this.save[where];
     let left = n;
-    for (let i = list.length - 1; i >= 0 && left > 0; i--) {
+    // 0.13.5: once kalitesiz olanlar gider (Nadir/Epik esya en son harcanir)
+    const order = [...list.keys()].reverse().sort((a, b) => (list[a] && list[a].x ? 1 : 0) - (list[b] && list[b].x ? 1 : 0));
+    for (const i of order) {
+      if (left <= 0) break;
       const s = list[i];
       if (s && s.id === id) {
         const take = Math.min(s.n, left);
@@ -493,9 +558,11 @@ export const S = {
     if (!(where in this.save.equip)) return false;
     if (!this.canEquip(slot.id)) return false;
     const old = this.save.equip[where];
+    const oldX = this.save.eqx[where];
     const hpRatio = this.hp / this.maxHp();
     this.save.equip[where] = slot.id;
-    this.save.bag[index] = old ? { id: old, n: 1 } : null;
+    if (slot.x) this.save.eqx[where] = slot.x; else delete this.save.eqx[where];
+    this.save.bag[index] = old ? (oldX ? { id: old, n: 1, x: oldX } : { id: old, n: 1 }) : null;
     this.hp = Math.max(1, Math.round(hpRatio * this.maxHp()));
     this.changed();
     return true;
@@ -507,7 +574,8 @@ export const S = {
     const i = this.save.bag.findIndex((s) => !s);
     if (i < 0) return false;
     const hpRatio = this.hp / this.maxHp();
-    this.save.bag[i] = { id, n: 1 };
+    this.save.bag[i] = this.save.eqx[where] ? { id, n: 1, x: this.save.eqx[where] } : { id, n: 1 };
+    delete this.save.eqx[where];
     this.save.equip[where] = null;
     this.hp = Math.max(1, Math.min(this.maxHp(), Math.round(hpRatio * this.maxHp())));
     this.changed();
@@ -519,7 +587,7 @@ export const S = {
     const s = this.save[fromList][index];
     if (!s) return false;
     // yumurta catlama sayacini korusun: yuvayi oldugu gibi tasi
-    if (ITEMS[s.id].egg) {
+    if (ITEMS[s.id].egg || s.x) {
       const j = this.save[toList].indexOf(null);
       if (j < 0) return false;
       this.save[toList][j] = s;
@@ -536,7 +604,7 @@ export const S = {
   },
   addItemRaw(id, n, where) {
     const run = this.run; this.run = null;
-    const left = this.addItem(id, n, where);
+    const left = this.addItem(id, n, where, 0);
     this.run = run;
     return left;
   },
@@ -577,6 +645,17 @@ export const S = {
     return { lost, gold };
   },
 
+  // 0.13.5 patron gunlugu
+  bossLogOf(key) {
+    const L = this.save.bossLog;
+    return (L[key] = L[key] || { n: 0, hn: 0, best: 0, bestH: 0, rares: {} });
+  },
+  bossWin(key, hard, ms) {
+    const b = this.bossLogOf(key);
+    if (hard) { b.hn++; if (!b.bestH || ms < b.bestH) b.bestH = ms; } else { b.n++; if (!b.best || ms < b.best) b.best = ms; }
+    this.changed();
+  },
+  bossDrop(key, id) { const b = this.bossLogOf(key); b.rares[id] = (b.rares[id] || 0) + 1; },
   endRun() { this.run = null; this.save.run = null; this.hp = this.maxHp(); this.persist(); this.changed(); },
 
   // ------------------------------------------------ gorevler (0.6)

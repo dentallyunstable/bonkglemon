@@ -4,7 +4,7 @@
 import {
   passiveOf, SECRET_HOME, GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
   typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
-  MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS,
+  MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS, BOSS_P2, BOSS_PHASE, HARD, KULE,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -95,6 +95,7 @@ export class Battle {
     this.gold = 0;
     this.flyTold = false;
     this.firstStrike = !!opts.ambush;
+    this.t0 = Date.now();
     this.gy = GROUND_Y;   // Glemonlarin durdugu zemin (arenada uzak meydan)
     this.arena = false;
     this.pets = [];
@@ -140,6 +141,11 @@ export class Battle {
       alive: true,
       st: emptySt(),
     };
+    // 0.13.5 zor mod patronu ve Kule kurallari
+    if (data.boss && this.opts.hard) { e.maxHp = Math.round(e.maxHp * HARD.hp); e.atk *= HARD.atk; e.defense *= HARD.def; e.name = `${data.name} (Zor)`; }
+    if (S.run && S.run.kule) { e.maxHp = Math.round(e.maxHp * KULE.hp); e.atk *= KULE.atk; }
+    if (this.kr() === 'hizli') e.spd = Math.round(e.spd * 1.4);
+    if (this.kr() === 'zirhli') e.defense *= 1.6;
     e.hp = e.maxHp;
     S.seeGlemon(spec.key, spec.shiny);
     if (spec.shiny) this.sparkle(e);
@@ -148,6 +154,9 @@ export class Battle {
   }
 
   alive() { return this.enemies.filter((e) => e.alive); }
+  // 0.13.5 Sonsuz Kule kurali
+  kr() { return S.run && S.run.krule; }
+  hm(h) { return this.kr() === 'sifa' ? Math.max(1, Math.round(h * 0.5)) : h; }
   topY(e) { return this.gy - e.meta.ay * e.scale; }
   eDef(e) { return e.defense * (e.st.shell > 0 ? 2 : 1); }
 
@@ -170,6 +179,7 @@ export class Battle {
   get pet() { return this.pets.find((t) => t.alive) || null; }
   makePet() {
     if (this.pets.length) return;
+    if (this.kr() === 'yalniz') return;
     const list = S.teamPets();
     const team = teamInfo(list);
     const runPets = S.run ? (S.run.pets = S.run.pets || {}) : null;
@@ -248,7 +258,7 @@ export class Battle {
     this.gainUlt(MANUAL2.ultPet);
     // 0.12 pasif: sifali ruh / ay isigi
     if (t.ps.regen && S.hp > 0 && S.hp < S.maxHp()) {
-      const h = Math.max(1, Math.round(S.maxHp() * t.ps.regen));
+      const h = this.hm(Math.max(1, Math.round(S.maxHp() * t.ps.regen)));
       S.hp = Math.min(S.maxHp(), S.hp + h);
       floatText(this.px(), this.py() + 6, `+${h}`, 'heal');
       this.renderMe();
@@ -271,7 +281,7 @@ export class Battle {
       if (t.hearts >= 5 && !t.heartUsed && this.perfectTurn === this.pTurns) { boost *= 2.5; t.heartUsed = true; heartCombo = true; this.combo('kalp_bagi'); }
       if (sp.heal) {
         await playAnim(t.sprite, t.k('saldiri'), 1);
-        const h = Math.round(S.maxHp() * 0.2 * boost);
+        const h = this.hm(Math.round(S.maxHp() * 0.2 * boost));
         S.hp = Math.min(S.maxHp(), S.hp + h);
         t.hp = Math.min(t.maxHp, t.hp + Math.round(t.maxHp * 0.2));
         floatText(this.px(), this.py(), `+${h}`, 'heal');
@@ -283,7 +293,7 @@ export class Battle {
         else { t.reflect = 3; t.taunt = 2; floatText(t.sprite.x, this.petTop(t) - 20, 'Dikenler hazır!', 'info'); }
         if (S.hp < S.maxHp() * 0.3) {
           this.combo('dost_kalkani');
-          const h = Math.round(S.maxHp() * 0.15);
+          const h = this.hm(Math.round(S.maxHp() * 0.15));
           S.hp = Math.min(S.maxHp(), S.hp + h);
           this.status.ay = Math.max(this.status.ay || 0, 1);
           floatText(this.px(), this.py(), `+${h}`, 'heal');
@@ -301,7 +311,7 @@ export class Battle {
         } else await this.petStrike(t, [target], (sp.mult || 1.4) * boost, sp.status);
       }
       if (heartCombo) {
-        const h = Math.round(S.maxHp() * 0.15);
+        const h = this.hm(Math.round(S.maxHp() * 0.15));
         S.hp = Math.min(S.maxHp(), S.hp + h);
         floatText(this.px(), this.py() - 8, `+${h}`, 'heal');
         this.renderMe();
@@ -650,9 +660,15 @@ export class Battle {
     if (this.status.nara > 0) this.status.nara--;
     if (this.status.sersem > 0) this.status.sersem--;
     // 0.13: mana her turda dolar; Sifaci Yenilenme
-    if (this.mana < this.maxMana) this.mana = Math.min(this.maxMana, this.mana + this.maxMana * MAGIC.regen * (1 + M('manaRegen')));
+    if (this.kr() === 'zehir' && S.hp > 0) {
+      const d = Math.max(1, Math.round(S.maxHp() * 0.04));
+      floatText(this.px(), this.py() - 10, 'Zehirli hava', 'info');
+      this.damagePlayer(d, false, true);
+      if (S.hp <= 0) { await this.lose(); if (this.over) return; }
+    }
+    if (this.mana < this.maxMana && this.kr() !== 'manasiz') this.mana = Math.min(this.maxMana, this.mana + this.maxMana * MAGIC.regen * (1 + M('manaRegen')));
     if (M('regen') && S.hp < S.maxHp()) {
-      const h = Math.max(1, Math.round(S.maxHp() * M('regen')));
+      const h = this.hm(Math.max(1, Math.round(S.maxHp() * M('regen'))));
       S.hp = Math.min(S.maxHp(), S.hp + h);
       floatText(this.px(), this.py() + 6, `+${h}`, 'heal');
     }
@@ -1078,7 +1094,7 @@ export class Battle {
   // Destek: Sifa buyusu
   sifaCost() { return Math.round(SIFA.mana * (1 - M('sifaCost'))); }
   healPlayer(frac) {
-    const h = Math.round(S.maxHp() * frac * (1 + M('heal')));
+    const h = this.hm(Math.round(S.maxHp() * frac * (1 + M('heal'))));
     S.hp = Math.min(S.maxHp(), S.hp + h);
     floatText(this.px(), this.py(), `+${h}`, 'heal');
     if (M('cleanse')) { for (const k of ['zehir', 'yanma', 'sersem', 'donma', 'karanlik']) this.status[k] = 0; }
@@ -1289,7 +1305,7 @@ export class Battle {
       this.pose(); this.renderMe(); this.renderStatus(); S.changed(); this.endPlayerTurn();
       return;
     }
-    const heal = Math.round(S.maxHp() * it.heal);
+    const heal = this.hm(Math.round(S.maxHp() * it.heal));
     S.hp = Math.min(S.maxHp(), S.hp + heal);
     sfx('heal');
     floatText(this.px(), this.py(), `+${heal}`, 'heal');
@@ -1501,6 +1517,10 @@ export class Battle {
       this.boom(e.sprite.x, this.gy - 26, 1.6);
       for (const o of this.alive()) if (o !== e) this.applyDamage(o, calcDamage(atk, m * 0.8, this.eDef(o)), true);
     }
+    // 0.13.5 Kule: cam top, silah katlari
+    const kr = this.kr();
+    if (kr === 'cam') m *= 2;
+    if (kr === 'kilic' || kr === 'yay' || kr === 'asa') m *= styleOf(this.wt) === kr ? 1.4 : 0.7;
     const def = ab && ab.pierce ? 0 : this.eDef(e);
     const dmg = calcDamage(atk, m, def);
     if (grade) floatText(e.sprite.x, top - 8, GRADE[grade].text, GRADE[grade].cls);
@@ -1517,7 +1537,7 @@ export class Battle {
     if (e.alive && ab && ab.status) this.giveEnemyStatus(e, ab.status);
     // 0.13: can calma (Golge Buyucusu, Golge Runu), Kan Hirsi, Lanet, Avci zehri
     const steal = (this.curMagic ? M('drain') + this.gearSum('drain') : 0) + M('leech');
-    if (steal > 0 && S.hp > 0) { const h = Math.max(1, Math.round(dmg * steal)); S.hp = Math.min(S.maxHp(), S.hp + h); floatText(this.px(), this.py() + 4, `+${h}`, 'heal'); this.renderMe(); }
+    if (steal > 0 && S.hp > 0) { const h = this.hm(Math.max(1, Math.round(dmg * steal))); S.hp = Math.min(S.maxHp(), S.hp + h); floatText(this.px(), this.py() + 4, `+${h}`, 'heal'); this.renderMe(); }
     if (e.alive && this.curMagic && M('curse')) { e.st.lanet = Math.max(e.st.lanet, 2 + M('curseTurns')); this.renderEnemy(e); }
     if (e.alive && this.wt === 'yay' && M('poison') && Math.random() < M('poison')) this.giveEnemyStatus(e, ['zehir', 3]);
     // 0.8: bazi silahlar vurunca durum verir (Buzul Kilici dondurur, Kor Kilici yakar)
@@ -1539,7 +1559,24 @@ export class Battle {
     floatText(e.sprite.x, this.topY(e) + 4, String(dmg), big ? 'crit' : 'dmg');
     this.renderEnemy(e);
     if (e.hp <= 0) { this.killEnemy(e); return; }
+    this.checkPhase(e);
     playAnim(e.sprite, e.k('hasar'), 1).then(() => { if (e.alive && e.sprite.active) e.sprite.play(e.k('durma')); });
+  }
+
+  // 0.13.5 patron canı yarıya inince 2. aşama
+  checkPhase(e) {
+    if (!e.alive || !e.data.boss || e.p2 || !BOSS_P2[e.key] || e.hp > e.maxHp * BOSS_PHASE.at) return;
+    e.p2 = true;
+    e.acts = 0;
+    e.atk *= BOSS_PHASE.atk;
+    e.spd += BOSS_PHASE.spd;
+    e.st.shell = 0;
+    banner(`${e.data.name}: 2. AŞAMA`, BOSS_P2[e.key].sp.name + '!', 1800, 'boss');
+    feed(`<span style="color:#ff6b5a">${e.data.name} öfkelendi! Saldırı düzeni değişti, artık ${BOSS_P2[e.key].sp.name} yapıyor.</span>`);
+    sfx('roar');
+    if (S.save.settings.shake !== false) this.scene.cameras.main.shake(400, 0.012);
+    if (e.sprite.active) { e.sprite.setTint(0xff9a8a); this.scene.time.delayedCall(260, () => { if (e.sprite.active) e.sprite.clearTint(); }); }
+    this.renderEnemy(e);
   }
 
   killEnemy(e) {
@@ -1575,7 +1612,9 @@ export class Battle {
     if (e.shiny) gold *= 3;
     if (e.golden) gold *= 3;
     if (this.opts.night) gold = Math.round(gold * NIGHT.reward);
-    if (e.data.boss) gold = 150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50);
+    if (e.data.boss) gold = (150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50)) * (this.opts.hard ? HARD.gold : 1);
+    if (e.data.boss && this.opts.hard) xp *= HARD.xp;
+    if (e.data.boss) this.bossWin = e.key;
     if (S.run && S.run.goldX) gold = Math.round(gold * S.run.goldX); // 0.9 Altin Gunu
     gold = Math.round(gold * (1 + this.aura.gold));
     S.addGold(gold);
@@ -1604,8 +1643,9 @@ export class Battle {
       let c = ch * (manual ? 1.1 : 1) * (e.sleeping ? 1.5 : 1) * (e.golden ? 3 : 1) * (e.shiny ? 2 : 1) * S.dropMult() * this.luckBonus * (1 + this.aura.luck) * (1 + 0.3 * e.stage) * (this.opts.night ? NIGHT.reward : 1);
       if (ch >= 1) c = 1;
       if (Math.random() < Math.min(1, c)) {
-        this.w.giveDrop(id, 1, e.from);
+        this.w.giveDrop(id, 1, e.from, false, e.data.boss ? (this.opts.hard ? 3 : 2) : 1);
         recordDrop(e.key, id);
+        if (e.data.boss && ch < 1) S.bossDrop(e.key, id);
         if (ITEMS[id].rarity !== 'siradan' && ch < 1) this.luckXp += 20 * Math.pow(this.floor, 0.8) * (RMULT[ITEMS[id].rarity] || 1);
       }
     }
@@ -1627,6 +1667,7 @@ export class Battle {
       return;
     }
     if (S.has('demir_deri')) d = Math.max(1, Math.round(d * 0.9));
+    if (this.kr() === 'cam' && !dot) d *= 2;
     if (!dot && this.status.ice > 0) { this.status.ice--; d = Math.max(1, Math.round(d * 0.4)); if (src && src.alive && Math.random() < 0.3) this.giveEnemyStatus(src, ['donma', 1]); }
     if (!dot && this.status.kalkan > 0) { this.status.kalkan = 0; d = Math.max(1, Math.round(d * 0.5)); }
     // Mana Kalkani: hasarin bir kismini mana karsilar
@@ -1829,8 +1870,11 @@ export class Battle {
   planAct(e, n) {
     const d = e.data;
     if (d.boss) {
-      const step = d.pattern[(n - 1) % d.pattern.length];
-      if (step !== 'normal') return { ...d.specials[step] };
+      // 0.13.5 ikinci asama: yeni duzen ve yeni ozel hamle
+      const p2 = e.p2 && BOSS_P2[e.key];
+      const pat = p2 ? p2.pattern : d.pattern;
+      const step = pat[(n - 1) % pat.length];
+      if (step !== 'normal') return { ...(p2 && step === p2.key ? p2.sp : d.specials[step]) };
     } else if (d.special && n % d.every === 0) return { ...d.special };
     return { mult: 1 };
   }
@@ -1899,7 +1943,7 @@ export class Battle {
     sfx('win');
     const manual = this.manualActs > 0 && this.manualActs >= this.autoActs;
     const zb = zoneBonus(this.zone.key);
-    const xm = (manual ? 1.2 : 1) * ((S.run && S.run.xpX) || 1) * (1 + this.aura.xp + (zb ? zb.xp : 0)); // 0.9 Devler Gunu: 2 kat
+    const xm = (manual ? 1.2 : 1) * ((S.run && S.run.xpX) || 1) * (1 + this.aura.xp + (zb ? zb.xp : 0) + S.bonus('xpPct')) * (this.kr() === 'bol' ? 2 : 1); // 0.9 Devler Gunu: 2 kat
     const skill = WEAPON_SKILL[this.wt];
     const gains = { [skill]: this.killXp * 0.7 * xm, can: this.killXp * 0.3 * xm, savunma: this.defXp, sans: this.luckXp };
     let petMsg = '';
@@ -1951,6 +1995,7 @@ export class Battle {
     if (S.save.equip.tilsim && ITEMS[S.save.equip.tilsim].revive) {
       const it = ITEMS[S.save.equip.tilsim];
       S.save.equip.tilsim = null;
+      delete S.save.eqx.tilsim;
       sfx('rare');
       feed(`<span style="color:#c08cff">${it.name} kırıldı ve seni ayağa kaldırdı!</span>`, 'epic');
       await playAnim(p, B('totem'), 1.2);

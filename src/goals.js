@@ -183,6 +183,7 @@ export const ACH = [
   { k: 'total', g: 4, n: 'Çok Yönlü', d: (t) => `Toplam seviye ${t}`, v: () => S.totalLevel(), t: [150, 500, 1000] },
   { k: 'daily', g: 4, n: 'Lale\'nin Yardımcısı', d: (t) => `${t} günlük görev bitir`, v: (s) => (s.goals && s.goals.dDone) || 0, t: [10, 60, 250] },
   { k: 'hours', g: 4, n: 'Sadık Oyuncu', d: (t) => `${t} saat oyna`, v: (s) => Math.floor(s.stats.playMs / 3600000), t: [5, 25, 100] },
+  { k: 'kule', g: 0, n: 'Kule Fatihi', d: (t) => `Sonsuz Kule'de Kat ${t}'i geç`, v: (s) => s.stats.kuleBest || 0, t: [10, 25, 50] },
 ];
 export const SECRET = [
   { k: 'ilk_parlak', n: 'Bu Ne Parlıyor?', d: 'İlk parlak Glemonunu gör', v: (s) => s.stats.shiny > 0 || Object.keys(s.album.shiny).length > 0 },

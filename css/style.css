@@ -861,3 +861,11 @@ html, body {
 .class-grid { flex-wrap: wrap; }
 .class-card { min-width: calc(80 * var(--u)); flex: 1 1 40%; }
 .class-card > div:not(.zn) { margin-top: calc(1 * var(--u)); }
+
+/* 0.13.5 esya kalitesi: Nadir / Epik yuvada kucuk bir yildiz */
+.slot.q-nadir::after, .slot.q-epik::after { content: '✦'; position: absolute; top: calc(0.5 * var(--u)); right: calc(1 * var(--u)); font-size: calc(5 * var(--u)); line-height: 1; }
+.slot.q-nadir::after { color: #62d862; }
+.slot.q-epik::after { color: #c08cff; }
+.detail .affix { font-weight: 800; }
+.trophies.journal .trophy span { font-size: calc(5 * var(--u)); }
+.trophies.journal .trophy .btn { margin-top: calc(1 * var(--u)); }

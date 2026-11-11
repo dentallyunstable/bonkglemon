@@ -4,6 +4,15 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 0.13.5 (Ustalık)
+
+- Eşya kalitesi: yeni silah, zırh ve tılsımlar bazen Nadir (1 ek özellik) ya da Epik (2 ek özellik) çıkar. Üretim seviyesi, patronlar ve Kule sandıkları şansı artırır.
+- Set bonusları 2 kademe: 2 parça küçük bonus, 3 parça tam bonus (Tahta setine de geldi).
+- Efsanevi silahlar, 3 yol (aynı güç): Yıldız (Üret), Kadim (zor patron / Kule), Şanlı (Lale'nin Efsane Vitrini, Lale Pulu + 300 başarım puanı). Kılıç, yay ve asa.
+- Örs'te Parçala: üretilmiş eski eşyadan malzemelerin yarısı geri gelir.
+- Sonsuz Kule (Lale haritası ve Etkinlik Kapısı): her kat tek savaş + rastgele kural, 5 katta ara patron ve kontrol noktası, 10 katta Kule sandığı, haftalık rekor.
+- Patronlar: canı yarıya inince 2. aşama, yenince Zor mod (kendi ödülleri), Patron Günlüğü (Kupa Rafı ve Lale).
+
 ## Sürüm 0.13.0 (Sınıflar ve Büyü)
 
 - Yeni beceri Büyü: asalar (Çırak Asası, Taş, Demir, Kristal, Kor, Bonkit, Gölge), Rün Taşı ve 3 rün tılsımı. Büyü Oku ve büyü yetenekleri (Alev Dalgası, Buz Kalkanı, Lanet Bulutu) mana harcar.

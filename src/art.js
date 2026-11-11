@@ -707,7 +707,7 @@ export function dungeonRoomBackground(level, variant = 0) {
 // Hanci Lale'nin arkasindaki harita (panelde buyuk gosterilir): eski kagit uzerine
 // kucuk bloklarla bolgeler, us, maden, arsa ve zindan cukuru; aralarinda kesik yollar.
 export const HUB_SPOTS = {
-  us: [34, 58], kesif: [60, 22], zindan: [160, 62], maden: [104, 66], arsa: [16, 70], ahir: [56, 74], koru: [100, 44],
+  us: [34, 58], kesif: [60, 22], zindan: [160, 62], maden: [104, 66], arsa: [16, 70], ahir: [56, 74], koru: [100, 44], kule: [176, 34],
 };
 export function hubMap() {
   const W = 192, H = 96;
@@ -740,8 +740,12 @@ export function hubMap() {
     }
   };
   path([[40, 56], [44, 34]]); path([[48, 30], [80, 24], [126, 26]]); path([[48, 62], [100, 66], [152, 62]]); path([[30, 64], [18, 68]]);
+  // 0.13.5 Sonsuz Kule: tas tugla kule, mor pencereler
+  for (let j = 0; j < 4; j++) for (let i = 0; i < 2; i++) putScaled(p, 'tas_duvar', 168 + i * 8, 26 + j * 8, 8);
+  for (const i of [0, 2]) putScaled(p, 'tas_duvar', 166 + i * 6, 20, 6);
+  p.rect(174, 34, 4, 5, '#5a3a8a'); p.rect(175, 35, 2, 3, '#b88af0'); p.rect(174, 46, 4, 5, '#5a3a8a'); p.rect(175, 47, 2, 3, '#b88af0');
   // pusula
-  p.rect(176, 8, 2, 12, '#7a4e2e'); p.rect(171, 13, 12, 2, '#7a4e2e'); p.rect(176, 6, 2, 3, '#b84a3c');
+  p.rect(176, 76, 2, 12, '#7a4e2e'); p.rect(171, 81, 12, 2, '#7a4e2e'); p.rect(176, 74, 2, 3, '#b84a3c');
   // kenar
   p.rect(0, 0, W, 2, '#a89670'); p.rect(0, H - 2, W, 2, '#a89670'); p.rect(0, 0, 2, H, '#a89670'); p.rect(W - 2, 0, 2, H, '#a89670');
   return p.canvas();
@@ -1445,4 +1449,15 @@ export function bigMoon() {
   ICONS.run_ates = [RUNE, { d: '#3e3638', S: '#76727f', g: '#ff9a3a' }];
   ICONS.run_buz = [RUNE, { d: '#3e4a62', S: '#8aa4c8', g: '#e0f8ff' }];
   ICONS.run_golge = [RUNE, { d: '#2e2040', S: '#5a3a8a', g: '#b88af0' }];
+  // 0.13.5 efsanevi silahlar: Yildiz (uretilir), Kadim (duser), Sanli (pulla alinir)
+  const LEG_COL = {
+    yildiz: ['#c8c4ec', '#ffffff', '#7a74b0', '#ffd060'],
+    kadim: ['#2a9a86', '#9af4dc', '#164a44', '#d0a040'],
+    sanli: ['#d24a4a', '#ffc0b0', '#7a1a28', '#ffd04d'],
+  };
+  for (const [t, [m, l, d, x]] of Object.entries(LEG_COL)) {
+    ICONS[`kilic_${t}`] = [SWORD, { W: l, B: m, G: x, h: '#5a3e26', P: d }];
+    ICONS[`yay_${t}`] = [BOW, { W: l, B: d, s: x }];
+    ICONS[`asa_${t}`] = [STAFF, { W: l, B: m, P: d, h: x }];
+  }
 }

@@ -6,6 +6,7 @@ import {
   GATHER, BAL_CHANCE, GATHER_CHANCE, RECIPES, ANIM_POOLS, CURRENCY,
   BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, SEED_CHANCE, CAMP, BONKIT_CHANCE, EGG_BATTLES,
   RANCH, ranchDropOf, SECRETS, stormNow, CLASS_RULES, WEAPON_SKILL, FISH, WATERS, fishXp, DEEP_LIMIT, AY_OTU_CHANCE, TREE, BASE_REWARDS, NIGHT, NIGHT_SPAWNS, HIVE, FIRE, TOK,
+  RARITY, KULE, KULE_RULES, BOSS_P2, HARD, HARD_DROPS, LEGENDS,
 } from './data.js';
 import { castOnce, chestLoot, cycleBait, baitLabel } from './fishing.js';
 import { S } from './state.js';
@@ -1684,6 +1685,134 @@ export class WorldScene extends Phaser.Scene {
     await this.enterFloor(level);
   }
 
+  // ------------------------------------------------------------ 0.13.5 Sonsuz Kule
+  // Her kat tek savas ve rastgele bir kural. 5 katta ara patron, 10 katta sandik.
+  // Haftalik sifirlanir; bu haftaki 5'in katlarindan devam edebilirsin.
+  kuleWeek() {
+    const k = S.save.kule;
+    const wk = weekNum();
+    if (k.wk !== wk) { k.wk = wk; k.best = 0; k.cp = 0; k.chests = []; }
+    return k;
+  }
+  async enterKule(from = 1) {
+    UI.closePanel();
+    if (this.busy || this.mode !== 'base') return;
+    this.kuleWeek();
+    this.busy = true;
+    stopMusic();
+    this.walkTok++;
+    UI.setActions([]);
+    await this.travelOut();
+    S.startRun(from);
+    S.run.zindan = true;
+    S.run.kule = true;
+    S.hp = S.maxHp();
+    this.mode = 'dungeon';
+    await this.enterFloor(from);
+  }
+  inKule() { return !!(S.run && S.run.kule); }
+  kuleRule() { return KULE_RULES.find((r) => r.k === (S.run && S.run.krule)); }
+  // Kule kati temizlendi: rekor ve kontrol noktasi
+  kuleCleared(f) {
+    const k = this.kuleWeek();
+    if (f > k.best) k.best = f;
+    if (f > (k.all || 0)) k.all = f;
+    if (f % KULE.mini === 0 && f > (k.cp || 0)) { k.cp = f; UI.feed(`<span style="color:#ffd04d">Kule kontrol noktası: bu hafta Kat ${f + 1}'den devam edebilirsin.</span>`, 'gold'); }
+    S.save.stats.kuleBest = Math.max(S.save.stats.kuleBest || 0, f);
+    S.changed();
+  }
+  // 10 katta bir: Kule sandigi (her hafta her sandik bir kez)
+  async kuleReward(room) {
+    if (this.busy || room.opened) return;
+    this.busy = true;
+    UI.setActions([]);
+    await moveTo(this.player, room.obj.x - 20, { speed: 85, anim: 'c_walk' });
+    this.player.setFlipX(false);
+    await playAnim(this.player, 'c_punch', 1.4);
+    room.obj.setTexture('chest_open');
+    room.opened = true;
+    sfx('chest');
+    this.idle();
+    const f = this.zLevel;
+    const k = this.kuleWeek();
+    if (k.chests.includes(f)) {
+      const g = 20 * f;
+      S.addGold(g);
+      UI.feed(`Bu haftanın Kat ${f} sandığını zaten açmıştın: sadece ${g} ${CURRENCY}. Pazartesi yenilenir.`);
+    } else {
+      k.chests.push(f);
+      UI.banner('Kule sandığı!', `Kat ${f}`, 2000, 'gold');
+      const gold = Math.round(60 * f * (1 + f / 20));
+      S.addGold(gold);
+      UI.feed(`<img class="ico-inline" src="${this.coinUrl}">Kule sandığından ${gold} ${CURRENCY}!`, 'gold');
+      const zs = ZONES.slice(0, Math.min(ZONES.length, 1 + Math.floor(f / 10)));
+      for (let i = 0; i < 1 + Math.floor(f / 10); i++) this.giveDrop(pick(ZONE_CHEST[pick(zs).key].mats), 2 + Math.floor(f / 5), 'Kule sandığından');
+      const zc = ZONE_CHEST[zs[zs.length - 1].key];
+      this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, 'Kule sandığından', false, 2 + f / 10);
+      if (f >= 20) this.giveDrop('yildiz_demiri', 1 + Math.floor(f / 25), 'Kule sandığından');
+      if (f >= 30 && Math.random() < 0.3) this.giveDrop('usta_damgasi', 1, 'Kule sandığından');
+      // Efsanevi yol 2 (Dusur): Kadim silah. 50. kat sandigi ilk seferde garanti
+      const first50 = f >= 50 && !k.k50;
+      if (first50 || (f >= KULE.kadimFrom && Math.random() < 0.1 * S.dropMult())) {
+        if (first50) k.k50 = true;
+        this.giveLegend('kadim', 'Kule sandığından');
+      }
+      addPul(f >= 30 ? 3 : 2);
+      UI.feed(`<span style="color:#ffd04d">+${f >= 30 ? 3 : 2} ${PUL}</span>`, 'gold');
+    }
+    S.changed();
+    this.busy = false;
+    room.cleared = true;
+    this.refreshRoomActions();
+  }
+  // efsanevi silah: sinifinin silahi (sinif yoksa elindeki silahin turu)
+  giveLegend(path, from) {
+    const cw = S.cls() ? S.cls().wt[0] : S.weaponType();
+    const wt = ['kilic', 'yay', 'asa'].includes(cw) ? cw : 'kilic';
+    const id = `${path}_${wt}`;
+    UI.banner('EFSANEVİ!', ITEMS[id].name, 3000, 'gold');
+    sfx('levelup');
+    this.giveDrop(id, 1, from);
+    return id;
+  }
+
+  // ------------------------------------------------------------ 0.13.5 zor mod patron
+  async enterHardBoss(key) {
+    UI.closePanel();
+    if (this.busy || this.mode !== 'base') return;
+    const z = ZONES.find((x) => x.boss === key);
+    if (!z || !(S.save.stats.glemons[key] > 0)) return;
+    this.busy = true;
+    stopMusic();
+    this.walkTok++;
+    UI.setActions([]);
+    await this.travelOut();
+    S.startRun(z.floors[1]);
+    S.run.zindan = true;
+    S.run.ev = 'zor';
+    S.run.hardKey = key;
+    S.run.zseed = 0;
+    S.hp = S.maxHp();
+    this.mode = 'dungeon';
+    await this.enterFloor(1);
+  }
+  async hardReward(key) {
+    const z = ZONES.find((x) => x.boss === key);
+    const zi = ZONES.indexOf(z);
+    UI.banner('Zor mod zaferi!', GLEMONS[key].name, 2400, 'gold');
+    const boss = GLEMONS[key];
+    // patronun kendi malzemesi 2 tane, zor mod tablosu ve garanti bir kaliteli esya sansi
+    this.giveDrop(boss.drops[0][0], 2, `${boss.from} (zor)`);
+    for (const [id, ch] of HARD_DROPS) if (Math.random() < ch * S.dropMult()) this.giveDrop(id, 1, `${boss.from} (zor)`);
+    const zc = ZONE_CHEST[z.key];
+    this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, `${boss.from} (zor)`, false, 4);
+    if (Math.random() < HARD.kadim[zi] * S.dropMult()) {
+      const id = this.giveLegend('kadim', `${boss.from} (zor)`);
+      S.bossDrop(key, id);
+    }
+    S.changed();
+  }
+
   // 5 katta bir odul sandigi: derinlestikce buyur
   async zindanReward() {
     const n = this.zLevel;
@@ -1698,7 +1827,7 @@ export class WorldScene extends Phaser.Scene {
     }
     if (Math.random() < Math.min(0.9, 0.3 + n * 0.02) * S.dropMult()) {
       const zc = ZONE_CHEST[pick(zs).key];
-      this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, 'Ödül sandığından');
+      this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, 'Ödül sandığından', false, 1 + n / 20);
     }
     if (Math.random() < 0.15 + n * 0.01) this.giveDrop('altin_elma', 1, 'Ödül sandığından');
     if (Math.random() < 0.04 + n * 0.006) this.giveDrop('can_tilsimi', 1, 'Ödül sandığından');
@@ -1783,6 +1912,13 @@ export class WorldScene extends Phaser.Scene {
 
   zindanRooms(level) {
     if (S.run && S.run.ev === 'patron') return this.bossRushRooms();
+    if (S.run && S.run.ev === 'zor') { const k = S.run.hardKey; return [{ type: 'evboss', key: k, fl: ZONES.find((z) => z.boss === k).floors[1], hard: true }]; }
+    if (S.run && S.run.kule) {
+      const rooms = [level % KULE.mini === 0 ? { type: 'arapatron' } : { type: 'savas' }];
+      if (level % KULE.chest === 0) rooms.push({ type: 'kulesandik' });
+      rooms.push({ type: 'merdiven' });
+      return rooms;
+    }
     const W = [['savas', 50], ['uyuyan', 15], ['sandik', 12], ['tuzak', 18], ['maden', 5]];
     const rooms = [{ type: 'savas' }];
     const n = 3 + (level >= 10 ? 1 : 0);
@@ -1827,6 +1963,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   enemyCount(f) {
+    if (this.inKule()) return Math.min(3, pick([1, 2, 2, 2, 3]) + (S.run.krule === 'kalabalik' ? 1 : 0));
     const zf = this.zoneFloor(f);
     return pick(zf <= 2 ? (f <= 2 ? [1, 1, 2] : [1, 2, 2]) : zf <= 6 ? [1, 2, 2, 3] : [2, 2, 3]);
   }
@@ -1839,7 +1976,7 @@ export class WorldScene extends Phaser.Scene {
     const night = this.isNight();
     return Array.from({ length: n }, () => {
       const r = Math.random();
-      const stage = rule === 'dev' ? 2 : r < usta ? 2 : r < usta + genc ? 1 : 0;
+      const stage = rule === 'dev' || (S.run && S.run.krule === 'dev') ? 2 : r < usta ? 2 : r < usta + genc ? 1 : 0;
       // 0.9 Dolunay Gecesi: her bolgede nadiren Dolunay Tavsani
       let key = moon && Math.random() < 0.06 ? 'ay_tavsani' : night && Math.random() < NIGHT.chance ? weighted(NIGHT_SPAWNS[this.zone().key]) : weighted(table);
       // 0.12 gizli tur: dolunay gecesi Keşifte Hilal Ejderi
@@ -1849,6 +1986,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   roomLabel() {
+    if (this.inKule()) { const r = this.kuleRule(); return `Sonsuz Kule · Kat ${this.zLevel}${r ? ` · ${r.n}` : ''}`; }
+    if (S.run && S.run.ev === 'zor') return 'Zor mod patron';
     if (S.run && S.run.ev === 'patron') return `Patron Koşusu · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
     if (S.run && S.run.ev) return `Günün Zindanı · Kat ${this.zLevel - S.run.evEnd + 5}/5 · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
     if (this.inZindan()) return `Zindan · Kat ${this.zLevel} · Oda ${this.roomIdx + 1}/${this.rooms.length}`;
@@ -1856,6 +1995,30 @@ export class WorldScene extends Phaser.Scene {
   }
 
   async enterFloor(f) {
+    if (this.inKule()) {
+      if (f > 1 && f - 1 > (S.run.kf || 0)) this.kuleCleared(f - 1);
+      // merdivende soluklanma: her yeni katta canin %10'u dolar
+      if (f > S.run.startFloor && S.hp > 0) S.hp = Math.min(S.maxHp(), S.hp + Math.round(S.maxHp() * KULE.heal));
+      S.run.kf = f - 1;
+      this.zLevel = f;
+      this.floor = KULE.eff(f);
+      this.zz = ZONES[Math.min(ZONES.length - 1, Math.floor((f - 1) / 9))];
+      const pool = KULE_RULES.filter((r) => !(f % KULE.mini === 0 && r.k === 'kalabalik'));
+      S.run.krule = pick(pool).k;
+      this.rooms = this.genRooms(f);
+      S.changed();
+      await this.enterRoom(0);
+      return;
+    }
+    if (S.run && S.run.ev === 'zor') {
+      this.zLevel = 1;
+      const z = ZONES.find((x) => x.boss === S.run.hardKey);
+      this.floor = z.floors[1];
+      this.zz = z;
+      this.rooms = this.genRooms(f);
+      await this.enterRoom(0);
+      return;
+    }
     if (this.inZindan()) {
       this.zLevel = f;
       this.floor = this.zEff(f);
@@ -1908,7 +2071,9 @@ export class WorldScene extends Phaser.Scene {
     UI.setLocation(this.roomLabel());
     await this.fade(false);
     const evr = S.run && S.run.ev;
-    if (i === 0 && evr === 'patron') UI.banner('Patron Koşusu', 'Bölge patronları arka arkaya!', 1800, 'gold');
+    if (i === 0 && this.inKule()) { const r = this.kuleRule(); UI.banner(`Sonsuz Kule · Kat ${this.zLevel}`, r ? `${r.n}: ${r.d}` : '', 2200, this.zLevel % KULE.mini === 0 ? 'gold' : undefined); }
+    else if (i === 0 && evr === 'zor') UI.banner('Zor mod', 'Patron çok daha güçlü!', 1600, 'boss');
+    else if (i === 0 && evr === 'patron') UI.banner('Patron Koşusu', 'Bölge patronları arka arkaya!', 1800, 'gold');
     else if (i === 0 && evr) UI.banner(`Günün Zindanı ${this.zLevel - S.run.evEnd + 5}/5`, todayRule().n, 1800, 'gold');
     else if (i === 0) UI.banner(zin ? `Zindan Kat ${this.zLevel}` : `Kat ${this.floor}`, zin ? `Rekorun: Kat ${S.save.stats.zindanBest || 0}` : zone.name, 1600);
     await moveTo(this.player, PLAYER_HOME, { speed: 115, anim: 'c_walk', timeScale: 1.3 });
@@ -2023,7 +2188,10 @@ export class WorldScene extends Phaser.Scene {
         room.obj = this.addObj(this.add.image(300, G, 'stairs').setOrigin(0.5, 0).setDepth(2));
         break;
       case 'evboss':
-        this.battle = new Battle(this, [{ key: room.key }], { ...this.battleOpts({}), floor: room.fl, boss: true });
+        this.battle = new Battle(this, [{ key: room.key }], { ...this.battleOpts({}), floor: room.fl, boss: true, hard: !!room.hard });
+        break;
+      case 'kulesandik':
+        room.obj = this.addObj(this.add.image(250, G + 1, room.opened ? 'chest_open' : 'chest').setOrigin(0.5, 1).setDepth(4).setScale(1.4));
         break;
       case 'evodul':
         room.obj = this.addObj(this.add.image(250, G + 1, room.opened ? 'chest_open' : 'chest').setOrigin(0.5, 1).setDepth(4).setScale(1.4));
@@ -2147,6 +2315,10 @@ export class WorldScene extends Phaser.Scene {
       case 'evboss':
         this.fight(room);
         break;
+      case 'kulesandik':
+        if (room.opened) this.refreshRoomActions();
+        else UI.setActions([{ label: 'Kule sandığını aç', cls: 'primary', onClick: () => this.kuleReward(room) }, back]);
+        break;
       case 'evodul':
         if (room.opened) UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
         else UI.setActions([{ label: 'Etkinlik sandığını aç', cls: 'primary', onClick: () => this.eventReward(room) }]);
@@ -2182,6 +2354,12 @@ export class WorldScene extends Phaser.Scene {
         UI.setActions([{ label: 'Zıpla!', cls: 'primary', onClick: () => this.trap(room) }, back]);
         break;
       case 'merdiven':
+        if (this.inKule()) {
+          this.kuleCleared(this.zLevel);
+          S.run.kf = this.zLevel;
+          UI.setActions([{ label: `Yukarı çık (Kat ${this.zLevel + 1})`, cls: 'primary', onClick: () => this.descend() }, back]);
+          break;
+        }
         UI.setActions([{ label: `Aşağı in (Kat ${this.inZindan() ? this.zLevel + 1 : this.floor + 1})`, cls: 'primary', onClick: () => this.descend() }, back]);
         break;
       default:
@@ -2225,13 +2403,24 @@ export class WorldScene extends Phaser.Scene {
       await wait(this, 300);
     }
     await this.enterBattleView();
+    const bt = this.battle;
     const res = await this.battle.start();
     this.battle = null;
     if (this.inBattleView) await this.exitBattleView(res !== 'lose');
     this.busy = false;
+    // 0.13.5 patron gunlugu: kac kez, en hizli sure (zor mod ayri)
+    if (res === 'win' && bt && bt.bossWin) S.bossWin(bt.bossWin, !!room.hard, Date.now() - bt.t0);
     if (res === 'win') {
       if (room.type === 'boss') this.bossDefeated();
-      else this.roomDone();
+      else if (room.hard) {
+        this.busy = true;
+        await this.hardReward(room.key);
+        await this.playPool('sevinc', 2000);
+        this.idle();
+        this.busy = false;
+        room.cleared = true;
+        UI.setActions([{ label: 'Üsse dön', cls: 'primary', onClick: () => this.returnBase() }]);
+      } else this.roomDone();
     } else if (res === 'lose') this.onDeath();
     else if (res === 'flee') this.afterFlee(room);
   }
@@ -2383,7 +2572,7 @@ export class WorldScene extends Phaser.Scene {
     const zc = ZONE_CHEST[this.zone().key];
     if (room.big) await this.zindanReward();
     if (Math.random() < 0.6) this.giveDrop(f > 15 && Math.random() < 0.4 ? 'orta_iksir' : 'iksir_k', 1, 'Sandıktan');
-    if (Math.random() < 0.18 * S.dropMult()) this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, 'Sandıktan');
+    if (Math.random() < 0.18 * S.dropMult()) this.giveDrop(weighted(zc.gear || CHEST_GEAR), 1, 'Sandıktan', false, 1.5);
     if (Math.random() < 0.4) this.giveDrop(pick(zc.mats), 1 + Math.floor(Math.random() * 3), 'Sandıktan');
     if (S.has('hazine_avcisi')) this.giveDrop(pick(zc.mats), 1, 'Hazine Avcısı:');
     const lx = S.addXp({ sans: 10 * f });
@@ -2459,7 +2648,7 @@ export class WorldScene extends Phaser.Scene {
     await new Promise((res) => this.tweens.add({ targets: this.player, x: 312, y: GROUND_Y + 22, alpha: 0, duration: 600, onComplete: res }));
     this.player.alpha = 1;
     this.player.y = GROUND_Y;
-    if (this.inZindan()) S.save.stats.zfloors = (S.save.stats.zfloors || 0) + 1;
+    if (this.inZindan() && !this.inKule()) S.save.stats.zfloors = (S.save.stats.zfloors || 0) + 1;
     this.enterFloor(this.inZindan() ? this.zLevel + 1 : this.floor + 1);
   }
 
@@ -2554,14 +2743,18 @@ export class WorldScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------ ganimet ve seviye
-  giveDrop(id, n, from, found = false) {
+  giveDrop(id, n, from, found = false, boost = 1) {
     const it = ITEMS[id];
-    const left = S.addItem(id, n);
+    const left = S.addItem(id, n, 'bag', boost);
     const got = n - left;
     if (got > 0) {
-      const special = it.rarity !== 'siradan' || !['malzeme', 'tuketim'].includes(it.kind);
-      const cls = it.rarity === 'nadir' ? 'rare' : it.rarity === 'epik' ? 'epic' : it.rarity === 'efsanevi' ? 'gold' : '';
-      const text = found ? `${UI.escapeHtml(from)} ${UI.itemName(id)}${got > 1 ? ` ×${got}` : ''}` : `${UI.escapeHtml(from)} ${UI.itemName(id)}${got > 1 ? ` ×${got}` : ''} düştü!`;
+      // 0.13.5: Nadir / Epik kalite cikinca adinin yaninda yazar
+      const x = S.lastRoll;
+      const rar = S.rarityOf(id, x);
+      const special = rar !== 'siradan' || !['malzeme', 'tuketim'].includes(it.kind);
+      const cls = rar === 'nadir' ? 'rare' : rar === 'epik' ? 'epic' : rar === 'efsanevi' ? 'gold' : '';
+      const q = x ? ` <span class="tag" style="color:${RARITY[x.q].color}">✦ ${RARITY[x.q].name} kalite</span>` : '';
+      const text = found ? `${UI.escapeHtml(from)} ${UI.itemName(id)}${q}${got > 1 ? ` ×${got}` : ''}` : `${UI.escapeHtml(from)} ${UI.itemName(id)}${q}${got > 1 ? ` ×${got}` : ''} düştü!`;
       UI.feed(`<img class="ico-inline" src="${iconUrl(it.icon)}">${text}`, cls);
       if (special) {
         sfx('rare');
