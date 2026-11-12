@@ -55,8 +55,8 @@ export const GUIDE = [
     'Bir savaş becerisi 20 olunca Lale\'den sınıf seçersin: Savaşçı, Nişancı, Büyücü ya da Destek. 50\'de alt sınıf açılır.',
     'Bir dalın becerilerinde her seviye atladığında o dala 1 yetenek puanı gelir. 1. sıradaki yetenekler kademe başı 1 puan, 2. sıradakiler 2 puan… diye gider. Bir dala puan harcadıkça yeni sıralar açılır. Hepsini alabilirsin; istersen Lale\'ye ücretle sıfırlatırsın.',
   ] },
-  { k: 'insa', t: 'Üs, inşa ve diğer işler', p: [
-    'Topladığın blokları evinin arsasına koyabilirsin. İnşa becerisi ve Üs Puanı böyle artar.',
+  { k: 'insa', t: 'Ev, inşa ve diğer işler', p: [
+    'Topladığın blokları evinin arsasına koyabilirsin. İnşa becerisi ve Ev Puanı böyle artar.',
     'Maden Kuyusu aşağı doğru sonsuzdur. Koru\'da ağaç dikersin, Göl\'de balık tutarsın. Kamp ateşi, oyunu kapattığında 2 saate kadar küçük bir ödül biriktirir.',
   ] },
   { k: 'son', t: 'Hikâye ve oyun sonu', p: [
@@ -126,7 +126,7 @@ export const TUT = [
   { t: 'Keşfe çık', h: 'Harita > Keşif > Kat 1. Odadan odaya ilerle.', v: (s) => (s.stats.deepest || 0) >= 1, gold: 30 },
   { t: '3 Glemon yen', h: 'Savaşta Oto ya da Manuel seç. Manuel %20 daha çok XP verir.', v: (s) => s.stats.kills >= 3, gold: 40 },
   { t: 'Çantana bak', h: 'Alttaki Çanta düğmesi. Eşyaya dokununca ne işe yaradığı yazar.', v: (s) => s.tut.f.canta, gold: 20 },
-  { t: 'Bir şey üret', h: 'Üsteki Üretim Masası\'na git. Ör. Tahta Kılıç ya da Fener.', v: (s) => (s.stats.crafted || 0) >= 1, gold: 50 },
+  { t: 'Bir şey üret', h: 'Evindeki Üretim Masası\'na git. Ör. Tahta Kılıç ya da Fener.', v: (s) => (s.stats.crafted || 0) >= 1, gold: 50 },
   { t: 'Becerilerine bak', h: 'Alttaki Beceriler düğmesi. Her beceri 99\'a kadar çıkar.', v: (s) => s.tut.f.beceri, gold: 20 },
   { t: 'Hikâyenin 1. bölümünü bitir', h: 'Harita > Köy Meydanı > Hikâye. Bölüm 1 hedefi: Kat 3\'e in.', v: (s) => (s.story && s.story.ch) >= 1, gold: 100, item: ['iksir_k', 3] },
 ];

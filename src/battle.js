@@ -32,7 +32,9 @@ const OLD_ITEMS = ['iksir_k', 'orta_iksir', 'buyuk_iksir', 'ay_iksiri', 'mantar_
 // 0.11: Mutfak yemekleri, sargi ve havuc da savasta yenir
 const BATTLE_ITEMS = [...OLD_ITEMS.slice(0, -2), 'sargi_bezi', 'havuc', 'yanmis_yemek', ...KITCHEN.map(([id]) => id), ...OLD_ITEMS.slice(-2)];
 // otomatik savasin kullanabildigi iyilestiriciler (Altin Elma haric), zayiftan gucluye
-const HEALS = OLD_ITEMS.filter((id) => ITEMS[id] && ITEMS[id].heal && !ITEMS[id].golden).sort((a, b) => ITEMS[a].heal - ITEMS[b].heal);
+// B5 (1.0.17): mutfak yemekleri, havuc ve sargi da dahil; Tok veren (pahali) yemekler en sona, once ucuz iyilestiriciler harcanir
+const HEALS = BATTLE_ITEMS.filter((id) => ITEMS[id] && ITEMS[id].heal && !ITEMS[id].golden)
+  .sort((a, b) => (ITEMS[a].tok ? 1 : 0) - (ITEMS[b].tok ? 1 : 0) || ITEMS[a].heal - ITEMS[b].heal);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Savas ekrani karakterin arkasindan bakar: karakter solda, yakin ve buyuk (arka 3/4)
 export const BPOS = { x: 70, y: GROUND_Y + 34, scale: 2 }; // 0.8.9: daha kucuk, on tumsegin ustunde
@@ -453,7 +455,7 @@ export class Battle {
     $('#battle').classList.remove('hidden');
     if (this.status.karanlik > 0) feed('Karanlıkta savaşıyorsun: vuruşların bazen boşa gidecek. (Fener taşı!)');
     if (this.teamLabel) feed(`Takım uyumu! ${this.teamLabel}`);
-    if (this.opts.cold) feed('Üşüyorsun: bu savaşta yavaşsın. (Sıcak Çorba: Fırın)');
+    if (this.opts.cold) feed('Üşüyorsun: bu savaşta yavaşsın. (Sıcak Çorba: Mutfak)');
     // 0.13 Avci Tuzakci: bir dusman tuzaga duser
     if (M('startStun') && this.alive().length) {
       const e = pick(this.alive());

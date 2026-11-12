@@ -648,8 +648,8 @@ export function openProfile(w) {
         ['Evcil', S.save.pets.length],
         ['Başarım', `${achCount()}/${ACH_TOTAL}`],
       ]));
-      boxes.appendChild(box('Üs', [
-        ['Üs Puanı', S.baseScore()],
+      boxes.appendChild(box('Ev', [
+        ['Ev Puanı', S.baseScore()],
         [CURRENCY, S.save.gold],
         ['Oyun süresi', `${(st.playMs / 3600000).toFixed(1)} sa`],
       ]));
@@ -694,6 +694,7 @@ export function openProfile(w) {
 }
 
 // ------------------------------------------------------------ harita
+const BONUS_ON = false; // B12: arkadas sistemi gelince true
 function bonusInfo(w, z, ok) {
   UI.choice(`${z.name} · Bonus Patron`, ok
     ? 'Bu mağarada bölgenin bonus patronu yaşıyor. En az 2 oyuncuyla girilir (en fazla 3 oyuncu, her biri 2 Glemon). Patron takımla güçlenir ama takım daha hızlı güçlenir; birlikte girmek her zaman daha kolay. Arkadaş sistemi gelince açılacak.'
@@ -744,7 +745,8 @@ export function openMap(w) {
           else if (b.disabled) b.title = `Önce Kat ${f}'e ulaş`;
           btns.appendChild(b);
         }
-        if (z.key !== 'orman') { // bonus patron (Orman haric; onu Eren anlatacak)
+        // B12 (1.0.17, Eren karari): arkadas sistemi rafta, bonus patron dugmesi o donene kadar gizli
+        if (BONUS_ON && z.key !== 'orman') { // bonus patron (Orman haric; onu Eren anlatacak)
           const ok = kills[z.boss] > 0;
           const bb = UI.button(ok ? 'Bonus' : '🔒 Bonus', () => bonusInfo(w, z, ok), 'small purple');
           if (!ok) bb.classList.add('locked');
@@ -1316,8 +1318,8 @@ export function openStation(w, station) {
           row.classList.add('locked');
           row.appendChild(UI.el('span', 'q', '?'));
           row.appendChild(UI.el('span', 'nm', '???'));
-          row.title = usLocked(r) ? `Üs Puanı ${r.us} olunca açılır` : `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`;
-          if (usLocked(r)) { row.lastChild.textContent = `Üs Puanı ${r.us}`; }
+          row.title = usLocked(r) ? `Ev Puanı ${r.us} olunca açılır` : `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`;
+          if (usLocked(r)) { row.lastChild.textContent = `Ev Puanı ${r.us}`; }
         } else {
           row.appendChild(UI.icon(it.icon));
           const nm = UI.el('span', 'nm', it.name);
@@ -1368,7 +1370,7 @@ function recipeDetail(w, station, r, render) {
   if (!r) { box.appendChild(UI.el('div', 'muted', 'Henüz açılmış tarif yok. Malzeme buldukça tarifler açılır.')); return box; }
   if (!unlocked(r)) {
     box.appendChild(UI.el('div', 'nm', '???'));
-    box.appendChild(UI.el('div', 'muted', usLocked(r) ? `Bu tarif, arsanın Üs Puanı ${r.us} olunca açılır. Arsana blok koydukça puan artar.` : `Bu tarif, ${ITEMS[Object.keys(r.mats)[0]].name} ilk kez bulunca açılır.`));
+    box.appendChild(UI.el('div', 'muted', usLocked(r) ? `Bu tarif, arsanın Ev Puanı ${r.us} olunca açılır. Arsana blok koydukça puan artar.` : `Bu tarif, ${ITEMS[Object.keys(r.mats)[0]].name} ilk kez bulunca açılır.`));
     return box;
   }
   const it = ITEMS[r.out];
@@ -1482,9 +1484,21 @@ function make(w, station, r, n, render) {
 // Cimen Blogu ile alisveris. Alinca karakter blogu tezgaha birakir (placeblock).
 export function openShop(w) {
   let tab = 'al';
+  let ask = null; // B10: satis onayi bekleyen { id, n }
   UI.openPanel('Hancı Lale · Takas', (body) => {
     const render = () => {
       body.innerHTML = '';
+      if (ask) {
+        const it = ITEMS[ask.id];
+        const box = UI.el('div', 'prep-box');
+        box.appendChild(UI.el('p', 'choice-text', `Emin misin? ${it.name}${ask.n > 1 ? ` ×${ask.n}` : ''} satılacak (${ask.n * SELL[ask.id]} ${CURRENCY}).${ask.q ? ' Bu kaliteli (✦) bir kopya!' : ''}`));
+        const r = UI.el('div', 'choice-row');
+        r.appendChild(UI.button('Evet, sat', () => { const a = ask; ask = null; sell(a.id, a.n, true); }, 'red'));
+        r.appendChild(UI.button('Vazgeç', () => { ask = null; render(); }, 'small'));
+        box.appendChild(r);
+        body.appendChild(box);
+        return;
+      }
       const top = UI.el('div', 'shop-top');
       top.innerHTML = `<img class="ico-inline" src="${iconUrl('cimen')}"><b>${S.save.gold}</b> ${CURRENCY}`;
       const tabs = UI.el('div', 'choice-row');
@@ -1518,7 +1532,9 @@ export function openShop(w) {
           row.appendChild(UI.icon(it.icon));
           row.appendChild(UI.el('div', 'shop-nm', `${it.name} ×${n} · tanesi ${SELL[id]}`));
           row.appendChild(UI.button('Sat 1', () => sell(id, 1), 'small'));
-          if (n > 1) row.appendChild(UI.button(`Hepsi (${n * SELL[id]})`, () => sell(id, n), 'small blue'));
+          // B10: "Hepsi" kaliteli (✦) kopyalari atlar
+          const plain = plainCount(id);
+          if (plain > 1) row.appendChild(UI.button(`Hepsi (${plain * SELL[id]})`, () => sell(id, plain), 'small blue'));
           list.appendChild(row);
         }
         body.appendChild(UI.el('p', 'muted', 'Satış fiyatı düşüktür: asıl değer malzemede.'));
@@ -1537,7 +1553,11 @@ export function openShop(w) {
       UI.closePanel();
       w.tradeDone().then(() => { w.shopBusy = false; if (w.home() && !UI.panelOpen()) openShop(w); else if (w.shopClosed) w.shopClosed(); });
     };
-    const sell = (id, n) => {
+    const plainCount = (id) => S.save.bag.reduce((t, x) => t + (x && x.id === id && !x.x ? x.n : 0), 0);
+    const sell = (id, n, sure = false) => {
+      // B10 (1.0.17): Nadir ve ustu esyada ya da kaliteli kopyada once onay
+      const q = plainCount(id) < n;
+      if (!sure && (['nadir', 'epik', 'efsanevi'].includes(ITEMS[id].rarity) || q)) { ask = { id, n, q }; render(); return; }
       const got = S.removeItem(id, n);
       S.save.gold += got * SELL[id];
       S.changed();
@@ -1808,7 +1828,7 @@ export function openZindan(w) {
   const best = S.save.stats.zindanBest || 0;
   UI.openPanel('Zindan', (body) => {
     body.appendChild(UI.el('p', 'choice-text', 'Aşağı indikçe Glemonlar güçlenir; sonu yok. Her 5 katta bir ara patron ve büyüyen bir ödül sandığı var. Bayılırsan bu turda bulduklarının yarısı gider, "Eve dön" dersen hepsi seninle.'));
-    body.appendChild(UI.el('p', 'zf', `Rekorun: Kat ${best}. Arkadaşlarınla en derin kat yarışı!`));
+    body.appendChild(UI.el('p', 'zf', `Rekorun: Kat ${best}.`));
     const row = UI.el('div', 'choice-row');
     row.appendChild(UI.button('Kat 1\'den başla', () => w.enterZindan(1), 'primary'));
     for (let f = 11; f <= best; f += 10) row.appendChild(UI.button(`Kat ${f}`, () => w.enterZindan(f), 'small'));
@@ -1947,7 +1967,7 @@ export function openEventGate(w) {
     }
     if (merchantHere(now)) row('Gezgin Tüccar evine geldi!', `Evinin önündeki patikada duruyor. ${PUL} ile 6 özel eşya satıyor.`, null, UI.button('Vitrine bak', () => openMerchant(w), 'purple small'), 'merchant');
     else row('Gezgin Tüccar', 'Cumartesi ve pazar gelir. Vitrini her hafta değişir.', `⏳ ${fmtLeft(merchantNext(now) - now)}`, null, 'soon');
-    if (fullMoon(now)) row('Dolunay Gecesi!', 'Parlak Glemon şansı 2 kat, ay otu her yerde, Dolunay Tavşanı ortalarda. Üs Göletinde Ay Işığı Sazanı!', `⏳ ${fmtLeft(nextMidnight(now) - now)}`, null, 'moon');
+    if (fullMoon(now)) row('Dolunay Gecesi!', 'Parlak Glemon şansı 2 kat, ay otu her yerde, Dolunay Tavşanı ortalarda. Evdeki Gölde Ay Işığı Sazanı!', `⏳ ${fmtLeft(nextMidnight(now) - now)}`, null, 'moon');
     else row('Dolunay Gecesi', 'Takvimdeki dolunayda 24 saat sürer.', `⏳ ${fmtLeft(nextFullMoon(now) - now)}`, null, 'soon');
     body.appendChild(list);
     body.appendChild(UI.el('p', 'muted', `Kaçırırsan ceza yok, etkinlikler dönüp gelir. ${PUL}: ${S.save.pul || 0}`));
@@ -2096,6 +2116,9 @@ export function openPrep(w, floor) {
     const render = () => {
       body.innerHTML = '';
       const night = todNow() === 'gece';
+      // B1: canta neredeyse doluysa uyar
+      const free = S.bagFreeSlots();
+      if (free < 3) body.appendChild(UI.el('div', 'prep-bad', `⚠ Çantanda sadece ${free} boş yuva var. Düşen eşyalar önce Depo'ya gider, o da dolarsa bekletilir. Yola çıkmadan çantanı boşaltabilirsin.`));
       if (night) { const n = UI.el('div', 'prep-night', '🌙 Gece: Glemonlar %15 güçlü ama %30 fazla XP ve eşya veriyor. Sadece gece çıkan Glemonlar var.'); body.appendChild(n); }
       const grid = UI.el('div', 'prep-grid');
       // tehlike

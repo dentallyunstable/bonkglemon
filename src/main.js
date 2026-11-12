@@ -14,6 +14,9 @@ import { initGear, refreshGear } from './gear.js';
 const LOOPING = new Set(['idle', 'idlesway', 'walk', 'run', 'sprint', 'ninjadash', 'ninjarun', 'sneakwalk', 'blockwalk', 'sit',
   'sneakspam', 'walkin', 'fish_idle', 'fish_reel', 'b_idlesway', 'b_ninjarun', 'b_run']);
 let BOOT = null;
+// K3: test kapilari sadece gelistirme kopyasinda acik; build_artifact.py __DEV__=false koyar
+// eslint-disable-next-line no-undef
+const DEV = typeof __DEV__ === 'undefined' ? true : __DEV__;
 
 class BootScene extends Phaser.Scene {
   constructor() { super('boot'); }
@@ -117,7 +120,7 @@ async function loadJson(url) {
 
 function startGame(char, charMeta, gmeta, npc) {
   S.load(char);
-  window.__S = S; // testler icin
+  if (DEV) window.__S = S; // testler icin (yayin surumunde kapali)
   stopMusic();
   setSound(S.save.settings.sound);
   BOOT = { char, charMeta: charMeta[char], gmeta, npc };
@@ -154,6 +157,13 @@ async function main() {
     const charMeta = {};
     await Promise.all(CHARACTERS.map(async (c) => { charMeta[c.key] = await loadJson(`assets/chars/${c.key}/anims.json`); }));
     show('#loading', false);
+    if (DEV) {
+      // K6 test turu: #t<karakter> girisi atlar
+      window.__start = (c) => startGame(c, charMeta, gmeta, npc);
+      import('./panels.js').then((P) => { window.__P = P; });
+      const m = location.hash.match(/^#t(\w+)/);
+      if (m && charMeta[m[1]]) { window.__start(m[1]); return; }
+    }
     showLogin(charMeta, (char) => startGame(char, charMeta, gmeta, npc));
   } catch (e) {
     console.error(e);

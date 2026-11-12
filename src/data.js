@@ -4,7 +4,7 @@
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0.16';
+export const VERSION = '1.0.17';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -38,12 +38,12 @@ export const SKILLS = [
   { key: 'can', name: 'Can', desc: 'Her savaşta artar. Her seviye +10 can.' },
   { key: 'okculuk', name: 'Okçuluk', desc: 'Yayla Glemon yenince artar. Daha iyi yaylar ve ok yetenekleri (20, 40, 60). Uçan Glemonlara tam hasar.' },
   { key: 'buyu', name: 'Büyü', desc: 'Asayla Glemon yenince artar. Daha çok mana, daha iyi asalar ve büyü yetenekleri (20, 40, 60).' },
-  { key: 'madencilik', name: 'Madencilik', desc: 'Maden Ocağı\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
+  { key: 'madencilik', name: 'Madencilik', desc: 'Maden Kuyusu\'nda ve maden damarlarında kazınca artar. Yeni cevherler ve kazmalar.' },
   { key: 'toplama', name: 'Toplama', desc: 'Keşifte ve Zindanda ot, böğürtlen ve dal toplayınca artar. Her 10 seviyede +1 fazla toplarsın.' },
   { key: 'uretim', name: 'Üretim', desc: 'Zanaat avlusundaki Masa, Fırın, Kazan ve Yem Tezgâhı\'nda üretince artar. Yeni tarifler açar.' },
   { key: 'ascilik', name: 'Aşçılık', desc: 'Kamp ateşindeki Mutfak\'ta yemek pişirince artar. Yeni yemekler açar; seviye arttıkça yemekler yanmaz.' },
   { key: 'insa', name: 'İnşa', desc: 'Arsana blok ve eşya koyunca artar. Yeni bloklar açar, arsan büyür (20, 40, 60).' },
-  { key: 'balikcilik', name: 'Balıkçılık', desc: 'Üs Göletinde ve Keşifteki göllerde balık tutunca artar. Yeni balıklar, oltalar ve batık sandıklar.' },
+  { key: 'balikcilik', name: 'Balıkçılık', desc: 'Evdeki Gölde ve Keşifteki göllerde balık tutunca artar. Yeni balıklar, oltalar ve batık sandıklar.' },
   { key: 'sans', name: 'Şans', desc: 'Patron yenince, sandık açınca ve nadir bir şey düşünce artar. Nadir düşme ve parlak Glemon şansı.' },
   { key: 'bag', name: 'Glemon Bağı', desc: 'Yanındaki Glemon savaşınca ve evcilleştirince artar. Daha zor Glemonları evcilleştirirsin, evcillerin güçlenir ve seviye sınırları artar (Bağ / 2).' },
 ];
@@ -509,7 +509,7 @@ export const ITEMS = {
   antik_yosun: { name: 'Antik yosun', kind: 'malzeme', rarity: 'epik', icon: 'yosun', desc: 'Yosunbabanın sakalından. Can Tılsımı malzemesi.' },
   agac_kalbi: { name: 'Ağaç Kalbi', kind: 'malzeme', rarity: 'nadir', icon: 'kalp', bound: true, desc: 'Ağaçbaşının çekirdeği. Takas edilemez.' },
   // ---- maden
-  tas: { name: 'Taş parçası', kind: 'malzeme', rarity: 'siradan', icon: 'tas', desc: 'Maden Ocağında kazılır. Taş eşyalar ve Taş Tuğla.' },
+  tas: { name: 'Taş parçası', kind: 'malzeme', rarity: 'siradan', icon: 'tas', desc: 'Maden Kuyusunda kazılır. Taş eşyalar ve Taş Tuğla.' },
   kum: { name: 'Kum', kind: 'malzeme', rarity: 'siradan', icon: 'kum', desc: 'Ocağın üst katlarında. Fırında şişe ve cam olur.' },
   komur: { name: 'Kömür', kind: 'malzeme', rarity: 'siradan', icon: 'komur', desc: 'Fırın yakıtı ve Bonk Bombası malzemesi.' },
   demir_cevheri: { name: 'Demir cevheri', kind: 'malzeme', rarity: 'siradan', icon: 'demir_cevheri', desc: 'Maden kuyusunda 6. sıradan aşağıda. Fırında külçe olur.' },
@@ -689,7 +689,7 @@ export const ITEMS = {
 // Her suyun kendi balıklari var. lvl: gereken Balikcilik, diff: ne kadar kivrak (1-5),
 // legend: efsane balik (elle tutulur, ozel hareket), col: simge renkleri [govde, acik, koyu, yuzgec]
 export const WATERS = {
-  us: { name: 'Üs Göleti' },
+  us: { name: 'Göl' },
   orman: { name: 'Orman Gölü' },
   magara: { name: 'Yeraltı Gölü' },
   col: { name: 'Vaha' },
@@ -727,7 +727,7 @@ export const FISH = {
   bosluk_vatozu: { name: 'Boşluk Vatozu', water: 'golge', lvl: 74, diff: 4.5, w: 16, rarity: 'nadir', col: ['#2a2040', '#5a4a8a', '#140e20', '#c8a0f0'] },
   ay_baligi: { name: 'Dolunay Balığı', water: 'golge', lvl: 90, diff: 5, legend: 'dive', rarity: 'efsanevi', col: ['#e8e8f8', '#ffffff', '#8a8ac8', '#fff0a0'] },
 };
-// 0.9 Dolunay Gecesi: sadece dolunayda Üs Göletinde
+// 0.9 Dolunay Gecesi: sadece dolunayda Evdeki Gölde
 FISH.ay_sazani = { name: 'Ay Işığı Sazanı', water: 'us', lvl: 10, diff: 2.2, w: 30, rarity: 'nadir', moon: true, col: ['#c8d0f0', '#ffffff', '#7a80b8', '#fff0a0'] };
 export const fishXp = (f) => Math.round((20 + f.lvl * 5 + f.lvl * f.lvl * 0.06) * (f.legend ? 5 : f.rarity === 'nadir' ? 1.6 : 1));
 export const FISHING = {
@@ -814,7 +814,7 @@ Object.assign(ITEMS, {
   bayrak_mavi: { name: 'Mavi Bayrak', kind: 'malzeme', rarity: 'siradan', icon: 'bayrak_m', desc: 'Süs: direkli bayrak.' },
   depo_sandigi: { name: 'Depo Sandığı', kind: 'malzeme', rarity: 'siradan', icon: 'sandik', desc: 'Mobilya: arsana koyunca Depo 10 yer büyür (en fazla 4 sandık). Dokununca Depo açılır.' },
   kupa_rafi: { name: 'Kupa Rafı', kind: 'malzeme', rarity: 'siradan', icon: 'kupa_rafi', desc: 'Mobilya: dokununca yendiğin patronların günlüğünü gösterir.' },
-  glemon_heykeli: { name: 'Glemon Heykeli', kind: 'malzeme', rarity: 'siradan', icon: 'heykel', desc: 'Süs: taç giymiş taş Glemon. Üs Puanı 1000 ödülü.' },
+  glemon_heykeli: { name: 'Glemon Heykeli', kind: 'malzeme', rarity: 'siradan', icon: 'heykel', desc: 'Süs: taç giymiş taş Glemon. Ev Puanı 1000 ödülü.' },
   hus_yaprak_blok: { name: 'Huş Yaprağı', kind: 'malzeme', rarity: 'siradan', icon: 'hus_yaprak', desc: 'İnşa bloğu: açık yeşil yaprak. Koruda huş ağacından düşer.' },
   cam_yaprak_blok: { name: 'Çam Yaprağı', kind: 'malzeme', rarity: 'siradan', icon: 'cam_yaprak', desc: 'İnşa bloğu: koyu yeşil yaprak. Koruda çam ağacından düşer.' },
   tasinir_masa: { name: 'Taşınır Üretim Masası', kind: 'malzeme', rarity: 'siradan', icon: 'tezgah', desc: 'Arsana koy: evinde de üretim yaparsın.' },
@@ -1453,7 +1453,7 @@ export const TREE = {
     name: 'Zanaat', skills: ['uretim', 'insa'],
     tiers: [
       [{ key: 'tutumlu', name: 'Tutumlu', desc: '%10 ihtimalle malzemeler gitmez' }, { key: 'sicak_firin', name: 'Sıcak Fırın', desc: 'Fırın %30 hızlı pişirir' }],
-      [{ key: 'cifte_uretim', name: 'Çifte Üretim', desc: '%8 ihtimalle 2 tane çıkar' }, { key: 'usta_insa', name: 'Usta İnşa', desc: 'Üs Puanı +%25' }],
+      [{ key: 'cifte_uretim', name: 'Çifte Üretim', desc: '%8 ihtimalle 2 tane çıkar' }, { key: 'usta_insa', name: 'Usta İnşa', desc: 'Ev Puanı +%25' }],
       [{ key: 'usta_isi', name: 'Usta İşi', desc: 'Üretilebilen silah, zırh ve aletler +%5 güçlü' }, { key: 'mimar', name: 'Mimar', desc: 'Arsan 1 sıra yükselir, 4 tarla fazla' }],
     ],
   },

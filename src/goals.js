@@ -172,7 +172,7 @@ export const ACH = [
   { k: 'fishsp', g: 1, n: 'Balık Kataloğu', d: (t) => `${t} tür balık tut`, v: (s) => Object.keys((s.fishing && s.fishing.caught) || {}).length, t: () => [5, 12, fishN()] },
   { k: 'crafted', g: 2, n: 'Zanaatkâr', d: (t) => `${t} eşya üret`, v: (s) => s.stats.crafted, t: [25, 250, 1500] },
   { k: 'placed', g: 2, n: 'Yapıcı', d: (t) => `Arsana ${t} blok koy`, v: (s) => s.stats.placed || 0, t: [50, 500, 2500] },
-  { k: 'score', g: 2, n: 'Güzel Üs', d: (t) => `Üs Puanı ${t}`, v: () => S.baseScore(), t: [50, 200, 600] },
+  { k: 'score', g: 2, n: 'Güzel Ev', d: (t) => `Ev Puanı ${t}`, v: () => S.baseScore(), t: [50, 200, 600] },
   { k: 'anvil', g: 2, n: 'Örsün Efendisi', d: (t) => `Bir eşyayı Örste +${t} yap`, v: (s) => Math.max(0, ...Object.values(s.upg || {})), t: [1, 2, 4] },
   { k: 'seen', g: 3, n: 'Albümcü', d: (t) => `${t} Glemon türü gör`, v: (s) => Object.keys(s.album.seen).length, t: () => [10, 25, glemonN()] },
   { k: 'tamed', g: 3, n: 'Bakıcı', d: (t) => `${t} Glemon evcilleştir`, v: (s) => s.stats.tamed || 0, t: [1, 10, 40] },
@@ -234,8 +234,8 @@ export const TITLES = [
   { k: 'koleksiyoncu', n: 'Koleksiyoncu', req: 'Albümü %100 doldur', ok: () => Object.keys(S.save.album.seen).length >= glemonN() },
   { k: 'ay_cocugu', n: 'Ay Çocuğu', req: 'Dolunay Tavşanı ile karşılaş', ok: () => !!S.save.album.seen.ay_tavsani },
   { k: 'basarim', n: 'Başarım Avcısı', req: '300 başarım puanı', ok: () => achPoints() >= 300 },
-  { k: 'yapici', n: 'Usta Yapıcı', req: 'Üs Puanı 250', ok: () => (S.save.plot.bestScore || 0) >= 250 },
-  { k: 'buyuk_mimar', n: 'Büyük Mimar', req: 'Üs Puanı 1000', ok: () => (S.save.plot.bestScore || 0) >= 1000 },
+  { k: 'yapici', n: 'Usta Yapıcı', req: 'Ev Puanı 250', ok: () => (S.save.plot.bestScore || 0) >= 250 },
+  { k: 'buyuk_mimar', n: 'Büyük Mimar', req: 'Ev Puanı 1000', ok: () => (S.save.plot.bestScore || 0) >= 1000 },
   { k: 'efsane', n: 'Efsane', req: 'Kadim Bonk\'u yen ya da bir beceride 99', ok: () => (S.save.stats.glemons.kadim_bonk || 0) > 0 || SKILLS.some((s) => S.level(s.key) >= 99) },
 ];
 export function titleOf() { return TITLES.find((t) => t.k === S.save.title) || null; }

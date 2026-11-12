@@ -422,6 +422,13 @@ export class WorldScene extends Phaser.Scene {
     bag.title = 'Çanta';
     bag.appendChild(UI.icon('dock_canta', 'ico'));
     bagBox.appendChild(bag);
+    // B1: bekleyen ganimet kutusu (sadece bekleyen esya varken gorunur)
+    this.lootBtn = UI.button('', () => this.claimLoot(), 'hud-bag-btn hud-loot-btn hidden');
+    this.lootBtn.title = 'Bekleyen eşyalar';
+    this.lootBtn.appendChild(UI.icon('sandik', 'ico'));
+    this.lootBadge = UI.el('span', 'dock-badge', '');
+    this.lootBtn.appendChild(this.lootBadge);
+    bagBox.appendChild(this.lootBtn);
     item('dock_beceri', 'Beceriler', () => openSkills(this));
     this.questBtn = item('dock_gorev', 'Görevler', () => openQuests(this));
     this.questBadge = UI.el('span', 'dock-badge hidden', '');
@@ -457,6 +464,7 @@ export class WorldScene extends Phaser.Scene {
     const tt = titleOf();
     UI.$('#hud-name').innerHTML = `${UI.escapeHtml(S.save.char)}${tt && tt.k !== 'caylak' ? `<span class="hud-title">${UI.escapeHtml(tt.n)}</span>` : ''}`;
     // 0.9: hazir gorev sayisi Gorevler dugmesinde
+    if (this.lootBtn) { const n = S.pendingCount(); this.lootBtn.classList.toggle('hidden', !n); this.lootBadge.textContent = n; }
     if (this.questBadge) { const n = readyCount(); this.questBadge.textContent = n; this.questBadge.classList.toggle('hidden', !n); }
     UI.$('#hud-hp').style.width = `${(S.hp / max) * 100}%`;
     UI.$('#hud-hp-text').textContent = `${S.hp} / ${max}`;
@@ -935,7 +943,7 @@ export class WorldScene extends Phaser.Scene {
 
   plotActions() {
     const g = this.plotGeom();
-    UI.setLocation(`Evin · Üs Puanı ${S.baseScore()}`);
+    UI.setLocation(`Evin · Ev Puanı ${S.baseScore()}`);
     UI.setActions([
       { label: 'İnşa et', cls: 'primary', onClick: () => this.startBuild() },
       { label: 'Harita', cls: 'blue', onClick: () => openHanci(this) },
@@ -1355,8 +1363,8 @@ export class WorldScene extends Phaser.Scene {
       S.save.plot.rw[rw.pts] = 1;
       addPul(rw.pul);
       sfx('rare');
-      UI.banner(`Üs Puanı ${rw.pts}!`, 'Yeni tarifler açıldı', 2200, 'gold');
-      UI.feed(`Üs Puanı ${rw.pts} ödülü: Üretim Masası'nda yeni tarifler (${rw.items.map((i) => ITEMS[i].name).join(', ')}) ve +${rw.pul} ${PUL}.${rw.title ? ' Yeni bir unvan da açıldı!' : ''}`, 'gold');
+      UI.banner(`Ev Puanı ${rw.pts}!`, 'Yeni tarifler açıldı', 2200, 'gold');
+      UI.feed(`Ev Puanı ${rw.pts} ödülü: Üretim Masası'nda yeni tarifler (${rw.items.map((i) => ITEMS[i].name).join(', ')}) ve +${rw.pul} ${PUL}.${rw.title ? ' Yeni bir unvan da açıldı!' : ''}`, 'gold');
       S.changed();
       await this.celebrate();
     }
@@ -1520,7 +1528,7 @@ export class WorldScene extends Phaser.Scene {
     this.idle();
     this.busy = false;
     this.pondActions();
-    if (!S.save.fishing.total) UI.feed('Üs Göleti! "Olta at" de, şamandıra batınca dokun, sonra yeşil kutuyla balığı yakala.');
+    if (!S.save.fishing.total) UI.feed('Göl! "Olta at" de, şamandıra batınca dokun, sonra yeşil kutuyla balığı yakala.');
   }
 
   goPond() {
@@ -1533,7 +1541,7 @@ export class WorldScene extends Phaser.Scene {
     this.player.setFlipX(false);
     this.resetPlayer();
     this.idle();
-    UI.setLocation('Üs Göleti');
+    UI.setLocation('Göl');
     // 0.12 firtina: yagmur ve koyu gok; gizli Yildirim Yilanbaligi oltaya takilabilir
     if (stormNow()) this.makeRain();
   }
@@ -2523,6 +2531,11 @@ export class WorldScene extends Phaser.Scene {
 
   // ------------------------------------------------------------ savas
   async fight(room) {
+    // B6 (1.0.17): savas nesnesi en basta saklanir; beklerken baska bir akis (eve donus, oda degisimi)
+    // savasi kaldirirsa sessizce cikilir (eskiden "null.start" hatasi veriyordu)
+    const bt = this.battle;
+    if (!bt) return;
+    const gone = () => this.battle !== bt;
     this.busy = true;
     UI.setActions([]);
     if (room.type === 'boss' || room.type === 'evboss') {
@@ -2532,16 +2545,17 @@ export class WorldScene extends Phaser.Scene {
       this.cameras.main.shake(500, 0.012);
       await wait(this, 1300);
     } else if (room.type === 'arapatron') {
-      UI.banner('Ara Patron!', this.battle.enemies[0].name, 1800, 'gold');
+      UI.banner('Ara Patron!', bt.enemies[0].name, 1800, 'gold');
       sfx('warn');
       await wait(this, 900);
     } else {
       await wait(this, 300);
     }
+    if (gone()) { this.busy = false; return; }
     await this.enterBattleView();
-    const bt = this.battle;
-    const res = await this.battle.start();
-    this.battle = null;
+    if (gone()) { if (this.inBattleView) await this.exitBattleView(false); this.busy = false; return; }
+    const res = await bt.start();
+    if (this.battle === bt) this.battle = null;
     if (this.inBattleView) await this.exitBattleView(res !== 'lose');
     this.busy = false;
     // 0.13.5 patron gunlugu: kac kez, en hizli sure (zor mod ayri)
@@ -2578,9 +2592,17 @@ export class WorldScene extends Phaser.Scene {
     const bossFight = !!(this.battle && this.battle.enemies.some((e) => e.data.boss));
     playMusic(bossFight ? 'boss' : 'enemyfight');
     const cam = this.cameras.main;
+    const bt = this.battle; // B6: gecis sirasinda savas kalkarsa yarim kalan gecisi geri al
     cam.flash(120, 255, 255, 255);
     await wait(this, 120);
     await this.fade(true);
+    if (!bt || this.battle !== bt) {
+      this.inBattleView = false;
+      UI.$('#ui').classList.remove('fighting');
+      S.setFight(false);
+      await this.fade(false);
+      return;
+    }
     this.roomBg = this.bg.texture.key;
     // 0.8.9: savas odanin kendi manzarasinda, iki cimen tumsegi ustunde gecer
     // 1.1: Zindan/Kule ve Magara savaslari kendi kapali mekan sahnesinde (kemerler, mesaleler, perspektifli zemin)
@@ -2916,11 +2938,25 @@ export class WorldScene extends Phaser.Scene {
   // ------------------------------------------------------------ ganimet ve seviye
   giveDrop(id, n, from, found = false, boost = 1) {
     const it = ITEMS[id];
-    const left = S.addItem(id, n, 'bag', boost);
-    const got = n - left;
+    // B1 (1.0.17): cantaya sigmayan Depo'ya, o da doluysa "bekleyen ganimet"e gider; hicbir esya kaybolmaz
+    let left = S.addItem(id, n, 'bag', boost);
+    let x = S.lastRoll;
+    let depo = 0;
+    if (left > 0) {
+      const l2 = S.addItem(id, left, 'depo', boost);
+      if (!x) x = S.lastRoll;
+      depo = left - l2;
+      if (depo && S.run) S.run.gained[id] = (S.run.gained[id] || 0) + depo;
+      left = l2;
+    }
+    if (left > 0) {
+      const stackable = it.kind === 'malzeme' || it.kind === 'tuketim';
+      if (stackable) S.save.pendingLoot.push({ id, n: left });
+      else for (let i = 0; i < left; i++) { const rx = boost > 0 ? S.rollX(id, boost) : null; S.save.pendingLoot.push(rx ? { id, n: 1, x: rx } : { id, n: 1 }); if (rx && !x) x = rx; }
+    }
+    const got = n;
     if (got > 0) {
       // 0.13.5: Nadir / Epik kalite cikinca adinin yaninda yazar
-      const x = S.lastRoll;
       const rar = S.rarityOf(id, x);
       const special = rar !== 'siradan' || !['malzeme', 'tuketim'].includes(it.kind);
       const cls = rar === 'nadir' ? 'rare' : rar === 'epik' ? 'epic' : rar === 'efsanevi' ? 'gold' : '';
@@ -2934,8 +2970,19 @@ export class WorldScene extends Phaser.Scene {
         if (!this.battle && !this.busy) this.celebrate();
       } else sfx('drop');
     }
-    if (left > 0) UI.feed(`Çanta dolu! ${UI.itemName(id, false)} ×${left} sığmadı.`);
+    if (depo > 0) UI.feed(`Çanta dolu, Lale depoya yolladı: ${UI.itemName(id, false)}${depo > 1 ? ` ×${depo}` : ''}.`);
+    if (left > 0) UI.feed(`<span style="color:#ffb04d">Çanta ve Depo dolu! ${UI.itemName(id, false)}${left > 1 ? ` ×${left}` : ''} seni bekliyor. Yer aç, sonra çantanın yanındaki kutuya dokun.</span>`);
     S.changed();
+    this.refreshHud();
+  }
+
+  // B1: bekleyen ganimeti al ("yer ac ve al")
+  claimLoot() {
+    const n = S.claimPending();
+    const rest = S.pendingCount();
+    if (n) { sfx('drop'); UI.feed(`Bekleyen ${n} eşya yerleşti.${rest ? ` ${rest} tanesi için hâlâ yer yok.` : ''}`); }
+    if (rest) { UI.feed('Yer yok: çantadan ya da Depo\'dan bir şey sat, at ya da kullan. Sonra kutuya yeniden dokun.'); openBag(this); }
+    this.refreshHud();
   }
 
   async levelUp(up) {
@@ -2950,8 +2997,8 @@ export class WorldScene extends Phaser.Scene {
     UI.bubble(this.player.x, GROUND_Y - 44, `<b>${sk.name}</b> ${up.level}. seviye!`, 2600);
     UI.feed(`<span style="color:#ffd04d">★ ${sk.name} seviyen ${up.level} oldu!</span>`, 'gold');
     if (up.level === 99) {
-      UI.banner(`${sk.name} 99!`, 'Pelerinin çantanda. Üsteki heykelin de parlıyor.', 3200, 'gold');
-      if (S.count99() === 1) UI.feed('<span style="color:#ffd04d">✦ İlk 99\'un! Üste altın bir heykelin dikildi. 99\'dan sonra XP birikir, sanal seviye 120\'ye kadar çıkar.</span>', 'gold');
+      UI.banner(`${sk.name} 99!`, 'Pelerinin çantanda. Evindeki heykelin de parlıyor.', 3200, 'gold');
+      if (S.count99() === 1) UI.feed('<span style="color:#ffd04d">✦ İlk 99\'un! Evinde altın bir heykelin dikildi. 99\'dan sonra XP birikir, sanal seviye 120\'ye kadar çıkar.</span>', 'gold');
     }
     const gear = Object.values(ITEMS).filter((it) => it.req && it.req[0] === up.skill && it.req[1] === up.level);
     if (gear.length) UI.feed(`Artık kuşanabilirsin: ${gear.map((it) => it.name).join(', ')}`);

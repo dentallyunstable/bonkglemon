@@ -1783,6 +1783,8 @@ const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);
 };
+// K6 veri taramasi icin: simgenin gercekten cizimi var mi (yoksa Dal simgesine duser)
+export const hasIcon = (name) => !!(ICON_PROPS[name] || ICON_BLOCKS[name] || ICONS[name]);
 const iconCache = {};
 export function iconUrl(name) {
   if (iconCache[name]) return iconCache[name];

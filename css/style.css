@@ -1005,6 +1005,8 @@ textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u
 }
 .hud-bag-btn .ico { width: calc(12 * var(--u)); height: calc(12 * var(--u)); image-rendering: pixelated; }
 #ui.fighting #hud-bag { display: none; }
+.btn.hud-loot-btn { position: relative; margin-left: calc(1.5 * var(--u)); --btn: #8a5a2a; --btn-light: #c08a44; --btn-dark: #5a3818; }
+.btn.hud-loot-btn.hidden { display: none; }
 #feed { top: calc(26 * var(--u)); }
 #ui.away #dock { top: calc(26 * var(--u)); }
 #ui.away #feed { top: calc(43 * var(--u)); }

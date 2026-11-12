@@ -96,6 +96,7 @@ function freshSave(char) {
     merch: { week: -1, bought: {} },
     ev: { daily: -1, weekend: -1, tourWeek: -1, tourBase: 0, tour: [] },
     clock: { max: 0 },
+    pendingLoot: [],   // B1 (1.0.17): canta ve depo doluyken dusen esyalar burada bekler
     // 0.10 Blok Dunyasi: maden kuyusu, fosiller, kazma ozelligi, Koru
     shaft: null,
     fossils: {},
@@ -556,7 +557,8 @@ export const S = {
   atkSkill() { return WEAPON_SKILL[this.weaponType()]; },
   atk() {
     const wt = this.weaponType();
-    const m = wt === 'yay' ? this.perk('kartal_gozu', 1.08, 1) : this.perk('keskin_kilic', 1.08, 1);
+    // B8 (1.0.17): Keskin Kilic sadece kilic ve yumrukta (asa icin buyu_gucu ayri isler)
+    const m = wt === 'yay' ? this.perk('kartal_gozu', 1.08, 1) : wt === 'kilic' || wt === 'yumruk' ? this.perk('keskin_kilic', 1.08, 1) : 1;
     const gece = todNow() === 'gece' ? this.bonus('gece') : 0;
     return Math.round(this.atkBase() * m * (1 + this.tokVal('atk')) * (1 + this.bonus('atkPct') + gece));
   },
@@ -743,6 +745,25 @@ export const S = {
     this.lastGive = { id, depo, lost: left };
     return this.lastGive;
   },
+  // B1 (1.0.17): bekleyen ganimeti (canta+depo doluyken dusen) yerlestirmeyi dene. Yerlesen adet doner.
+  claimPending() {
+    const list = this.save.pendingLoot || [];
+    let placed = 0;
+    for (const p of list) {
+      if (!ITEMS[p.id]) { p.n = 0; continue; }
+      if (p.x) { // kaliteli tek esya: yuvasiyla birlikte
+        for (const w of ['bag', 'depo']) { const j = this.save[w].indexOf(null); if (j >= 0 && p.n > 0) { this.save[w][j] = { id: p.id, n: 1, x: p.x }; this.save.seen[p.id] = true; p.n = 0; placed++; } }
+        continue;
+      }
+      const l1 = this.addItemRaw(p.id, p.n, 'bag');
+      const l2 = l1 > 0 ? this.addItemRaw(p.id, l1, 'depo') : 0;
+      placed += p.n - l2; p.n = l2;
+    }
+    this.save.pendingLoot = list.filter((p) => p.n > 0);
+    if (placed) this.changed();
+    return placed;
+  },
+  pendingCount() { return (this.save.pendingLoot || []).reduce((t, p) => t + p.n, 0); },
   addItemRaw(id, n, where) {
     const run = this.run; this.run = null;
     const left = this.addItem(id, n, where, 0);
@@ -777,7 +798,9 @@ export const S = {
     for (const [id, n] of Object.entries(this.run.gained)) {
       const lose = Math.floor(n / 2);
       if (lose > 0) {
-        const removed = this.removeItem(id, lose);
+        let removed = this.removeItem(id, lose);
+        // B1: canta doluyken Depo'ya giden ganimet de bayilma kuralina dahil
+        if (removed < lose) removed += this.removeItem(id, lose - removed, 'depo');
         if (removed > 0) lost.push({ id, n: removed });
       }
     }
@@ -904,7 +927,7 @@ export const S = {
   },
   releasePet(id) {
     const p = this.save.pets.find((x) => x.id === id);
-    if (p && p.acc) this.addItem(p.acc, 1);
+    if (p && p.acc) this.giveSafe(p.acc, 1); // B9 (1.0.17): canta doluysa aksesuar Depo'ya
     this.save.pets = this.save.pets.filter((x) => x.id !== id);
     if (this.save.pet === id) this.save.pet = null;
     if (this.save.pet2 === id) this.save.pet2 = null;
