@@ -315,6 +315,19 @@ def process(char_dir):
                         t = 3 if d <= 1 else 2
                         if xx == ridge and 2 <= d < BAND and (back or v == 'back'):
                             t = 3                             # ortadaki sirt
+                    # G3 (1.0.22): arkadan bakista kask duz blok gibi durmasin: tepe sirti (golgeli),
+                    # bantta percinler, ense korumasinin altinda ikinci koyu kenar ve dikis
+                    if back or v == 'back':
+                        if 0 <= d <= BAND + 2 and xx == ridge:
+                            t = 3
+                        elif 1 <= d <= BAND + 2 and xx == ridge + 1:
+                            t = 1                             # sirtin golgesi
+                        if d == BAND and (xx - face_l) % 4 == 2 and xx not in (ridge, ridge + 1):
+                            t = 4                             # bant percinleri
+                        if d == low - 1:
+                            t = 0                             # ense korumasinin alt kenari
+                        elif d > BAND + 2 and d < low - 1 and xx == ridge:
+                            t = 0                             # ense dikisi
                     if v == '34' and xx == x0 + 3 and d == 10:
                         t = 4                                 # yandaki percin
                     if v == '34back' and xx == x1 - 3 and d == 10:
