@@ -258,11 +258,15 @@ export class PlotPart {
     if (!cell) return false;
     const o = this.plotOrigin(cell);
     const oc = o && S.save.plot.cells[o.key];
-    if (oc && BUILD[oc.id] && BUILD[oc.id].func) { this.useFurniture(o, oc); return true; }
+    const g = this.plotGeom();
+    // 1.0.23 (Eren): dokunulan blok/esya kisa bir sure isaretlenir
+    const sel = (c, r, cw = 1, ch = 1) => this.flashSel(g.x0 + c * 16, GROUND_Y - (r + ch) * 16, cw * 16, ch * 16);
+    if (oc && BUILD[oc.id] && BUILD[oc.id].func) { const d = BUILD[oc.id]; sel(o.c, o.r, d.wide ? 2 : 1, d.tall ? 2 : 1); this.useFurniture(o, oc); return true; }
     // tarlanin kendisi ya da ustundeki bitki
     const base = oc && oc.id === 'tarla' ? o
       : cell.r === 1 && S.save.plot.cells[`${cell.c},0`] && S.save.plot.cells[`${cell.c},0`].id === 'tarla' ? { c: cell.c, r: 0, key: `${cell.c},0` } : null;
     if (!base) return false;
+    sel(base.c, base.r, 1, 2);
     this.gardenTap(base);
     return true;
   }

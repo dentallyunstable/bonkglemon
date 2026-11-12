@@ -3,7 +3,9 @@ export const PLAYER_HOME = 96;
 export const WALK_MODES = ['plot', 'koru'];
 // 1.0.5 ev = arsa: soldan patika, kamp atesi, istasyonlar; insa alani YARD_W'den baslar
 export const YARD_W = 336;
-export const YX = { tabela: 22, ates: 68, masa: 120, firin: 158, kazan: 194, yem: 230, ors: 264, depo: 296, heykel: 322, tuccar: 44 };
+// 1.0.23 (Eren): istasyonlar tek bir acik hava atolyesinde yan yana (ATOLYE: atolyenin sol ve sag kenari)
+export const YX = { tabela: 22, ates: 68, silahlik: 104, masa: 127, firin: 151, kazan: 173, yem: 197, ors: 222, zirh: 245, depo: 268, heykel: 316, tuccar: 44 };
+export const ATOLYE = [92, 284];
 export const SIT_AFTER = 20000; // bu kadar hareketsiz kalinca oturur
 export const SPRINT_DIST = 150; // bundan uzaga dokununca kosar
 

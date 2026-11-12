@@ -4,6 +4,13 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 1.0.23 (Atölye)
+
+- Evdeki istasyonlar tek bir açık hava atölyesinde yan yana: kalas duvar, direkler, kiremit saçak, duvara dayalı silahlık, asılı kalkan, zırh askısı.
+- İstasyon yazıları küçük ve istasyonun hemen üstünde; sadece önünde durduğun istasyonun yazısı görünür.
+- Dokunduğun istasyon ya da blok kısa bir süre sarı köşeliklerle işaretlenir.
+- Bütün düğmeler köşeli piksel tarzında.
+
 ## Sürüm 1.0.17 - 1.0.22 (Denetim düzeltmeleri)
 
 - 1.0.22 Eren'in kararları: patronlar hem uzun (20-42 vuruş) hem sert (vuruşu canın ~%14'ü), patron kontrol noktası (patrona ulaşınca Keşif'te "Patron" düğmesi, bayılınca "Patrona tekrar dene"), gün vakti yine gerçek saate bağlı, XP payı 60/20/20 ve Orman ilk 3 kat -%25 (rapordaki değerler), oyun saati internet saatine eşitlenir, zor mod/Kadim XP bonusu düzeldi, dükkânda parayla süs blokları (Kristal Fener, Taş Çeşme, Kristal Sütun, Altın Glemon Heykeli).

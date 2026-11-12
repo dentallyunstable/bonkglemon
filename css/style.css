@@ -216,6 +216,7 @@ html, body {
 #feed { transition: opacity 0.3s; }
 .objlabel { transition: opacity 0.25s; }
 .objlabel.far { opacity: 0; }
+.objlabel.st { font-size: calc(5.6 * var(--u)); padding: calc(0.2 * var(--u)) calc(2 * var(--u)) calc(0.5 * var(--u)); }
 .objlabel.lockl { padding-left: calc(1 * var(--u)); padding-right: calc(1 * var(--u)); }
 #feed.dim { opacity: 0.25; }
 #banner .b-title { font-size: calc(18 * var(--u)); font-weight: 400; color: #fff4c8; text-shadow: 0 calc(1.2 * var(--u)) 0 #000, 0 0 calc(6 * var(--u)) rgba(0,0,0,0.6); letter-spacing: calc(0.5 * var(--u)); }
@@ -1046,3 +1047,9 @@ textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u
 .btn.pf-filter.on { --btn: #3a8a4a; --btn-light: #5ab06a; --btn-dark: #24552e; }
 .pf-fmenu { display: flex; gap: calc(1.5 * var(--u)); flex-wrap: wrap; background: rgba(0, 0, 0, 0.3); padding: calc(1.5 * var(--u)); }
 @media (orientation: portrait), (max-width: 700px) { .pf-boxes { grid-template-columns: 1fr; } }
+
+/* 1.0.23 (Eren): oyundaki butun dugmeler koseli, piksel tarzinda (yuvarlak kose yok). Boyut ve yerlesim degismez. */
+.btn, .btn.small, .btn.tiny, .btn.close, .btn.help, .btn.act-btn, .btn.dock-btn, #ui.away .btn.dock-btn, .b-me .btn.auto-btn,
+.btn.hud-loot-btn, .btn.build-btn, .map-spot, .char-card, .objlabel, .dodge, .dodge .ring, .dock-badge, .title-card, .album-card, .zone.zbanner {
+  border-radius: 0 !important;
+}

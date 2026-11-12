@@ -16,7 +16,7 @@ import { now as gNow } from './clock.js';
 import { PlotPart } from './plot.js';
 import { PondPart } from './pond.js';
 import { DungeonPart } from './dungeon.js';
-import { PLAYER_HOME, WALK_MODES, YARD_W, YX, SIT_AFTER, SPRINT_DIST, pick } from './wconst.js';
+import { PLAYER_HOME, WALK_MODES, YARD_W, YX, ATOLYE, SIT_AFTER, SPRINT_DIST, pick } from './wconst.js';
 
 export class WorldScene extends Phaser.Scene {
   constructor() { super('world'); }
@@ -264,7 +264,18 @@ export class WorldScene extends Phaser.Scene {
       if (l._x === undefined) continue;
       const near = Math.abs(l._x - this.player.x) < 20;
       if (l._near !== near) { l._near = near; l.classList.toggle('near', near); }
-      if (l._prox) { const far = Math.abs(l._x - this.player.x) > 56 && !(l._flash > gNow()); if (l._far !== far) { l._far = far; l.classList.toggle('far', far); } }
+    }
+    // 1.0.23: atolyede istasyonlar yan yana; sadece karakterin onundeki (en yakin) istasyonun yazisi gorunur
+    {
+      const fx = this.player.x + (this.player.flipX ? -14 : 14);
+      let best = null; let bd = 30;
+      for (const l of this.labels) if (l._prox) { const d = Math.abs(l._x - fx); if (d < bd) { bd = d; best = l; } }
+      const t = gNow();
+      for (const l of this.labels) {
+        if (!l._prox) continue;
+        const far = l !== best && !(l._flash > t);
+        if (l._far !== far) { l._far = far; l.classList.toggle('far', far); }
+      }
     }
     this.updateFollower(dt);
     this.updateRanch(dt);
@@ -482,6 +493,8 @@ export class WorldScene extends Phaser.Scene {
       obj.setInteractive({ useHandCursor: true });
       obj.on('pointerdown', () => {
         if (this.busy || UI.panelOpen() || !(opts.modes || WALK_MODES).includes(this.mode)) return;
+        // 1.0.23 (Eren): dokunulan nesne kisa bir sure piksel kosebentlerle isaretlenir
+        if (opts.sel !== false && obj.getBounds) { const b = obj.getBounds(); this.flashSel(b.x, b.y, b.width, b.height); }
         if (opts.direct) { opts.act(); return; }
         this.walkThen(opts.x ?? obj.x, () => {
           if (opts.face !== undefined) this.player.setFlipX(opts.face);
@@ -497,12 +510,56 @@ export class WorldScene extends Phaser.Scene {
       // G4 (1.0.19): evdeki istasyon yazilari sadece karakter yakindayken ya da dokununca gorunur
       if (opts.prox) { l._prox = true; l.classList.add('far'); obj.on('pointerdown', () => { l._flash = gNow() + 2500; }); }
       if (opts.lock) l.classList.add('lockl');
+      if (opts.small) l.classList.add('st');
       l.style.left = UI.pctX(lx - (UI.view.x || 0));
       l.style.top = UI.pctY(opts.ly);
       UI.$('#floats').appendChild(l);
       this.labels.push(l);
     }
     return obj;
+  }
+
+  // 1.0.23 (Eren): acik hava atolyesi. Arkada alcak tahta duvar ve iki direk, ustte kutuk kirisi ve
+  // kiremit sacak; duvara dayali silahlik, asili kalkan ve zirh askisi. Hepsi 16x16 bloklardan.
+  buildWorkshop() {
+    const G = GROUND_Y; const [x0, x1] = ATOLYE;
+    const img = (x, y, k, d = 2.6, tint = null) => { const o = this.add.image(x, y, 'blocks', k).setOrigin(0, 1).setDepth(d); if (tint) o.setTint(tint); this.roomObjs.push(o); return o; };
+    // zemin: kalaslar (patikanin ustunde ince tahta doseme)
+    for (let x = x0; x < x1; x += 16) { const f = this.add.image(x, G, 'blocks', 'kalas').setOrigin(0, 0).setDepth(2.2).setCrop(0, 0, 16, 4).setTint(0xd8c8b0); this.roomObjs.push(f); }
+    // arka duvar: 2 sira kalas, arkada kaldigi icin biraz koyu
+    for (let x = x0 + 8; x < x1 - 8; x += 16) for (let r = 0; r < 2; r++) img(x, G - r * 16, 'kalas', 2.4, 0x9a8a78);
+    // direkler (3 blok) ve kiris
+    for (const x of [x0, x1 - 16]) for (let r = 0; r < 3; r++) img(x, G - r * 16, 'kutuk', 2.7);
+    for (let x = x0; x < x1; x += 16) img(x, G - 48, 'kutuk', 2.7, 0xc8b8a0).setCrop(0, 10, 16, 6);
+    // kiremit sacak
+    img(x0 - 16, G - 50, 'kiremit_sol', 2.8);
+    for (let x = x0; x < x1; x += 16) img(x, G - 50, 'kiremit', 2.8);
+    img(x1, G - 50, 'kiremit_sag', 2.8);
+    // duvara dayali silahlik, asili kalkan ve zirh askisi (sus)
+    img(YX.silahlik - 8, G + 1, 'silahlik_alt', 3.5); img(YX.silahlik - 8, G - 15, 'silahlik_ust', 3.5);
+    img(YX.zirh - 8, G + 1, 'zirh_alt', 3.5); img(YX.zirh - 8, G - 15, 'zirh_ust', 3.5);
+    img(YX.firin + 4, G - 17, 'kalkan', 2.9);
+    img(YX.masa - 8, G - 20, 'harita_sol', 2.9).setScale(0.75);
+  }
+
+  // 1.0.23 (Eren): secim isareti. Dort kosede sari piksel kosebent + hafif parlama, ~1 sn yanip soner.
+  flashSel(x, y, w, h) {
+    if (this.selG) { this.tweens.killTweensOf(this.selG); this.selG.destroy(); }
+    x = Math.round(x) - 2; y = Math.round(y) - 2; w = Math.round(w) + 4; h = Math.round(h) + 4;
+    const g = this.add.graphics().setDepth(30);
+    g.fillStyle(0xfff4c0, 0.16).fillRect(x + 2, y + 2, w - 4, h - 4);
+    const L = Math.max(3, Math.min(5, Math.floor(Math.min(w, h) / 3)));
+    const corner = (cx, cy, dx, dy, col, o) => { // o = 1: koyu dis cizgi
+      g.fillStyle(col, 1);
+      g.fillRect((dx > 0 ? cx : cx - L + 2) - o, cy - o, L + o * 2, 2 + o * 2);
+      g.fillRect(cx - o, (dy > 0 ? cy : cy - L + 2) - o, 2 + o * 2, L + o * 2);
+    };
+    for (const [cx, cy, dx, dy] of [[x, y, 1, 1], [x + w - 2, y, -1, 1], [x, y + h - 2, 1, -1], [x + w - 2, y + h - 2, -1, -1]]) corner(cx, cy, dx, dy, 0x2a1e14, 1);
+    for (const [cx, cy, dx, dy] of [[x, y, 1, 1], [x + w - 2, y, -1, 1], [x, y + h - 2, 1, -1], [x + w - 2, y + h - 2, -1, -1]]) corner(cx, cy, dx, dy, 0xffd84a, 0);
+    this.selG = g;
+    this.tweens.add({ targets: g, alpha: 0.35, duration: 160, yoyo: true, repeat: 2, onComplete: () => {
+      this.tweens.add({ targets: g, alpha: 0, duration: 250, onComplete: () => { g.destroy(); if (this.selG === g) this.selG = null; } });
+    } });
   }
 
   clearRoom() {
@@ -610,12 +667,15 @@ export class WorldScene extends Phaser.Scene {
     }
     // patika: soldan eve (kapinin onune) kadar
     for (let x = -16; x < YARD_W + 64; x += 16) this.roomObjs.push(this.add.image(x, G, 'patika').setOrigin(0, 0).setDepth(2.1));
-    const station = (k, obj, label, high) => {
+    this.buildWorkshop();
+    const station = (k, obj, label) => {
       const open = this.stationOpen(k);
       if (!open) obj.setAlpha(0.55);
       const x = obj.x;
-      return this.addObj(obj.setOrigin(0.5, 1).setDepth(4), {
-        x: x - 18, face: false, label: open ? label : '🔒', lock: !open, prox: open, lx: x, ly: high ? G - 46 : G - 26,
+      obj.setOrigin(0.5, 1).setDepth(4);
+      // 1.0.23 (Eren): yazi kucuk ve istasyonun hemen ustunde
+      return this.addObj(obj, {
+        x: x - 16, face: false, label: open ? label : '🔒', lock: !open, prox: open, small: true, lx: x, ly: G - obj.displayHeight - 2,
         act: () => {
           if (!this.stationOpen(k)) { UI.feed(`${label}, Üretim ${STATION_LVL[k]} olunca açılır. (Üretim seviyen: ${S.level('uretim')})`); this.sulk(); return; }
           if (k === 'ors') openAnvil(this); else openStation(this, k);
@@ -632,15 +692,15 @@ export class WorldScene extends Phaser.Scene {
     this.addObj(fire, { x: YX.ates + 18, face: true, label: 'Kamp ateşi', prox: true, lx: YX.ates, ly: G - 22, act: () => this.fireMenu() });
     this.fireSpr = fire;
     if (gNow() < (S.save.fireUntil || 0)) fire.setScale(1.05);
-    station('masa', this.add.image(YX.masa, G + 1, 'workbench'), 'Üretim Masası', false);
+    station('masa', this.add.image(YX.masa, G + 1, 'workbench'), 'Üretim Masası');
     this.furnace = this.add.sprite(YX.firin, G + 1, 'furnace', 0);
-    station('firin', this.furnace, 'Fırın', true);
+    station('firin', this.furnace, 'Fırın');
     const caul = this.add.sprite(YX.kazan, G + 1, 'cauldron', 0);
     if (this.stationOpen('kazan')) caul.play('cauldron');
-    station('kazan', caul, 'Simya Kazanı', false);
-    station('yem', this.add.image(YX.yem, G + 1, 'feedtable'), 'Yem Tezgâhı', true);
-    station('ors', this.add.image(YX.ors, G + 1, 'blocks', 'ors').setScale(1.4), 'Örs', false);
-    this.addObj(this.add.image(YX.depo, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), { x: YX.depo - 18, face: false, label: 'Depo', prox: true, lx: YX.depo, ly: G - 24, act: () => openDepo(this) });
+    station('kazan', caul, 'Simya Kazanı');
+    station('yem', this.add.image(YX.yem, G + 1, 'feedtable'), 'Yem Tezgâhı');
+    station('ors', this.add.image(YX.ors, G + 1, 'blocks', 'ors').setScale(1.4), 'Örs');
+    this.addObj(this.add.image(YX.depo, G + 1, 'chest').setOrigin(0.5, 1).setDepth(4), { x: YX.depo - 16, face: false, label: 'Depo', prox: true, small: true, lx: YX.depo, ly: G - 16, act: () => openDepo(this) });
     this.buildStatue(YX.heykel);
     if (merchantHere()) {
       const tc = this.add.sprite(YX.tuccar, G + 1, 'tuccar', 0).setOrigin(0.5, 1).setDepth(6);
