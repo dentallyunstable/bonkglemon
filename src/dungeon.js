@@ -300,6 +300,9 @@ export class DungeonPart {
     if (this.inZindan()) return this.zindanRooms(this.zLevel);
     const zf = this.zoneFloor(f);
     const zone = zoneOf(f);
+    // 1.0.22 (Eren): patron kontrol noktasindan gelince sadece patron odasi
+    const bossStart = this.bossStart; this.bossStart = false;
+    if (bossStart && zf === 10) return [{ type: 'boss' }];
     const n = Math.min(6, 4 + Math.floor(zf / 4) + (zone.key === 'orman' ? 0 : 1));
     const rooms = [];
     let kamp = false;
@@ -488,7 +491,7 @@ export class DungeonPart {
   isNight() { return this.mode === 'dungeon' && !this.inZindan() && !(S.run && S.run.ev) && todNow() === 'gece'; }
 
   // Kesife cikmadan once Hazirlik ekrani
-  prepDungeon(floor) { openPrep(this, floor); }
+  prepDungeon(floor, opts) { openPrep(this, floor, opts); }
 
   async eggHatched(h) {
     if (h.progress) { UI.feed(`${h.name} çatırdıyor… (${h.progress}/${S.eggNeed()} savaş)`); return; }
@@ -527,6 +530,12 @@ export class DungeonPart {
         break;
       }
       case 'boss':
+        // 1.0.22 (Eren): patrona ulasinca kontrol noktasi acilir (bayilirsan 5 kat geriden degil, patrondan baslarsin)
+        if (!(S.save.bossCp || {})[zoneOf(this.floor).key]) {
+          S.save.bossCp = { ...(S.save.bossCp || {}), [zoneOf(this.floor).key]: 1 };
+          UI.feed(`<span style="color:#ffd04d">Patron kontrol noktası açıldı! Bayılırsan Keşif'ten "Patron" düğmesiyle doğrudan buraya dönebilirsin.</span>`, 'gold');
+          S.changed();
+        }
         this.battle = new Battle(this, [{ key: zoneOf(this.floor).boss }], { ...this.battleOpts({}), boss: true });
         break;
       case 'uyuyan': {
@@ -1128,6 +1137,9 @@ export class DungeonPart {
     S.save.stats.deaths++;
     const res = S.loseHalfRun();
     S.changed();
+    const dr = this.rooms && this.rooms[this.roomIdx];
+    const bossFloor = dr && dr.type === 'boss' && this.mode === 'dungeon' && !this.inZindan() ? this.floor : 0;
+    this.retryBoss = 0;
     UI.openPanel('Bayıldın!', (body) => {
       body.appendChild(UI.el('p', 'choice-text', 'Glemonlar seni yendi. Bu turda topladıklarının yarısını kaybettin:'));
       const ul = UI.el('ul', 'droplog');
@@ -1142,6 +1154,8 @@ export class DungeonPart {
       body.appendChild(UI.el('p', 'muted', 'İpucu: Canın azalınca "Eve dön" ile her şeyini koruyabilirsin.'));
       const row = UI.el('div', 'choice-row');
       row.appendChild(UI.button('Eve dön', () => UI.closePanel(), 'primary'));
+      // 1.0.22 (Eren): patrona yenilince patron kontrol noktasindan tekrar dene
+      if (bossFloor) row.appendChild(UI.button('Patrona tekrar dene', () => { this.retryBoss = bossFloor; UI.closePanel(); }, 'purple'));
       body.appendChild(row);
     }, { onClose: () => this.afterDeath() });
   }
@@ -1155,5 +1169,6 @@ export class DungeonPart {
     await playAnim(this.player, 'c_cry', 1);
     this.idle();
     this.busy = false;
+    if (this.retryBoss) { const f = this.retryBoss; this.retryBoss = 0; openPrep(this, f, { boss: true }); }
   }
 }

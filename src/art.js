@@ -6,7 +6,6 @@
 import { GAME_W, GAME_H, GROUND_Y, FISH, CAPE_COLORS, KITCHEN, SEED_OF } from './data.js';
 import { rng, Pix, hex, mix, mul, pack, unpack, col, INK } from './pix.js';
 import { B, block, build } from './blocks.js';
-import { now as gNow } from './clock.js';
 
 export { rng, hex, INK };
 
@@ -51,29 +50,26 @@ export const TOD = {
 };
 // 0.10.5: yatakta gece uyuyunca sabaha (08:00) kadar gunduz sayilir
 export const TOD_SKIP = { until: 0 };
-// M4 (1.0.20, Eren karari bekleniyor: oneri uygulandi): oyun ici gun dongusu, 60 dakikada bir gun.
-// 40 dk gunduz (3 dk gundogumu + 34 dk gun + 3 dk gunbatimi), 20 dk gece. Herkes ayni anda ayni vakti gorur.
-export const DAY = { len: 60, dawn: 3, day: 37, dusk: 40 };
-const dayMin = (t) => ((t / 60000) % DAY.len + DAY.len) % DAY.len;
-export function todNow(d = new Date(gNow())) {
-  const t = d.getTime();
-  if (t < TOD_SKIP.until) return 'gun';
-  const m = dayMin(t);
-  if (m < DAY.dawn) return 'gundogumu';
-  if (m < DAY.day) return 'gun';
-  if (m < DAY.dusk) return 'gunbatimi';
+// M4 (1.0.22, Eren karari 2026-11-12): gun vakti gercek saate bagli, oyun ici dongu yok.
+// 06-08 gundogumu, 08-18 gun, 18-20 gunbatimi, 20-06 gece. Yatakta uyuyunca sabaha (08:00) kadar gunduz.
+export function todNow(d = new Date()) {
+  if (d.getTime() < TOD_SKIP.until) return 'gun';
+  const h = d.getHours() + d.getMinutes() / 60;
+  if (h >= 6 && h < 8) return 'gundogumu';
+  if (h >= 8 && h < 18) return 'gun';
+  if (h >= 18 && h < 20) return 'gunbatimi';
   return 'gece';
 }
-// bir sonraki sabahin (gundogumu bitisi) zamani: yatakta uyuyunca buraya kadar gunduz sayilir
-export function nextMorning(t = gNow()) {
-  const m = dayMin(t);
-  const start = t - m * 60000;
-  return start + (m < DAY.dawn ? DAY.dawn : DAY.len + DAY.dawn) * 60000;
+// bir sonraki sabah 08:00 (yatakta uyuyunca buraya kadar gunduz sayilir)
+export function nextMorning(t = Date.now()) {
+  const d = new Date(t); const m = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 8).getTime();
+  return m > t ? m : new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 8).getTime();
 }
-// gecenin bitmesine kalan dakika (Hazirlik ve bilgi yazilari icin)
-export function todLeftMin(t = gNow()) {
-  const m = dayMin(t);
-  return Math.ceil((m >= DAY.dusk ? DAY.len - m : m >= DAY.day ? DAY.dusk - m : DAY.day - m));
+// gecenin bitmesine (06:00) kalan dakika
+export function todLeftMin(t = Date.now()) {
+  const d = new Date(t); let e = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 6).getTime();
+  if (e <= t) e = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 6).getTime();
+  return Math.ceil((e - t) / 60000);
 }
 function skyColor(i, t, stops = null) {
   if (stops) {

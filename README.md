@@ -4,12 +4,14 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
-## Sürüm 1.0.17 - 1.0.21 (Denetim düzeltmeleri)
+## Sürüm 1.0.17 - 1.0.22 (Denetim düzeltmeleri)
+
+- 1.0.22 Eren'in kararları: patronlar hem uzun (20-42 vuruş) hem sert (vuruşu canın ~%14'ü), patron kontrol noktası (patrona ulaşınca Keşif'te "Patron" düğmesi, bayılınca "Patrona tekrar dene"), gün vakti yine gerçek saate bağlı, XP payı 60/20/20 ve Orman ilk 3 kat -%25 (rapordaki değerler).
 
 - 1.0.17 acil hatalar: çanta doluyken ganimet kaybolmaz (Depo, sonra bekleyen kutusu), oto savaş mutfak yemeklerini de yer, satışta onay, Bonus düğmesi gizli.
 - 1.0.18 denge: Saldırı / Can / Savunma XP payı 50/20/30, eşya seviyeleri 25/35/45/55, kısa ama sert patronlar, yoldaş saldırısı %60, Orman'ın ilk 3 katı daha kolay (kamp ateşi garanti). Örs ucuz malzemelerle başlar, artılar eşyanın kendisinde durur (kayıt sürümü 4). Çanta yuvası satın alma, kalite yeniden atma.
 - 1.0.19 sade ekran: yeni adlar (Ev, Göl, Maden Kuyusu, Köy Haritası), yakına gelince çıkan yazılar, birleşik seviye mesajı, küçük ilk adım rozeti, tek tuşla alt sınıf değiştirme.
-- 1.0.20 gece ve gündüz: oyun içi döngü (40 dk gündüz, 20 dk gece), zindan ve maden göğü gece karanlık, yeni Çöl / Gölge / Yıldız arka planları.
+- 1.0.20 gece ve gündüz: zindan ve maden göğü gece karanlık, yeni Çöl / Gölge / Yıldız arka planları.
 - 1.0.21 kod temizliği: saat ileri alma hilesine geçici koruma (kapalıyken en fazla 12 saat sayılır), madende bayılınca o inişte kazılanın yarısı düşer, test kapıları yayında kapalı, world.js parçalara bölündü (plot, pond, dungeon).
 
 ## Sürüm 0.13.5 (Ustalık)

@@ -49,6 +49,7 @@ function freshSave(char) {
     depo: new Array(DEPO_SIZE).fill(null),
     equip: { silah: 'pasli_kilic', kask: null, gogus: null, bot: null, tilsim: null, kazma: 'tahta_kazma', olta: 'tahta_olta', pelerin: null },
     stats: { kills: 0, deepest: 0, bossKills: 0, shiny: 0, deaths: 0, battles: 0, glemons: {}, playMs: 0, mined: 0, crafted: 0, gathered: 0, deepestMine: 1, placed: 0, zfloors: 0 },
+    bossCp: {}, // 1.0.22 (Eren): bolge patronuna ulasinca patron kontrol noktasi (bolge anahtari -> 1)
     seen: {},                               // bir kez bulunan esyalar (tarif defteri icin)
     furnace: { rid: null, n: 0, t0: 0 },    // firindaki is: tarif, adet, baslama zamani
     mine: { depth: 1 },

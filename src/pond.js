@@ -285,9 +285,11 @@ export class PondPart {
     }
   }
 
-  async enterDungeon(floor) {
+  // opts.boss (1.0.22, Eren): patron kontrol noktasi; dogrudan bolge patronunun odasindan baslar
+  async enterDungeon(floor, opts = {}) {
     UI.closePanel();
     if (this.busy) return;
+    this.bossStart = !!opts.boss;
     this.busy = true;
     stopMusic();
     this.walkTok++;

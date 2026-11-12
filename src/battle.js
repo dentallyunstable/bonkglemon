@@ -5,7 +5,7 @@ import {
   passiveOf, SECRET_HOME, GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
   typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
   MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS, BOSS_P2, BOSS_PHASE, HARD, KULE, BOSS_PHASES, KADIM,
-  XP_SPLIT, killXpMult, earlyAtk,
+  XP_SPLIT, earlyAtk,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -1626,19 +1626,20 @@ export class Battle {
       return;
     }
     const rm = RMULT[e.rarity] || 1;
-    let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage) * killXpMult(this.floor); // D2: Kat 40 sonrasi artis
+    let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage);
     if (e.shiny) xp *= 2;
     if (e.golden) xp *= 4;
     if (this.opts.night) xp *= NIGHT.reward; // 0.11 gece
     if (e.finished) xp *= 1 + MANUAL2.finishXp; // 0.13 bitirici vurus
+    // 1.0.22 (Eren): zor mod ve Kadim XP carpanlari eskiden killXp'ye eklendikten SONRA uygulaniyordu (etkisizdi)
+    if (e.data.boss && this.opts.hard) xp *= HARD.xp;
+    if (this.opts.kadim) xp *= KADIM.xp;
     this.killXp += xp;
     let gold = Math.round(this.floor * (2 + Math.random() * 2) * Math.min(rm, 3) * (e.data.goldMult || 1));
     if (e.shiny) gold *= 3;
     if (e.golden) gold *= 3;
     if (this.opts.night) gold = Math.round(gold * NIGHT.reward);
     if (e.data.boss) gold = (150 * (ZONES.indexOf(this.zone) + 1) + Math.round(Math.random() * 50)) * (this.opts.hard ? HARD.gold : 1);
-    if (e.data.boss && this.opts.hard) xp *= HARD.xp;
-    if (this.opts.kadim) xp *= KADIM.xp;
     if (e.data.boss) this.bossWin = e.key;
     if (S.run && S.run.goldX) gold = Math.round(gold * S.run.goldX); // 0.9 Altin Gunu
     gold = Math.round(gold * (1 + this.aura.gold));

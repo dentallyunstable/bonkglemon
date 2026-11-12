@@ -799,6 +799,12 @@ export function openMap(w) {
           else if (b.disabled) b.title = `Önce Kat ${f}'e ulaş`;
           btns.appendChild(b);
         }
+        // 1.0.22 (Eren): patron kontrol noktasi; patrona bir kez ulasinca dogrudan patron odasindan baslanir
+        if ((S.save.bossCp || {})[z.key] || deepest >= z.floors[1]) {
+          const pb = UI.button('Patron', () => w.prepDungeon(z.floors[1], { boss: true }), 'small purple');
+          pb.disabled = !atkOk;
+          btns.appendChild(pb);
+        }
         // B12 (1.0.17, Eren karari): arkadas sistemi rafta, bonus patron dugmesi o donene kadar gizli
         if (BONUS_ON && z.key !== 'orman') { // bonus patron (Orman haric; onu Eren anlatacak)
           const ok = kills[z.boss] > 0;
@@ -810,7 +816,7 @@ export function openMap(w) {
       row.appendChild(btns);
       list.appendChild(row);
     });
-    body.appendChild(UI.el('p', 'muted', 'Her bölgede 5. katta ara patron, 10. katta bölge patronu var. 5 ve 10. katlarda kısayol açılır.'));
+    body.appendChild(UI.el('p', 'muted', 'Her bölgede 5. katta ara patron, 10. katta bölge patronu var. 5 ve 10. katlarda kısayol açılır. Patrona bir kez ulaşınca "Patron" düğmesiyle doğrudan patrondan başlarsın.'));
   }, { wide: true });
 }
 
@@ -2197,9 +2203,9 @@ const PREP_NEED = {
   magara: { what: 'Karanlık', items: ['fener'], carry: true, how: 'Fener taşı (Üretim Masası)' },
   golge: { what: 'Karanlık', items: ['fener'], carry: true, how: 'Fener taşı (Üretim Masası)' },
 };
-export function openPrep(w, floor) {
+export function openPrep(w, floor, opts = {}) {
   const z = zoneOf(floor);
-  UI.openPanel(`Hazırlık · ${z.name}, Kat ${floor}`, (body) => {
+  UI.openPanel(`Hazırlık · ${z.name}, ${opts.boss ? `Patron (${GLEMONS[z.boss].name})` : `Kat ${floor}`}`, (body) => {
     const render = () => {
       body.innerHTML = '';
       const night = todNow() === 'gece';
@@ -2265,7 +2271,7 @@ export function openPrep(w, floor) {
       grid.appendChild(hb);
       body.appendChild(grid);
       const row = UI.el('div', 'choice-row');
-      row.appendChild(UI.button('Yola çık!', () => w.enterDungeon(floor), 'primary'));
+      row.appendChild(UI.button(opts.boss ? 'Patrona git!' : 'Yola çık!', () => w.enterDungeon(floor, opts), 'primary'));
       row.appendChild(UI.button('Geri', () => openVillageMap(w), 'small'));
       body.appendChild(row);
     };

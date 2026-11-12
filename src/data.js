@@ -5,7 +5,7 @@ import { now as gNow } from './clock.js';
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0.21';
+export const VERSION = '1.0.22';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -86,7 +86,7 @@ export const GLEMONS = {
   },
   agacbasi: {
     name: 'Ağaçbaşı', from: "Ağaçbaşı'ndan", rarity: 'efsanevi', type: 'Orman', boss: true,
-    hp: 85, atk: 4.2, def: 3.2, spd: 85,
+    hp: 142, atk: 8.4, def: 3.2, spd: 85, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 85, atk 4.2)
     pattern: ['normal', 'kok', 'normal', 'cagir', 'normal', 'darbe', 'normal', 'recine'],
     specials: {
       kok: { name: 'Kök Sarması', mult: 1.0, status: ['sersem', 1], telegraph: true },
@@ -129,7 +129,7 @@ export const GLEMONS = {
   },
   tas_golemi: {
     name: 'Taş Golemi', from: "Taş Golemi'nden", rarity: 'efsanevi', type: 'Taş', boss: true,
-    hp: 92, atk: 6.0, def: 4.2, spd: 70, // D4 (1.0.18): eskiden hp 92, atk 4.4
+    hp: 158, atk: 7.6, def: 4.2, spd: 70, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 92, atk 4.4)
     pattern: ['normal', 'sarsinti', 'normal', 'cagir', 'normal', 'kabuk', 'normal', 'sarsinti'],
     specials: {
       sarsinti: { name: 'Yer Sarsıntısı', mult: 2.4, telegraph: true, aoe: true },
@@ -171,7 +171,7 @@ export const GLEMONS = {
   },
   firtina_cakali: {
     name: 'Fırtına Çakalı', from: "Fırtına Çakalı'ndan", rarity: 'efsanevi', type: 'Kum', boss: true,
-    hp: 96, atk: 5.9, def: 3.6, spd: 118, // D4 (1.0.18): eskiden hp 96, atk 4.8
+    hp: 162, atk: 7.5, def: 3.6, spd: 118, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 96, atk 4.8)
     pattern: ['normal', 'firtina', 'normal', 'isirik', 'normal', 'cagir', 'normal', 'firtina'],
     specials: {
       firtina: { name: 'Kum Fırtınası', mult: 0.8, status: ['karanlik', 3], telegraph: true, aoe: true },
@@ -213,7 +213,7 @@ export const GLEMONS = {
   },
   buzul_ayisi: {
     name: 'Buzul Ayısı', from: "Buzul Ayısı'ndan", rarity: 'efsanevi', type: 'Buz', boss: true,
-    hp: 104, atk: 5.7, def: 4.2, spd: 80, // D4 (1.0.18): eskiden hp 104, atk 5.2
+    hp: 142, atk: 7.3, def: 4.2, spd: 80, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 104, atk 5.2)
     pattern: ['normal', 'nefes', 'normal', 'pence', 'normal', 'cagir', 'normal', 'nefes'],
     specials: {
       nefes: { name: 'Buz Nefesi', mult: 0.9, status: ['donma', 1], telegraph: true, aoe: true },
@@ -255,7 +255,7 @@ export const GLEMONS = {
   },
   magma_kaplumbaga: {
     name: 'Magma Kaplumbağası', from: "Magma Kaplumbağası'ndan", rarity: 'efsanevi', type: 'Ateş', boss: true,
-    hp: 103, atk: 6.6, def: 5.2, spd: 66, // D4 (1.0.18): eskiden hp 120, atk 5.4
+    hp: 141, atk: 7.1, def: 5.2, spd: 66, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 120, atk 5.4)
     pattern: ['normal', 'kizgin', 'normal', 'kabuk', 'normal', 'lav', 'normal', 'kizgin'],
     specials: {
       kizgin: { name: 'Kızgın Kabuk', mult: 0.9, status: ['yanma', 3], telegraph: true, aoe: true },
@@ -329,7 +329,7 @@ export const GLEMONS = {
   },
   bosluk_bekcisi: {
     name: 'Boşluk Bekçisi', from: "Boşluk Bekçisi'nden", rarity: 'efsanevi', type: 'Gölge', boss: true, fly: true,
-    hp: 108, atk: 6.4, def: 4.6, spd: 100, // D4 (1.0.18): eskiden hp 130, atk 5.8
+    hp: 161, atk: 7.5, def: 4.6, spd: 100, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 130, atk 5.8)
     pattern: ['normal', 'isinlan', 'normal', 'kopya', 'normal', 'karanlik', 'normal', 'darbe'],
     specials: {
       isinlan: { name: 'Işınlanma', shell: 2 },
@@ -502,11 +502,9 @@ export const SPAWN_TABLE = [
 export const SHINY_CHANCE = 1 / 500;
 
 // D1 (1.0.18): savas XP'si payi: silah becerisi %60, Can %20, Savunma %20 (eskiden %70/%30/%0); alinan hasar ve kacinma XP'si ustune eklenir
-export const XP_SPLIT = { weapon: 0.5, can: 0.2, savunma: 0.3 };
-// D2 (1.0.18): Kat 40'tan sonra Glemon XP'si kat basina %3 artar (Kat 70'te x1,9): Bonkit ve Golge esyasi hikaye icinde giyilir
-export const killXpMult = (floor) => 1 + 0.06 * Math.max(0, floor - 40);
-// D3 (1.0.18): yeni oyuncu icin Orman'in ilk 3 katinda Glemon saldirisi %40 az (rapor %25 diyordu; bot testinde Kat 3 ilk denemede gecilemedi)
-export const earlyAtk = (zoneKey, floor) => (zoneKey === 'orman' && floor <= 3 ? 0.6 : 1);
+export const XP_SPLIT = { weapon: 0.6, can: 0.2, savunma: 0.2 }; // 1.0.22: rapordaki deger (Eren)
+// D3 (1.0.18): yeni oyuncu icin Orman'in ilk 3 katinda Glemon saldirisi %25 az (rapordaki deger)
+export const earlyAtk = (zoneKey, floor) => (zoneKey === 'orman' && floor <= 3 ? 0.75 : 1);
 export const floorMult = (floor) => 1 + 0.2 * (floor - 1);
 
 // ---------------------------------------------------------------- Esyalar
@@ -982,11 +980,11 @@ export const GATHER_CHANCE = 0.4;
 // D2 (1.0.18): giris gucu = onceki bolgenin esyasini giyip o bolgeyi bitiren oyuncunun gucunun %90'i (tools/test/balance.mjs)
 export const ZONES = [
   { key: 'orman', name: 'Yabani Orman', floors: [1, 10], open: true, boss: 'agacbasi', type: 'Orman', atk: 1 },
-  { key: 'magara', name: 'Yankı Mağaraları', floors: [11, 20], open: true, boss: 'tas_golemi', type: 'Taş', atk: 20, after: 'agacbasi', hazard: 'Karanlık odalar: çantanda Fener yoksa göremezsin.' },
-  { key: 'col', name: 'Kavurucu Çöl', floors: [21, 30], open: true, boss: 'firtina_cakali', type: 'Kum', atk: 33, after: 'tas_golemi', hazard: 'Sıcak: Su Matarası yoksa her odada biraz can kaybedersin.' },
-  { key: 'buz', name: 'Donmuş Zirve', floors: [31, 40], open: true, boss: 'buzul_ayisi', type: 'Buz', atk: 45, after: 'firtina_cakali', hazard: 'Soğuk: Sıcak Çorba içmezsen savaşlarda yavaşlarsın.' },
-  { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], open: true, boss: 'magma_kaplumbaga', type: 'Ateş', atk: 51, after: 'buzul_ayisi', hazard: 'Lav: Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın.' },
-  { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], open: true, boss: 'bosluk_bekcisi', type: 'Gölge', atk: 65, after: 'magma_kaplumbaga', hazard: 'Karanlık: odaların yarısı karanlık, Fener taşı.' },
+  { key: 'magara', name: 'Yankı Mağaraları', floors: [11, 20], open: true, boss: 'tas_golemi', type: 'Taş', atk: 21, after: 'agacbasi', hazard: 'Karanlık odalar: çantanda Fener yoksa göremezsin.' },
+  { key: 'col', name: 'Kavurucu Çöl', floors: [21, 30], open: true, boss: 'firtina_cakali', type: 'Kum', atk: 34, after: 'tas_golemi', hazard: 'Sıcak: Su Matarası yoksa her odada biraz can kaybedersin.' },
+  { key: 'buz', name: 'Donmuş Zirve', floors: [31, 40], open: true, boss: 'buzul_ayisi', type: 'Buz', atk: 47, after: 'firtina_cakali', hazard: 'Soğuk: Sıcak Çorba içmezsen savaşlarda yavaşlarsın.' },
+  { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], open: true, boss: 'magma_kaplumbaga', type: 'Ateş', atk: 53, after: 'buzul_ayisi', hazard: 'Lav: Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın.' },
+  { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], open: true, boss: 'bosluk_bekcisi', type: 'Gölge', atk: 66, after: 'magma_kaplumbaga', hazard: 'Karanlık: odaların yarısı karanlık, Fener taşı.' },
 ];
 
 // ---------------------------------------------------------------- Madencilik (0.2)
@@ -1971,7 +1969,7 @@ Object.assign(GLEMONS, {
   },
   kadim_bonk: {
     name: 'Kadim Bonk', from: "Kadim Bonk'tan", rarity: 'efsanevi', type: 'Yıldız', boss: true,
-    hp: 95, atk: 7.0, def: 5.2, spd: 105, // D4 (1.0.18): eskiden hp 175, atk 6.4
+    hp: 150, atk: 7.0, def: 5.2, spd: 105, // D4 (1.0.22, Eren: patronlar hem uzun hem zor): duz vurusla 20-42 vurus, vurusu canin ~%14 (eskiden hp 175, atk 6.4)
     pattern: ['normal', 'yagmur', 'normal', 'cagir', 'normal', 'darbe', 'normal', 'kalkan'],
     specials: {
       yagmur: { name: 'Yıldız Yağmuru', mult: 1.0, aoe: true, telegraph: true, status: ['karanlik', 2] },
@@ -1982,7 +1980,7 @@ Object.assign(GLEMONS, {
     drops: [['kadim_kalp', 1], ['cekirdek_kristali', 0.5], ['efsane_pul', 0.3], ['altin_elma', 0.5]],
   },
 });
-ZONES.push({ key: 'cekirdek', name: 'Yıldız Çekirdeği', floors: [61, 70], open: true, boss: 'kadim_bonk', type: 'Yıldız', atk: 82, after: 'bosluk_bekcisi', hazard: 'Hikâyenin son bölgesi. En dipte Kadim Bonk uyuyor.' });
+ZONES.push({ key: 'cekirdek', name: 'Yıldız Çekirdeği', floors: [61, 70], open: true, boss: 'kadim_bonk', type: 'Yıldız', atk: 81, after: 'bosluk_bekcisi', hazard: 'Hikâyenin son bölgesi. En dipte Kadim Bonk uyuyor.' });
 ZONE_SPAWNS.cekirdek = [['yildiz_tozu', 0.3], ['nebula_kedisi', 0.3], ['meteor_kaplumbaga', 0.25], ['takimyildiz_geyigi', 0.15]];
 NIGHT_SPAWNS.cekirdek = [['isilbocek', 0.3], ['gece_kelebegi', 0.4], ['ruya_kuzusu', 0.3]];
 ZONE_GATHER.cekirdek = [['ay_otu', 30], ['gece_mantari', 40], ['sifali_ot', 30]];

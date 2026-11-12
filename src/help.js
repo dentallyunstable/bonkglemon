@@ -44,7 +44,7 @@ export const GUIDE = [
   { k: 'bolge', t: 'Bölgeler ve tehlikeler', p: [
     'Yabani Orman (1-10), Yankı Mağaraları (11-20), Kavurucu Çöl (21-30), Donmuş Zirve (31-40), Kor Diyarı (41-50), Gölge Boşluğu (51-60) ve Yıldız Çekirdeği (61-70).',
     'Her yeni bölge bir önceki patronu yenince ve yeterli Saldırı gücün olunca açılır.',
-    'Oyunda bir gün 1 saat sürer: 40 dakika gündüz, 20 dakika gece. Gece Glemonlar %15 güçlü ama %30 fazla XP ve eşya verir, gece Glemonları çıkar. Evdeki yatakta uyursan gece atlanır.',
+    'Gün vakti gerçek saate bağlı: 20:00-06:00 arası gece. Gece Glemonlar %15 güçlü ama %30 fazla XP ve eşya verir, gece Glemonları çıkar. Evdeki yatakta uyursan gece atlanır.',
     'Bazı bölgelerin tehlikesi var: Çölde Su Matarası, Zirvede sıcak çorba, Kor Diyarı\'nda Ateş Direnci İksiri, karanlık yerlerde Fener lazım. Çıkmadan önce Hazırlık ekranı söyler.',
   ] },
   { k: 'zindan', t: 'Zindan, Kule ve etkinlikler', p: [
