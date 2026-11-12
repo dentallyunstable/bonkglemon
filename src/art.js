@@ -1802,7 +1802,7 @@ const ICON_BLOCKS = {
 };
 // saydam zeminli bloklar: cercevesiz, sadece cizgiyle
 const ICON_PROPS = { cit: 'cit', fener: 'fener', kapi: 'kapi_alt', mavi_fener: 'mavi_fener', merdiven: 'merdiven', mesale: 'mesale',
-  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan', kovan: 'kovan', kulucka: 'kulucka' };
+  tas_yarim: 'tas_yarim', kalas_yarim: 'kalas_yarim', tas_basamak: 'tas_basamak', kalas_basamak: 'kalas_basamak', hali_k: 'hali_k', hali_m: 'hali_m', yatak_bas: 'yatak_bas', masa_m: 'masa_m', sandalye: 'sandalye', saksi: 'saksi', tabela: 'tabela', bayrak_k: 'bayrak_k', bayrak_m: 'bayrak_m', sandik: 'sandik', kupa_rafi: 'kupa_rafi', heykel: 'heykel', altin_heykel: 'altin_heykel', cesme: 'cesme', kristal_sutun: 'kristal_sutun', kristal_fener: 'kristal_fener', kazan0: 'kazan0', varil: 'varil', kalkan: 'kalkan', kovan: 'kovan', kulucka: 'kulucka' };
 const mute = (v) => {
   const c = unpack(v); const l = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
   return pack(mul(mix(c.slice(0, 3), [l, l, l], 0.18), 0.94), c[3]);

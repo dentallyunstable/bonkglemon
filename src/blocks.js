@@ -817,6 +817,23 @@ function statue() {
   t.rect(5, 2, 1, 2, '#d8b048'); t.rect(7, 1, 2, 3, '#d8b048'); t.rect(10, 2, 1, 2, '#d8b048'); t.rect(5, 3, 6, 1, '#c8a040');
   return t;
 }
+// D7 (1.0.22): parayla alinan sus bloklari (gec oyun para harcama yeri)
+function fountain() {
+  const t = T(null); const W = ['#5a8ac8', '#7ab0e0', '#3e6aa8', '#c8e6f8'];
+  t.rect(1, 10, 14, 6, STONE[1]); t.rect(1, 10, 14, 1, STONE[4]); t.rect(1, 15, 14, 1, STONE[3]); t.rect(2, 11, 12, 2, W[0]); t.rect(2, 11, 12, 1, W[1]);
+  t.rect(7, 4, 2, 6, STONE[2]); t.rect(7, 4, 1, 6, STONE[4]); t.rect(5, 5, 6, 1, STONE[2]); t.rect(5, 5, 6, 1, STONE[4]);
+  t.rect(7, 1, 2, 3, W[1]); t.set(6, 2, W[3]); t.set(9, 2, W[3]); t.set(4, 6, W[1]); t.set(11, 6, W[1]); t.set(3, 8, W[0]); t.set(12, 8, W[0]); t.set(8, 0, W[3]);
+  t.set(4, 11, W[3]); t.set(10, 12, W[3]);
+  return t;
+}
+function crystalColumn() {
+  const t = T(null); const K = ['#9a6cc8', '#c8a0ec', '#6e4c9a', '#f0e0ff'];
+  t.rect(3, 14, 10, 2, STONE[1]); t.rect(3, 14, 10, 1, STONE[4]); t.rect(4, 13, 8, 1, STONE[2]);
+  t.rect(5, 6, 6, 7, STONE[2]); t.rect(5, 6, 1, 7, STONE[4]); t.rect(10, 6, 1, 7, STONE[3]); t.rect(7, 7, 1, 5, STONE[1]);
+  t.rect(4, 5, 8, 1, STONE[4]);
+  t.rect(6, 1, 4, 4, K[0]); t.rect(7, 0, 2, 1, K[1]); t.rect(6, 1, 1, 4, K[1]); t.rect(9, 2, 1, 3, K[2]); t.set(7, 2, K[3]);
+  return t;
+}
 function openDoor(top) {
   const t = T(null);
   const d = door(top);
@@ -940,7 +957,7 @@ const PROPS = {
   tas_yarim: () => half(stone()), kalas_yarim: () => half(planks()), tas_basamak: () => steps(stone()), kalas_basamak: () => steps(planks()),
   hali_k: () => carpet('#a8463e', '#c86a5a', '#7e322e'), hali_m: () => carpet('#3e6aa8', '#5a8ac8', '#2a4a7e'),
   masa_m: table, sandalye: chair, saksi: flowerPot, bayrak_k: () => flag('#b8483e', '#d86a5a'), bayrak_m: () => flag('#3e6aa8', '#5a8ac8'),
-  kupa_rafi: trophyShelf, heykel: statue, kapi_acik_alt: () => openDoor(false), kapi_acik_ust: () => openDoor(true),
+  kupa_rafi: trophyShelf, heykel: statue, altin_heykel: () => tintTo(statue(), '#d8b048', 0.55), cesme: fountain, kristal_sutun: crystalColumn, kristal_fener: () => tintTo(lantern(), '#c8a0ec', 0.45), kapi_acik_alt: () => openDoor(false), kapi_acik_ust: () => openDoor(true),
   ekin_bugday: () => crop('bugday'), ekin_havuc: () => crop('havuc'), ekin_patates: () => crop('patates'), ekin_kabak: () => crop('kabak'),
   ekin_misir: () => crop('misir'), ekin_pamuk: () => crop('pamuk'), ekin_biber: () => crop('biber'), ekin_cilek: () => crop('cilek'), kovan: beehive,
   ors: anvil, yem_tezgahi: feedTable, varil: barrel, kalkan: wallShield, harita_sol: () => wallMap('sol'), harita_sag: () => wallMap('sag'), kupalar: mugs,

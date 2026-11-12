@@ -6,7 +6,7 @@ ve okulda arkadaşlarına profil kartını göster.
 
 ## Sürüm 1.0.17 - 1.0.22 (Denetim düzeltmeleri)
 
-- 1.0.22 Eren'in kararları: patronlar hem uzun (20-42 vuruş) hem sert (vuruşu canın ~%14'ü), patron kontrol noktası (patrona ulaşınca Keşif'te "Patron" düğmesi, bayılınca "Patrona tekrar dene"), gün vakti yine gerçek saate bağlı, XP payı 60/20/20 ve Orman ilk 3 kat -%25 (rapordaki değerler).
+- 1.0.22 Eren'in kararları: patronlar hem uzun (20-42 vuruş) hem sert (vuruşu canın ~%14'ü), patron kontrol noktası (patrona ulaşınca Keşif'te "Patron" düğmesi, bayılınca "Patrona tekrar dene"), gün vakti yine gerçek saate bağlı, XP payı 60/20/20 ve Orman ilk 3 kat -%25 (rapordaki değerler), oyun saati internet saatine eşitlenir, zor mod/Kadim XP bonusu düzeldi, dükkânda parayla süs blokları (Kristal Fener, Taş Çeşme, Kristal Sütun, Altın Glemon Heykeli).
 
 - 1.0.17 acil hatalar: çanta doluyken ganimet kaybolmaz (Depo, sonra bekleyen kutusu), oto savaş mutfak yemeklerini de yer, satışta onay, Bonus düğmesi gizli.
 - 1.0.18 denge: Saldırı / Can / Savunma XP payı 50/20/30, eşya seviyeleri 25/35/45/55, kısa ama sert patronlar, yoldaş saldırısı %60, Orman'ın ilk 3 katı daha kolay (kamp ateşi garanti). Örs ucuz malzemelerle başlar, artılar eşyanın kendisinde durur (kayıt sürümü 4). Çanta yuvası satın alma, kalite yeniden atma.

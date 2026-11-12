@@ -823,6 +823,11 @@ Object.assign(ITEMS, {
   bayrak_mavi: { name: 'Mavi Bayrak', kind: 'malzeme', rarity: 'siradan', icon: 'bayrak_m', desc: 'Süs: direkli bayrak.' },
   depo_sandigi: { name: 'Depo Sandığı', kind: 'malzeme', rarity: 'siradan', icon: 'sandik', desc: 'Mobilya: arsana koyunca Depo 10 yer büyür (en fazla 4 sandık). Dokununca Depo açılır.' },
   kupa_rafi: { name: 'Kupa Rafı', kind: 'malzeme', rarity: 'siradan', icon: 'kupa_rafi', desc: 'Mobilya: dokununca yendiğin patronların günlüğünü gösterir.' },
+  // D7 (1.0.22): sadece Lale'nin dukkanindan parayla alinan sus bloklari
+  cesme: { name: 'Taş Çeşme', kind: 'malzeme', rarity: 'nadir', icon: 'cesme', desc: 'Süs: şırıl şırıl akan taş çeşme. Sadece dükkânda, parayla.' },
+  kristal_fener: { name: 'Kristal Fener', kind: 'malzeme', rarity: 'nadir', icon: 'kristal_fener', desc: 'Süs: mor ışıklı fener. Sadece dükkânda, parayla.' },
+  kristal_sutun: { name: 'Kristal Sütun', kind: 'malzeme', rarity: 'epik', icon: 'kristal_sutun', desc: 'Süs: tepesinde Bonkit kristali parlayan taş sütun. Sadece dükkânda, parayla.' },
+  altin_heykel: { name: 'Altın Glemon Heykeli', kind: 'malzeme', rarity: 'epik', icon: 'altin_heykel', desc: 'Süs: taç giymiş altın Glemon. Evin en gösterişli süsü. Sadece dükkânda, parayla.' },
   glemon_heykeli: { name: 'Glemon Heykeli', kind: 'malzeme', rarity: 'siradan', icon: 'heykel', desc: 'Süs: taç giymiş taş Glemon. Ev Puanı 1000 ödülü.' },
   hus_yaprak_blok: { name: 'Huş Yaprağı', kind: 'malzeme', rarity: 'siradan', icon: 'hus_yaprak', desc: 'İnşa bloğu: açık yeşil yaprak. Koruda huş ağacından düşer.' },
   cam_yaprak_blok: { name: 'Çam Yaprağı', kind: 'malzeme', rarity: 'siradan', icon: 'cam_yaprak', desc: 'İnşa bloğu: koyu yeşil yaprak. Koruda çam ağacından düşer.' },
@@ -1304,6 +1309,11 @@ export const SHOP = [
   { id: 'pamuk_tohumu', price: 20 },
   { id: 'biber_tohumu', price: 22 },
   { id: 'cilek_tohumu', price: 26 },
+  // D7 (1.0.22): gec oyun para harcama yeri, sus bloklari
+  { id: 'kristal_fener', price: 4000 },
+  { id: 'cesme', price: 8000 },
+  { id: 'kristal_sutun', price: 15000 },
+  { id: 'altin_heykel', price: 40000 },
 ];
 export const SELL = {
   dal: 1, mantar: 2, diken: 2, tas: 1, kum: 1, komur: 2, demir_cevheri: 4, demir_kulcesi: 10,
@@ -1382,6 +1392,10 @@ export const BUILD = {
   depo_sandigi: { tex: 'sandik', lvl: 6, xp: 30, pts: 6, prop: true, func: 'sandik' },
   kupa_rafi: { tex: 'kupa_rafi', lvl: 12, xp: 50, pts: 15, prop: true, func: 'kupa' },
   glemon_heykeli: { tex: 'heykel', lvl: 15, xp: 120, pts: 40, prop: true },
+  cesme: { tex: 'cesme', lvl: 10, xp: 60, pts: 30, prop: true },
+  kristal_fener: { tex: 'kristal_fener', lvl: 12, xp: 60, pts: 25, prop: true, glow: 1 },
+  kristal_sutun: { tex: 'kristal_sutun', lvl: 15, xp: 100, pts: 50, prop: true },
+  altin_heykel: { tex: 'altin_heykel', lvl: 20, xp: 200, pts: 120, prop: true },
   hus_yaprak_blok: { tex: 'hus_yaprak', lvl: 1, xp: 8, pts: 2 },
   cam_yaprak_blok: { tex: 'cam_yaprak', lvl: 1, xp: 8, pts: 2 },
   tasinir_masa: { tex: 'tezgah', lvl: 5, xp: 40, pts: 8, func: 'masa' },
