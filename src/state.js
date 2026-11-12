@@ -3,7 +3,8 @@
 // 0.6'da Firebase ile buluta tasinacak.
 import { QUALITY_KINDS, QUALITY_ROLL, AFFIX, LEGEND_FX } from './data.js';
 import { todNow } from './art.js';
-import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE, TREE_COST, TREE2, TREE_ROW_NEED, CLASS_ROW, SUB_ROW, nodeCost, RECIPES, TOK, TASTY_BONUS, TRAITS, RANCH, BOND, TEAM, passiveOf, CLASSES, SUBCLASSES, CLASS_TREE, SUB_TREE, CLASS_RULES, MAGIC } from './data.js';
+import { now as gNow, initClock, stampClock } from './clock.js';
+import { ITEMS, SETS, BAG_SIZE, STACK, SKILLS, RARITY, BUILD, GLEMONS, WEAPON_SKILL, EVOLVE_AT, PET_MAX_LVL, petXpFor, petStatMult, petCap, ahirSize, QUESTS, QUEST_SLOTS, ZONES, ZONE_SPAWNS, EGGS, EGG_BATTLES, TREE2, TREE_ROW_NEED, CLASS_ROW, SUB_ROW, nodeCost, RECIPES, TOK, TASTY_BONUS, TRAITS, RANCH, BOND, TEAM, passiveOf, CLASSES, SUBCLASSES, CLASS_TREE, SUB_TREE, CLASS_RULES, MAGIC, PET_ATK } from './data.js';
 
 const CRAFTABLE = new Set(RECIPES.map((r) => r.out));
 
@@ -37,10 +38,11 @@ function freshSave(char) {
   for (const s of SKILLS) skills[s.key] = 0;
   const bag = new Array(BAG_SIZE).fill(null);
   bag[0] = { id: 'iksir_k', n: 3 };
+  bag[1] = { id: 'dal', n: 10 }; // D3 (1.0.18): ilk Tahta Kilic icin
   return {
     v: 1,
     char,
-    created: Date.now(),
+    created: gNow(),
     skills,
     gold: 0,
     bag,
@@ -56,7 +58,7 @@ function freshSave(char) {
     plot: { cells: {}, garden: {}, best: 0, back: {}, kinds: {}, rw: {}, bestScore: 0 },
     // 0.11: Tok guclendirmesi { id, k, v, until }, lezzetli yemek sayilari, kamp atesi, savas esyasi kullanimlari
     tok: null, tasty: {}, fireUntil: 0, useCount: {},
-    lastSeen: Date.now(),
+    lastSeen: gNow(),
     // 0.4 evcil Glemonlar: { id, key, stage, shiny, lvl, xp, t }
     pets: [],
     pet: null,          // yanindaki Glemon'un id'si
@@ -77,12 +79,14 @@ function freshSave(char) {
     combos: {},
     // 0.5
     bagBonus: 0,
+    bagBought: 0,       // D7 (1.0.18): Lale'den parayla alinan canta yuvalari
     waterUntil: 0,
     // 0.6 Hanci Lale'nin gorevleri
     quests: { list: [], done: 0, seq: 1 },
     // 0.8.5 balikcilik: tur -> kac tane, secili yem
     fishing: { caught: {}, best: {}, bait: 'yok', total: 0 },
-    upg: {},            // Ors yukseltmeleri: esya turu -> +1..+4
+    upg: {},            // eski (1.0.17'ye kadar) Ors yukseltmeleri; 1.0.18'den beri bos (bkz. equ ve yuva.u)
+    equ: {},            // B4 (1.0.18): kusanili yuvadaki esyanin Ors artisi (yuva -> +1..+5); cantadaki esyada yuva.u
     perks: {},          // eski (0.8.5) yetenek agaci; 1.0.13'ten beri bos
     tree: {},           // 1.0.13 yetenek agaci 2.0: dal -> { yetenek: kademe }
     // 0.9 Hedefler (bkz. goals.js)
@@ -113,7 +117,7 @@ function storageSet(key, val) {
 }
 
 // 1.0 kayit surumu ve yedekler
-export const SAVE_V = 3;
+export const SAVE_V = 4;
 const BAK_PREFIX = 'bonkglemon.bak.';
 const BAK_MAX = 3;
 const BAK_EVERY = 20 * 3600 * 1000;
@@ -127,7 +131,25 @@ const MIGRATIONS = [
       const f = b > a ? Math.max(0, Math.min(1, ((p.xp || 0) - a) / (b - a))) : 0;
       p.xp = Math.round(petXpFor(p.lvl) + f * (petXpFor(p.lvl + 1) - petXpFor(p.lvl)));
     }
-    d.oldPerks = d.perks; d.perks = {}; d.tree = {};
+    d.perks = {}; d.tree = {};
+  },
+  (d) => { // 3 -> 4 (1.0.18): B4 Ors artisi esya turune degil esyanin kendisine; B11 Sifaci "bereket" -> "sifa_bereketi"
+    const upg = d.upg || {};
+    d.equ = d.equ || {};
+    d.stats = d.stats || {};
+    let best = 0;
+    for (const [id, u] of Object.entries(upg)) {
+      if (!(u > 0)) continue;
+      best = Math.max(best, u);
+      const slot = Object.keys(d.equip || {}).find((k) => d.equip[k] === id);
+      if (slot) { d.equ[slot] = u; continue; }
+      const sl = [...(d.bag || []), ...(d.depo || [])].find((x) => x && x.id === id && !x.u);
+      if (sl) sl.u = u;
+    }
+    d.stats.bestUpg = Math.max(d.stats.bestUpg || 0, best);
+    d.upg = {};
+    const sv = d.tree && d.tree.savas;
+    if (sv && sv.bereket) { sv.sifa_bereketi = sv.bereket; delete sv.bereket; }
   },
 ];
 function readBackups(char) {
@@ -180,6 +202,8 @@ export const S = {
     if (!('pelerin' in data.equip)) data.equip.pelerin = null;
     if (!data.fishing) data.fishing = { caught: {}, best: {}, bait: 'yok', total: 0 };
     if (!data.upg) data.upg = {};
+    if (!data.equ || typeof data.equ !== 'object') data.equ = {};
+    for (const k of Object.keys(data.equ)) if (!data.equip[k] || !(data.equ[k] > 0)) delete data.equ[k];
     if (!data.perks) data.perks = {};
     // 0.10.5 Insa: arka duvar katmani, ilk kez konan blok turleri, odul basamaklari, depo sandiklari
     data.plot.back = data.plot.back || {};
@@ -202,7 +226,7 @@ export const S = {
     for (const p of data.pets) {
       if (!TRAITS[p.huy]) p.huy = tk[Math.floor(Math.random() * tk.length)];
       if (!(p.kalp >= 0)) p.kalp = 0;
-      if (!p.rt) p.rt = Date.now() - RANCH.ms;
+      if (!p.rt) p.rt = gNow() - RANCH.ms;
       if (p.acc && (!ITEMS[p.acc] || ITEMS[p.acc].kind !== 'aksesuar')) p.acc = null;
     }
     if (data.pet2 && (data.pet2 === data.pet || !data.pets.some((p) => p.id === data.pet2))) data.pet2 = null;
@@ -232,7 +256,10 @@ export const S = {
     if (!data.story || typeof data.story !== 'object' || !Number.isFinite(data.story.ch)) data.story = { ch: 0 };
     data.kadimMode = !!data.kadimMode;
     if (!Number.isFinite(data.ending)) data.ending = 0;
+    delete data.oldPerks; // K2 (1.0.21): eski agacin artigi
+    initClock(data); // B3 (1.0.19)
     this.save = data;
+    this.treeChanged();
     this.hp = this.maxHp();
     // 0.8.6: savasin ortasinda oyunu kapatmak bayilma cezasindan kurtarmaz
     this.loadNote = null;
@@ -257,8 +284,8 @@ export const S = {
     if (!this.save) return;
     const list = readBackups(this.save.char);
     const last = list.reduce((m, b) => Math.max(m, b.t || 0), 0);
-    if (!force && Date.now() - last < BAK_EVERY) return;
-    list.push({ t: Date.now(), raw: JSON.stringify(this.save) });
+    if (!force && gNow() - last < BAK_EVERY) return;
+    list.push({ t: gNow(), raw: JSON.stringify(this.save) });
     list.sort((x, y) => y.t - x.t);
     if (!storageSet(BAK_PREFIX + this.save.char, JSON.stringify(list.slice(0, BAK_MAX)))) storageSet(BAK_PREFIX + this.save.char, JSON.stringify(list.slice(0, 1)));
   },
@@ -277,7 +304,7 @@ export const S = {
   // indirilecek yedek dosyasinin metni
   exportText() {
     this.persist();
-    return JSON.stringify({ game: 'bonkglemon', sv: SAVE_V, t: Date.now(), char: this.save.char, save: this.save });
+    return JSON.stringify({ game: 'bonkglemon', sv: SAVE_V, t: gNow(), char: this.save.char, save: this.save });
   },
   // dosyadan yukle: sadece ayni karakterin kaydi kabul edilir
   importText(text) {
@@ -297,6 +324,7 @@ export const S = {
   persist() {
     if (!this.save || this.frozen) return;
     if (this._pt) { clearTimeout(this._pt); this._pt = null; }
+    stampClock(this.save);
     storageSet(SAVE_PREFIX + this.save.char, JSON.stringify(this.save));
   },
   // 0.8.6: art arda gelen degisiklikler tek seferde yazilir (sekme kapanirken hemen yazilir)
@@ -313,7 +341,16 @@ export const S = {
   onChange(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); },
 
   // ------------------------------------------------ beceriler
-  level(skill) { return levelFromXp(this.save.skills[skill] || 0); },
+  // K1 (1.0.21): seviye onbellegi (XP degismedikce 99 adimli dongu calismaz)
+  level(skill) {
+    const xp = this.save.skills[skill] || 0;
+    const c = (this._lv || (this._lv = {}))[skill];
+    if (c && c[0] === xp && this._lvSave === this.save) return c[1];
+    if (this._lvSave !== this.save) { this._lv = {}; this._lvSave = this.save; }
+    const l = levelFromXp(xp);
+    this._lv[skill] = [xp, l];
+    return l;
+  },
   // 1.0 sanal seviye: 99'dan sonra 120'ye kadar (sadece gosterim ve Usta Pelerini)
   vlevel(skill) {
     const xp = this.save.skills[skill] || 0;
@@ -338,7 +375,7 @@ export const S = {
       if (amount > 0) amount *= 1 + this.treeBon('xp_' + skill); // 1.0.13 yetenek agaci
       this.save.skills[skill] = (this.save.skills[skill] || 0) + Math.round(amount);
       const after = this.level(skill);
-      if (after > before) ups.push({ skill, level: after });
+      if (after > before) ups.push({ skill, level: after, from: before });
       else if (before >= 99 && amount > 0) { // 1.0 sanal seviye
         const vb = levelFromXp(this.save.skills[skill] - Math.round(amount)) >= 99 ? this.vlevelOf(this.save.skills[skill] - Math.round(amount)) : 99;
         const va = this.vlevel(skill);
@@ -377,14 +414,15 @@ export const S = {
     if (!this.canBuy(branch, row, node)) return false;
     const t = (this.save.tree[branch] = this.save.tree[branch] || {});
     t[node.key] = (t[node.key] || 0) + 1;
+    this.treeChanged();
     this.hp = Math.min(this.hp, this.maxHp());
     this.changed();
     return true;
   },
   // alinmis yetenekler: [{...yetenek, rank}]
   pickedPerks() {
-    // kucuk onbellek: agac ya da sinif degismedikce ayni liste
-    const sig = JSON.stringify(this.save.tree) + (this.save.cls ? `${this.save.cls.c}|${this.save.cls.sub}` : '');
+    // K1 (1.0.21): onbellek; agac ya da sinif degisince treeChanged() temizler (her sorguda JSON yazilmaz)
+    const sig = `${this.treeVer || 0}|${this.save.cls ? `${this.save.cls.c}|${this.save.cls.sub}` : ''}`;
     if (this._ppSig === sig && this._ppSave === this.save) return this._pp;
     const out = [];
     for (const b of Object.keys(TREE2)) for (const row of this.treeRows(b)) for (const n of row) {
@@ -392,9 +430,11 @@ export const S = {
       if (r > 0) out.push({ ...n, rank: r });
     }
     this._ppSig = sig; this._ppSave = this.save; this._pp = out;
+    this._ppKeys = new Set(out.map((pk) => pk.key));
     return out;
   },
-  has(key) { return this.pickedPerks().some((pk) => pk.key === key); },
+  treeChanged() { this.treeVer = (this.treeVer || 0) + 1; },
+  has(key) { this.pickedPerks(); return this._ppKeys.has(key); },
   treeBon(k) { let v = 0; for (const pk of this.pickedPerks()) if (pk.bon && pk.bon[k]) v += pk.bon[k] * pk.rank; return v; },
   // ------------------------------------------------ 0.13 sinif
   cls() { return this.save.cls && this.save.cls.c ? CLASSES[this.save.cls.c] : null; },
@@ -433,11 +473,25 @@ export const S = {
     if (!t) return;
     const keys = new Set([...Object.values(CLASS_TREE), ...Object.values(SUB_TREE)].flat(2).map((n) => n.key));
     for (const k of Object.keys(t)) if (keys.has(k)) delete t[k];
+    this.treeChanged();
   },
   pickSub(sb) {
     const d = SUBCLASSES[sb];
     if (!d || d.of !== this.save.cls.c || this.save.cls.sub || this.combatLevel() < CLASS_RULES.sub) return false;
     this.save.cls.sub = sb;
+    this.changed();
+    return true;
+  },
+  // M6 (1.0.19): alt sinif degistirme (Lale Pulu); eski alt sinifin yetenekleri iade edilir
+  changeSub(sb) {
+    const d = SUBCLASSES[sb]; const cl = this.save.cls;
+    if (!d || d.of !== cl.c || !cl.sub || cl.sub === sb) return false;
+    if ((this.save.pul || 0) < CLASS_RULES.changePul) return false;
+    this.save.pul -= CLASS_RULES.changePul;
+    const t = (this.save.tree || {}).savas;
+    if (t) { const keys = new Set(Object.values(SUB_TREE).flat(2).map((n) => n.key)); for (const k of Object.keys(t)) if (keys.has(k)) delete t[k]; }
+    cl.sub = sb;
+    this.treeChanged();
     this.changed();
     return true;
   },
@@ -461,6 +515,11 @@ export const S = {
     const m = boost * this.dropMult();
     const q = r < QUALITY_ROLL.epik * m ? 'epik' : r < (QUALITY_ROLL.epik + QUALITY_ROLL.nadir) * m ? 'nadir' : null;
     if (!q) return null;
+    return this.affixRoll(id, q);
+  },
+  // verilen kalitede (nadir/epik) yeni ek ozellikler (D7: Ors'te yeniden cevirme de bunu kullanir)
+  affixRoll(id, q) {
+    const it = ITEMS[id];
     const pool = Object.keys(AFFIX).filter((k) => AFFIX[k].kinds.includes(it.kind));
     const a = [];
     for (let i = 0; i < (q === 'epik' ? 2 : 1) && pool.length; i++) {
@@ -492,7 +551,11 @@ export const S = {
     return t + this.treeBon(k);
   },
   // Ors (0.8.5): her arti %8 guc; esya turune islenir
-  upg(id) { return (this.save.upg && this.save.upg[id]) || 0; },
+  // B4 (1.0.18): artis kusanili esyanin kendisinde (yuva -> artis); id ile sorulursa o esyayi tasiyan yuvaya bakilir
+  upg(id) {
+    const slot = Object.keys(this.save.equip).find((k) => this.save.equip[k] === id);
+    return (slot && this.save.equ && this.save.equ[slot]) || 0;
+  },
   upMult(id) { return 1 + 0.08 * this.upg(id) + (CRAFTABLE.has(id) && this.has('usta_isi') ? 0.05 : 0); },
   gearStat(key) { return Object.values(this.save.equip).filter(Boolean).reduce((t, id) => t + (ITEMS[id][key] || 0) * (key === 'def' ? this.upMult(id) : 1), 0); },
   dodgeBonus() { return this.gear().reduce((t, it) => t + (it.dodge || 0), 0) + this.perk('refleks', 0.2, 0) + this.bonus('dodge'); },
@@ -511,16 +574,13 @@ export const S = {
     }
     return out;
   },
-  setBonusHp() {
-    return 0; // 0.13.5: bonus('hp') icinde
-  },
   maxHp() {
     return Math.round((50 + 10 * this.level('can') + this.gear().reduce((t, it) => t + (it.hp || 0), 0) + this.bonus('hp')) * (1 + this.tokVal('hp')));
   },
   // ------------------------------------------------ 0.11 Tok guclendirmesi (ayni anda bir tane)
   tokVal(k) {
     const t = this.save && this.save.tok;
-    if (!t || t.k !== k || Date.now() >= t.until) return 0;
+    if (!t || t.k !== k || gNow() >= t.until) return 0;
     return t.v;
   },
   applyTok(id) {
@@ -530,18 +590,18 @@ export const S = {
     this.save.tasty[id] = Math.min(this.save.tasty[id] || 0, this.countItem(id) + 1);
     if ((this.save.tasty[id] || 0) > 0) { this.save.tasty[id]--; ms *= TASTY_BONUS; tasty = true; }
     const before = this.save.tok && this.tokLeft() ? this.save.tok : null;
-    this.save.tok = { id, k, v, until: Date.now() + ms };
+    this.save.tok = { id, k, v, until: gNow() + ms };
     this.hp = Math.min(this.hp, this.maxHp());
     return `Tok: ${TOK[k].fmt(v)} (${Math.round(ms / 60000)} dk${tasty ? ', lezzetli!' : ''})${before && before.id !== id ? ` · ${ITEMS[before.id].name} etkisi bitti` : ''}`;
   },
-  tokLeft() { const t = this.save.tok; return t && Date.now() < t.until ? t.until - Date.now() : 0; },
+  tokLeft() { const t = this.save.tok; return t && gNow() < t.until ? t.until - gNow() : 0; },
   // yemek, iksir, matara: hepsi buradan yenir. Mesajlari dondurur.
   consume(id) {
     const it = ITEMS[id];
     const msgs = [];
     if (this.removeItem(id, 1) < 1) return null;
     if (it.heal) { const h = Math.round(this.maxHp() * it.heal); this.hp = Math.min(this.maxHp(), this.hp + h); msgs.push(`+${h} can`); }
-    const m30 = Date.now() + 30 * 60 * 1000;
+    const m30 = gNow() + 30 * 60 * 1000;
     if (it.warm) { this.save.warmUntil = m30; msgs.push('30 dakika soğuktan etkilenmezsin'); }
     if (it.fireRes) { this.save.fireResUntil = m30; msgs.push('30 dakika lav seni yakmaz'); }
     if (it.water) { this.save.waterUntil = m30; msgs.push('30 dakika çöl sıcağından etkilenmezsin'); }
@@ -663,7 +723,7 @@ export const S = {
     const list = this.save[where];
     let left = n;
     // 0.13.5: once kalitesiz olanlar gider (Nadir/Epik esya en son harcanir)
-    const order = [...list.keys()].reverse().sort((a, b) => (list[a] && list[a].x ? 1 : 0) - (list[b] && list[b].x ? 1 : 0));
+    const order = [...list.keys()].reverse().sort((a, b) => (list[a] && (list[a].x || list[a].u) ? 1 : 0) - (list[b] && (list[b].x || list[b].u) ? 1 : 0));
     for (const i of order) {
       if (left <= 0) break;
       const s = list[i];
@@ -694,10 +754,14 @@ export const S = {
     if (!this.canEquip(slot.id)) return false;
     const old = this.save.equip[where];
     const oldX = this.save.eqx[where];
+    const oldU = this.save.equ[where] || 0;
     const hpRatio = this.hp / this.maxHp();
     this.save.equip[where] = slot.id;
     if (slot.x) this.save.eqx[where] = slot.x; else delete this.save.eqx[where];
-    this.save.bag[index] = old ? (oldX ? { id: old, n: 1, x: oldX } : { id: old, n: 1 }) : null;
+    if (slot.u) this.save.equ[where] = slot.u; else delete this.save.equ[where];
+    const back = old ? (oldX ? { id: old, n: 1, x: oldX } : { id: old, n: 1 }) : null;
+    if (back && oldU) back.u = oldU;
+    this.save.bag[index] = back;
     this.hp = Math.max(1, Math.round(hpRatio * this.maxHp()));
     this.changed();
     return true;
@@ -710,7 +774,9 @@ export const S = {
     if (i < 0) return false;
     const hpRatio = this.hp / this.maxHp();
     this.save.bag[i] = this.save.eqx[where] ? { id, n: 1, x: this.save.eqx[where] } : { id, n: 1 };
+    if (this.save.equ[where]) this.save.bag[i].u = this.save.equ[where];
     delete this.save.eqx[where];
+    delete this.save.equ[where];
     this.save.equip[where] = null;
     this.hp = Math.max(1, Math.min(this.maxHp(), Math.round(hpRatio * this.maxHp())));
     this.changed();
@@ -722,7 +788,7 @@ export const S = {
     const s = this.save[fromList][index];
     if (!s) return false;
     // yumurta catlama sayacini korusun: yuvayi oldugu gibi tasi
-    if (ITEMS[s.id].egg || s.x) {
+    if (ITEMS[s.id].egg || s.x || s.u) {
       const j = this.save[toList].indexOf(null);
       if (j < 0) return false;
       this.save[toList][j] = s;
@@ -774,7 +840,7 @@ export const S = {
   // ------------------------------------------------ gunluk
   logDrop(item, from, extra = {}) {
     const it = ITEMS[item];
-    this.save.droplog.unshift({ t: Date.now(), item, from, rarity: it ? it.rarity : 'siradan', ...extra });
+    this.save.droplog.unshift({ t: gNow(), item, from, rarity: it ? it.rarity : 'siradan', ...extra });
     this.save.droplog = this.save.droplog.slice(0, 30);
   },
 
@@ -895,7 +961,7 @@ export const S = {
     const sh = p.shiny ? 1.1 : 1;
     return {
       maxHp: Math.round(d.hp * m * sh * f('hp') * heart * sy * (1 + this.cmod('petHp'))),
-      atk: d.atk * m * bond * sh * this.perk('sadik_dost', 1.15, 1) * f('atk') * heart * sy * (1 + this.cmod('petAtk')),
+      atk: PET_ATK * d.atk * m * bond * sh * this.perk('sadik_dost', 1.15, 1) * f('atk') * heart * sy * (1 + this.cmod('petAtk')),
       def: d.def * m * 0.6 * f('def') * heart * sy,
       spd: Math.round(d.spd * f('spd')),
     };
@@ -916,8 +982,8 @@ export const S = {
   addPet(key, stage, shiny, lvl, huy = null) {
     if (this.save.pets.length >= this.ahirSize()) return null;
     const tk = Object.keys(TRAITS);
-    const p = { id: this.save.petSeq++, key, stage, shiny: !!shiny, lvl: Math.max(1, lvl), xp: petXpFor(Math.max(1, lvl)), t: Date.now(),
-      huy: TRAITS[huy] ? huy : tk[Math.floor(Math.random() * tk.length)], kalp: 0, rt: Date.now(), acc: null };
+    const p = { id: this.save.petSeq++, key, stage, shiny: !!shiny, lvl: Math.max(1, lvl), xp: petXpFor(Math.max(1, lvl)), t: gNow(),
+      huy: TRAITS[huy] ? huy : tk[Math.floor(Math.random() * tk.length)], kalp: 0, rt: gNow(), acc: null };
     this.save.pets.push(p);
     this.save.album.tamed[key] = true;
     this.save.album.seen[key] = true;

@@ -2,18 +2,19 @@
 import { playAnim } from './anim.js';
 import { gearPreview } from './gear.js';
 import { newShaft } from './shaft.js';
-import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE2, TREE_ROW_NEED, nodeCost, nodeDesc, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5, STATION_LVL } from './data.js';
+import { QUESTS, QUEST_REROLL, ITEMS, SLOTS, SKILLS, ZONES, RARITY, SETS, VERSION, RECIPES, STATIONS, FURNACE_MS as FURNACE_BASE, FURNACE_MAX, SHOP, SELL, CURRENCY, BUILD, SEEDS, CAMP, GLEMONS, ZONE_SPAWNS, STAGES, COMBOS, ABILITIES, BASIC, EVOLVE_AT, petXpFor, FOODS, TAME, EGG_BATTLES, EGGS, FISH, WATERS, WATER_GLEMONS, TREE2, TREE_ROW_NEED, nodeCost, nodeDesc, respecCost, masteryOf, ENCH, FOSSILS, TREES, GROVE_PLOTS, TOK, burnChance, TASTY_BONUS, zoneOf, NIGHT_HOME, TRAITS, PASSIVES, passiveOf, favOf, BOND, TEAM, NEST, ranchDropOf, TYPE_STRONG, SECRET_HOME, ZONE_DONE, MASTERY, CLASSES, SUBCLASSES, CLASS_RULES, CLASS_TREE, SUB_TREE, STYLE, STYLE_NAME, AFFIX, bonusText, LEGENDS, LEGEND_PUL, LEGEND_ACH, KULE_RULES, BOSS_P2, HARD, STORY, KADIM, ANVIL5, STATION_LVL , BAG_BUY, REROLL_PRICE, ZONE_BASE, DROP_ZONE, NAMES } from './data.js';
 import * as PETS from './pets.js';
 import { S, xpForLevel } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { tutFlag, openSettings } from './help.js';
-import { iconUrl, todNow } from './art.js';
+import { iconUrl, todNow, todLeftMin } from './art.js';
 import {
   PUL, refreshGoals, goals, goalDef, goalText, goalProgress, readyCount, addPul, clockOk, ACH, SECRET, ACH_GROUPS, TIER_NAMES, TIER_PTS, SECRET_PTS, achTier, achTargets, achPoints, achCount, ACH_TOTAL,
   TITLES, titleOf, ALBUM_RW, albumPct, todayRule, weekendNow, weekendKind, weekendEnds, weekendStarts, nextMidnight, nextMonday, fmtLeft, fullMoon, nextFullMoon,
   merchantHere, merchantNext, merchantStock, weekNum, tourCount, FISH_TOUR, FISH_TOUR_PUL, dayNum,
 } from './goals.js';
+import { now as gNow } from './clock.js';
 
 const KIND = { aksesuar: 'Glemon aksesuarı', malzeme: 'Malzeme', tuketim: 'Tüketilebilir', silah: 'Silah', kask: 'Kask', gogus: 'Göğüslük', bot: 'Bot', tilsim: 'Tılsım', kazma: 'Kazma', olta: 'Olta', yumurta: 'Yumurta', pelerin: 'Pelerin', alet: 'Alet' };
 
@@ -25,6 +26,7 @@ function slotEl(s, label) {
     if (s.x) d.classList.add('q-' + s.x.q);
     d.appendChild(UI.icon(it.icon));
     if (s.n > 1) d.appendChild(UI.el('span', 'n', String(s.n)));
+    else if (s.u) d.appendChild(UI.el('span', 'n', `+${s.u}`)); // B4: Ors artisi
     d.title = it.name;
   } else if (label) d.appendChild(UI.el('span', 'lbl', label));
   return d;
@@ -91,7 +93,7 @@ function cook(w, r, n, render) {
     const ups = S.addXp({ ascilik: xp });
     S.changed();
     if (UI.panelOpen() && render) render();
-    for (const u of ups) w.levelUp(u);
+    w.levelUps(ups);
   });
 }
 
@@ -133,12 +135,12 @@ function statLines(it) {
   return out;
 }
 
-function detailBox(id, buttons, x = null) {
+function detailBox(id, buttons, x = null, u = 0) {
   const box = UI.el('div', 'detail');
   if (!id) { box.appendChild(UI.el('div', 'muted', 'Bir eşyaya dokun.')); return box; }
   const it = ITEMS[id];
   const r = RARITY[S.rarityOf(id, x)];
-  const nm = UI.el('div', 'nm', it.name);
+  const nm = UI.el('div', 'nm', it.name + (u ? ` +${u}` : ''));
   nm.style.color = r.color;
   box.appendChild(nm);
   box.appendChild(UI.el('div', 'muted', `${r.name} · ${KIND[it.kind]}${it.bound ? ' · Takas edilemez' : ''}`));
@@ -176,7 +178,7 @@ export function openBag(w) {
       const eq = UI.el('div', 'equip-col');
       for (const [slot, label] of SLOTS) {
         const id = S.save.equip[slot];
-        const d = slotEl(id ? { id, n: 1, x: S.save.eqx[slot] } : null, label);
+        const d = slotEl(id ? { id, n: 1, x: S.save.eqx[slot], u: S.save.equ[slot] } : null, label);
         if (sel && sel.equip === slot) d.classList.add('sel');
         d.addEventListener('click', () => { sfx('click'); sel = id ? { equip: slot } : null; confirmDrop = false; render(); });
         eq.appendChild(d);
@@ -263,7 +265,7 @@ export function openBag(w) {
               UI.feed(`Çantan büyüdü! Artık ${S.bagSize()} yuva.`);
             } else {
               S.removeItem(id, 1);
-              S.save.waterUntil = Date.now() + 30 * 60 * 1000;
+              S.save.waterUntil = gNow() + 30 * 60 * 1000;
               UI.feed('Su içtin: 30 dakika çöl sıcağından etkilenmezsin.');
             }
             sfx('heal');
@@ -293,7 +295,8 @@ export function openBag(w) {
       }
       if (inBattle) right.appendChild(UI.el('div', 'muted', 'Savaş sırasında eşya değiştiremezsin.'));
       const xsel = sel && sel.equip ? S.save.eqx[sel.equip] : sel && sel.i !== undefined && S.save.bag[sel.i] ? S.save.bag[sel.i].x : null;
-      const dbox = detailBox(id, btns, xsel);
+      const usel = sel && sel.equip ? S.save.equ[sel.equip] : sel && sel.i !== undefined && S.save.bag[sel.i] ? S.save.bag[sel.i].u : 0;
+      const dbox = detailBox(id, btns, xsel, usel);
       const eslot = sel && sel.i !== undefined && S.save.bag[sel.i];
       if (eslot && ITEMS[eslot.id].egg) dbox.insertBefore(UI.el('div', '', `Çatlamaya: ${eslot.p || 0}/${S.eggNeed()} savaş`), dbox.lastChild.previousSibling);
       right.appendChild(dbox);
@@ -445,6 +448,7 @@ export function openTree(tab = 'savas') {
           else if (S.save.gold >= cost) S.save.gold -= cost;
           else return;
           S.save.tree = {};
+          S.treeChanged();
           S.hp = Math.min(S.hp, S.maxHp());
           S.changed();
           sfx('coin');
@@ -462,13 +466,30 @@ export function openTree(tab = 'savas') {
 
 // ------------------------------------------------------------ Ors (0.8.5)
 // Silah, zirh ve kazma +1..+3 Yildiz Demiriyle, +4 Usta Damgasiyla. Her arti %8. Asla basarisiz olmaz.
-const ANVIL_COST = [[['yildiz_demiri', 1]], [['yildiz_demiri', 2]], [['yildiz_demiri', 3]], [['yildiz_demiri', 2], ['usta_damgasi', 1]], ANVIL5]; // 1.0 +5 Kadim isciligi
+// D5 (1.0.18): +1..+3 bedeli esyanin kademesine gore (eskiden hep Yildiz Demiri). +4 ve +5 ayni kaldi.
+const ANVIL_TIER = {
+  dusuk: [[['demir_kulcesi', 3]], [['demir_kulcesi', 6]], [['demir_kulcesi', 10]]],
+  orta: [[['altin_kulcesi', 2], ['saf_kristal', 1]], [['altin_kulcesi', 4], ['saf_kristal', 2]], [['altin_kulcesi', 6], ['saf_kristal', 3]]],
+  yuksek: [[['yildiz_demiri', 1]], [['yildiz_demiri', 2]], [['yildiz_demiri', 3]]],
+};
+const ANVIL_TOP = [[['yildiz_demiri', 2], ['usta_damgasi', 1]], ANVIL5]; // +4 ve +5 (1.0 Kadim isciligi)
+const ANVIL_MAX = 5;
+function anvilTier(id) {
+  const pre = id.split('_')[0];
+  if (['tas', 'demir', 'tahta', 'pasli', 'yosun'].includes(pre)) return 'dusuk';
+  if (['kristal', 'kor'].includes(pre)) return 'orta';
+  if (['bonkit', 'golge'].includes(pre)) return 'yuksek';
+  const r = ITEMS[id].req ? ITEMS[id].req[1] : 0;
+  return r < 25 ? 'dusuk' : r < 45 ? 'orta' : 'yuksek';
+}
+const anvilCost = (id, u) => (u < 3 ? ANVIL_TIER[anvilTier(id)][u] : ANVIL_TOP[u - 3]);
+let askSalv = null;
 export function openAnvil(w) {
   if (S.level('uretim') < STATION_LVL.ors) { UI.feed(`Örs, Üretim ${STATION_LVL.ors} olunca açılır. (Üretim seviyen: ${S.level('uretim')})`); return; }
   UI.openPanel('Örs', (body) => {
     const render = () => {
       body.innerHTML = '';
-      body.appendChild(UI.el('p', 'muted', 'Kuşandığın bir eşyayı yükselt. +1, +2, +3 Yıldız Demiri ister, +4 Usta Damgası da ister, +5 (Kadim işçiliği) Kadim Öz ister. Her artı %8 güç verir. Yükseltme asla başarısız olmaz, eşya kırılmaz.'));
+      body.appendChild(UI.el('p', 'muted', 'Kuşandığın bir eşyayı yükselt. +1, +2, +3: Taş/Demir eşya Demir Külçesi, Kristal/Kor eşya Altın Külçesi ve Saf Kristal, Bonkit ve üstü Yıldız Demiri ister. +4 Usta Damgası da ister, +5 (Kadim işçiliği) Kadim Öz ister. Her artı %8 güç verir. Artı o eşyanın kendisinde kalır. Yükseltme asla başarısız olmaz.'));
       const slots = SLOTS.filter(([k]) => S.save.equip[k] && ['silah', 'kask', 'gogus', 'bot', 'kazma'].includes(k));
       if (!slots.length) body.appendChild(UI.el('p', '', 'Kuşanılmış silah, zırh ya da kazma yok.'));
       for (const [k, label] of slots) {
@@ -480,13 +501,14 @@ export function openAnvil(w) {
         const nm = UI.el('div', 'shop-nm', `${label}: ${it.name}${u ? ` +${u}` : ''}`);
         nm.style.color = RARITY[it.rarity].color;
         row.appendChild(nm);
-        if (u >= ANVIL_COST.length) { row.appendChild(UI.el('div', 'muted', 'En üst seviye')); list(row); continue; }
-        const cost = ANVIL_COST[u];
+        if (u >= ANVIL_MAX) { row.appendChild(UI.el('div', 'muted', 'En üst seviye')); list(row); continue; }
+        const cost = anvilCost(id, u);
         const ok = cost.every(([m, n]) => S.countItem(m) >= n);
         const b = UI.button(`+${u + 1}: ${cost.map(([m, n]) => `${ITEMS[m].name} ×${n}`).join(', ')}`, () => {
           if (!cost.every(([m, n]) => S.countItem(m) >= n)) return;
           for (const [m, n] of cost) S.removeItem(m, n);
-          S.save.upg[id] = u + 1;
+          S.save.equ[k] = u + 1; // B4: artis bu esyanin kendisinde
+          S.save.stats.bestUpg = Math.max(S.save.stats.bestUpg || 0, u + 1);
           S.changed();
           sfx('craft');
           UI.feed(`<img class="ico-inline" src="${iconUrl(it.icon)}">${UI.itemName(id)} artık +${u + 1}! (%${(u + 1) * 8} güçlü)`, 'gold');
@@ -500,31 +522,36 @@ export function openAnvil(w) {
       function list(row) { body.appendChild(row); }
       // 0.13.5 Parcalama: cantadaki uretilmis eski esya bozulur, malzemesinin yarisi geri gelir
       body.appendChild(UI.el('h3', '', 'Parçala'));
-      body.appendChild(UI.el('p', 'muted', 'Çantandaki eski bir silahı, zırhı ya da kazmayı boz: üretiminde kullanılan malzemelerin yarısı geri gelir. Kuşandıkların ve Nadir/Epik olanlar listede en sonda.'));
+      body.appendChild(UI.el('p', 'muted', 'Çantandaki eski bir silahı, zırhı ya da kazmayı boz: üretiminde kullanılan malzemelerin yarısı geri gelir. Glemonlardan düşen eşyalar bölgesinin temel malzemesini verir. Kaliteli ve artılı olanlar listede en sonda.'));
       const salv = [];
       S.save.bag.forEach((sl, i) => {
         if (!sl) return;
         const r = RECIPES.find((x) => x.out === sl.id && x.station === 'masa');
-        if (!r || ITEMS[sl.id].legend || !['silah', 'kask', 'gogus', 'bot', 'kazma', 'tilsim'].includes(ITEMS[sl.id].kind)) return;
+        if (ITEMS[sl.id].legend || ITEMS[sl.id].bound || !['silah', 'kask', 'gogus', 'bot', 'kazma', 'tilsim'].includes(ITEMS[sl.id].kind)) return;
+        // D7 (1.0.18): tarifi olmayan (dusen) esya bolgenin temel malzemesini verir
+        if (!r) { const z = DROP_ZONE[sl.id]; if (!z) return; salv.push({ i, sl, r: null, drop: [[ZONE_BASE[z], ITEMS[sl.id].rarity === 'siradan' ? 1 : 2]] }); return; }
         salv.push({ i, sl, r });
       });
-      salv.sort((a, b) => (a.sl.x ? 1 : 0) - (b.sl.x ? 1 : 0));
+      salv.sort((a, b) => (a.sl.x || a.sl.u ? 1 : 0) - (b.sl.x || b.sl.u ? 1 : 0));
       if (!salv.length) body.appendChild(UI.el('p', '', 'Çantanda parçalanacak üretilmiş eşya yok.'));
       const back = (r) => {
         const out = Object.entries(r.mats).map(([m, k]) => [m, Math.floor(k / 2)]).filter(([, k]) => k > 0);
         if (!out.length) { const [m] = Object.entries(r.mats).sort((a, b) => b[1] - a[1])[0]; out.push([m, 1]); }
         return out;
       };
-      for (const { i, sl, r } of salv.slice(0, 8)) {
+      for (const { i, sl, r, drop } of salv.slice(0, 8)) {
         const it = ITEMS[sl.id];
         const row = UI.el('div', 'shop-row');
         row.appendChild(UI.icon(it.icon));
-        const nm = UI.el('div', 'shop-nm', `${it.name}${sl.x ? ` (${RARITY[sl.x.q].name})` : ''}`);
+        const nm = UI.el('div', 'shop-nm', `${it.name}${sl.u ? ` +${sl.u}` : ''}${sl.x ? ` (${RARITY[sl.x.q].name})` : ''}`);
         nm.style.color = RARITY[S.rarityOf(sl.id, sl.x)].color;
         row.appendChild(nm);
-        const out = back(r);
-        const b = UI.button(`Parçala: ${out.map(([m, k]) => `${ITEMS[m].name} ×${k}`).join(', ')}`, () => {
+        const out = drop || back(r);
+        const b = UI.button(askSalv === sl ? `Emin misin? +${sl.u} kaybolur` : `Parçala: ${out.map(([m, k]) => `${ITEMS[m].name} ×${k}`).join(', ')}`, () => {
           if (S.save.bag[i] !== sl) return;
+          // B4: artili esyada once onay
+          if (sl.u && askSalv !== sl) { askSalv = sl; render(); return; }
+          askSalv = null;
           S.save.bag[i] = null;
           for (const [m, k] of out) { const left = S.addItem(m, k); if (left) S.addItem(m, left, 'depo'); }
           S.save.stats.salvaged = (S.save.stats.salvaged || 0) + 1;
@@ -536,6 +563,33 @@ export function openAnvil(w) {
         }, 'small blue');
         row.appendChild(b);
         body.appendChild(row);
+      }
+      // D7 (1.0.18): kalite yeniden cevirme (gec oyun para harcama yeri)
+      const qslots = SLOTS.filter(([k]) => S.save.equip[k] && S.save.eqx[k] && REROLL_PRICE[S.save.eqx[k].q]);
+      if (qslots.length) {
+        body.appendChild(UI.el('h3', '', 'Kaliteyi yeniden çevir'));
+        body.appendChild(UI.el('p', 'muted', `Kuşandığın Nadir ya da Epik kaliteli eşyanın ek özelliklerini yeniden çevir. Kalite aynı kalır, özellikler değişir.`));
+        for (const [k, label] of qslots) {
+          const id = S.save.equip[k]; const x = S.save.eqx[k]; const price = REROLL_PRICE[x.q];
+          const row = UI.el('div', 'shop-row');
+          row.appendChild(UI.icon(ITEMS[id].icon));
+          const nm = UI.el('div', 'shop-nm');
+          nm.innerHTML = `<b>${label}: ${UI.escapeHtml(ITEMS[id].name)}</b><br><span class="muted">${x.a.map(([a, v]) => AFFIX[a].n(v)).join(' · ')}</span>`;
+          row.appendChild(nm);
+          const b = UI.button(`${price}`, () => {
+            if (S.save.gold < price) { sfx('weak'); return; }
+            const nx = S.affixRoll(id, x.q);
+            S.save.gold -= price;
+            S.save.eqx[k] = nx;
+            S.changed(); sfx('craft');
+            UI.feed(`${UI.itemName(id)} yeniden çevrildi: ${nx.a.map(([a, v]) => AFFIX[a].n(v)).join(' · ')}`, 'epic');
+            render();
+          }, 'small purple');
+          b.prepend(Object.assign(document.createElement('img'), { className: 'ico-inline', src: iconUrl('cimen') }));
+          b.disabled = S.save.gold < price;
+          row.appendChild(b);
+          body.appendChild(row);
+        }
       }
       // 0.10 kazma ozelligi: ayni anda bir tane (yenisi eskisinin yerine gecer)
       body.appendChild(UI.el('h3', '', 'Kazma özelliği'));
@@ -567,7 +621,7 @@ export function openAnvil(w) {
 
 // ------------------------------------------------------------ profil karti
 function ago(t) {
-  const m = Math.floor((Date.now() - t) / 60000);
+  const m = Math.floor((gNow() - t) / 60000);
   if (m < 1) return 'şimdi';
   if (m < 60) return `${m} dk önce`;
   const h = Math.floor(m / 60);
@@ -1254,7 +1308,7 @@ export function furnaceState() {
   const f = S.save.furnace;
   if (!f || !f.rid || f.n <= 0) return { working: false, ready: 0, left: 0, out: null };
   const r = RECIPES[f.rid];
-  const done = Math.min(f.n, Math.floor((Date.now() - f.t0) / fms()));
+  const done = Math.min(f.n, Math.floor((gNow() - f.t0) / fms()));
   return { working: done < f.n, ready: done, left: f.n - done, out: r.out, recipe: r, next: f.t0 + (done + 1) * fms() };
 }
 
@@ -1278,7 +1332,7 @@ function collectFurnace(w) {
     UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[fs.out].icon)}">Fırından ${UI.itemName(fs.out)} ×${got} aldın. +${xp} Üretim XP`);
     const ups = S.addXp({ uretim: xp });
     S.changed();
-    for (const u of ups) w.levelUp(u);
+    w.levelUps(ups);
   }
   if (got < fs.ready) UI.feed('Çanta dolu! Fırındakilerin hepsini alamadın.');
   return got;
@@ -1311,15 +1365,17 @@ export function openStation(w, station) {
       if (station === 'masa') { const ar = UI.el('div', 'choice-row'); const ok = S.level('uretim') >= STATION_LVL.ors; const b = UI.button(ok ? 'Örs: eşya yükselt' : `Örs 🔒 Üretim ${STATION_LVL.ors}`, () => openAnvil(w), 'small purple'); b.disabled = !ok; ar.appendChild(b); body.appendChild(ar); }
       const lay = UI.el('div', 'craft');
       const ul = UI.el('div', 'recipes');
+      // M3 (1.0.19): kilitli tariflerden sadece seviyesi yeten ilk 3'u ipucuyla; gerisi tek satir
+      let hints = 0; let hidden = 0;
       for (const r of list) {
         const it = ITEMS[r.out];
         const row = UI.el('div', 'recipe');
         if (!unlocked(r)) {
+          if (hints >= 3 || lvOf(r) < r.lvl) { hidden++; continue; }
+          hints++;
           row.classList.add('locked');
           row.appendChild(UI.el('span', 'q', '?'));
-          row.appendChild(UI.el('span', 'nm', '???'));
-          row.title = usLocked(r) ? `Ev Puanı ${r.us} olunca açılır` : `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`;
-          if (usLocked(r)) { row.lastChild.textContent = `Ev Puanı ${r.us}`; }
+          row.appendChild(UI.el('span', 'nm', usLocked(r) ? `Ev Puanı ${r.us} olunca` : `${ITEMS[Object.keys(r.mats)[0]].name} bulunca açılır`));
         } else {
           row.appendChild(UI.icon(it.icon));
           const nm = UI.el('span', 'nm', it.name);
@@ -1332,6 +1388,7 @@ export function openStation(w, station) {
         row.addEventListener('click', () => { sfx('click'); sel = r; render(); });
         ul.appendChild(row);
       }
+      if (hidden) ul.appendChild(UI.el('div', 'muted recipe-more', `+${hidden} gizli tarif (malzeme buldukça ve seviye atladıkça açılır)`));
       lay.appendChild(ul);
       lay.appendChild(recipeDetail(w, station, sel, render));
       body.appendChild(lay);
@@ -1350,7 +1407,7 @@ function furnaceBox(w, render) {
   }
   box.appendChild(UI.icon(ITEMS[fs.out].icon));
   const txt = UI.el('div', 'ftxt');
-  const secs = fs.working ? Math.max(1, Math.ceil((fs.next - Date.now()) / 1000)) : 0;
+  const secs = fs.working ? Math.max(1, Math.ceil((fs.next - gNow()) / 1000)) : 0;
   txt.innerHTML = `<b>${UI.escapeHtml(ITEMS[fs.out].name)}</b><br>Hazır: ${fs.ready} · Sırada: ${fs.left}${fs.working ? ` · sıradaki ${secs} sn` : ''}`;
   box.appendChild(txt);
   const bar = UI.el('div', 'bar xp');
@@ -1438,10 +1495,10 @@ function make(w, station, r, n, render) {
     if (!furnaceIdle(f) && f.rid !== rid) return;
     for (const [id, k] of Object.entries(r.mats)) S.removeItem(id, k * n);
     const fs = furnaceState();
-    if (furnaceIdle(f)) { f.rid = rid; f.n = 0; f.t0 = Date.now(); }
+    if (furnaceIdle(f)) { f.rid = rid; f.n = 0; f.t0 = gNow(); }
     else if (!fs.working) {
       // bitmis ama alinmamis olanlar korunur, yeni isler simdi baslar
-      f.t0 = Date.now() - fs.ready * fms();
+      f.t0 = gNow() - fs.ready * fms();
     }
     f.n += n;
     sfx('smelt');
@@ -1477,7 +1534,7 @@ function make(w, station, r, n, render) {
   UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[r.out].icon)}">${UI.itemName(r.out)}${n * per > 1 ? ` ×${n * per}` : ''} ürettin! +${xp} Üretim XP`);
   const ups = S.addXp({ uretim: xp });
   S.changed();
-  for (const u of ups) w.levelUp(u);
+  w.levelUps(ups);
 }
 
 // ---------------------------------------------------------------- Takas Tezgahi (0.2.1)
@@ -1520,6 +1577,35 @@ export function openShop(w) {
           b.prepend(Object.assign(document.createElement('img'), { className: 'ico-inline', src: iconUrl('cimen') }));
           b.disabled = S.save.gold < price;
           row.appendChild(b);
+          // D8 (1.0.18): iksir ve tohum gibi yiginlanan mallarda x5
+          if (['malzeme', 'tuketim'].includes(it.kind)) {
+            const b5 = UI.button(`×5 (${price * 5})`, () => buy(id, price, 5), 'small blue');
+            b5.disabled = S.save.gold < price * 5;
+            row.appendChild(b5);
+          }
+          list.appendChild(row);
+        }
+        // D7 (1.0.18): gec oyun icin parayla canta yuvasi
+        const bought = S.save.bagBought || 0;
+        if (bought < BAG_BUY.max) {
+          const price = BAG_BUY.price(bought);
+          const row = UI.el('div', 'shop-row r-nadir');
+          row.appendChild(UI.icon('dock_canta'));
+          row.appendChild(UI.el('div', 'shop-nm'));
+          row.lastChild.innerHTML = `<b>+${BAG_BUY.step} çanta yuvası</b><div class="muted">Lale çantanı büyütür (${bought}/${BAG_BUY.max} alındı). Her seferinde pahalanır.</div>`;
+          const b = UI.button(`${price}`, () => {
+            if (S.save.gold < price) { sfx('weak'); return; }
+            S.save.gold -= price;
+            S.save.bagBought = bought + BAG_BUY.step;
+            S.save.bagBonus = (S.save.bagBonus || 0) + BAG_BUY.step;
+            for (let i = 0; i < BAG_BUY.step; i++) S.save.bag.push(null);
+            S.changed(); sfx('coin');
+            UI.feed(`Çantan ${BAG_BUY.step} yuva büyüdü! (−${price} ${CURRENCY})`, 'gold');
+            render();
+          }, 'small primary');
+          b.prepend(Object.assign(document.createElement('img'), { className: 'ico-inline', src: iconUrl('cimen') }));
+          b.disabled = S.save.gold < price;
+          row.appendChild(b);
           list.appendChild(row);
         }
       } else {
@@ -1530,7 +1616,8 @@ export function openShop(w) {
           const n = S.countItem(id);
           const row = UI.el('div', 'shop-row');
           row.appendChild(UI.icon(it.icon));
-          row.appendChild(UI.el('div', 'shop-nm', `${it.name} ×${n} · tanesi ${SELL[id]}`));
+          const qn = n - plainCount(id);
+          row.appendChild(UI.el('div', 'shop-nm', `${it.name} ×${n} · tanesi ${SELL[id]}${qn ? ` · ${qn} tanesi ✦/artılı` : ''}`));
           row.appendChild(UI.button('Sat 1', () => sell(id, 1), 'small'));
           // B10: "Hepsi" kaliteli (✦) kopyalari atlar
           const plain = plainCount(id);
@@ -1541,19 +1628,19 @@ export function openShop(w) {
       }
       body.appendChild(list);
     };
-    const buy = (id, price) => {
-      if (S.save.gold < price) { sfx('weak'); return; }
-      if (!S.fits(id)) { UI.feed('Çanta dolu!'); if (w.sulk) w.sulk(); return; }
-      S.save.gold -= price;
-      S.addItem(id, 1);
+    const buy = (id, price, n = 1) => {
+      if (S.save.gold < price * n) { sfx('weak'); return; }
+      if (!S.fits(id, n)) { UI.feed('Çanta dolu!'); if (w.sulk) w.sulk(); return; }
+      S.save.gold -= price * n;
+      S.addItem(id, n);
       S.changed();
       sfx('coin');
-      UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[id].icon)}">${UI.itemName(id)} aldın! (−${price} ${CURRENCY})`);
-      w.shopBusy = true;
-      UI.closePanel();
-      w.tradeDone().then(() => { w.shopBusy = false; if (w.home() && !UI.panelOpen()) openShop(w); else if (w.shopClosed) w.shopClosed(); });
+      UI.feed(`<img class="ico-inline" src="${iconUrl(ITEMS[id].icon)}">${UI.itemName(id)}${n > 1 ? ` ×${n}` : ''} aldın! (−${price * n} ${CURRENCY})`);
+      // D8 (1.0.18): panel acik kalir, karakter tezgaha birakma animasyonunu arkada oynar
+      if (!w.shopBusy) { w.shopBusy = true; w.tradeDone().then(() => { w.shopBusy = false; }); }
+      render();
     };
-    const plainCount = (id) => S.save.bag.reduce((t, x) => t + (x && x.id === id && !x.x ? x.n : 0), 0);
+    const plainCount = (id) => S.save.bag.reduce((t, x) => t + (x && x.id === id && !x.x && !x.u ? x.n : 0), 0);
     const sell = (id, n, sure = false) => {
       // B10 (1.0.17): Nadir ve ustu esyada ya da kaliteli kopyada once onay
       const q = plainCount(id) < n;
@@ -1616,9 +1703,9 @@ const LALE_SAYS = [
 // Konumlar resmin 2000x1116 olcegine gore [orta x, orta y, genislik, yukseklik].
 const MAP_SPOTS = [
   ['Maden', 290, 97, 150, 56, (w) => { UI.closePanel(); w.enterMine(); }],
-  ['Koru', 160, 388, 142, 56, (w) => { UI.closePanel(); w.enterKoru(); }],
-  ['Köy Meydanı', 722, 372, 232, 56, (w) => openMeydan(w)],
-  ['Göl', 188, 841, 132, 56, (w) => { UI.closePanel(); w.enterPond(); }],
+  [NAMES.koru, 160, 388, 142, 56, (w) => { UI.closePanel(); w.enterKoru(); }],
+  [NAMES.meydan, 722, 372, 232, 56, (w) => openLale(w)],
+  [NAMES.gol, 188, 841, 132, 56, (w) => { UI.closePanel(); w.enterPond(); }],
   ['Arsa', 705, 678, 150, 56, (w) => { UI.closePanel(); w.enterPlot(); }],
   ['Ahır', 1097, 738, 132, 56, (w) => openAhir(w)],
   ['Etkinlik', 1305, 217, 160, 56, (w) => openEventGate(w)],
@@ -1626,10 +1713,10 @@ const MAP_SPOTS = [
   ['Keşif', 1610, 406, 150, 56, (w) => openMap(w)],
   ['Zindan', 1840, 777, 172, 56, (w) => openZindan(w)],
 ];
-export function openHanci(w) {
+export function openVillageMap(w) {
   S.fillQuests();
   tutFlag('lale');
-  UI.openPanel('Harita', (body) => {
+  UI.openPanel(NAMES.koyHaritasi, (body) => {
     const box = UI.el('div', 'hubmap wmap');
     box.style.backgroundImage = 'url(assets/harita.jpg)';
     for (const [name, x, y, bw, bh, fn] of MAP_SPOTS) {
@@ -1646,9 +1733,9 @@ export function openHanci(w) {
     body.appendChild(box);
   }, { wide: true });
 }
-export function openMeydan(w) {
+export function openLale(w) {
   S.fillQuests();
-  UI.openPanel('Köy Meydanı · Hancı Lale', (body) => {
+  UI.openPanel(`${NAMES.meydan} · Hancı Lale`, (body) => {
     body.appendChild(UI.el('p', 'lale-says', `“${LALE_SAYS[Math.floor(Math.random() * LALE_SAYS.length)]}”`));
     { // 1.0 hikaye satiri
       const ch = S.save.story.ch;
@@ -1675,7 +1762,7 @@ export function openMeydan(w) {
       const canPick = !c && S.combatLevel() >= CLASS_RULES.unlock;
       row.appendChild(UI.button(canPick ? 'Sınıf seç!' : canSub ? 'Alt sınıf seç!' : c ? `Sınıf: ${c.name}` : 'Sınıflar', () => openClass(), canPick || canSub ? 'small green' : 'small'));
     }
-    row.appendChild(UI.button('Harita', () => openHanci(w), 'small blue'));
+    row.appendChild(UI.button(NAMES.koyHaritasi, () => openVillageMap(w), 'small blue'));
     body.appendChild(row);
   }, { wide: true });
 }
@@ -1705,8 +1792,8 @@ export function openQuests(w, tab = 'gunluk') {
       const weekly = tab === 'haftalik';
       const list = weekly ? g.weekly : g.daily;
       body.appendChild(UI.el('p', 'muted', weekly
-        ? `Her pazartesi yenilenir (kalan ${fmtLeft(nextMonday() - Date.now())}). İkisi de bitince Haftalık Sandık: garanti nadir eşya.`
-        : `Her gece 00:00'da yenilenir (kalan ${fmtLeft(nextMidnight() - Date.now())}). Kaçırırsan ceza yok. Üçü de bitince günün sandığı.`));
+        ? `Her pazartesi yenilenir (kalan ${fmtLeft(nextMonday() - gNow())}). İkisi de bitince Haftalık Sandık: garanti nadir eşya.`
+        : `Her gece 00:00'da yenilenir (kalan ${fmtLeft(nextMidnight() - gNow())}). Kaçırırsan ceza yok. Üçü de bitince günün sandığı.`));
       for (const q of list) {
         const prog = goalProgress(q, weekly);
         const ok = prog >= q.target;
@@ -1729,7 +1816,7 @@ export function openQuests(w, tab = 'gunluk') {
           sfx('coin');
           UI.feed(`<span style="color:#ffd04d">★ ${weekly ? 'Haftalık' : 'Günlük'} görev tamam! +${q.gold} ${CURRENCY}, +${q.pul} ${PUL}</span>`, 'gold');
           render();
-          for (const u of ups) await w.levelUp(u);
+          await w.levelUps(ups);
         }, 'primary small'));
         row.appendChild(btns);
         body.appendChild(row);
@@ -1746,7 +1833,7 @@ export function openQuests(w, tab = 'gunluk') {
       crow.appendChild(cb);
       body.appendChild(crow);
       const back = UI.el('div', 'choice-row');
-      back.appendChild(UI.button('Lale\'ye dön', () => openMeydan(w), 'small'));
+      back.appendChild(UI.button('Lale\'ye dön', () => openLale(w), 'small'));
       body.appendChild(back);
     };
     const renderFree = () => {
@@ -1772,7 +1859,7 @@ export function openQuests(w, tab = 'gunluk') {
           sfx('coin');
           UI.feed(`<span style="color:#ffd04d">★ Görev tamam: ${UI.escapeHtml(q.text)}! +${q.gold} ${CURRENCY}, +${q.xp} ${sk.name} XP</span>`, 'gold');
           render();
-          for (const u of ups) await w.levelUp(u);
+          await w.levelUps(ups);
         }, 'primary small'));
         else {
           btns.appendChild(UI.button(`Değiştir (${QUEST_REROLL})`, () => {
@@ -1788,7 +1875,7 @@ export function openQuests(w, tab = 'gunluk') {
         body.appendChild(row);
       }
       const back = UI.el('div', 'choice-row');
-      back.appendChild(UI.button('Lale\'ye dön', () => openMeydan(w), 'small'));
+      back.appendChild(UI.button('Lale\'ye dön', () => openLale(w), 'small'));
       body.appendChild(back);
     };
     render();
@@ -1914,7 +2001,7 @@ export function openTitles(w) {
 export function openEventGate(w) {
   refreshGoals();
   UI.openPanel('Etkinlik Kapısı', (body) => {
-    const now = Date.now();
+    const now = gNow();
     const ev = S.save.ev;
     const list = UI.el('div', 'event-list');
     const row = (title, sub, timer, btn, cls = '') => {
@@ -2049,7 +2136,7 @@ export function openKule(w) {
   UI.openPanel('Sonsuz Kule', (body) => {
     body.appendChild(UI.el('p', 'muted', 'Her kat tek bir savaş ve rastgele bir kural ("Yarım Şifa", "Hızlı Glemonlar"...). 5 katta bir ara patron, 10 katta bir Kule sandığı (yıldız demiri, kaliteli eşya, Lale Pulu; 30. kattan sonra Kadim efsanevi silah şansı, 50. kat ilk seferde garanti). Rekor her pazartesi sıfırlanır.'));
     const info = UI.el('div', 'stats-box');
-    info.innerHTML = `<b>Bu hafta rekorun:</b> Kat ${k.best || 0} &nbsp; <b>En iyi rekorun:</b> Kat ${k.all || 0}<br><b>Kontrol noktası:</b> ${k.cp ? `Kat ${k.cp + 1}'den devam edebilirsin` : 'yok (5. katı geçince açılır)'} &nbsp; <b>Sıfırlanmaya:</b> ${fmtLeft(nextMonday() - Date.now())}`;
+    info.innerHTML = `<b>Bu hafta rekorun:</b> Kat ${k.best || 0} &nbsp; <b>En iyi rekorun:</b> Kat ${k.all || 0}<br><b>Kontrol noktası:</b> ${k.cp ? `Kat ${k.cp + 1}'den devam edebilirsin` : 'yok (5. katı geçince açılır)'} &nbsp; <b>Sıfırlanmaya:</b> ${fmtLeft(nextMonday() - gNow())}`;
     body.appendChild(info);
     body.appendChild(UI.el('p', 'muted', `Kurallar: ${KULE_RULES.map((r) => r.n).join(', ')}.`));
     const row = UI.el('div', 'choice-row');
@@ -2119,7 +2206,7 @@ export function openPrep(w, floor) {
       // B1: canta neredeyse doluysa uyar
       const free = S.bagFreeSlots();
       if (free < 3) body.appendChild(UI.el('div', 'prep-bad', `⚠ Çantanda sadece ${free} boş yuva var. Düşen eşyalar önce Depo'ya gider, o da dolarsa bekletilir. Yola çıkmadan çantanı boşaltabilirsin.`));
-      if (night) { const n = UI.el('div', 'prep-night', '🌙 Gece: Glemonlar %15 güçlü ama %30 fazla XP ve eşya veriyor. Sadece gece çıkan Glemonlar var.'); body.appendChild(n); }
+      if (night) { const n = UI.el('div', 'prep-night', `🌙 Gece (${todLeftMin()} dk kaldı): Glemonlar %15 güçlü ama %30 fazla XP ve eşya veriyor. Sadece gece çıkan Glemonlar var.`); body.appendChild(n); }
       const grid = UI.el('div', 'prep-grid');
       // tehlike
       const need = PREP_NEED[z.key];
@@ -2128,9 +2215,9 @@ export function openPrep(w, floor) {
       if (!need) hz.appendChild(UI.el('div', 'prep-ok', 'Bu bölgede özel bir tehlike yok.'));
       else {
         hz.appendChild(UI.el('div', 'muted', z.hazard || need.what));
-        const safe = need.carry ? (S.darkproof() || S.countItem('fener') > 0) : (need.until === 'fireResUntil' && S.fireproof()) || Date.now() < (S.save[need.until] || 0);
+        const safe = need.carry ? (S.darkproof() || S.countItem('fener') > 0) : (need.until === 'fireResUntil' && S.fireproof()) || gNow() < (S.save[need.until] || 0);
         if (safe) {
-          const left = !need.carry && !S.fireproof() ? Math.ceil(((S.save[need.until] || 0) - Date.now()) / 60000) : 0;
+          const left = !need.carry && !S.fireproof() ? Math.ceil(((S.save[need.until] || 0) - gNow()) / 60000) : 0;
           hz.appendChild(UI.el('div', 'prep-ok', `✓ Hazırsın${left > 0 ? ` (${left} dk korunuyorsun)` : need.carry ? ` (Fener ×${S.countItem('fener')})` : ''}`));
         } else hz.appendChild(UI.el('div', 'prep-bad', `✗ ${need.what}a karşı korumasızsın.`));
         if (!need.carry) {
@@ -2179,7 +2266,7 @@ export function openPrep(w, floor) {
       body.appendChild(grid);
       const row = UI.el('div', 'choice-row');
       row.appendChild(UI.button('Yola çık!', () => w.enterDungeon(floor), 'primary'));
-      row.appendChild(UI.button('Geri', () => openHanci(w), 'small'));
+      row.appendChild(UI.button('Geri', () => openVillageMap(w), 'small'));
       body.appendChild(row);
     };
     render();
@@ -2214,11 +2301,28 @@ export function openClass() {
         for (const k of c.subs) {
           const d = SUBCLASSES[k];
           const b = UI.button('Seç', () => {
-            askClass(`${d.name} olacaksın. Alt sınıf sonra sadece sınıf değiştirerek sıfırlanır.`, () => {
+            askClass(`${d.name} olacaksın. Sonra Lale'de ${CLASS_RULES.changePul} Lale Pulu ile alt sınıfını değiştirebilirsin.`, () => {
               if (S.pickSub(k)) { sfx('levelup'); UI.banner(`${d.name}!`, d.bonus, 2200, 'gold'); UI.feed(`<span style="color:#ffd04d">★ Alt sınıf: ${d.name}. Yetenek Ağacı'nın Sınıf dalında 2 yeni kat açıldı.</span>`, 'gold'); render(); }
             });
           }, 'small green');
           b.disabled = lvl < CLASS_RULES.sub;
+          row.appendChild(classCard(d.name, [['muted', d.desc], ['', d.bonus]], b));
+        }
+        body.appendChild(row);
+      }
+      // M6 (1.0.19): alt sinif degistir
+      if (c && sb) {
+        body.appendChild(UI.el('h3', '', `Alt sınıf değiştir (${CLASS_RULES.changePul} Lale Pulu)`));
+        const row = UI.el('div', 'tree-row');
+        for (const k of c.subs) {
+          if (k === cl.sub) continue;
+          const d = SUBCLASSES[k];
+          const b = UI.button(`Değiştir (${CLASS_RULES.changePul} Pul)`, () => {
+            askClass(`${sb.name} yerine ${d.name} olacaksın. ${sb.name} yeteneklerin iade edilir.`, () => {
+              if (S.changeSub(k)) { sfx('levelup'); UI.banner(`${d.name}!`, d.bonus, 2200, 'gold'); render(); }
+            });
+          }, 'small');
+          b.disabled = (S.save.pul || 0) < CLASS_RULES.changePul;
           row.appendChild(classCard(d.name, [['muted', d.desc], ['', d.bonus]], b));
         }
         body.appendChild(row);

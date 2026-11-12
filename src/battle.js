@@ -5,6 +5,7 @@ import {
   passiveOf, SECRET_HOME, GLEMONS, GROUND_Y, RARITY, ITEMS, floorMult, ANIM_POOLS, CURRENCY, STAGES, STAGE_STAT, TAME, FOODS, ZONE_SPAWNS,
   typeMult, WATER_GLEMONS, BASIC, ABILITIES, WEAPON_SKILL, STATUS_NAMES, COMBOS, zoneOf, ZONES, masteryOf, KITCHEN, NIGHT, NIGHT_HOME,
   MAGIC, styleMult, styleOf, ELEMENTS, SIFA, MANUAL2, SKILLS, BOSS_P2, BOSS_PHASE, HARD, KULE, BOSS_PHASES, KADIM,
+  XP_SPLIT, killXpMult, earlyAtk,
 } from './data.js';
 import { S } from './state.js';
 import { ARENA } from './art.js';
@@ -12,6 +13,7 @@ import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner, icon } 
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
 import { teamInfo, teamAura, petDisplayName, fightBond, recordDrop, tickNest, zoneBonus, homeOf } from './pets.js';
+import { now as gNow } from './clock.js';
 
 const RMULT = { siradan: 1, nadir: 1.6, epik: 2.5, efsanevi: 15 };
 const ATB_RATE = 1.0; // Hiz 100 -> cubuk 1 saniyede dolar
@@ -21,7 +23,8 @@ const GRADE = {
   zayif: { mult: 0.8, text: 'Zayıf', cls: 'weak', sfx: 'weak' },
 };
 const WEAPON_ANIM = { kilic: 'stab', yay: 'bowshot', yumruk: 'punch' };
-const PET_POS = [{ x: 136, y: GROUND_Y + 24, scale: 1.6 }, { x: 184, y: GROUND_Y + 13, scale: 1.35 }];
+// G3 (1.0.19): yoldaslar %25 kucuk, biraz daha saga ve ileriye (oyuncuyu kapatmasin)
+const PET_POS = [{ x: 150, y: GROUND_Y + 17, scale: 1.2 }, { x: 200, y: GROUND_Y + 7, scale: 1.0 }];
 
 export function calcDamage(atk, mult, def) {
   const d = atk * mult * (100 / (100 + def)) * (0.9 + Math.random() * 0.2);
@@ -99,7 +102,7 @@ export class Battle {
     this.gold = 0;
     this.flyTold = false;
     this.firstStrike = !!opts.ambush;
-    this.t0 = Date.now();
+    this.t0 = gNow();
     this.gy = GROUND_Y;   // Glemonlarin durdugu zemin (arenada uzak meydan)
     this.arena = false;
     this.pets = [];
@@ -137,7 +140,7 @@ export class Battle {
       fly: !!data.fly,
       shiny: !!spec.shiny, golden: !!spec.golden, sleeping: !!spec.sleeping,
       maxHp: Math.round(data.hp * m * sm * (spec.golden ? 2.2 : 1) * (this.opts.night ? NIGHT.mult : 1)),
-      atk: data.atk * m * (1 + 0.25 * stage) * (spec.golden ? 1.4 : 1) * (this.opts.night ? NIGHT.mult : 1),
+      atk: data.atk * m * (1 + 0.25 * stage) * (spec.golden ? 1.4 : 1) * (this.opts.night ? NIGHT.mult : 1) * (S.run && !S.run.zindan && !S.run.ev ? earlyAtk(this.zone.key, this.floor) : 1),
       defense: data.def * m * (1 + 0.2 * stage),
       spd: data.spd,
       atb: Math.random() * 30,
@@ -1623,7 +1626,7 @@ export class Battle {
       return;
     }
     const rm = RMULT[e.rarity] || 1;
-    let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage);
+    let xp = 8 * Math.pow(this.floor, 1.2) * rm * (1 + 0.6 * e.stage) * killXpMult(this.floor); // D2: Kat 40 sonrasi artis
     if (e.shiny) xp *= 2;
     if (e.golden) xp *= 4;
     if (this.opts.night) xp *= NIGHT.reward; // 0.11 gece
@@ -1976,7 +1979,7 @@ export class Battle {
     const zb = zoneBonus(this.zone.key);
     const xm = (manual ? 1.2 : 1) * ((S.run && S.run.xpX) || 1) * (1 + this.aura.xp + (zb ? zb.xp : 0) + S.bonus('xpPct')) * (this.kr() === 'bol' ? 2 : 1); // 0.9 Devler Gunu: 2 kat
     const skill = WEAPON_SKILL[this.wt];
-    const gains = { [skill]: this.killXp * 0.7 * xm, can: this.killXp * 0.3 * xm, savunma: this.defXp, sans: this.luckXp };
+    const gains = { [skill]: this.killXp * XP_SPLIT.weapon * xm, can: this.killXp * XP_SPLIT.can * xm, savunma: this.killXp * XP_SPLIT.savunma * xm + this.defXp, sans: this.luckXp };
     let petMsg = '';
     const evos = [];
     for (const t of this.pets) {
@@ -2008,7 +2011,7 @@ export class Battle {
     for (const evo of evos) await this.w.petEvolved(evo);
     for (const h of hatched) await this.w.eggHatched(h);
     // seviye atladiysa levelup, atlamadiysa rastgele bir sevinme animasyonu
-    if (ups.length) for (const up of ups) await this.w.levelUp(up);
+    if (ups.length) await this.w.levelUps(ups);
     else { await this.w.playPool('sevinc', 1300, 1.2); this.w.idle(); }
     S.changed();
     this.resolve('win');

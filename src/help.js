@@ -44,6 +44,7 @@ export const GUIDE = [
   { k: 'bolge', t: 'Bölgeler ve tehlikeler', p: [
     'Yabani Orman (1-10), Yankı Mağaraları (11-20), Kavurucu Çöl (21-30), Donmuş Zirve (31-40), Kor Diyarı (41-50), Gölge Boşluğu (51-60) ve Yıldız Çekirdeği (61-70).',
     'Her yeni bölge bir önceki patronu yenince ve yeterli Saldırı gücün olunca açılır.',
+    'Oyunda bir gün 1 saat sürer: 40 dakika gündüz, 20 dakika gece. Gece Glemonlar %15 güçlü ama %30 fazla XP ve eşya verir, gece Glemonları çıkar. Evdeki yatakta uyursan gece atlanır.',
     'Bazı bölgelerin tehlikesi var: Çölde Su Matarası, Zirvede sıcak çorba, Kor Diyarı\'nda Ateş Direnci İksiri, karanlık yerlerde Fener lazım. Çıkmadan önce Hazırlık ekranı söyler.',
   ] },
   { k: 'zindan', t: 'Zindan, Kule ve etkinlikler', p: [
@@ -57,7 +58,7 @@ export const GUIDE = [
   ] },
   { k: 'insa', t: 'Ev, inşa ve diğer işler', p: [
     'Topladığın blokları evinin arsasına koyabilirsin. İnşa becerisi ve Ev Puanı böyle artar.',
-    'Maden Kuyusu aşağı doğru sonsuzdur. Koru\'da ağaç dikersin, Göl\'de balık tutarsın. Kamp ateşi, oyunu kapattığında 2 saate kadar küçük bir ödül biriktirir.',
+    'Maden Kuyusu aşağı doğru sonsuzdur; madende bayılırsan o inişte kazdığın cevherlerin yarısı düşer. Koru\'da ağaç dikersin, Göl\'de balık tutarsın. Kamp ateşi, oyunu kapattığında 2 saate kadar küçük bir ödül biriktirir.',
   ] },
   { k: 'son', t: 'Hikâye ve oyun sonu', p: [
     'Lale\'nin hikâyesi 9 bölüm. Her bölüm bir hedef ve ödül verir. Son bölümde Yıldız Çekirdeği\'nin dibinde Kadim Bonk seni bekler.',
@@ -73,7 +74,7 @@ export const GUIDE = [
 const GUIDE_BY = Object.fromEntries(GUIDE.map((g) => [g.k, g]));
 // panel basligi (bas kismi) -> rehber konusu
 const HELP = [
-  ['Hancı Lale', 'temel'], ['Köy Meydanı', 'temel'], ['Harita', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
+  ['Hancı Lale', 'temel'], ['Köy Meydanı', 'temel'], ['Köy Haritası', 'temel'], ['Lale\'nin görevleri', 'temel'], ['Lale\'nin hikâyesi', 'son'], ['Son', 'son'],
   ['Keşif', 'bolge'], ['Hazırlık', 'bolge'],
   ['Çanta', 'esya'], ['Depo', 'esya'], ['Örs', 'esya'], ['Efsane Vitrini', 'esya'],
   ['Beceriler', 'beceri'], ['Yetenek Ağacı', 'sinif'], ['Sınıflar', 'sinif'],
@@ -122,11 +123,12 @@ export function openGuide(k = 'temel') {
 // ---------------------------------------------------------------- ilk adimlar
 // Yeni oyuncuya sag ustte kucuk bir kart: siradaki adim. Yapinca kucuk odul ve sonraki adim.
 export const TUT = [
-  { t: 'Haritayı aç', h: 'Evin solundaki Köy yolu tabelasına ya da Harita düğmesine dokun. Her yere haritadan gidilir.', v: (s) => s.tut.f.lale, gold: 20 },
+  { t: 'Köy Haritasını aç', h: 'Evin solundaki Köy yolu tabelasına ya da Köy Haritası düğmesine dokun. Her yere haritadan gidilir.', v: (s) => s.tut.f.lale, gold: 20 },
+  // D3 (1.0.18): once Tahta Kilic (baslangic cantasinda yeterli Dal var)
+  { t: 'Tahta Kılıç yap', h: 'Evindeki Üretim Masası\'na dokun, Tahta Kılıç yap (Dal çantanda), sonra Çanta\'dan kuşan. Paslı Kılıç\'tan daha güçlü.', v: (s) => (s.stats.crafted || 0) >= 1 || (s.equip.silah && s.equip.silah !== 'pasli_kilic'), gold: 30 },
   { t: 'Keşfe çık', h: 'Harita > Keşif > Kat 1. Odadan odaya ilerle.', v: (s) => (s.stats.deepest || 0) >= 1, gold: 30 },
   { t: '3 Glemon yen', h: 'Savaşta Oto ya da Manuel seç. Manuel %20 daha çok XP verir.', v: (s) => s.stats.kills >= 3, gold: 40 },
   { t: 'Çantana bak', h: 'Alttaki Çanta düğmesi. Eşyaya dokununca ne işe yaradığı yazar.', v: (s) => s.tut.f.canta, gold: 20 },
-  { t: 'Bir şey üret', h: 'Evindeki Üretim Masası\'na git. Ör. Tahta Kılıç ya da Fener.', v: (s) => (s.stats.crafted || 0) >= 1, gold: 50 },
   { t: 'Becerilerine bak', h: 'Alttaki Beceriler düğmesi. Her beceri 99\'a kadar çıkar.', v: (s) => s.tut.f.beceri, gold: 20 },
   { t: 'Hikâyenin 1. bölümünü bitir', h: 'Harita > Köy Meydanı > Hikâye. Bölüm 1 hedefi: Kat 3\'e in.', v: (s) => (s.story && s.story.ch) >= 1, gold: 100, item: ['iksir_k', 3] },
 ];
@@ -173,11 +175,20 @@ export function refreshTut(w) {
   if (!show) return;
   const st = TUT[t.i];
   card.innerHTML = '';
+  // M2 (1.0.19): ev disinda (maden, koru, gol, kesif) kucuk "1/7" rozeti; dokununca acilir
+  const small = w && w.home && !w.home() && !card._open;
+  card.classList.toggle('mini', !!small);
+  if (small) {
+    card.appendChild(UI.button(`İlk adım ${t.i + 1}/${TUT.length}`, () => { card._open = true; refreshTut(w); }, 'tiny tut-badge'));
+    return;
+  }
+  if (w && w.home && w.home()) card._open = false;
   card.appendChild(UI.el('div', 'tut-h', `İlk adımlar ${t.i + 1}/${TUT.length}`));
   card.appendChild(UI.el('div', 'tut-t', st.t));
   card.appendChild(UI.el('div', 'tut-d', st.h));
   const x = UI.button('Gizle', () => { t.hide = true; S.changed(); UI.feed('İlk adımları Rehber\'den tekrar açabilirsin.'); }, 'tiny');
   card.appendChild(x);
+  if (card._open) card.appendChild(UI.button('Küçült', () => { card._open = false; refreshTut(w); }, 'tiny'));
 }
 
 // ---------------------------------------------------------------- Ayarlar

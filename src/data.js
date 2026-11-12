@@ -1,10 +1,11 @@
+import { now as gNow } from './clock.js';
 // Oyun verileri: karakterler, Glemonlar, esyalar, sabitler.
 // Denge sayilari Oyun Tasarim Belgesi'nden gelir ve test ederken ayarlanir.
 
 export const GAME_W = 384;
 export const GAME_H = 216;
 export const GROUND_Y = 178;
-export const VERSION = '1.0.17';
+export const VERSION = '1.0.21';
 
 // Her karakter sadece kendi koduyla secilebilir. Kodun kendisi burada degil,
 // sadece SHA-256 ozeti tutulur. (Bulut hesaplari 0.6 surumunde gelecek.)
@@ -24,6 +25,8 @@ export const ANIM_POOLS = {
 };
 // Para birimi: Cimen Blogu (kayitta hala "gold" alani)
 export const CURRENCY = 'Çimen Bloğu';
+// M1/K7 (1.0.19): yer adlari tek sozluk. Her yerde bunlar kullanilir.
+export const NAMES = { ev: 'Ev', evPuani: 'Ev Puanı', gol: 'Göl', maden: 'Maden Kuyusu', koyHaritasi: 'Köy Haritası', kesif: 'Keşif', meydan: 'Köy Meydanı', koru: 'Koru' };
 
 export const RARITY = {
   siradan: { name: 'Sıradan', color: '#c4c4bc' },
@@ -126,7 +129,7 @@ export const GLEMONS = {
   },
   tas_golemi: {
     name: 'Taş Golemi', from: "Taş Golemi'nden", rarity: 'efsanevi', type: 'Taş', boss: true,
-    hp: 92, atk: 4.4, def: 4.2, spd: 70,
+    hp: 92, atk: 6.0, def: 4.2, spd: 70, // D4 (1.0.18): eskiden hp 92, atk 4.4
     pattern: ['normal', 'sarsinti', 'normal', 'cagir', 'normal', 'kabuk', 'normal', 'sarsinti'],
     specials: {
       sarsinti: { name: 'Yer Sarsıntısı', mult: 2.4, telegraph: true, aoe: true },
@@ -168,7 +171,7 @@ export const GLEMONS = {
   },
   firtina_cakali: {
     name: 'Fırtına Çakalı', from: "Fırtına Çakalı'ndan", rarity: 'efsanevi', type: 'Kum', boss: true,
-    hp: 96, atk: 4.8, def: 3.6, spd: 118,
+    hp: 96, atk: 5.9, def: 3.6, spd: 118, // D4 (1.0.18): eskiden hp 96, atk 4.8
     pattern: ['normal', 'firtina', 'normal', 'isirik', 'normal', 'cagir', 'normal', 'firtina'],
     specials: {
       firtina: { name: 'Kum Fırtınası', mult: 0.8, status: ['karanlik', 3], telegraph: true, aoe: true },
@@ -210,7 +213,7 @@ export const GLEMONS = {
   },
   buzul_ayisi: {
     name: 'Buzul Ayısı', from: "Buzul Ayısı'ndan", rarity: 'efsanevi', type: 'Buz', boss: true,
-    hp: 104, atk: 5.2, def: 4.2, spd: 80,
+    hp: 104, atk: 5.7, def: 4.2, spd: 80, // D4 (1.0.18): eskiden hp 104, atk 5.2
     pattern: ['normal', 'nefes', 'normal', 'pence', 'normal', 'cagir', 'normal', 'nefes'],
     specials: {
       nefes: { name: 'Buz Nefesi', mult: 0.9, status: ['donma', 1], telegraph: true, aoe: true },
@@ -252,7 +255,7 @@ export const GLEMONS = {
   },
   magma_kaplumbaga: {
     name: 'Magma Kaplumbağası', from: "Magma Kaplumbağası'ndan", rarity: 'efsanevi', type: 'Ateş', boss: true,
-    hp: 120, atk: 5.4, def: 5.2, spd: 66,
+    hp: 103, atk: 6.6, def: 5.2, spd: 66, // D4 (1.0.18): eskiden hp 120, atk 5.4
     pattern: ['normal', 'kizgin', 'normal', 'kabuk', 'normal', 'lav', 'normal', 'kizgin'],
     specials: {
       kizgin: { name: 'Kızgın Kabuk', mult: 0.9, status: ['yanma', 3], telegraph: true, aoe: true },
@@ -326,7 +329,7 @@ export const GLEMONS = {
   },
   bosluk_bekcisi: {
     name: 'Boşluk Bekçisi', from: "Boşluk Bekçisi'nden", rarity: 'efsanevi', type: 'Gölge', boss: true, fly: true,
-    hp: 130, atk: 5.8, def: 4.6, spd: 100,
+    hp: 108, atk: 6.4, def: 4.6, spd: 100, // D4 (1.0.18): eskiden hp 130, atk 5.8
     pattern: ['normal', 'isinlan', 'normal', 'kopya', 'normal', 'karanlik', 'normal', 'darbe'],
     specials: {
       isinlan: { name: 'Işınlanma', shell: 2 },
@@ -442,6 +445,8 @@ export const FOODS = {
   golge: ['gece_coregi', 'ay_pastasi'],
   su: ['balik_kraker', 'inci_kraker'],
 };
+// D6 (1.0.18, Eren karari bekleniyor: oneri uygulandi): yoldas Glemon saldirisi %60; Terbiyeci alt sinifi farki geri kazandirir
+export const PET_ATK = 0.6;
 export const PET_MAX_LVL = 50;
 export const EVOLVE_AT = [15, 35];
 // 1.0.13: basta hizli, sonda yavas (eski: 30 * (L-1)^2.1)
@@ -496,6 +501,12 @@ export const SPAWN_TABLE = [
 ];
 export const SHINY_CHANCE = 1 / 500;
 
+// D1 (1.0.18): savas XP'si payi: silah becerisi %60, Can %20, Savunma %20 (eskiden %70/%30/%0); alinan hasar ve kacinma XP'si ustune eklenir
+export const XP_SPLIT = { weapon: 0.5, can: 0.2, savunma: 0.3 };
+// D2 (1.0.18): Kat 40'tan sonra Glemon XP'si kat basina %3 artar (Kat 70'te x1,9): Bonkit ve Golge esyasi hikaye icinde giyilir
+export const killXpMult = (floor) => 1 + 0.06 * Math.max(0, floor - 40);
+// D3 (1.0.18): yeni oyuncu icin Orman'in ilk 3 katinda Glemon saldirisi %40 az (rapor %25 diyordu; bot testinde Kat 3 ilk denemede gecilemedi)
+export const earlyAtk = (zoneKey, floor) => (zoneKey === 'orman' && floor <= 3 ? 0.6 : 1);
 export const floorMult = (floor) => 1 + 0.2 * (floor - 1);
 
 // ---------------------------------------------------------------- Esyalar
@@ -673,7 +684,7 @@ export const ITEMS = {
   // ---- 0.8.5 sadece tek beceriyle bulunan malzemeler ve onlardan yapilanlar
   yildiz_demiri: { name: 'Yıldız Demiri', kind: 'malzeme', rarity: 'epik', icon: 'yildiz_demiri', desc: 'Sadece maden kuyusunda 56. sıradan aşağıda (Madencilik 70). Örste eşya yükseltir.' },
   cekirdek_kristali: { name: 'Çekirdek Kristali', kind: 'malzeme', rarity: 'efsanevi', icon: 'cekirdek_kristali', desc: 'Sadece maden kuyusunda 76. sıradan aşağıda (Derin Kazı yeteneği, Madencilik 80).' },
-  ay_otu: { name: 'Ay otu', kind: 'malzeme', rarity: 'nadir', icon: 'ay_otu', desc: 'Sadece gece (gerçek saat) Keşifte toplanır. Ay İksiri malzemesi.' },
+  ay_otu: { name: 'Ay otu', kind: 'malzeme', rarity: 'nadir', icon: 'ay_otu', desc: 'Sadece gece Keşifte toplanır (oyunda her saatin son 20 dakikası gece). Ay İksiri malzemesi.' },
   usta_damgasi: { name: 'Usta Damgası', kind: 'malzeme', rarity: 'epik', icon: 'usta_damgasi', desc: 'Üretim 75+ iken her üretimde %2 ihtimalle çıkar. Örste eşyayı +4 Usta yapar.' },
   inci_tilsimi: { name: 'İnci Tılsımı', kind: 'tilsim', rarity: 'epik', icon: 'tilsim_inci', dodge: 0.15, def: 4, desc: 'Kaçınma düğmesi %15 daha uzun kalır.' },
   pullu_pelerin: { name: 'Pullu Pelerin', kind: 'tilsim', rarity: 'efsanevi', icon: 'pelerin_pullu', def: 10, hp: 25, spd: 15, dodge: 0.08, req: ['savunma', 60], desc: 'Efsane balık pullarından. Her şeyden biraz.' },
@@ -855,7 +866,7 @@ export const KITCHEN = [
   ['kar_cilekli_pasta', 'Kar Çilekli Pasta', 42, { bugday: 2, kar_cilegi: 2 }, 0.45, ['spd', 0.12, 15], ['hurma_tatlisi', { h: '#5a8ac0', H: '#c8e0f8', Y: '#f4f8fb', y: '#ffffff', p: '#d8d0c4' }]],
   ['kabak_corbasi', 'Kabak Çorbası', 45, { kabak: 1, sifali_ot: 2 }, 0.45, ['gather', 0.35, 15], ['corba', { s: '#f4f4f8', b: '#5a7a4a', B: '#3a5a2e', c: '#e0802a', m: '#f8c850' }]],
   ['maden_kumanyasi', 'Maden Kumanyası', 48, { ekmek: 1, kizarmis_patates: 1 }, 0.45, ['mine', 0.25, 20], ['ezme', { m: '#e8c078', M: '#f8e8b0', b: '#7a5a3a', B: '#4a3420' }]],
-  ['firin_alabalik', 'Fırın Alabalık', 52, { dere_alabaligi: 1, havuc: 1 }, 0.5, ['fish', 0.25, 20], ['izgara_balik', null]],
+  ['firin_alabalik', 'Fırın Alabalık', 52, { dere_alabaligi: 1, havuc: 1 }, 0.5, ['fish', 0.25, 20], ['izgara_balik', { B: '#d88a8a', L: '#f4c0b0', D: '#9a5050', F: '#b06a5a', d: '#5a2e28', w: '#fff0d0', k: '#100c14', p: '#9a9aa8' }]], // G6: pembe alabalik, metal tepsi
   ['ay_otu_cayi', 'Ay Otu Çayı', 56, { ay_otu: 1, bal: 1 }, 0.3, ['luck', 12, 20], ['corba', { s: '#e8ecff', b: '#d8d0e8', B: '#a8a0c0', c: '#c8b0f0', m: '#fff0a0' }]],
   ['savasci_kebabi', 'Savaşçı Kebabı', 60, { ates_biberi: 2, bugday: 1, patates: 1 }, 0.55, ['atk', 0.15, 20], ['hurma_tatlisi', { h: '#8a4a2a', H: '#c87a4a', Y: '#d8a860', y: '#f0c890', p: '#8a6a40' }]],
   ['kale_guveci', 'Kale Güveci', 64, { kabak: 1, patates: 2, mantar: 2 }, 0.55, ['def', 0.15, 20], ['corba', { s: '#f4f4f8', b: '#6a6a7a', B: '#3e3e4a', c: '#c8783a', m: '#e8c050' }]],
@@ -863,7 +874,7 @@ export const KITCHEN = [
   ['gece_corbasi', 'Gece Çorbası', 72, { gece_mantari: 2, havuc: 1 }, 0.6, ['hp', 0.15, 25], ['corba', { s: '#c8fff4', b: '#4a3a6a', B: '#2a2040', c: '#3a8a8a', m: '#c8fff4' }]],
   ['ziyafet_tabagi', 'Ziyafet Tabağı', 77, { misir: 1, patates: 1, havuc: 1, kabak: 1 }, 0.65, ['spd', 0.15, 25], ['hurma_tatlisi', { h: '#e0802a', H: '#f0c838', Y: '#e8782a', y: '#6cbc4e', p: '#e8e4dc' }]],
   ['biber_dolmasi', 'Biber Dolması', 82, { ates_biberi: 3, misir: 1 }, 0.7, ['atk', 0.2, 25], ['hurma_tatlisi', { h: '#c8301e', H: '#f07a3a', Y: '#4e7a2e', y: '#7aa852', p: '#e8e4dc' }]],
-  ['balik_ziyafeti', 'Balık Ziyafeti', 87, { altin_pulcuk: 1, misir: 1, bal: 1 }, 0.7, ['fish', 0.35, 30], ['izgara_balik', null]],
+  ['balik_ziyafeti', 'Balık Ziyafeti', 87, { altin_pulcuk: 1, misir: 1, bal: 1 }, 0.7, ['fish', 0.35, 30], ['izgara_balik', { B: '#e0b040', L: '#f8e080', D: '#a87a20', F: '#c89030', d: '#6a4a10', w: '#fff8e0', k: '#100c14', p: '#c84a3a' }]], // G6: altin balik, kirmizi ziyafet tabagi
   ['altin_turta', 'Altın Elmalı Turta', 92, { altin_elma: 1, bugday: 2 }, 0.8, ['luck', 20, 30], ['turta', { c: '#f8e070', R: '#f0b020', d: '#e8c060', b: '#b08a30' }]],
   ['efsane_ziyafet', 'Efsane Ziyafet', 97, { bugday: 2, kabak: 1, ates_biberi: 1, kar_cilegi: 1 }, 1, ['xp', 0.2, 30], ['turta', { c: '#ffd34d', R: '#c84a3a', d: '#e8b048', b: '#a87a40' }]],
 ];
@@ -898,7 +909,7 @@ Object.assign(ITEMS, {
   gubre: { name: 'Gübre', kind: 'malzeme', rarity: 'siradan', icon: 'gubre', desc: 'Ekili tarlaya dokunup gübrele: hasatta +2 ürün.' },
   kovan: { name: 'Arı Kovanı', kind: 'malzeme', rarity: 'nadir', icon: 'kovan', desc: 'Mobilya: arsana koy. Arsanda saksı ya da çiçek varsa kendiliğinden bal yapar; dokunup al.' },
   yanmis_yemek: { name: 'Yanmış Yemek', kind: 'tuketim', rarity: 'siradan', icon: 'yanmis_yemek', heal: 0.05, food: true, anim: 'eat', desc: 'Olmadı… Biraz can verir. Aşçılık seviyen arttıkça yemekler yanmaz.' },
-  sargi_bezi: { name: 'Pamuk Sargı', kind: 'tuketim', rarity: 'siradan', icon: 'sargi', heal: 0.3, anim: 'drinkpotion', desc: 'Pamuktan sargı. Canının %30\'unu doldurur.' },
+  sargi_bezi: { name: 'Pamuk Sargı', kind: 'tuketim', rarity: 'siradan', icon: 'sargi_pamuk', heal: 0.3, anim: 'drinkpotion', desc: 'Pamuktan sargı. Canının %30\'unu doldurur.' },
 });
 for (const [id, name, h, , , tod] of CROPS) {
   const sd = SEED_OF[id];
@@ -915,11 +926,12 @@ for (const [k, f] of Object.entries(FISH)) {
 }
 
 // 0.8 ekipman seviyeleri: Kristal, Kor, Bonkit, Golge (kilic, yay, kazma, kask, goguslik, bot)
+// D2 (1.0.18): esya seviyeleri bolgelere hizali (Kristal 25, Kor 35, Bonkit 45, Golge 55; eskiden 30/45/60/75)
 export const TIERS = {
-  kristal: { name: 'Kristal', atk: 22, bow: 21, pick: 7, def: [7, 13, 7], lvl: 30, mine: 35 },
-  kor: { name: 'Kor', atk: 32, bow: 30, pick: 11, def: [9, 17, 9], lvl: 45, mine: 50 },
-  bonkit: { name: 'Bonkit', atk: 44, bow: 42, pick: 16, def: [12, 22, 12], lvl: 60, mine: 65 },
-  golge: { name: 'Gölge', atk: 58, bow: 55, pick: 24, def: [15, 28, 15], lvl: 75, mine: 80 },
+  kristal: { name: 'Kristal', atk: 22, bow: 21, pick: 7, def: [7, 13, 7], lvl: 25, mine: 35 },
+  kor: { name: 'Kor', atk: 32, bow: 30, pick: 11, def: [9, 17, 9], lvl: 35, mine: 50 },
+  bonkit: { name: 'Bonkit', atk: 44, bow: 42, pick: 16, def: [12, 22, 12], lvl: 45, mine: 65 },
+  golge: { name: 'Gölge', atk: 58, bow: 55, pick: 24, def: [15, 28, 15], lvl: 55, mine: 80 },
 };
 for (const [t, T] of Object.entries(TIERS)) {
   const d = 'Üretim Masasında yapılır.';
@@ -967,13 +979,14 @@ export const ROOM_WEIGHTS = [['savas', 52], ['sandik', 13], ['tuzak', 11], ['uyu
 // savastan sonra odada toplanacak bir sey cikma ihtimali
 export const GATHER_CHANCE = 0.4;
 
+// D2 (1.0.18): giris gucu = onceki bolgenin esyasini giyip o bolgeyi bitiren oyuncunun gucunun %90'i (tools/test/balance.mjs)
 export const ZONES = [
   { key: 'orman', name: 'Yabani Orman', floors: [1, 10], open: true, boss: 'agacbasi', type: 'Orman', atk: 1 },
-  { key: 'magara', name: 'Yankı Mağaraları', floors: [11, 20], open: true, boss: 'tas_golemi', type: 'Taş', atk: 15, after: 'agacbasi', hazard: 'Karanlık odalar: çantanda Fener yoksa göremezsin.' },
-  { key: 'col', name: 'Kavurucu Çöl', floors: [21, 30], open: true, boss: 'firtina_cakali', type: 'Kum', atk: 30, after: 'tas_golemi', hazard: 'Sıcak: Su Matarası yoksa her odada biraz can kaybedersin.' },
+  { key: 'magara', name: 'Yankı Mağaraları', floors: [11, 20], open: true, boss: 'tas_golemi', type: 'Taş', atk: 20, after: 'agacbasi', hazard: 'Karanlık odalar: çantanda Fener yoksa göremezsin.' },
+  { key: 'col', name: 'Kavurucu Çöl', floors: [21, 30], open: true, boss: 'firtina_cakali', type: 'Kum', atk: 33, after: 'tas_golemi', hazard: 'Sıcak: Su Matarası yoksa her odada biraz can kaybedersin.' },
   { key: 'buz', name: 'Donmuş Zirve', floors: [31, 40], open: true, boss: 'buzul_ayisi', type: 'Buz', atk: 45, after: 'firtina_cakali', hazard: 'Soğuk: Sıcak Çorba içmezsen savaşlarda yavaşlarsın.' },
-  { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], open: true, boss: 'magma_kaplumbaga', type: 'Ateş', atk: 60, after: 'buzul_ayisi', hazard: 'Lav: Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın.' },
-  { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], open: true, boss: 'bosluk_bekcisi', type: 'Gölge', atk: 75, after: 'magma_kaplumbaga', hazard: 'Karanlık: odaların yarısı karanlık, Fener taşı.' },
+  { key: 'kor', name: 'Kor Diyarı', floors: [41, 50], open: true, boss: 'magma_kaplumbaga', type: 'Ateş', atk: 51, after: 'buzul_ayisi', hazard: 'Lav: Ateş Direnci İksiri yoksa savaşlara yanarak başlarsın.' },
+  { key: 'golge', name: 'Gölge Boşluğu', floors: [51, 60], open: true, boss: 'bosluk_bekcisi', type: 'Gölge', atk: 65, after: 'magma_kaplumbaga', hazard: 'Karanlık: odaların yarısı karanlık, Fener taşı.' },
 ];
 
 // ---------------------------------------------------------------- Madencilik (0.2)
@@ -1428,43 +1441,26 @@ export const QUESTS = {
 };
 export const QUEST_SLOTS = 3;
 
-// ---------------------------------------------------------------- Yetenek agaci (0.8.5)
-// 4 dal. Bir dalin becerilerinde her 10 seviye o dala 1 puan verir. Her katta 2 yetenekten
-// birini secersin. Kat maliyeti: 5, 7, 6 puan (2. kat icin 5, 3. kat icin 12 puan harcamis olmalisin).
-export const TREE_COST = [5, 7, 6];
-export const TREE = {
-  savas: {
-    name: 'Savaş', skills: ['saldiri', 'savunma', 'can', 'okculuk'],
-    tiers: [
-      [{ key: 'keskin_kilic', name: 'Keskin Kılıç', desc: 'Kılıç ve yumruk gücü +%8' }, { key: 'kartal_gozu', name: 'Kartal Gözü', desc: 'Yay gücü +%8' }],
-      [{ key: 'refleks', name: 'Refleks', desc: 'Kaçınma düğmesi %20 uzun kalır, otomatik savaşta %25 kaçınırsın' }, { key: 'demir_deri', name: 'Demir Deri', desc: 'Aldığın hasar -%10' }],
-      [{ key: 'ofke', name: 'Öfke', desc: 'Canın %30\'un altındayken kritik +%20' }, { key: 'karsi_darbe', name: 'Karşı Darbe', desc: 'Kusursuz kaçışın karşı darbesi 2 kat' }],
-    ],
-  },
-  toplayici: {
-    name: 'Toplayıcı', skills: ['madencilik', 'toplama', 'balikcilik'],
-    tiers: [
-      [{ key: 'hizli_kazma', name: 'Hızlı Kazma', desc: 'Bloklar 1 vuruş erken kırılır' }, { key: 'sabirli_olta', name: 'Sabırlı Olta', desc: 'Balık %30 daha çabuk ısırır' }],
-      [{ key: 'damar_bulucu', name: 'Damar Bulucu', desc: 'Değerli cevher şansı +%30' }, { key: 'genis_ag', name: 'Geniş Ağ', desc: 'Balık yakalama kutusu +%20' }],
-      [{ key: 'derin_kazi', name: 'Derin Kazı', desc: 'Maden kuyusunda 76. sıra ve aşağısını kazabilirsin (Çekirdek Kristali)' }, { key: 'efsane_avcisi', name: 'Efsane Avcısı', desc: 'Efsane balık şansı 2 kat' }],
-    ],
-  },
-  zanaat: {
-    name: 'Zanaat', skills: ['uretim', 'insa'],
-    tiers: [
-      [{ key: 'tutumlu', name: 'Tutumlu', desc: '%10 ihtimalle malzemeler gitmez' }, { key: 'sicak_firin', name: 'Sıcak Fırın', desc: 'Fırın %30 hızlı pişirir' }],
-      [{ key: 'cifte_uretim', name: 'Çifte Üretim', desc: '%8 ihtimalle 2 tane çıkar' }, { key: 'usta_insa', name: 'Usta İnşa', desc: 'Ev Puanı +%25' }],
-      [{ key: 'usta_isi', name: 'Usta İşi', desc: 'Üretilebilen silah, zırh ve aletler +%5 güçlü' }, { key: 'mimar', name: 'Mimar', desc: 'Arsan 1 sıra yükselir, 4 tarla fazla' }],
-    ],
-  },
-  glemon: {
-    name: 'Glemon', skills: ['bag', 'sans'],
-    tiers: [
-      [{ key: 'yem_ustasi', name: 'Yem Ustası', desc: 'Evcilleştirme şansı +%15' }, { key: 'sansli_dogan', name: 'Şanslı Doğan', desc: 'Şans +8' }],
-      [{ key: 'sadik_dost', name: 'Sadık Dost', desc: 'Evcilinin saldırısı +%15' }, { key: 'parlak_goz', name: 'Parlak Göz', desc: 'Parlak Glemon şansı 1,5 kat' }],
-      [{ key: 'yumurta_bakicisi', name: 'Yumurta Bakıcısı', desc: 'Yumurtalar 60 savaşta çatlar' }, { key: 'hazine_avcisi', name: 'Hazine Avcısı', desc: 'Sandıklardan 1 eşya fazla çıkar' }],
-    ],
-  },
+// K2 (1.0.21): eski (0.8.5) yetenek agacindan sadece Yetenek Agaci 2.0'in kullandigi yetenekler kaldi
+const OLD_PERKS = {
+  cifte_uretim: {key: 'cifte_uretim',name: 'Çifte Üretim',desc: '%8 ihtimalle 2 tane çıkar'},
+  damar_bulucu: {key: 'damar_bulucu',name: 'Damar Bulucu',desc: 'Değerli cevher şansı +%30'},
+  derin_kazi: {key: 'derin_kazi',name: 'Derin Kazı',desc: 'Maden kuyusunda 76. sıra ve aşağısını kazabilirsin (Çekirdek Kristali)'},
+  efsane_avcisi: {key: 'efsane_avcisi',name: 'Efsane Avcısı',desc: 'Efsane balık şansı 2 kat'},
+  genis_ag: {key: 'genis_ag',name: 'Geniş Ağ',desc: 'Balık yakalama kutusu +%20'},
+  hazine_avcisi: {key: 'hazine_avcisi',name: 'Hazine Avcısı',desc: 'Sandıklardan 1 eşya fazla çıkar'},
+  hizli_kazma: {key: 'hizli_kazma',name: 'Hızlı Kazma',desc: 'Bloklar 1 vuruş erken kırılır'},
+  mimar: {key: 'mimar',name: 'Mimar',desc: 'Arsan 1 sıra yükselir, 4 tarla fazla'},
+  parlak_goz: {key: 'parlak_goz',name: 'Parlak Göz',desc: 'Parlak Glemon şansı 1,5 kat'},
+  sabirli_olta: {key: 'sabirli_olta',name: 'Sabırlı Olta',desc: 'Balık %30 daha çabuk ısırır'},
+  sadik_dost: {key: 'sadik_dost',name: 'Sadık Dost',desc: 'Evcilinin saldırısı +%15'},
+  sansli_dogan: {key: 'sansli_dogan',name: 'Şanslı Doğan',desc: 'Şans +8'},
+  sicak_firin: {key: 'sicak_firin',name: 'Sıcak Fırın',desc: 'Fırın %30 hızlı pişirir'},
+  tutumlu: {key: 'tutumlu',name: 'Tutumlu',desc: '%10 ihtimalle malzemeler gitmez'},
+  usta_insa: {key: 'usta_insa',name: 'Usta İnşa',desc: 'Ev Puanı +%25'},
+  usta_isi: {key: 'usta_isi',name: 'Usta İşi',desc: 'Üretilebilen silah, zırh ve aletler +%5 güçlü'},
+  yem_ustasi: {key: 'yem_ustasi',name: 'Yem Ustası',desc: 'Evcilleştirme şansı +%15'},
+  yumurta_bakicisi: {key: 'yumurta_bakicisi',name: 'Yumurta Bakıcısı',desc: 'Yumurtalar 60 savaşta çatlar'},
 };
 // ---------------------------------------------------------------- Tur ustaligi (0.8.6)
 // Bir Glemon turunu yendikce o ture karsi guclenirsin: [yenilen sayi, hasar bonusu]
@@ -1518,8 +1514,8 @@ WATER_GLEMONS.push(['nilufer_kurbagasi', 30], ['kirpi_baligi', 25]);
 export const SECRET_HOME = { hilal_ejderi: 'golge', kadim_kostebek: 'magara', yildirim_baligi: 'su' };
 export const SECRETS = { moon: ['hilal_ejderi', 0.025], deep: ['kadim_kostebek', 0.04, 50], storm: ['yildirim_baligi', 0.12] };
 // Firtina: gercek saate gore gunde birkac saat (her 5 saatten biri), sadece Us Goletinde
-export function stormNow(d = new Date()) {
-  if (typeof window !== 'undefined' && window.__storm !== undefined) return !!window.__storm;
+export function stormNow(d = new Date(gNow())) {
+  if ((typeof __DEV__ === 'undefined' || __DEV__) && typeof window !== 'undefined' && window.__storm !== undefined) return !!window.__storm;
   const h = Math.floor(d.getTime() / 3600000);
   return ((h * 2654435761) >>> 0) % 5 === 0;
 }
@@ -1725,7 +1721,7 @@ export const SUBCLASSES = {
   element: { name: 'Element Ustası', of: 'buyucu', desc: 'Ateş, buz, yıldırım ve kombolar.', bonus: 'Büyü durumları 2 kat sık; durumu olan düşmana +%25 hasar', mods: { statusX: 1, statusDmg: 0.25 } },
   golge_b: { name: 'Gölge Büyücüsü', of: 'buyucu', desc: 'Zayıflatma, can çalma, lanet.', bonus: 'Büyüler Lanet verir (düşman %25 fazla hasar alır, %20 az vurur); %15 can çalma', mods: { drain: 0.15, curse: 1 } },
   sifaci: { name: 'Şifacı', of: 'destek', desc: 'İyileştirme, kalkan, durum temizleme.', bonus: 'İyileştirmeler kötü durumları siler ve kalkan verir (sonraki vuruş yarım)', mods: { cleanse: 1, shieldOnHeal: 1 } },
-  terbiyeci: { name: 'Terbiyeci', of: 'destek', desc: '2 yoldaş çok güçlü, Glemon yetenekleri sık çalışır.', bonus: 'Glemonların +%25 saldırı; ★ yetenekleri 2 turda bir dolar', mods: { petAtk: 0.25, petCharge: 1 } },
+  terbiyeci: { name: 'Terbiyeci', of: 'destek', desc: '2 yoldaş çok güçlü, Glemon yetenekleri sık çalışır.', bonus: 'Glemonların +%67 saldırı (tam güç); ★ yetenekleri 2 turda bir dolar', mods: { petAtk: 0.67, petCharge: 1 } },
 };
 // Yetenek agacinin "Savas" dali artik "Sinif" dali: 3 kat sinif + 2 kat alt sinif
 export const CLASS_TREE = {
@@ -1776,7 +1772,7 @@ export const SUB_TREE = {
     [{ key: 'korku', name: 'Korku', desc: 'Lanetli düşman %20 ihtimalle sırasını kaçırır', mods: { fear: 0.2 } }, { key: 'karanlik_perde', name: 'Karanlık Perde', desc: 'Lanet Bulutu 2 tur fazla kör eder', mods: { shroud: 2 } }],
   ],
   sifaci: [
-    [{ key: 'yenilenme', name: 'Yenilenme', desc: 'Her turunda canının %3\'ü dolar', mods: { regen: 0.03 } }, { key: 'bereket', name: 'Bereket', desc: 'Şifa %40 daha az mana harcar', mods: { sifaCost: 0.4 } }],
+    [{ key: 'yenilenme', name: 'Yenilenme', desc: 'Her turunda canının %3\'ü dolar', mods: { regen: 0.03 } }, { key: 'sifa_bereketi', name: 'Bereket', desc: 'Şifa %40 daha az mana harcar', mods: { sifaCost: 0.4 } }],
     [{ key: 'kutsal_isik', name: 'Kutsal Işık', desc: 'Şifa bir de Ay kalkanı verir (1 saldırı)', mods: { sifaWard: 1 } }, { key: 'umut', name: 'Umut', desc: 'İyileştirmelerin +%25', mods: { heal: 0.25 } }],
   ],
   terbiyeci: [
@@ -1784,10 +1780,6 @@ export const SUB_TREE = {
     [{ key: 'alfa', name: 'Alfa', desc: 'Glemonlarının vuruşları %15 kritik', mods: { petCrit: 0.15 } }, { key: 'sadakat', name: 'Sadakat', desc: 'Bayılan Glemon bir kez %30 canla kalkar', mods: { petRevive: 0.3 } }],
   ],
 };
-TREE.savas.name = 'Sınıf';
-TREE.savas.skills = ['saldiri', 'savunma', 'can', 'okculuk', 'buyu'];
-TREE.savas.tiers = [];
-TREE_COST.push(8, 8);
 
 // ================================================================ 1.0.13 Yetenek Agaci 2.0 (Eren)
 // Dalin becerilerinde her seviye atlayisin o dala 1 puan verir. Her sira bir oncekinden pahali:
@@ -1798,7 +1790,7 @@ TREE_COST.push(8, 8);
 export const TREE_ROW_NEED = [0, 3, 10, 25, 50, 90];
 const small = (key, name, max, bon, txt) => ({ key, name, max, bon, txt });
 const big = (pk, mult = 3) => ({ ...pk, max: 1, big: mult });
-const findOld = (k) => Object.values(TREE).flatMap((b) => b.tiers.flat()).find((x) => x.key === k);
+const findOld = (k) => OLD_PERKS[k];
 export const TREE2 = {
   savas: {
     name: 'Sınıf', skills: ['saldiri', 'savunma', 'can', 'okculuk', 'buyu'],
@@ -1979,7 +1971,7 @@ Object.assign(GLEMONS, {
   },
   kadim_bonk: {
     name: 'Kadim Bonk', from: "Kadim Bonk'tan", rarity: 'efsanevi', type: 'Yıldız', boss: true,
-    hp: 175, atk: 6.4, def: 5.2, spd: 105,
+    hp: 95, atk: 7.0, def: 5.2, spd: 105, // D4 (1.0.18): eskiden hp 175, atk 6.4
     pattern: ['normal', 'yagmur', 'normal', 'cagir', 'normal', 'darbe', 'normal', 'kalkan'],
     specials: {
       yagmur: { name: 'Yıldız Yağmuru', mult: 1.0, aoe: true, telegraph: true, status: ['karanlik', 2] },
@@ -1990,7 +1982,7 @@ Object.assign(GLEMONS, {
     drops: [['kadim_kalp', 1], ['cekirdek_kristali', 0.5], ['efsane_pul', 0.3], ['altin_elma', 0.5]],
   },
 });
-ZONES.push({ key: 'cekirdek', name: 'Yıldız Çekirdeği', floors: [61, 70], open: true, boss: 'kadim_bonk', type: 'Yıldız', atk: 100, after: 'bosluk_bekcisi', hazard: 'Hikâyenin son bölgesi. En dipte Kadim Bonk uyuyor.' });
+ZONES.push({ key: 'cekirdek', name: 'Yıldız Çekirdeği', floors: [61, 70], open: true, boss: 'kadim_bonk', type: 'Yıldız', atk: 82, after: 'bosluk_bekcisi', hazard: 'Hikâyenin son bölgesi. En dipte Kadim Bonk uyuyor.' });
 ZONE_SPAWNS.cekirdek = [['yildiz_tozu', 0.3], ['nebula_kedisi', 0.3], ['meteor_kaplumbaga', 0.25], ['takimyildiz_geyigi', 0.15]];
 NIGHT_SPAWNS.cekirdek = [['isilbocek', 0.3], ['gece_kelebegi', 0.4], ['ruya_kuzusu', 0.3]];
 ZONE_GATHER.cekirdek = [['ay_otu', 30], ['gece_mantari', 40], ['sifali_ot', 30]];
@@ -2046,3 +2038,21 @@ export const ANVIL5 = [['kadim_oz', 3], ['meteor_tasi', 4], ['usta_damgasi', 1]]
 export const VMAX = 120;
 CAPE_COLORS.usta = ['#5a3a12', '#c89a2a', '#ffe070', '#ffffff'];
 ITEMS.usta_pelerini = { name: 'Usta Pelerini', kind: 'pelerin', rarity: 'efsanevi', icon: 'pelerin_usta', def: 10, hp: 60, spd: 10, cape: 'usta', desc: 'Bir beceride sanal 120\'ye ulaşan gerçek ustalara. Altın gibi parlar. Savunma +10, Can +60, Hız +10.' };
+
+// ---------------------------------------------------------------- 1.0.18 ekonomi (D7)
+// Fiyati olmayan her silah ve zirha kademesine gore otomatik fiyat (guc x 3; zirhta savunma x 3 + can)
+for (const [id, it] of Object.entries(ITEMS)) {
+  if (SELL[id] !== undefined || it.legend || it.bound) continue;
+  if (it.kind === 'silah' && it.power) SELL[id] = Math.max(5, Math.round(it.power * 3));
+  else if (['kask', 'gogus', 'bot'].includes(it.kind) && it.def) SELL[id] = Math.max(5, Math.round(it.def * 3 + (it.hp || 0)));
+}
+// Parcala: tarifi olmayan (dusen) esyalar bolgenin temel malzemesini verir
+export const ZONE_BASE = { orman: 'dal', magara: 'demir_cevheri', col: 'demir_kulcesi', buz: 'altin_kulcesi', kor: 'kor_tasi', golge: 'golge_tasi', cekirdek: 'yildiz_parcasi' };
+export const DROP_ZONE = {};
+for (const [z, list] of Object.entries(ZONE_SPAWNS)) for (const [k] of list) for (const [id] of (GLEMONS[k] && GLEMONS[k].drops) || []) if (!DROP_ZONE[id]) DROP_ZONE[id] = z;
+for (const z of ZONES) for (const [id] of (GLEMONS[z.boss] && GLEMONS[z.boss].drops) || []) if (!DROP_ZONE[id]) DROP_ZONE[id] = z.key;
+for (const [z, c] of Object.entries(ZONE_CHEST)) for (const [id] of c.gear || []) if (!DROP_ZONE[id]) DROP_ZONE[id] = z;
+for (const [id] of CHEST_GEAR) if (!DROP_ZONE[id]) DROP_ZONE[id] = 'orman';
+// Gec oyun para harcama yerleri: parayla canta yuvasi (her 5 yuva pahalanir) ve Ors'te kalite yeniden cevirme
+export const BAG_BUY = { step: 5, max: 20, price: (bought) => 2000 * Math.pow(2, Math.floor(bought / 5)) };
+export const REROLL_PRICE = { nadir: 1500, epik: 4000 };

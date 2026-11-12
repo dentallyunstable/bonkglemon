@@ -1,11 +1,12 @@
 // 0.10 Koru: 6 fidan yeri. Agaclar gercek zamanla buyur, baltayla kesilir.
 // Agaclar da 16x16 bloklardan kurulur (kutuk + yaprak), Minecraft gibi.
-import { GROUND_Y, ITEMS, TREES, GROVE_PLOTS } from './data.js';
+import { GROUND_Y, ITEMS, TREES, GROVE_PLOTS, NAMES } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, moveTo, wait } from './anim.js';
 import { TOD } from './art.js';
+import { now as gNow } from './clock.js';
 
 const LEAF = { mese: 'yaprak', hus: 'hus_yaprak', cam: 'cam_yaprak', kiraz: 'pembe_yaprak' };
 const LOG = { mese: 'kutuk', hus: 'hus_kutuk', cam: 'cam_kutuk', kiraz: 'kiraz_kutuk' };
@@ -19,7 +20,7 @@ function grove() {
   }
   return S.save.grove;
 }
-function growth(pl) { return pl.k ? Math.min(1, (Date.now() - pl.t0) / TREES[pl.k].ms) : 0; }
+function growth(pl) { return pl.k ? Math.min(1, (gNow() - pl.t0) / TREES[pl.k].ms) : 0; }
 export function axePower() { return Math.max(0, ...S.save.bag.filter(Boolean).map((s) => ITEMS[s.id].axe || 0)); }
 
 export const GroveMixin = {
@@ -48,7 +49,7 @@ export const GroveMixin = {
     this.drawKoru();
     this.resetPlayer();
     this.applyTod();
-    UI.setLocation('Koru');
+    UI.setLocation(NAMES.koru); // K7
     UI.setActions([{ label: 'Eve dön', onClick: () => this.leaveKoru() }]);
   },
 
@@ -157,12 +158,12 @@ export const GroveMixin = {
     pl.k = null; pl.t0 = 0;
     // ayni fidan cantadaysa otomatik yeniden dikilir
     const back = Object.entries(TREES).find(([, tt]) => tt === t)[0];
-    if (S.removeItem(t.sap, 1) === 1) { pl.k = back; pl.t0 = Date.now(); UI.feed(`${ITEMS[t.sap].name} yerine yeniden dikildi.`); }
+    if (S.removeItem(t.sap, 1) === 1) { pl.k = back; pl.t0 = gNow(); UI.feed(`${ITEMS[t.sap].name} yerine yeniden dikildi.`); }
     const ups = S.addXp({ toplama: t.xp });
     S.changed();
     this.idle();
     this.drawKoru();
-    for (const u of ups) await this.levelUp(u);
+    await this.levelUps(ups);
     this.busy = false;
   },
 
@@ -180,7 +181,7 @@ export const GroveMixin = {
         const b = UI.button(ok ? 'Dik' : `Toplama ${t.lvl}`, () => {
           if (!ok || S.removeItem(id, 1) < 1) return;
           const pl = grove().plots[i];
-          pl.k = SAP[id]; pl.t0 = Date.now();
+          pl.k = SAP[id]; pl.t0 = gNow();
           S.changed();
           UI.closePanel();
           sfx('gather');

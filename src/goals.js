@@ -4,6 +4,7 @@
 // Takvim gercek saate bagli. Saat geri alinirsa yenilenme ve etkinlik odulu durur (kasilmasin diye).
 import { S } from './state.js';
 import { SKILLS, GLEMONS, ITEMS, FISH, ZONES } from './data.js';
+import { now as gNow } from './clock.js';
 
 export const PUL = 'Lale Pulu';
 const DAY = 86400000;
@@ -12,19 +13,19 @@ const DAY = 86400000;
 // Saat, bugune kadar gorulen en ileri zamandan 10 dakikadan fazla geride ise "geri alinmis" sayilir.
 export function clockOk() {
   const c = S.save.clock || (S.save.clock = { max: 0 });
-  const now = Date.now();
+  const now = gNow();
   if (now + 10 * 60000 < c.max) return false;
   if (now > c.max) c.max = now;
   return true;
 }
-export function dayNum(t = Date.now()) { return Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / DAY); }
+export function dayNum(t = gNow()) { return Math.floor((t - new Date(t).getTimezoneOffset() * 60000) / DAY); }
 // 0 pazar, 1 pazartesi ... 6 cumartesi (1970-01-01 persembe)
-export function weekday(t = Date.now()) { return (dayNum(t) + 4) % 7; }
+export function weekday(t = gNow()) { return (dayNum(t) + 4) % 7; }
 // pazartesiden baslayan hafta numarasi
-export function weekNum(t = Date.now()) { return Math.floor((dayNum(t) - 4) / 7); }
-export function nextMidnight(t = Date.now()) { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime(); }
-export function dayStart(t = Date.now()) { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
-export function nextMonday(t = Date.now()) { const wd = weekday(t); const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + ((8 - wd) % 7 || 7)).getTime(); }
+export function weekNum(t = gNow()) { return Math.floor((dayNum(t) - 4) / 7); }
+export function nextMidnight(t = gNow()) { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime(); }
+export function dayStart(t = gNow()) { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+export function nextMonday(t = gNow()) { const wd = weekday(t); const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + ((8 - wd) % 7 || 7)).getTime(); }
 export function fmtLeft(ms) {
   const m = Math.max(1, Math.ceil(ms / 60000));
   if (m < 60) return `${m} dk`;
@@ -37,11 +38,11 @@ export function fmtLeft(ms) {
 const SYN = 29.530588853;
 const FULL_REF = Date.UTC(2000, 0, 21, 4, 41);
 function fullMoonNear(t) { const k = Math.round((t - FULL_REF) / DAY / SYN); return FULL_REF + k * SYN * DAY; }
-export function fullMoon(t = Date.now()) {
-  if (typeof window !== 'undefined' && window.__moon !== undefined) return !!window.__moon;
+export function fullMoon(t = gNow()) {
+  if ((typeof __DEV__ === 'undefined' || __DEV__) && typeof window !== 'undefined' && window.__moon !== undefined) return !!window.__moon;
   return dayNum(fullMoonNear(t)) === dayNum(t);
 }
-export function nextFullMoon(t = Date.now()) {
+export function nextFullMoon(t = gNow()) {
   let fm = fullMoonNear(t);
   if (dayNum(fm) <= dayNum(t)) fm += SYN * DAY;
   return dayStart(fm);
@@ -58,18 +59,18 @@ export const DAILY_RULES = [
 ];
 export function todayRule() { return DAILY_RULES[dayNum() % DAILY_RULES.length]; }
 // Hafta sonu etkinligi: cuma, cumartesi, pazar. Haftadan haftaya patron kosusu / balik turnuvasi
-export function weekendNow(t = Date.now()) { const wd = weekday(t); return wd === 5 || wd === 6 || wd === 0; }
-export function weekendKind(t = Date.now()) { return weekNum(t) % 2 === 0 ? 'patron' : 'balik'; }
-export function weekendEnds(t = Date.now()) { return nextMonday(t); }
-export function weekendStarts(t = Date.now()) { const wd = weekday(t); const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + ((5 - wd + 7) % 7)).getTime(); }
+export function weekendNow(t = gNow()) { const wd = weekday(t); return wd === 5 || wd === 6 || wd === 0; }
+export function weekendKind(t = gNow()) { return weekNum(t) % 2 === 0 ? 'patron' : 'balik'; }
+export function weekendEnds(t = gNow()) { return nextMonday(t); }
+export function weekendStarts(t = gNow()) { const wd = weekday(t); const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + ((5 - wd + 7) % 7)).getTime(); }
 export const FISH_TOUR = [10, 25, 50]; // balik turnuvasi: hafta sonu tutulan balik esikleri
 export const FISH_TOUR_PUL = [2, 3, 5];
 // Gezgin Tuccar: cumartesi ve pazar ussun ortasinda
-export function merchantHere(t = Date.now()) {
-  if (typeof window !== 'undefined' && window.__merchant !== undefined) return !!window.__merchant;
+export function merchantHere(t = gNow()) {
+  if ((typeof __DEV__ === 'undefined' || __DEV__) && typeof window !== 'undefined' && window.__merchant !== undefined) return !!window.__merchant;
   const wd = weekday(t); return wd === 6 || wd === 0;
 }
-export function merchantNext(t = Date.now()) { const wd = weekday(t); const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + ((6 - wd + 7) % 7)).getTime(); }
+export function merchantNext(t = gNow()) { const wd = weekday(t); const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + ((6 - wd + 7) % 7)).getTime(); }
 
 // ------------------------------------------------------------ Gezgin Tuccar vitrini
 // [esya, adet, fiyat (Lale Pulu)]. Her hafta 6 tanesi secilir; her biri haftada bir kez alinir.
@@ -79,7 +80,7 @@ export const MERCHANT = [
   ['buyuk_iksir', 3, 3], ['parlak_yem', 2, 5], ['canta_eki', 1, 12], ['tuccar_pelerini', 1, 15],
 ];
 function seeded(n) { let x = (n * 2654435761) >>> 0; return () => { x ^= x << 13; x >>>= 0; x ^= x >> 17; x ^= x << 5; x >>>= 0; return x / 4294967296; }; }
-export function merchantStock(t = Date.now()) {
+export function merchantStock(t = gNow()) {
   const r = seeded(weekNum(t) + 913);
   const list = MERCHANT.filter(([id]) => ITEMS[id]).slice();
   for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
@@ -173,7 +174,7 @@ export const ACH = [
   { k: 'crafted', g: 2, n: 'Zanaatkâr', d: (t) => `${t} eşya üret`, v: (s) => s.stats.crafted, t: [25, 250, 1500] },
   { k: 'placed', g: 2, n: 'Yapıcı', d: (t) => `Arsana ${t} blok koy`, v: (s) => s.stats.placed || 0, t: [50, 500, 2500] },
   { k: 'score', g: 2, n: 'Güzel Ev', d: (t) => `Ev Puanı ${t}`, v: () => S.baseScore(), t: [50, 200, 600] },
-  { k: 'anvil', g: 2, n: 'Örsün Efendisi', d: (t) => `Bir eşyayı Örste +${t} yap`, v: (s) => Math.max(0, ...Object.values(s.upg || {})), t: [1, 2, 4] },
+  { k: 'anvil', g: 2, n: 'Örsün Efendisi', d: (t) => `Bir eşyayı Örste +${t} yap`, v: (s) => Math.max(s.stats.bestUpg || 0, ...Object.values(s.equ || {}), ...Object.values(s.upg || {})), t: [1, 2, 4] },
   { k: 'seen', g: 3, n: 'Albümcü', d: (t) => `${t} Glemon türü gör`, v: (s) => Object.keys(s.album.seen).length, t: () => [10, 25, glemonN()] },
   { k: 'tamed', g: 3, n: 'Bakıcı', d: (t) => `${t} Glemon evcilleştir`, v: (s) => s.stats.tamed || 0, t: [1, 10, 40] },
   { k: 'shiny', g: 3, n: 'Parıltı Avcısı', d: (t) => `${t} parlak Glemon yen`, v: (s) => s.stats.shiny, t: [1, 5, 20] },

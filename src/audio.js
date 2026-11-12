@@ -150,7 +150,7 @@ export function stopMusic() { want = null; syncMusic(); }
 }, true));
 
 // testler icin
-window.__music = () => ({ want, synth: seq ? seq.key : null, playing: Object.entries(tracks).filter(([, a]) => !a.paused).map(([k]) => k) });
+if (typeof __DEV__ === 'undefined' || __DEV__) window.__music = () => ({ want, synth: seq ? seq.key : null, playing: Object.entries(tracks).filter(([, a]) => !a.paused).map(([k]) => k) });
 
 // ------------------------------------------------------------ 1.0 bolge muzikleri (dosyasiz, tarayicida calinir)
 // Her bolgenin kendi gamı, hizi ve sesi var. Melodi sabit bir tohumdan uretilir: her acilista ayni sarki.
@@ -290,7 +290,7 @@ function synthStop() {
 }
 
 // testler ve onizleme icin: sarkiyi sessizce bir ses tamponuna cal
-window.__renderSong = async (key, secs = 30) => {
+if (typeof __DEV__ === 'undefined' || __DEV__) window.__renderSong = async (key, secs = 30) => {
   const sg = SONGS[key]; const c = compose(sg);
   const a = new OfflineAudioContext(1, 44100 * secs, 44100);
   const out = a.createGain(); out.gain.value = SYNTH_VOL; out.connect(a.destination);

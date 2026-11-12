@@ -61,9 +61,11 @@ export function feed(html, cls = '') {
   const e = el('div', 'feed-msg ' + cls);
   e.innerHTML = html;
   box.appendChild(e);
-  while (box.children.length > 5) box.firstChild.remove();
-  setTimeout(() => e.classList.add('fade'), 5200);
-  setTimeout(() => e.remove(), 6000);
+  // M2 (1.0.19): en fazla 3 mesaj; siradan 3 sn, onemli (altin/epik/nadir) 5 sn
+  while (box.children.length > 3) box.firstChild.remove();
+  const ms = /gold|epic|rare/.test(cls) ? 5000 : 3000;
+  setTimeout(() => e.classList.add('fade'), ms - 800);
+  setTimeout(() => e.remove(), ms);
 }
 
 export function banner(title, sub = '', ms = 1800, cls = '') {
@@ -71,7 +73,9 @@ export function banner(title, sub = '', ms = 1800, cls = '') {
   b.className = 'show ' + cls;
   b.innerHTML = `<div class="b-title">${escapeHtml(title)}</div>` + (sub ? `<div class="b-sub">${escapeHtml(sub)}</div>` : '');
   clearTimeout(b._t);
-  b._t = setTimeout(() => { b.className = ''; }, ms);
+  // M2: buyuk baslik varken mesaj alani soluk (ust uste binmesin)
+  $('#feed').classList.add('dim');
+  b._t = setTimeout(() => { b.className = ''; $('#feed').classList.remove('dim'); }, ms);
 }
 
 export function itemName(id, withTag = true) {

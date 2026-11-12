@@ -6,6 +6,7 @@ import {
 } from './data.js';
 import { S } from './state.js';
 import { giveNote } from './ui.js';
+import { now as gNow } from './clock.js';
 
 // ------------------------------------------------------------ Glemon'un yuvasi (bolgesi)
 const HOME = {};
@@ -41,7 +42,7 @@ export function heartsText(p) {
   return '♥'.repeat(h) + '♡'.repeat(BOND.max - h);
 }
 export function petDisplayName(p) { return p.nick || S.petName(p); }
-export function canFeedFav(p, now = Date.now()) { return !p.fed || now - p.fed >= BOND.feedMs; }
+export function canFeedFav(p, now = gNow()) { return !p.fed || now - p.fed >= BOND.feedMs; }
 // sevdigi yemek (gunde bir) ya da Glemon Sekeri (her zaman)
 export function feedPet(p, id) {
   const it = ITEMS[id];
@@ -52,7 +53,7 @@ export function feedPet(p, id) {
   else if (id === favOf(p.key)) {
     if (!canFeedFav(p)) return { ok: false, msg: 'Bugün zaten yedi. Yarın tekrar ver.' };
     n = BOND.fav * ((TRAITS[p.huy] || {}).food || 1);
-    p.fed = Date.now();
+    p.fed = gNow();
   } else return { ok: false, msg: 'Bunu pek sevmedi.' };
   S.removeItem(id, 1);
   const up = S.addBond(p, n);
@@ -73,20 +74,20 @@ export function equipAcc(p, id) {
 }
 
 // ------------------------------------------------------------ Yasayan Ahir: gunluk malzeme
-export function ranchReady(p, now = Date.now()) { return now - (p.rt || 0) >= RANCH.ms; }
-export function ranchLeft(p, now = Date.now()) { return Math.max(0, RANCH.ms - (now - (p.rt || 0))); }
+export function ranchReady(p, now = gNow()) { return now - (p.rt || 0) >= RANCH.ms; }
+export function ranchLeft(p, now = gNow()) { return Math.max(0, RANCH.ms - (now - (p.rt || 0))); }
 export function ranchAmount(p) { return 1 + (p.stage === 2 ? 1 : 0) + (S.hearts(p) >= 3 ? 1 : 0); }
 export function collectRanch(p) {
   if (!ranchReady(p)) return null;
   const id = ranchDropOf(p.key);
   const n = ranchAmount(p);
-  p.rt = Date.now();
+  p.rt = gNow();
   return { id, n };
 }
 export function readyCount() { return S.save.pets.filter((p) => ranchReady(p)).length; }
 
 // ------------------------------------------------------------ ciftlestirme
-export function breedReady(p, now = Date.now()) { return !p.bred || now - p.bred >= NEST.breedCd; }
+export function breedReady(p, now = gNow()) { return !p.bred || now - p.bred >= NEST.breedCd; }
 export function breedWhy(a, b) {
   if (!a || !b || a.id === b.id) return 'İki farklı Glemon seç.';
   if (a.stage < 2 || b.stage < 2) return 'İkisi de Usta olmalı (Sv. 35).';
@@ -105,7 +106,7 @@ export function breed(a, b) {
   const shiny = Math.random() < NEST.shinyBase + NEST.shinyParent * ((a.shiny ? 1 : 0) + (b.shiny ? 1 : 0));
   const egg = { key, huy, shiny, from: [a.key, b.key] };
   S.save.eggs.push(egg);
-  a.bred = b.bred = Date.now();
+  a.bred = b.bred = gNow();
   S.save.stats.bred = (S.save.stats.bred || 0) + 1;
   return { ok: true, egg };
 }
@@ -117,7 +118,7 @@ export function nestNeed() { return Math.round(NEST.legendBattles * (S.has('yumu
 export function putBasketEgg(slot, i) {
   if (S.save.nest[slot] || !S.save.eggs[i]) return false;
   const e = S.save.eggs.splice(i, 1)[0];
-  S.save.nest[slot] = { ...e, t0: Date.now(), ms: NEST.bredMs };
+  S.save.nest[slot] = { ...e, t0: gNow(), ms: NEST.bredMs };
   return true;
 }
 export function putBagEgg(slot, bagIdx) {
@@ -130,12 +131,12 @@ export function putBagEgg(slot, bagIdx) {
   if (s.n > 1) { s.n--; s.p = 0; } else S.save.bag[bagIdx] = null;
   return true;
 }
-export function nestProgress(e, now = Date.now()) {
+export function nestProgress(e, now = gNow()) {
   if (!e) return 0;
   if (e.legend) return Math.min(1, (e.p || 0) / nestNeed());
   return Math.min(1, (now - e.t0) / e.ms);
 }
-export function nestLeftText(e, now = Date.now()) {
+export function nestLeftText(e, now = gNow()) {
   if (e.legend) return `${Math.max(0, nestNeed() - (e.p || 0))} savaş`;
   const ms = Math.max(0, e.ms - (now - e.t0));
   const m = Math.ceil(ms / 60000);

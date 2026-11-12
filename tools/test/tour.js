@@ -65,8 +65,8 @@ async function makeAdvanced(page) {
 const PANELS = [
   ['openBag', 'w'], ['openDepo', 'w'], ['openSkills'], ['openTree', 'savas'], ['openAnvil', 'w'], ['openProfile', 'w'],
   ['openMap', 'w'], ['openAhir', 'w'], ['openNest', 'w'], ['openAlbum', 'w'], ['openStation', 'w', 'masa'], ['openStation', 'w', 'firin'],
-  ['openStation', 'w', 'kazan'], ['openStation', 'w', 'yem'], ['openStation', 'w', 'mutfak'], ['openShop', 'w'], ['openHanci', 'w'],
-  ['openMeydan', 'w'], ['openQuests', 'w'], ['openZindan', 'w'], ['openAchievements', 'w'], ['openTitles', 'w'], ['openEventGate', 'w'],
+  ['openStation', 'w', 'kazan'], ['openStation', 'w', 'yem'], ['openStation', 'w', 'mutfak'], ['openShop', 'w'], ['openVillageMap', 'w'],
+  ['openLale', 'w'], ['openQuests', 'w'], ['openZindan', 'w'], ['openAchievements', 'w'], ['openTitles', 'w'], ['openEventGate', 'w'],
   ['openMerchant', 'w'], ['openTrophies', 'w'], ['openKule', 'w'], ['openLegends', 'w'], ['openPrep', 'w', 1], ['openClass'], ['openStory', 'w'],
   ['openCredits', 'w'], ['openAlbum', 'w', 'balik'], ['openAhir', 'w', 'yem'], ['openQuests', 'w', 'haftalik'],
 ];
@@ -113,7 +113,20 @@ async function openGame(opts = {}) {
 }
 module.exports = { serve, openGame };
 
+// once butun kaynak dosyalarin soz dizimi (sayfa acilmadan once yakalansin)
+function syntaxCheck() {
+  const { execFileSync } = require('child_process');
+  const bad = [];
+  for (const f of fs.readdirSync(path.join(ROOT, 'src')).filter((x) => x.endsWith('.js'))) {
+    try { execFileSync(process.execPath, ['--input-type=module', '--check'], { input: fs.readFileSync(path.join(ROOT, 'src', f)), stdio: ['pipe', 'pipe', 'pipe'] }); } catch (e) { bad.push(`[soz dizimi] src/${f}: ${String(e.stderr).split('\n').slice(0, 5).join(' | ')}`); }
+  }
+  return bad;
+}
+module.exports.syntaxCheck = syntaxCheck;
+
 if (require.main === module) (async () => {
+  const sx = syntaxCheck();
+  if (sx.length) { console.log('HATALAR:\n' + sx.join('\n')); process.exit(1); }
   const srv = await serve();
   const url = `http://localhost:${srv.address().port}/index.html`;
   const browser = await chromium.launch();

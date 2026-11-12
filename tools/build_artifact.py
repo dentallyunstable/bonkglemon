@@ -11,7 +11,7 @@ def font(m):
 css = re.sub(r'url\((\.\./vendor/fonts/[^)]+\.woff2)\)', font, css)
 html = open(os.path.join(root, 'index.html'), encoding='utf8').read()
 body = html[html.index('<div id="stage">'):html.index('<script src="vendor/phaser.min.js">')]
-js = subprocess.run(['npx', 'esbuild', os.path.join(root, 'src/main.js'), '--bundle', '--minify', '--format=iife'], capture_output=True, text=True, check=True).stdout
+js = subprocess.run(['npx', 'esbuild', os.path.join(root, 'src/main.js'), '--bundle', '--minify', '--format=iife', '--define:__DEV__=false'], capture_output=True, text=True, check=True).stdout
 js = js.replace('</script', '<\\/script')
 page = ('<title>Bonkglemon</title>\n<style>\n:root{color-scheme:dark}\n' + css + '\n</style>\n' + body +
         '<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>\n<script>' + js + '</script>\n')

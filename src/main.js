@@ -10,6 +10,7 @@ import * as ART from './art.js';
 import { block, BLOCK_NAMES } from './blocks.js';
 import { Pix } from './pix.js';
 import { initGear, refreshGear } from './gear.js';
+import { now as gNow } from './clock.js';
 
 const LOOPING = new Set(['idle', 'idlesway', 'walk', 'run', 'sprint', 'ninjadash', 'ninjarun', 'sneakwalk', 'blockwalk', 'sit',
   'sneakspam', 'walkin', 'fish_idle', 'fish_reel', 'b_idlesway', 'b_ninjarun', 'b_run']);
@@ -70,13 +71,8 @@ class BootScene extends Phaser.Scene {
       BLOCK_NAMES.forEach((n, i) => bt.add(n, 0, i * 16, 0, 16, 16));
     }
     tex('yard', ART.workshopYard());
-    tex('inn_back', ART.innBack());
-    tex('inn_counter', ART.innCounter());
     tex('bigmoon', ART.bigMoon());
     tex('feedtable', ART.feedTable());
-    tex('mine', ART.mineEntrance());
-    tex('signpost', ART.signpost());
-    tex('stall', ART.stall());
     tex('chest', ART.chest(false));
     tex('chest_open', ART.chest(true));
     tex('spikes', ART.spikes());
@@ -130,12 +126,12 @@ function startGame(char, charMeta, gmeta, npc) {
   setInterval(() => {
     if (document.hidden || !S.save) return;
     S.save.stats.playMs += 30000;
-    S.save.lastSeen = Date.now();
+    S.save.lastSeen = gNow();
     S.persist();
   }, 30000);
   // eslik: sekme kapanirken kaydet
-  window.addEventListener('pagehide', () => { S.save.lastSeen = Date.now(); S.persist(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { S.save.lastSeen = Date.now(); S.persist(); } pauseMusic(document.hidden); });
+  window.addEventListener('pagehide', () => { S.save.lastSeen = gNow(); S.persist(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { S.save.lastSeen = gNow(); S.persist(); } pauseMusic(document.hidden); });
   new Phaser.Game({
     type: Phaser.AUTO,
     parent: 'game',

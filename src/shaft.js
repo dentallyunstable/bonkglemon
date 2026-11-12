@@ -4,14 +4,14 @@
 // lav, su, cakil, magara cepleri (Glemon), fosil, antik sandik ve jeotlar var.
 import {
   SECRETS, GAME_W, ITEMS, ORES, ZONES, ZONE_SPAWNS, GLEMONS, CURRENCY, SHAFT, LAYERS, layerOf, oreDepthOf,
-  oreWeights, mineXpMult, mineHardBonus, FOSSILS, GEODE_GEMS,
-} from './data.js';
+  oreWeights, mineXpMult, mineHardBonus, FOSSILS, GEODE_GEMS, NAMES } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
 import { sfx, stopMusic, playMusic } from './audio.js';
 import { playAnim, wait } from './anim.js';
 import { Battle } from './battle.js';
-import { caveBackground } from './art.js';
+import { caveBackground, todNow } from './art.js';
+import { now as gNow } from './clock.js';
 
 export const SH = { X0: (GAME_W - SHAFT.cols * 16) / 2, TOP: 120, CELL: 16, SIDE: 6, SCALE: 0.9 };
 const COLS = SHAFT.cols;
@@ -36,7 +36,7 @@ function wpick(list, u) {
 }
 
 export function newShaft() {
-  return { seed: (Math.random() * 2 ** 31) >>> 0, d: {}, it: {}, cv: {}, pr: -1, pc: 5, low: -1, t: Date.now() };
+  return { seed: (Math.random() * 2 ** 31) >>> 0, d: {}, it: {}, cv: {}, pr: -1, pc: 5, low: -1, t: gNow() };
 }
 
 // magara cepleri: her 4 satirlik bantta bir tane olabilir (3 genis, 2 yuksek)
@@ -109,6 +109,8 @@ export const ShaftMixin = {
       UI.giveNote(S.giveSafe('merdiven', 8)); UI.giveNote(S.giveSafe('mesale', 8));
       first = true;
     }
+    // M5 (1.0.19): bu inişte toplanan cevherler (bayılınca yarısı düşer, keşifteki kural)
+    S.save.mineRun = { got: {} };
     this.goShaft();
     await this.fade(false);
     this.busy = false;
@@ -124,6 +126,7 @@ export const ShaftMixin = {
     if (!this.standOk(v.pr, v.pc)) { v.pr = -1; v.pc = 5; }
     this.shLayerBg(true);
     // yuzeyde orman (kuyu ustundeki gokyuzu)
+    this.tod = todNow(); // B2 (1.0.20): maden yuzeyinin gogu de gun vaktine uyar
     const sky = this.add.image(0, SH.TOP - 178, this.todBg('bg_base')).setOrigin(0).setDepth(1);
     this.roomObjs.push(sky);
     this.shDark = this.add.renderTexture(0, 0, GAME_W, 216).setOrigin(0).setScrollFactor(0).setDepth(11);
@@ -288,7 +291,7 @@ export const ShaftMixin = {
     const v = this.sv();
     const lad = S.countItem('merdiven'); const tor = S.countItem('mesale'); const bombs = S.countItem('bonk_bombasi');
     const lay = layerOf(Math.max(0, v.pr));
-    UI.setLocation(v.pr < 0 ? 'Maden Kuyusu · Yüzey' : `Maden · ${lay.name} · ${v.pr + 1}. sıra`);
+    UI.setLocation(v.pr < 0 ? `${NAMES.maden} · Yüzey` : `${NAMES.maden} · ${lay.name} · ${v.pr + 1}. sıra`); // K7
     UI.setActions([
       { label: `Tırman ↑ (${lad})`, cls: 'primary', disabled: v.pr < 0, onClick: () => this.shClimb() },
       { label: `Merdiven (${lad})`, disabled: lad < 1 || v.pr < 0, onClick: () => this.shPlace('merdiven') },
@@ -356,7 +359,7 @@ export const ShaftMixin = {
     const key = (s) => `${s.r},${s.c}`;
     const prev = new Map([[key(start), null]]);
     const q = [start];
-    const lavaOk = S.fireproof() || Date.now() < (S.save.fireResUntil || 0);
+    const lavaOk = S.fireproof() || gNow() < (S.save.fireResUntil || 0);
     const enter = (r, c) => this.standOk(r, c) && (lavaOk || (!isLava(this.kindAt(r, c)) && !isLava(this.kindAt(r - 1, c))));
     while (q.length && prev.size < 400) {
       const s = q.shift();
@@ -514,6 +517,7 @@ export const ShaftMixin = {
     if (drop) {
       const n = !silk && S.save.ench === 'servet' && !ore.soft && Math.random() < 0.3 ? 2 : 1;
       const left = S.addItem(drop, n);
+      if (left < n && S.save.mineRun) { const g = S.save.mineRun.got; g[drop] = (g[drop] || 0) + n - left; }
       if (left < n) this.shFloat(x, y - 4, `+${n - left} ${ITEMS[drop].name}`, n > 1 ? 'gold' : 'info');
       if (left > 0) UI.feed(`Çanta dolu! ${ITEMS[drop].name} sığmadı.`);
     }
@@ -550,7 +554,7 @@ export const ShaftMixin = {
     this.shFloat(x, y - 14, `+${xp} XP`, 'good');
     const ups = S.addXp({ madencilik: xp });
     S.changed();
-    for (const u of ups) await this.levelUp(u);
+    await this.levelUps(ups);
   },
 
   // ---------------------------------------------------------- tehlikeler
@@ -625,11 +629,11 @@ export const ShaftMixin = {
     const v = this.sv();
     const inLava = isLava(this.kindAt(v.pr, v.pc)) || isLava(this.kindAt(v.pr - 1, v.pc));
     if (inLava) {
-      if (S.fireproof() || Date.now() < (S.save.fireResUntil || 0)) {
+      if (S.fireproof() || gNow() < (S.save.fireResUntil || 0)) {
         if (!this.toldLavaOk) { this.toldLavaOk = true; UI.feed('Lavın içindesin ama ateş direncin seni koruyor.'); }
       } else if (S.countItem('ates_iksiri') > 0) {
         S.removeItem('ates_iksiri', 1);
-        S.save.fireResUntil = Date.now() + 30 * 60 * 1000;
+        S.save.fireResUntil = gNow() + 30 * 60 * 1000;
         UI.feed('Lav! Hemen Ateş Direnci İksiri içtin: 30 dakika yanmazsın.');
         await playAnim(this.player, 'c_drinkpotion', 2.4);
       } else {
@@ -652,13 +656,20 @@ export const ShaftMixin = {
     const v = this.sv();
     v.pr = -1; v.pc = 5;
     S.hp = Math.max(1, Math.round(S.maxHp() * 0.3));
+    // M5 (1.0.19): bu inişte kazılan cevherlerin yarısı düşer
+    const lost = [];
+    for (const [id, n] of Object.entries((S.save.mineRun && S.save.mineRun.got) || {})) {
+      const k = S.removeItem(id, Math.floor(n / 2));
+      if (k > 0) lost.push(`${ITEMS[id].name} ×${k}`);
+    }
+    S.save.mineRun = { got: {} };
     S.changed();
     await playAnim(this.player, 'c_death', 1);
     await this.fade(true);
     this.shExit();
     this.goBase('death');
     await this.fade(false);
-    UI.feed('Madende bayıldın. Lale seni yüzeye çıkarıp kampa getirdi; çantan sende. Bir dahaki sefere canına dikkat et!');
+    UI.feed(lost.length ? `Madende bayıldın. Lale seni kampa getirdi ama bu inişte kazdıklarının yarısı düştü: ${lost.join(', ')}.` : 'Madende bayıldın. Lale seni yüzeye çıkarıp kampa getirdi. Bir dahaki sefere canına dikkat et!', lost.length ? 'warn' : '');
     await playAnim(this.player, 'c_cry', 1);
     this.idle();
     this.busy = false;
