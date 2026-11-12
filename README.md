@@ -4,6 +4,10 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 1.0.24
+
+- Paneller bir seçimden ya da alıştan sonra en üste kaymıyor (Üretim Masası, Dükkân ve diğerleri).
+
 ## Sürüm 1.0.23 (Atölye)
 
 - Evdeki istasyonlar tek bir açık hava atölyesinde yan yana: kalas duvar, direkler, kiremit saçak, duvara dayalı silahlık, asılı kalkan, zırh askısı.

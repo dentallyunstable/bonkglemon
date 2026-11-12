@@ -110,6 +110,9 @@ let panelClose = null;
 let helpHook = null;
 export function setHelpHook(fn) { helpHook = fn; }
 export function openPanel(title, build, { wide = false, onClose = null } = {}) {
+  // 1.0.24: ayni panel kendini yeniden acarsa (ornegin bir islemden sonra) kaydirma yeri korunur
+  const old = $('#panel .panel-title');
+  const keep = old && old.textContent === title && $('#panel').classList.contains('show') ? saveScroll($('#panel .panel-body')) : null;
   closePanel();
   const wrap = $('#panel');
   wrap.innerHTML = '';
@@ -125,8 +128,41 @@ export function openPanel(title, build, { wide = false, onClose = null } = {}) {
   box.appendChild(head); box.appendChild(body);
   wrap.appendChild(box);
   panelClose = onClose;
+  keepScroll(body);
   build(body, box);
+  if (keep) restoreScroll(body, keep);
   wrap.onclick = (e) => { if (e.target === wrap) closePanel(); };
+}
+
+// 1.0.24 (Eren): paneller bir secimden sonra kendini yeniden cizince (body.innerHTML = '') kaydirma
+// en uste atiyordu (Uretim Masasinda asagidaki tarifi secince). Yeniden cizimden once panelin ve icindeki
+// kayan listelerin (tarifler, dukkan, Glemonlar...) kaydirma yeri saklanir, cizim bitince geri konur.
+const SCROLLERS = '.recipes, .shop-list, .pet-grid, .detail, [data-keep-scroll]';
+function saveScroll(body) {
+  return { top: body.scrollTop, lists: [...body.querySelectorAll(SCROLLERS)].map((e, i) => ({ k: `${e.className}#${i}`, t: e.scrollTop })) };
+}
+function restoreScroll(body, p) {
+  body.scrollTop = p.top;
+  const now = [...body.querySelectorAll(SCROLLERS)];
+  for (const l of p.lists) { const e = now.find((x, i) => `${x.className}#${i}` === l.k); if (e && l.t) e.scrollTop = l.t; }
+}
+function keepScroll(body) {
+  const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  let pending = null;
+  Object.defineProperty(body, 'innerHTML', {
+    configurable: true,
+    get() { return desc.get.call(this); },
+    set(v) {
+      if (!pending) {
+        pending = saveScroll(body);
+        queueMicrotask(() => {
+          const p = pending; pending = null;
+          if (p && body.isConnected) restoreScroll(body, p);
+        });
+      }
+      desc.set.call(this, v);
+    },
+  });
 }
 
 export function closePanel() {
