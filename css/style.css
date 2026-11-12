@@ -1053,3 +1053,11 @@ textarea.save-text, .save-text textarea { width: 100%; height: calc(40 * var(--u
 .btn.hud-loot-btn, .btn.build-btn, .map-spot, .char-card, .objlabel, .dodge, .dodge .ring, .dock-badge, .title-card, .album-card, .zone.zbanner {
   border-radius: 0 !important;
 }
+
+/* 1.0.25 (Eren): panel ust dugmeleri (? ve kapat) her ekranda kare ve ayni boyda kalir; ? kapatmanin yaninda.
+   Telefondaki "en az 40 piksel" kurali bunlari uzun dikdortgene ceviriyordu. */
+.panel-head .btn.help { margin-left: auto; }
+.panel-head .btn.close, .panel-head .btn.help { flex: none; aspect-ratio: 1; }
+@media (max-height: 500px) and (pointer: coarse), (max-height: 420px) {
+  .panel-head .btn.close, .panel-head .btn.help { min-height: 0; width: max(calc(15 * var(--u)), 30px); height: max(calc(15 * var(--u)), 30px); }
+}

@@ -4,6 +4,11 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 1.0.25
+
+- Panellerin üstündeki ? ve kapatma düğmeleri her ekran boyutunda kare ve sağda kalıyor.
+- Altın elma, totem, seviye atlama ve sevgi animasyonlarında zırh artık yanıp sönmüyor.
+
 ## Sürüm 1.0.24
 
 - Paneller bir seçimden ya da alıştan sonra en üste kaymıyor (Üretim Masası, Dükkân ve diğerleri).

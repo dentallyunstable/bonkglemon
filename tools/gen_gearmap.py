@@ -130,6 +130,105 @@ def frame_views(char_dir, frames):
     return view, anim_of
 
 
+# 1.0.25 (Eren): altin elma / totem gibi animasyonlarda kafanin/govdenin ustundeki parlama ve
+# parcaciklar kafa bulmayi sasirtiyor; bazi karelerde kask/goguslik bos ya da yarim cikiyor ve
+# zirh cok hizli yanip sonuyor. Bu karelerde eksik parca, ayni animasyonun en yakin saglam
+# karesinden (ayni kaynak koordinatina) kopyalanir. Karakterin gercekten kayboldugu
+# animasyonlara (olum, patlama, kaybolma) dokunulmaz.
+REPAIR = ('goldenapple', 'totem', 'levelup', 'love')   # parlama/parcacikli animasyonlar
+REPAIR_MIN = 0.75
+
+
+def repair(out, meta, atlas, frames, pal, log):
+    O = out.load()
+    A = atlas.load()
+    by_anim = {}
+    for n in meta:
+        a, i = n.rsplit('/', 1)
+        by_anim.setdefault(a, []).append((int(i), n))
+    def pix(n, k):
+        m = meta[n]['frame']; res = []
+        for y in range(m['y'], m['y'] + m['h']):
+            for x in range(m['x'], m['x'] + m['w']):
+                p = O[x, y]
+                if p[3] and round(p[0] / KR) == k:
+                    res.append((x, y, p))
+        return res
+    def src_px(n, sx, sy):
+        f = frames[n]; ss = f['spriteSourceSize']; fr = f['frame']
+        x, y = sx - ss['x'], sy - ss['y']
+        return A[fr['x'] + x, fr['y'] + y] if 0 <= x < fr['w'] and 0 <= y < fr['h'] else (0, 0, 0, 0)
+    sil = {}
+    def body_set(n):
+        if n not in sil:
+            f = frames[n]; ss = f['spriteSourceSize']; fr = f['frame']; st = set()
+            for y in range(fr['h']):
+                for x in range(fr['w']):
+                    q = A[fr['x'] + x, fr['y'] + y]
+                    if q[3] and (is_outline(q) or q[:3] in pal):
+                        st.add((x + ss['x'], y + ss['y']))
+            sil[n] = st
+        return sil[n]
+    def diff(n, g):
+        return len(body_set(n) ^ body_set(g))
+    for a, lst in by_anim.items():
+        base = a[2:] if a.startswith('b_') else a
+        if base not in REPAIR or len(lst) < 4:
+            continue
+        lst.sort()
+        names = [n for _, n in lst]
+        for k in (1, 2, 3):
+            cnt = {n: len(pix(n, k)) for n in names}
+            vals = sorted(cnt.values())
+            med = vals[len(vals) // 2]
+            if med < 20:
+                continue
+            good = [j for j, n in enumerate(names) if cnt[n] >= REPAIR_MIN * med]
+            if not good:
+                continue
+            # art arda bozuk kareler tek bir kaynak kareden alinir (kask sekli kareler arasinda ziplamasin):
+            # karakter silueti en cok benzeyen saglam kare, esitse en yakini
+            runs, cur = [], []
+            for j, n in enumerate(names):
+                if cnt[n] < REPAIR_MIN * med:
+                    cur.append(j)
+                elif cur:
+                    runs.append(cur); cur = []
+            if cur:
+                runs.append(cur)
+            src = {}
+            for r in runs:
+                q = min(good, key=lambda q: (sum(diff(names[j], names[q]) for j in r), min(abs(q - j) for j in r), q))
+                for j in r:
+                    src[j] = q
+            for j, n in enumerate(names):
+                if j not in src:
+                    continue
+                g = names[src[j]]
+                mg, mb = meta[g], meta[n]
+                fb = mb['frame']
+                # once bu karedeki yarim parca silinir, sonra saglam kareninki kopyalanir
+                for x, y, p in pix(n, k):
+                    O[x, y] = (0, 0, 0, 0)
+                put = 0
+                for x, y, p in pix(g, k):
+                    sx = x - mg['frame']['x'] - mg['pad'] + mg['spriteSourceSize']['x']
+                    sy = y - mg['frame']['y'] - mg['pad'] + mg['spriteSourceSize']['y']
+                    bx = sx - mb['spriteSourceSize']['x'] + mb['pad'] + fb['x']
+                    by = sy - mb['spriteSourceSize']['y'] + mb['pad'] + fb['y']
+                    if not (fb['x'] <= bx < fb['x'] + fb['w'] and fb['y'] <= by < fb['y'] + fb['h']):
+                        continue
+                    q = src_px(n, sx, sy)
+                    if not q[3] and not src_px(g, sx, sy)[3]:
+                        continue
+                    if q[3] and not is_outline(q) and q[:3] not in pal:
+                        continue                  # elde tutulan totem/elma ve parlama zirhin ustunde kalir
+                    if O[bx, by][3] and round(O[bx, by][0] / KR) not in (0, k):
+                        continue
+                    O[bx, by] = p; put += 1
+                log.append(f'{a}/{n.rsplit("/",1)[1]} parca {k}: {cnt[n]} -> {put} ({g} karesinden)')
+
+
 def process(char_dir):
     atlas = Image.open(os.path.join(char_dir, 'atlas.png')).convert('RGBA')
     frames = json.load(open(os.path.join(char_dir, 'atlas.json')))['frames']
@@ -524,6 +623,11 @@ def process(char_dir):
                     stats[k] = stats.get(k, 0) + 1
         shade(part, O, tone)
         shade(cpart, CO, ctone)
+    log = []
+    repair(out, meta, atlas, frames, pal, log)
+    stats['onarim'] = len(log)
+    if os.environ.get('GEAR_LOG'):
+        print('\n'.join(log))
     out.save(os.path.join(char_dir, 'gear.png'), optimize=True)
     cout.save(os.path.join(char_dir, 'cape.png'), optimize=True)
     json.dump({'frames': meta, 'meta': {'size': {'w': AW, 'h': AH}, 'pad': PAD}}, open(os.path.join(char_dir, 'gear.json'), 'w'))
