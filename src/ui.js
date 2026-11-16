@@ -334,6 +334,13 @@ export function glemonImg(gmeta, key, stage = 0, shiny = false, scale = 2, sil =
   const d = el('div', 'gimg' + (sil ? ' sil' : ''));
   d.style.width = `calc(${st.w * scale} * var(--u))`;
   d.style.height = `calc(${st.h * scale} * var(--u))`;
+  if (gmeta[key].v === 2) {
+    // Plan v2: arayuz yalniz kucuk ikon dosyasini kullanir (normal | parlak yan yana)
+    d.style.backgroundImage = `url(assets/glemons/${key}/${stage}_ikon.png)`;
+    d.style.backgroundSize = `calc(${st.w * 2 * scale} * var(--u)) calc(${st.h * scale} * var(--u))`;
+    d.style.backgroundPosition = `${shiny ? '100%' : '0'} 0`;
+    return d;
+  }
   d.style.backgroundImage = `url(assets/glemons/${key}/${stage}.png)`;
   d.style.backgroundSize = `calc(${st.w * st.n * scale} * var(--u)) calc(${st.h * 2 * scale} * var(--u))`;
   d.style.backgroundPosition = `0 ${shiny ? '100%' : '0'}`;

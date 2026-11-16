@@ -1,0 +1,41 @@
+{
+ "anahtar": "kutukcuk",
+ "asama": "genc",
+ "kaynak": "/mnt/project-files/glemon-art/kutukcuk/genc.jpg",
+ "piksel_adimi": 22.95,
+ "olcek": 0.8293,
+ "tuval": 56,
+ "kalip": "K",
+ "goz": {
+  "lx": 18,
+  "rx": 28,
+  "ey": 32
+ },
+ "ten": "Kahve",
+ "yuz_kutusu": [
+  15,
+  31,
+  20,
+  9
+ ],
+ "govde_ust": 19,
+ "ayak": 52,
+ "govde_gen": 42,
+ "aileler": [
+  "Kahve",
+  "Cimen",
+  "Krem",
+  "Kirmizi"
+ ],
+ "uzak_oran": 0.043,
+ "tek_piksel_duzeltme": 62,
+ "denetim": [
+  "tek basina piksel 30 (yuz ve cizgi dahil)"
+ ],
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "tepe"
+ ]
+}

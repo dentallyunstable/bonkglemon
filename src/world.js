@@ -1,4 +1,5 @@
 // Ana sahne: us (ev, depo, harita, maden girisi) ve zindan odalari.
+import { glemTex, glemScale, attachGlemon, accAnchor, glemHeadOffset } from './glemon2.js';
 import { GAME_W, GROUND_Y, ITEMS, SKILLS, STAGES, ABILITIES, ORES, RECIPES, ANIM_POOLS, CURRENCY, BUILD, CAMP, CLASS_RULES, WEAPON_SKILL, TREE2, FIRE, TOK, RARITY, CAPE_COLORS, STATION_LVL } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -92,9 +93,11 @@ export class WorldScene extends Phaser.Scene {
     S.teamPets().forEach((p, i) => {
       const meta = this.gmeta[p.key].stages[p.stage];
       const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
-      const f = this.add.sprite(this.player.x - 24 - i * 22, GROUND_Y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
-        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(9 - i * 0.1).setScale(p.stage === 2 ? 0.8 : 1);
+      const [tex, fr0] = glemTex(this.gmeta, p.key, p.stage, p.shiny);
+      const f = this.add.sprite(this.player.x - 24 - i * 22, GROUND_Y, tex, fr0)
+        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(9 - i * 0.1).setScale(glemScale(this.gmeta, p.key, p.stage === 2 ? 0.8 : 1));
       f.play(k('durma'));
+      attachGlemon(f, { key: p.key, stage: p.stage, shiny: !!p.shiny, k });
       f.k = k;
       f.pet = p;
       f.slot = i;
@@ -125,7 +128,7 @@ export class WorldScene extends Phaser.Scene {
         f.x += Math.sign(dx) * sp;
         f.setFlipX(dx > 0);
         if (f.anims.currentAnim.key !== f.k('yurume')) f.play(f.k('yurume'));
-      } else if (f.anims.currentAnim.key !== f.k('durma')) {
+      } else if (f.anims.currentAnim.key !== f.k('durma') && f.anims.currentAnim.key !== f.k('huy')) {
         f.play(f.k('durma'));
         f.setFlipX(!p.flipX);
       }
@@ -154,6 +157,8 @@ export class WorldScene extends Phaser.Scene {
     const img = this.add.image(sprite.x, sprite.y, key).setOrigin(0.5, 0.5);
     // gozlerin biraz alti: govdenin ust %45'i
     img.host = sprite; img.fy = meta.ay - meta.bodyH * 0.4; img.fx = meta.bodyW * 0.12;
+    const an = accAnchor(this.gmeta, p.key, p.stage, meta);   // v2: yuzun alti (yaka), kafa kaymasini izler
+    if (an) { img.fy = an.fy; img.fx = an.fx; }
     this.accs = this.accs || [];
     this.accs.push(img);
   }
@@ -163,7 +168,8 @@ export class WorldScene extends Phaser.Scene {
       const h = a.host;
       if (!h.active) { a.destroy(); return false; }
       const sx = h.scaleX; const sy = h.scaleY;
-      a.setPosition(h.x + (h.flipX ? a.fx : -a.fx) * sx, h.y - a.fy * sy).setScale(sx, sy).setFlipX(h.flipX)
+      const [hx, hy] = glemHeadOffset(h);
+      a.setPosition(h.x + (h.flipX ? a.fx - hx : -a.fx + hx) * sx, h.y - (a.fy - hy) * sy).setScale(sx, sy).setFlipX(h.flipX)
         .setDepth(h.depth + 0.05).setVisible(h.visible).setAlpha(h.alpha);
       return true;
     });

@@ -1768,7 +1768,16 @@ def main(out, preview=None):
     os.makedirs(out, exist_ok=True)
     allmeta = {}
     sheets = []
+    # Plan v2: yeni cizime gecmis turler (v: 2) tools/gen_glemons2.py ile uretilir; dosyalarina ve
+    # glemons.json kayitlarina dokunulmaz.
+    v2 = {}
+    jp = os.path.join(out, 'glemons.json')
+    if os.path.exists(jp):
+        v2 = {k: v for k, v in json.load(open(jp)).items() if v.get('v') == 2}
     for key, base in SPECIES.items():
+        if key in v2:
+            allmeta[key] = v2[key]
+            continue
         d = os.path.join(out, key)
         os.makedirs(d, exist_ok=True)
         for old in os.listdir(d):

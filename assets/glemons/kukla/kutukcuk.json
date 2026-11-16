@@ -1,0 +1,81 @@
+{
+ "anahtar": "kutukcuk",
+ "not": "Govde ve kafa tek parca (kutuk). Tepe = filiz / fidan / bonsai. Genc'te iki dal kol. Yuz kutugun on yuzunde.",
+ "asamalar": {
+  "bebek": {
+   "kaynak": "kutukcuk/bebek.jpg",
+   "govde_boy": 28,
+   "kalip": "K",
+   "ek_aileler": [],
+   "ek_aile_notu": ""
+  },
+  "genc": {
+   "kaynak": "kutukcuk/genc.jpg",
+   "govde_boy": 35,
+   "kalip": "K",
+   "ek_aileler": [
+    "Kirmizi"
+   ],
+   "ek_aile_notu": "Raf mantari kirmizi (Orman vurgu ailesi Kirmizi).",
+   "maske": [
+    [
+     0,
+     18,
+     12,
+     31,
+     "kol_1"
+    ],
+    [
+     46,
+     32,
+     55,
+     40,
+     "kol_2"
+    ]
+   ]
+  },
+  "usta": {
+   "kaynak": "kutukcuk/usta.jpg",
+   "govde_boy": 42,
+   "kalip": "O",
+   "ek_aileler": [
+    "Gok"
+   ],
+   "ek_aile_notu": "Yuvadaki iki mavi yumurta (tarifte yaziyor). Govde araligin en altinda (42): bonsai ile toplam boy 64'luk tuvale sigsin, ziplama payi kalsin."
+  }
+ },
+ "parcalar": {
+  "govde": {
+   "mil": "ayak_orta",
+   "bagli": null,
+   "gecikme": 0,
+   "dolgu": null
+  },
+  "tepe": {
+   "mil": "alt_orta",
+   "bagli": "kafa",
+   "gecikme": 1,
+   "dolgu": "uzat"
+  },
+  "kol_1": {
+   "mil": "ic_kenar",
+   "bagli": "kafa",
+   "gecikme": 1,
+   "dolgu": "govde"
+  },
+  "kol_2": {
+   "mil": "ic_kenar",
+   "bagli": "kafa",
+   "gecikme": 1,
+   "dolgu": "govde"
+  }
+ },
+ "parla_aile": "Krem",
+ "doygunluk": 1.6,
+ "parlaklik": -8,
+ "acik_aile": [
+  "Krem",
+  80
+ ],
+ "palet_notu": "Eren'in gorselindeki renkler paletten soluk; kahve govde Krem'e kaymasin diye doygunluk 1.6 ve parlaklik -8 ile eslenir. Krem yalniz kaynakta acik (L>=80) olan halkalarda."
+}

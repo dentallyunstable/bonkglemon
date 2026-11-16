@@ -1,0 +1,38 @@
+{
+ "anahtar": "kutukcuk",
+ "asama": "bebek",
+ "kaynak": "/mnt/project-files/glemon-art/kutukcuk/bebek.jpg",
+ "piksel_adimi": 22.95,
+ "olcek": 0.6429,
+ "tuval": 48,
+ "kalip": "K",
+ "goz": {
+  "lx": 14,
+  "rx": 24,
+  "ey": 28
+ },
+ "ten": "Kahve",
+ "yuz_kutusu": [
+  11,
+  27,
+  20,
+  9
+ ],
+ "govde_ust": 18,
+ "ayak": 44,
+ "govde_gen": 28,
+ "aileler": [
+  "Kahve",
+  "Cimen",
+  "Krem"
+ ],
+ "uzak_oran": 0.022,
+ "tek_piksel_duzeltme": 38,
+ "denetim": [
+  "tek basina piksel 13 (yuz ve cizgi dahil)"
+ ],
+ "parcalar": [
+  "govde",
+  "tepe"
+ ]
+}

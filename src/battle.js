@@ -12,6 +12,7 @@ import { ARENA } from './art.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner, icon } from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
+import { glemTex, attachGlemon, glemAnim, glemFx, glemHappy, isV2 } from './glemon2.js';
 import { teamInfo, teamAura, petDisplayName, fightBond, recordDrop, tickNest, zoneBonus, homeOf } from './pets.js';
 import { now as gNow } from './clock.js';
 
@@ -49,6 +50,8 @@ for (const [k] of WATER_GLEMONS) ZONE_OF_KEY[k] = 'su';
 Object.assign(ZONE_OF_KEY, NIGHT_HOME, SECRET_HOME);
 // 1.0 patron asamalari: BOSS_PHASES (cok asamali) ya da BOSS_P2 (tek ek asama)
 const phasesOf = (k) => BOSS_PHASES[k] || (BOSS_P2[k] ? [{ at: BOSS_PHASE.at, ...BOSS_P2[k] }] : []);
+// Plan v2: savasta yuzde gorunen durum (oncelik sirasi)
+const topStatus = (st) => ['donma', 'sersem', 'zehir', 'yanma', 'karanlik'].find((k) => st[k] > 0) || null;
 const emptySt = () => ({ zehir: 0, yanma: 0, sersem: 0, donma: 0, karanlik: 0, shell: 0, reflect: 0, lanet: 0 });
 const M = (k) => S.cmod(k);
 
@@ -118,15 +121,16 @@ export class Battle {
     const stage = data.boss ? 0 : (spec.stage || 0);
     const meta = this.w.gmeta[spec.key].stages[stage];
     const m = floorMult(this.floor);
-    const zoom = this.arena ? (data.boss ? 1.5 : 2) : 1;
+    const v2 = isV2(this.w.gmeta, spec.key);
+    const zoom = this.arena ? (data.boss && !v2 ? 1.5 : 2) : 1;
     const scale = (spec.golden ? 1.35 : 1) * zoom;
-    const tex = `gs_${spec.key}_${stage}`;
+    const [tex, fr0] = glemTex(this.w.gmeta, spec.key, stage, spec.shiny);
     const k = (a) => `g_${spec.key}_${stage}_${a}${spec.shiny ? '_p' : ''}`;
-    const sprite = this.scene.add.sprite(x, this.gy, tex, spec.shiny ? meta.n : 0)
+    const sprite = this.scene.add.sprite(x, this.gy, tex, fr0)
       .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(scale);
     if (spec.golden) sprite.setTint(0xffd86a);
-    sprite.play(k('durma'));
-    if (spec.sleeping) sprite.anims.timeScale = 0.35;
+    sprite.play(k(v2 && spec.sleeping ? 'uyku' : 'durma'));
+    if (spec.sleeping && !v2) sprite.anims.timeScale = 0.35;
     const shadow = this.scene.add.image(x, this.gy + 1, 'shadow').setDepth(7).setScale((meta.bodyW * scale) / 18, 1);
     const prefix = (spec.shiny ? 'Parlak ' : spec.golden ? 'Altın ' : '') + (stage ? `${STAGES[stage]} ` : '');
     const sm = STAGE_STAT[stage];
@@ -147,7 +151,10 @@ export class Battle {
       acts: 0,
       alive: true,
       st: emptySt(),
+      napping: !!spec.sleeping,
     };
+    // Plan v2: yuz karosu, huy, uyku, savunma ve durum yuzleri
+    attachGlemon(sprite, { key: spec.key, stage, shiny: !!spec.shiny, k, state: () => ({ sleep: e.napping, defend: e.st.shell > 0 || e.st.reflect > 0, status: topStatus(e.st) }) });
     // 0.13.5 zor mod patronu ve Kule kurallari
     if (data.boss && this.opts.hard) { e.maxHp = Math.round(e.maxHp * HARD.hp); e.atk *= HARD.atk; e.defense *= HARD.def; e.name = `${data.name} (Zor)`; }
     if (S.run && S.run.kule) { e.maxHp = Math.round(e.maxHp * KULE.hp); e.atk *= KULE.atk; }
@@ -162,6 +169,16 @@ export class Battle {
   }
 
   alive() { return this.enemies.filter((e) => e.alive); }
+
+  // Plan v2: vurus anindaki efekt (turun saldiri / ozel efektleri, bolum 5.6)
+  hitFx(a, target, special) {
+    const c = a && a.sprite && a.sprite._glem;
+    if (!c) return;
+    const names = special ? [].concat(c.gm.fx.ozel || []) : [c.gm.fx.saldiri];
+    const x = target && target.sprite ? target.sprite.x : this.px();
+    const y = target && target.sprite ? target.sprite.y - (target.meta.bodyH * (target.scale || 1)) * 0.6 : this.py() - 14;
+    names.filter(Boolean).forEach((n, i) => glemFx(this.scene, x, y, n, { n: n === 'vurus_yildizi' ? 1 : 3, spread: 18, rise: n === 'vurus_yildizi' ? 2 : 16, scale: 2, dur: 450 + i * 150, depth: 40 }));
+  }
   // 0.13.5 Sonsuz Kule kurali
   kr() { return S.run && S.run.krule; }
   hm(h) { return this.kr() === 'sifa' ? Math.max(1, Math.round(h * 0.5)) : h; }
@@ -174,7 +191,7 @@ export class Battle {
     this.gy = ARENA.enemyY;
     const n = this.enemies.length;
     this.enemies.forEach((e, i) => {
-      const z = e.data.boss ? 1.5 : 2;
+      const z = e.data.boss && !isV2(this.w.gmeta, e.key) ? 1.5 : 2;
       e.scale = (e.golden ? 1.35 : 1) * z;
       e.homeX = arenaX(n, i, !!this.opts.boss);
       e.sprite.setPosition(e.homeX, this.gy).setScale(e.scale);
@@ -198,8 +215,9 @@ export class Battle {
       const meta = this.w.gmeta[p.key].stages[p.stage];
       const st = S.petStats(p, team);
       const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
-      const sc = pos.scale * (p.stage === 2 ? 0.85 : 1);
-      const sprite = this.scene.add.sprite(pos.x, pos.y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
+      const sc = pos.scale * (p.stage === 2 && !isV2(this.w.gmeta, p.key) ? 0.85 : 1);
+      const [ptex, pfr] = glemTex(this.w.gmeta, p.key, p.stage, p.shiny);
+      const sprite = this.scene.add.sprite(pos.x, pos.y, ptex, pfr)
         .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(18 - i).setScale(sc).setFlipX(true);
       sprite.play(k('durma'));
       const shadow = this.scene.add.image(pos.x, pos.y + 1, 'shadow').setDepth(17 - i).setScale((meta.bodyW * sc) / 18, sc * 0.8);
@@ -212,6 +230,7 @@ export class Battle {
         taunt: 0, shell: 0, reflect: 0, fought: false, hearts: S.hearts(p),
       };
       if (!t.alive) { sprite.destroy(); shadow.destroy(); return; }
+      attachGlemon(sprite, { key: p.key, stage: p.stage, shiny: !!p.shiny, k, state: () => ({ defend: t.shell > 0 || t.reflect > 0 }) });
       if (this.w.attachAcc) this.w.attachAcc(sprite, p, meta);
       this.pets.push(t);
     });
@@ -288,7 +307,7 @@ export class Battle {
       let heartCombo = false;
       if (t.hearts >= 5 && !t.heartUsed && this.perfectTurn === this.pTurns) { boost *= 2.5; t.heartUsed = true; heartCombo = true; this.combo('kalp_bagi'); }
       if (sp.heal) {
-        await playAnim(t.sprite, t.k('saldiri'), 1);
+        await playAnim(t.sprite, glemAnim(t.k, 'ozel', 'saldiri'), 1);
         const h = this.hm(Math.round(S.maxHp() * 0.2 * boost));
         S.hp = Math.min(S.maxHp(), S.hp + h);
         t.hp = Math.min(t.maxHp, t.hp + Math.round(t.maxHp * 0.2));
@@ -296,7 +315,7 @@ export class Battle {
         sfx('heal');
         this.renderMe();
       } else if (sp.shell || sp.reflect) {
-        await playAnim(t.sprite, t.k('saldiri'), 1);
+        await playAnim(t.sprite, glemAnim(t.k, 'ozel', 'saldiri'), 1);
         if (sp.shell) { t.shell = 3; t.taunt = 3; floatText(t.sprite.x, this.petTop(t) - 20, 'Glemonlar ona saldıracak!', 'info'); }
         else { t.reflect = 3; t.taunt = 2; floatText(t.sprite.x, this.petTop(t) - 20, 'Dikenler hazır!', 'info'); }
         if (S.hp < S.maxHp() * 0.3) {
@@ -315,8 +334,8 @@ export class Battle {
             this.combo('kum_firtinasi');
             for (const e of alive) { e.st.sersem = Math.max(e.st.sersem, 2); this.renderEnemy(e); }
           }
-          await this.petStrike(t, alive, (sp.mult || 1) * 0.8 * boost, sp.status);
-        } else await this.petStrike(t, [target], (sp.mult || 1.4) * boost, sp.status);
+          await this.petStrike(t, alive, (sp.mult || 1) * 0.8 * boost, sp.status, true);
+        } else await this.petStrike(t, [target], (sp.mult || 1.4) * boost, sp.status, true);
       }
       if (heartCombo) {
         const h = this.hm(Math.round(S.maxHp() * 0.15));
@@ -333,13 +352,14 @@ export class Battle {
     this.endEnemyTurn();
   }
 
-  async petStrike(t, targets, mult, status) {
+  async petStrike(t, targets, mult, status, special = false) {
     const first = targets[0];
     t.sprite.setDepth(16);
     t.sprite.play(t.k('yurume'));
     await new Promise((res) => this.scene.tweens.add({ targets: t.sprite, x: first.sprite.x - 34, y: this.gy + 8, scale: t.scale * 0.8, duration: 240, ease: 'Quad.easeIn', onComplete: res }));
-    const atk = playAnim(t.sprite, t.k('saldiri'), 1.6);
+    const atk = playAnim(t.sprite, special ? glemAnim(t.k, 'ozel', 'saldiri') : t.k('saldiri'), 1.6);
     await wait(this.scene, 200);
+    this.hitFx(t, first, special);
     for (const e of targets) {
       if (!e.alive) continue;
       const tm = typeMult(t.data.type, e.type);
@@ -381,8 +401,9 @@ export class Battle {
       this.savePetHp();
       feed(`${t.name} bayıldı! Eve dönünce iyileşir.`);
       floatText(t.sprite.x, this.petTop(t) - 12, 'Bayıldı!', 'warn');
-      t.sprite.play(t.k('hasar'));
-      this.scene.tweens.add({ targets: [t.sprite, t.shadow], alpha: 0, duration: 600, delay: 200 });
+      const v2f = !!t.sprite._glem;
+      t.sprite.play(v2f ? t.k('bayilma') : t.k('hasar'));
+      this.scene.tweens.add({ targets: [t.sprite, t.shadow], alpha: 0, duration: 600, delay: v2f ? 900 : 200 });
       if (t.ui) { t.ui.wrap.remove(); t.ui = null; }
     } else {
       playAnim(t.sprite, t.k('hasar'), 1).then(() => { if (t.alive && t.sprite.active) t.sprite.play(t.k('durma')); });
@@ -441,6 +462,7 @@ export class Battle {
   wake(surprised) {
     for (const e of this.enemies) {
       e.sprite.anims.timeScale = 1;
+      e.napping = false;   // v2: uykudan saskin yuzle uyanir (glemon2.js)
       if (surprised) { e.sleeping = false; e.atb = 100; } else e.atb = 0;
     }
     if (!surprised) { this.firstStrike = true; this.pAtb = 100; } else this.pAtb = 0;
@@ -450,6 +472,7 @@ export class Battle {
   start() {
     for (const e of this.enemies) {
       e.sprite.anims.timeScale = 1;
+      e.napping = false;
       this.makeBar(e);
     }
     this.makePetBar();
@@ -1464,6 +1487,7 @@ export class Battle {
     e.alive = false;
     if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
     sfx('levelup');
+    glemHappy(e.sprite);   // v2: evcillesince mutlu
     for (let i = 0; i < 5; i++) {
       const h = this.scene.add.text(e.sprite.x + (Math.random() - 0.5) * 20, this.topY(e) + 6, '♥', { fontFamily: 'BonkSym, "Jersey 15"', fontSize: '10px', color: '#ff7a9a' }).setDepth(22);
       this.scene.tweens.add({ targets: h, y: h.y - 22, alpha: 0, duration: 900, delay: i * 120, onComplete: () => h.destroy() });
@@ -1605,9 +1629,13 @@ export class Battle {
 
   killEnemy(e) {
     e.alive = false;
-    e.sprite.play(e.k('hasar'));
-    this.scene.tweens.add({ targets: [e.sprite], alpha: 0, y: this.gy - 6, duration: 500, delay: 250, onComplete: () => e.sprite.destroy() });
-    this.scene.tweens.add({ targets: [e.shadow], alpha: 0, duration: 500, delay: 250, onComplete: () => e.shadow.destroy() });
+    // v2: bayilma (son karede kalir), sonra bugunku solma
+    const v2d = !!e.sprite._glem;
+    e.sprite.play(v2d ? e.k('bayilma') : e.k('hasar'));
+    if (v2d) glemFx(this.scene, e.sprite.x, this.topY(e) + e.meta.bodyH * e.scale * 0.3, 'yildiz', { n: 2, scale: e.scale > 1.5 ? 2 : 1, dur: 900 });
+    const fd = v2d ? 700 : 250;
+    this.scene.tweens.add({ targets: [e.sprite], alpha: 0, y: this.gy - 6, duration: 500, delay: fd, onComplete: () => e.sprite.destroy() });
+    this.scene.tweens.add({ targets: [e.shadow], alpha: 0, duration: 500, delay: fd, onComplete: () => e.shadow.destroy() });
     if (e.ui) { e.ui.wrap.remove(); e.ui = null; }
     // patron dusunce cagirdiklari da cekilir (odulsuz)
     if (e.data.boss) {
@@ -1802,6 +1830,7 @@ export class Battle {
       floatText(e.sprite.x, top - 2, '!', 'warn');
       if (act.name) floatText(e.sprite.x, top - 20, act.name, 'info');
       sfx('warn');
+      if (e.sprite._glem) { e.sprite.play(e.k('hazirlik')); e.sprite.once('animationcomplete', () => { if (e.sprite.active && e.alive) e.sprite.play(e.k('hazirlik2')); }); }
       e.sprite.setTintFill(0xffffff);
       this.scene.time.delayedCall(90, () => { if (e.sprite.active) { e.sprite.clearTint(); if (e.golden) e.sprite.setTint(0xffd86a); } });
       if (!S.save.settings.auto && !onPet) {
@@ -1824,8 +1853,10 @@ export class Battle {
     await new Promise((res) => this.scene.tweens.add({
       targets: e.sprite, x: tx, y: ty, scale: e.scale * (onPet ? 1.1 : 1.4), duration: 260, ease: 'Quad.easeIn', onComplete: res,
     }));
-    const atkAnim = playAnim(e.sprite, e.k('saldiri'), 1.6);
+    const special = !!(act.telegraph || act.name);
+    const atkAnim = playAnim(e.sprite, special ? glemAnim(e.k, 'ozel', 'saldiri') : e.k('saldiri'), 1.6);
     await wait(this.scene, 300 / 1.6);
+    if (!missed) this.hitFx(e, onPet ? t : null, special);
     if (missed) {
       floatText(onPet ? t.sprite.x : this.px(), onPet ? this.petTop(t) : this.py() - 10, 'Iskaladı!', 'good');
     } else if (parried) {
@@ -1974,6 +2005,7 @@ export class Battle {
     this.busy = true;
     this.phase = null;
     this.savePetHp();
+    for (const t of this.pets) if (t.alive && t.sprite.active) glemHappy(t.sprite);   // v2: zaferde mutlu
     await wait(this.scene, 350);
     sfx('win');
     const manual = this.manualActs > 0 && this.manualActs >= this.autoActs;

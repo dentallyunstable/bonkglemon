@@ -4,6 +4,13 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 1.0.26 (Glemon yenileme denemesi: Kütükçük)
+
+- Kütükçük, Eren'in çizimleriyle yeni Bonk stilinde: 3 aşama (Bebek, Genç, Usta), ortak palet, ortak göz kalıbı.
+- 11 animasyon: durma (nefes), huy (filiz titrer, şaşırır), yürüme, hazırlık, saldırı (tos), özel (Kafa Atma), hasar, bayılma, uyku, mutlu, savunma.
+- Yüz ifadeleri: göz kırpma, acı, şaşkın, mutlu, kızgın, baygın; zehir, yanma, donma, sersem ve körlükte yüz değişir, efekt çıkar.
+- Araçlar: tools/glemon_import.py, tools/gen_glemons2.py, tools/gen_glemon_fx.py (diğer Glemonlar eski çizimiyle kalır).
+
 ## Sürüm 1.0.25
 
 - Panellerin üstündeki ? ve kapatma düğmeleri her ekran boyutunda kare ve sağda kalıyor.

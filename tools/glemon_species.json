@@ -1,0 +1,2554 @@
+{
+ "kutukcuk": {
+  "ad": "Kütükçük",
+  "nadirlik": "sıradan",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kahve",
+   "Cimen",
+   "Krem"
+  ],
+  "parlak": {
+   "Kahve": "Kar",
+   "Cimen": "Turuncu"
+  },
+  "renk_not": "Kahve, Çimen, Krem (halkalar). Parlak: Kahve -> Kar (huş ağacı), Çimen -> Turuncu.",
+  "huy": {
+   "kod": "H1",
+   "not": "filiz titrer, sonra şaşırır"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Kafa Atma",
+   "fx": [
+    "yaprak",
+    "vurus_yildizi"
+   ],
+   "not": "halkalar parlar, iki adım gerileyip tos; yaprak + vurus_yildizi."
+  },
+  "hareket_not": "H1 (filiz titrer, sonra şaşırır) · A1 · Özel \"Kafa Atma\": halkalar parlar, iki adım gerileyip tos; yaprak + vurus_yildizi.",
+  "yuruyus": "agir",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "patlakmantar": {
+  "ad": "Patlakmantar",
+  "nadirlik": "sıradan",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kirmizi",
+   "Krem"
+  ],
+  "parlak": {
+   "Kirmizi": "Gok"
+  },
+  "renk_not": "Kırmızı, Krem. Parlak: Kırmızı -> Gök.",
+  "huy": {
+   "kod": "H7",
+   "not": "hapşırınca spor çıkar, şapkası zıplar"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Spor Bulutu",
+   "fx": [
+    "spor"
+   ],
+   "not": "A9, Çimen tonlu spor bulutu (zehir)."
+  },
+  "hareket_not": "H7 (hapşırınca spor çıkar, şapkası zıplar) · A2 · Özel \"Spor Bulutu\": A9, Çimen tonlu spor bulutu (zehir).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "dikentavsan": {
+  "ad": "Dikentavşan",
+  "nadirlik": "sıradan",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Krem",
+   "Cimen",
+   "Kahve"
+  ],
+  "parlak": {
+   "Krem": "Pembe",
+   "Cimen": "Mor"
+  },
+  "renk_not": "Krem (tüy), Çimen (kabuk), Kahve (kestane). Parlak: Krem -> Pembe, Çimen -> Mor.",
+  "huy": {
+   "kod": "H11",
+   "not": "burnu oynar, bir kulağı düşer"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Diken Fırlatma",
+   "fx": [
+    "diken"
+   ],
+   "not": "sırtını dönüp silkinir, A6 ile üç diken."
+  },
+  "hareket_not": "H11 (burnu oynar, bir kulağı düşer) · A2 · Özel \"Diken Fırlatma\": sırtını dönüp silkinir, A6 ile üç diken.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "yaprakbocek": {
+  "ad": "Yaprakböcek",
+  "nadirlik": "nadir",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Cimen",
+   "Komur",
+   "Turuncu"
+  ],
+  "parlak": {
+   "Cimen": "Kirmizi"
+  },
+  "renk_not": "Çimen, Kömür (gövde), Turuncu (vurgu). Parlak: Çimen -> Kırmızı.",
+  "huy": {
+   "kod": "H10",
+   "not": "yaprak kanatlarını açıp kapar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Yaprak Fırlatma",
+   "fx": [
+    "yaprak"
+   ],
+   "not": "kanatlar açılır, A6 ile dönen yaprak."
+  },
+  "hareket_not": "H10 (yaprak kanatlarını açıp kapar) · A1 · Özel \"Yaprak Fırlatma\": kanatlar açılır, A6 ile dönen yaprak.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "yosunbaba": {
+  "ad": "Yosunbaba",
+  "nadirlik": "epik",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Cimen",
+   "Cam",
+   "Kahve"
+  ],
+  "parlak": {
+   "Cimen": "Gok"
+  },
+  "renk_not": "Çimen, Çam (sakal), Kahve (baston); çiçekler Krem. Parlak: Çimen -> Gök.",
+  "huy": {
+   "kod": "H5",
+   "not": "esner, sakalı sallanır"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "İyileştiren Yosun",
+   "fx": [
+    "spor"
+   ],
+   "not": "bastonu kaldırır, iyileştirme efekti. Epik parçacık: spor (Çam-1)."
+  },
+  "hareket_not": "H5 (esner, sakalı sallanır) · A3 (bastonla) · Özel \"İyileştiren Yosun\": bastonu kaldırır, iyileştirme efekti. Epik parçacık: spor (Çam-1).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "pamukcuk": {
+  "ad": "Pamukçuk",
+  "nadirlik": "sıradan",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Kahve",
+   "Cimen"
+  ],
+  "parlak": {
+   "Kar": "Pembe"
+  },
+  "renk_not": "Kar (pamuk), Kahve (koza), Çimen (yaprak). Parlak: Kar -> Pembe.",
+  "huy": {
+   "kod": "H2",
+   "not": "silkelenir, pamuk tüyü uçar"
+  },
+  "saldiri": "A7",
+  "ozel": {
+   "ad": "Pamuk Kalkanı",
+   "fx": [],
+   "not": "savunma; pamuk kabarır, yalnız gözler görünür."
+  },
+  "hareket_not": "H2 (silkelenir, pamuk tüyü uçar) · A7 · Özel \"Pamuk Kalkanı\": savunma; pamuk kabarır, yalnız gözler görünür.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "tirtilcik": {
+  "ad": "Tırtılcık",
+  "nadirlik": "sıradan",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Cimen",
+   "Sari",
+   "Kar"
+  ],
+  "parlak": {
+   "Cimen": "Mor"
+  },
+  "renk_not": "Çimen, Sarı (karın ve benek), Kar (ipek). Parlak: Çimen -> Mor.",
+  "huy": {
+   "kod": "H11",
+   "not": "yaprağından bir ısırık alır, mutlu"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "İpek Ağı",
+   "fx": [
+    "ipek"
+   ],
+   "not": "A9 ile ipek ağı püskürtür (sersem)."
+  },
+  "hareket_not": "H11 (yaprağından bir ısırık alır, mutlu) · A1 · Özel \"İpek Ağı\": A9 ile ipek ağı püskürtür (sersem).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "mese_baykusu": {
+  "ad": "Meşe Baykuşu",
+  "nadirlik": "nadir",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Kahve",
+   "Krem",
+   "Cimen"
+  ],
+  "parlak": {
+   "Kahve": "Tas"
+  },
+  "renk_not": "Kahve, Krem (karın), Çimen (yaprak). Parlak: Kahve -> Taş (gümüş baykuş).",
+  "huy": {
+   "kod": "H4",
+   "not": "kafasını iki yana çevirir, yavaş göz kırpar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Gece Bakışı",
+   "fx": [
+    "isik_halkasi"
+   ],
+   "not": "saskin gözler, Sarı isik_halkasi."
+  },
+  "hareket_not": "H4 (kafasını iki yana çevirir, yavaş göz kırpar) · A8 · Özel \"Gece Bakışı\": saskin gözler, Sarı isik_halkasi.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "micir": {
+  "ad": "Mıcır",
+  "nadirlik": "sıradan",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Gok"
+  ],
+  "parlak": {
+   "Tas": "Kahve"
+  },
+  "renk_not": "Taş, Gök (kristal). Parlak: Taş -> Kahve (kumtaşı).",
+  "huy": {
+   "kod": "H2",
+   "not": "üstteki taşlar sallanır, düşecek gibi olur, saskin"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Yuvarlanma",
+   "fx": [
+    "toz"
+   ],
+   "not": "A7; toz."
+  },
+  "hareket_not": "H2 (üstteki taşlar sallanır, düşecek gibi olur, saskin) · A1 · Özel \"Yuvarlanma\": A7; toz.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "taskabuk": {
+  "ad": "Taşkabuk",
+  "nadirlik": "sıradan",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Cam",
+   "Mor"
+  ],
+  "parlak": {
+   "Mor": "Sari"
+  },
+  "renk_not": "Taş (kabuk), Çam (ten), Mor (kristal). Parlak: Mor -> Sarı.",
+  "huy": {
+   "kod": "H4",
+   "not": "kafasını uzatıp bakınır, geri çeker"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Kabuğa Çekil",
+   "fx": [],
+   "not": "savunma; kristaller parlar. Ağır yürüyüş."
+  },
+  "hareket_not": "H4 (kafasını uzatıp bakınır, geri çeker) · A4 · Özel \"Kabuğa Çekil\": savunma; kristaller parlar. Ağır yürüyüş.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "pirpir": {
+  "ad": "Pırpır",
+  "nadirlik": "sıradan",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Mor",
+   "Tas",
+   "Pembe"
+  ],
+  "parlak": {
+   "Mor": "Krem"
+  },
+  "renk_not": "Mor, Taş (kanat), Pembe (kulak içi). Parlak: Mor -> Krem.",
+  "huy": {
+   "kod": "H1",
+   "not": "bir kulağı döner, o yana bakar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Ses Dalgası",
+   "fx": [
+    "ses_halkasi"
+   ],
+   "not": "ağzı açılır, üç ses_halkasi (sersem)."
+  },
+  "hareket_not": "H1 (bir kulağı döner, o yana bakar) · A8 · Özel \"Ses Dalgası\": ağzı açılır, üç ses_halkasi (sersem).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kristalbocek": {
+  "ad": "Kristalböcek",
+  "nadirlik": "nadir",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Komur",
+   "Gok",
+   "Mor"
+  ],
+  "parlak": {
+   "Gok": "Pembe"
+  },
+  "renk_not": "Kömür (gövde), Gök (kristal), Mor (vurgu). Parlak: Gök -> Pembe.",
+  "huy": {
+   "kod": "H9",
+   "not": "kristalinde ışık gezer, ona bakıp sevinir"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Buz Kristali",
+   "fx": [
+    "kristal",
+    "buz"
+   ],
+   "not": "A6 ile kristal; hedefte buz (donma)."
+  },
+  "hareket_not": "H9 (kristalinde ışık gezer, ona bakıp sevinir) · A1 · Özel \"Buz Kristali\": A6 ile kristal; hedefte buz (donma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "ametist_kirpi": {
+  "ad": "Ametist Kirpi",
+  "nadirlik": "epik",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Krem",
+   "Kahve",
+   "Mor"
+  ],
+  "parlak": {
+   "Mor": "Cam"
+  },
+  "renk_not": "Krem (yüz ve karın), Kahve (tüy), Mor (kristal). Parlak: Mor -> Çam (zümrüt).",
+  "huy": {
+   "kod": "H11",
+   "not": null
+  },
+  "saldiri": "A7",
+  "ozel": {
+   "ad": "Kristal Diken",
+   "fx": [
+    "kristal"
+   ],
+   "not": "savunma; kristaller uzar ve parlar. Epik parçacık: kristal parıltısı."
+  },
+  "hareket_not": "H11 · A7 · Özel \"Kristal Diken\": savunma; kristaller uzar ve parlar. Epik parçacık: kristal parıltısı.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "sarkitcik": {
+  "ad": "Sarkıtçık",
+  "nadirlik": "sıradan",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Cam"
+  ],
+  "parlak": {
+   "Tas": "Sari"
+  },
+  "renk_not": "Taş, Çam (su ve mineral). Parlak: Taş -> Sarı.",
+  "huy": {
+   "kod": "H4",
+   "not": "yukarı bakar, damla düşer, saskin"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Sarkıt Düşür",
+   "fx": [
+    "tas"
+   ],
+   "not": "yukarı seslenir, hedefin üstüne tas düşer."
+  },
+  "hareket_not": "H4 (yukarı bakar, damla düşer, saskin) · A2 · Özel \"Sarkıt Düşür\": yukarı seslenir, hedefin üstüne tas düşer.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kaya_kostebek": {
+  "ad": "Kaya Köstebeği",
+  "nadirlik": "sıradan",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kahve",
+   "Tas",
+   "Pembe"
+  ],
+  "parlak": {
+   "Kahve": "Lacivert"
+  },
+  "renk_not": "Kahve, Taş (kask), Pembe (burun ve pençe). Parlak: Kahve -> Lacivert.",
+  "huy": {
+   "kod": "H11",
+   "not": "yıldız burnu oynar"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Tünel Saldırısı",
+   "fx": [
+    "toz"
+   ],
+   "not": "yere dalar (gövde aşağı kayarak kaybolur, toz), hedefin önünden fırlar."
+  },
+  "hareket_not": "H11 (yıldız burnu oynar) · A3 · Özel \"Tünel Saldırısı\": yere dalar (gövde aşağı kayarak kaybolur, toz), hedefin önünden fırlar.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "fener_semenderi": {
+  "ad": "Fener Semenderi",
+  "nadirlik": "nadir",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Pembe",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Pembe": "Lacivert"
+  },
+  "renk_not": "Pembe, Mor (benek ve gölge), Sarı (ışık). Parlak: Pembe -> Lacivert.",
+  "huy": {
+   "kod": "H6",
+   "not": "kuyruk fenerini sallar"
+  },
+  "saldiri": "A5",
+  "ozel": {
+   "ad": "Işık Patlaması",
+   "fx": [
+    "isik_halkasi"
+   ],
+   "not": "saçaklar açılır, Sarı isik_halkasi (körlük)."
+  },
+  "hareket_not": "H6 (kuyruk fenerini sallar) · A5 · Özel \"Işık Patlaması\": saçaklar açılır, Sarı isik_halkasi (körlük).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kumkiskic": {
+  "ad": "Kumkıskaç",
+  "nadirlik": "sıradan",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Turuncu",
+   "Sari",
+   "Cam"
+  ],
+  "parlak": {
+   "Turuncu": "Lacivert"
+  },
+  "renk_not": "Turuncu, Sarı (karın ve kum), Çam (damla ve boncuk). Parlak: Turuncu -> Lacivert.",
+  "huy": {
+   "kod": "H10",
+   "not": "kıskaçlarını iki kez çıtırdatır"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Zehirli İğne",
+   "fx": [
+    "kabarcik"
+   ],
+   "not": "kuyruk öne iner, Çimen kabarcik (zehir)."
+  },
+  "hareket_not": "H10 (kıskaçlarını iki kez çıtırdatır) · A3 (kıskaç) · Özel \"Zehirli İğne\": kuyruk öne iner, Çimen kabarcik (zehir).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kaktus_bekcisi": {
+  "ad": "Kaktüs Bekçisi",
+  "nadirlik": "sıradan",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Cimen",
+   "Turuncu",
+   "Pembe"
+  ],
+  "parlak": {
+   "Cimen": "Mor"
+  },
+  "renk_not": "Çimen, Turuncu (saksı), Pembe (çiçek). Parlak: Çimen -> Mor.",
+  "huy": {
+   "kod": "H4",
+   "not": "nöbet tutar gibi iki yana bakar"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Diken Zırhı",
+   "fx": [],
+   "not": "savunma; dikenleri uzar."
+  },
+  "hareket_not": "H4 (nöbet tutar gibi iki yana bakar) · A3 · Özel \"Diken Zırhı\": savunma; dikenleri uzar.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "toz_kertenkelesi": {
+  "ad": "Toz Kertenkelesi",
+  "nadirlik": "sıradan",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Sari",
+   "Turuncu",
+   "Cam"
+  ],
+  "parlak": {
+   "Sari": "Pembe"
+  },
+  "renk_not": "Sarı, Turuncu (yaka), Çam (desen). Parlak: Sarı -> Pembe.",
+  "huy": {
+   "kod": "H10",
+   "not": "yaka açılıp kapanır"
+  },
+  "saldiri": "A5",
+  "ozel": {
+   "ad": "Kum Atma",
+   "fx": [
+    "kum"
+   ],
+   "not": "arkasını dönüp ayaklarıyla kum savurur (körlük)."
+  },
+  "hareket_not": "H10 (yaka açılıp kapanır) · A5 · Özel \"Kum Atma\": arkasını dönüp ayaklarıyla kum savurur (körlük).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "sargicik": {
+  "ad": "Sargıcık",
+  "nadirlik": "nadir",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Krem",
+   "Lacivert",
+   "Cam"
+  ],
+  "parlak": {
+   "Krem": "Mor"
+  },
+  "renk_not": "Krem (sargı), Lacivert (aralık ve gölge), Çam (göz ve muska); Usta'da başlık Sarı. Parlak: Krem -> Mor.",
+  "huy": {
+   "kod": "H2",
+   "not": "sargısı çözülür, telaşla toplar"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Lanetli Ateş",
+   "fx": [
+    "alev"
+   ],
+   "not": "gözleri büyür, Çam ve Mor tonlu alev (yanma)."
+  },
+  "hareket_not": "H2 (sargısı çözülür, telaşla toplar) · A3 (sargı kamçısı) · Özel \"Lanetli Ateş\": gözleri büyür, Çam ve Mor tonlu alev (yanma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "altin_skarabe": {
+  "ad": "Altın Skarabe",
+  "nadirlik": "epik",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Sari",
+   "Lacivert",
+   "Cam"
+  ],
+  "parlak": {
+   "Sari": "Tas"
+  },
+  "renk_not": "Sarı, Lacivert (çizgi), Çam (taş). Parlak: Sarı -> Taş (gümüş).",
+  "huy": {
+   "kod": "H9",
+   "not": "topunu parlatır"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Parıltı",
+   "fx": [
+    "toz",
+    "isik_halkasi"
+   ],
+   "not": "topu kaldırır, Sarı isik_halkasi (körlük). Epik parçacık: Sarı toz."
+  },
+  "hareket_not": "H9 (topunu parlatır) · A1 · Özel \"Parıltı\": topu kaldırır, Sarı isik_halkasi (körlük). Epik parçacık: Sarı toz.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kum_tilkisi": {
+  "ad": "Kum Tilkisi",
+  "nadirlik": "sıradan",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Krem",
+   "Turuncu",
+   "Cam"
+  ],
+  "parlak": {
+   "Turuncu": "Tas"
+  },
+  "renk_not": "Krem, Turuncu (sırt ve kulak ucu), Çam (bandana). Parlak: Turuncu -> Taş.",
+  "huy": {
+   "kod": "H1",
+   "not": "kulakları ayrı ayrı döner"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Kum Kazma",
+   "fx": [
+    "kum"
+   ],
+   "not": "öne eğilip hızla kazar, kum fışkırır."
+  },
+  "hareket_not": "H1 (kulakları ayrı ayrı döner) · A4 · Özel \"Kum Kazma\": öne eğilip hızla kazar, kum fışkırır.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "devecik": {
+  "ad": "Devecik",
+  "nadirlik": "sıradan",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kahve",
+   "Krem",
+   "Kirmizi"
+  ],
+  "parlak": {
+   "Kahve": "Kar"
+  },
+  "renk_not": "Kahve, Krem, Kırmızı (kilim). Parlak: Kahve -> Kar.",
+  "huy": {
+   "kod": "H5",
+   "not": "esner, çenesini yan yana oynatır"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Tükürük",
+   "fx": [
+    "su"
+   ],
+   "not": "A9; tek büyük su topu (sersem). Ağır yürüyüş."
+  },
+  "hareket_not": "H5 (esner, çenesini yan yana oynatır) · A1 · Özel \"Tükürük\": A9; tek büyük su topu (sersem). Ağır yürüyüş.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "yarim"
+  }
+ },
+ "serap_kelebegi": {
+  "ad": "Serap Kelebeği",
+  "nadirlik": "nadir",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Turuncu",
+   "Krem",
+   "Cam"
+  ],
+  "parlak": {
+   "Turuncu": "Mor"
+  },
+  "renk_not": "Turuncu, Krem (gövde), Çam (desen). Parlak: Turuncu -> Mor.",
+  "huy": {
+   "kod": "H10",
+   "not": "kanatlarını yavaşça açıp kapar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Serap",
+   "fx": [
+    "toz"
+   ],
+   "not": "iki yanında soluk iki kopyası belirip kaybolur (kod: yarı saydam kopya), toz (körlük, alan)."
+  },
+  "hareket_not": "H10 (kanatlarını yavaşça açıp kapar) · A8 · Özel \"Serap\": iki yanında soluk iki kopyası belirip kaybolur (kod: yarı saydam kopya), toz (körlük, alan).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kar_penguen": {
+  "ad": "Kar Pengueni",
+  "nadirlik": "sıradan",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Lacivert",
+   "Kirmizi",
+   "Turuncu"
+  ],
+  "parlak": {
+   "Lacivert": "Mor"
+  },
+  "renk_not": "Lacivert, Kırmızı (atkı), Turuncu (gaga ve ayak); karın Kar. Parlak: Lacivert -> Mor.",
+  "huy": {
+   "kod": "H3",
+   "not": "paytak paytak zıplar, kanatlarını çırpar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Buz Kayması",
+   "fx": [
+    "buz"
+   ],
+   "not": "karnının üstüne yatıp hızla kayar, arkasında buz izi."
+  },
+  "hareket_not": "H3 (paytak paytak zıplar, kanatlarını çırpar) · A1 · Özel \"Buz Kayması\": karnının üstüne yatıp hızla kayar, arkasında buz izi.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kiragi_tilki": {
+  "ad": "Kırağı Tilkisi",
+  "nadirlik": "sıradan",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Gok"
+  ],
+  "parlak": {
+   "Gok": "Pembe"
+  },
+  "renk_not": "Kar, Gök (kırağı). Parlak: Gök -> Pembe.",
+  "huy": {
+   "kod": "H6",
+   "not": "kuyruğunu sallar, kar dökülür"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Kırağı Pençesi",
+   "fx": [
+    "buz"
+   ],
+   "not": "A3 + buz (donma)."
+  },
+  "hareket_not": "H6 (kuyruğunu sallar, kar dökülür) · A3 · Özel \"Kırağı Pençesi\": A3 + buz (donma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "buzcuk": {
+  "ad": "Buzcuk",
+  "nadirlik": "sıradan",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Gok",
+   "Kar",
+   "Cimen"
+  ],
+  "parlak": {
+   "Gok": "Cam"
+  },
+  "renk_not": "Gök, Kar, Çimen (içteki çam). Parlak: Gök -> Çam.",
+  "huy": {
+   "kod": "H2",
+   "not": "kendini sallar, içinde kar yağar, mutlu"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Buz Zırhı",
+   "fx": [],
+   "not": "savunma; üstü kalın buzla kaplanır."
+  },
+  "hareket_not": "H2 (kendini sallar, içinde kar yağar, mutlu) · A2 · Özel \"Buz Zırhı\": savunma; üstü kalın buzla kaplanır.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kar_baykusu": {
+  "ad": "Kar Baykuşu",
+  "nadirlik": "nadir",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Kar",
+   "Tas",
+   "Sari"
+  ],
+  "parlak": {
+   "Kar": "Kahve"
+  },
+  "renk_not": "Kar, Taş (benek), Sarı (gaga ve pençe). Parlak: Kar -> Kahve.",
+  "huy": {
+   "kod": "H4",
+   "not": "kafasını yavaşça yana yatırır"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Tipi",
+   "fx": [
+    "kar"
+   ],
+   "not": "kanat çırpar, geniş kar bulutu (körlük, alan)."
+  },
+  "hareket_not": "H4 (kafasını yavaşça yana yatırır) · A8 · Özel \"Tipi\": kanat çırpar, geniş kar bulutu (körlük, alan).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "aurora_geyigi": {
+  "ad": "Aurora Geyiği",
+  "nadirlik": "epik",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Cam",
+   "Mor"
+  ],
+  "parlak": {
+   "Cam": "Sari"
+  },
+  "renk_not": "Kar, Çam, Mor. Parlak: Çam -> Sarı.",
+  "huy": {
+   "kod": "H9",
+   "not": "kurdelelerin rengi kayar, başını kaldırıp bakar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Kutup Işığı",
+   "fx": [
+    "yildiz"
+   ],
+   "not": "kurdeleler yukarı uzar, iyileştirme efekti. Epik parçacık: Çam yildiz."
+  },
+  "hareket_not": "H9 (kurdelelerin rengi kayar, başını kaldırıp bakar) · A1 · Özel \"Kutup Işığı\": kurdeleler yukarı uzar, iyileştirme efekti. Epik parçacık: Çam yildiz.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "fokcuk": {
+  "ad": "Fokçuk",
+  "nadirlik": "sıradan",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Tas",
+   "Gok"
+  ],
+  "parlak": {
+   "Kar": "Krem"
+  },
+  "renk_not": "Kar, Taş (benek), Gök (fular). Parlak: Kar -> Krem.",
+  "huy": {
+   "kod": "H3",
+   "not": "yüzgeçleriyle alkışlar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Kartopu",
+   "fx": [
+    "kar"
+   ],
+   "not": "burnundaki topu A6 ile fırlatır, kar (donma)."
+  },
+  "hareket_not": "H3 (yüzgeçleriyle alkışlar) · A1 · Özel \"Kartopu\": burnundaki topu A6 ile fırlatır, kar (donma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kar_gelincigi": {
+  "ad": "Kar Gelinciği",
+  "nadirlik": "sıradan",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Komur",
+   "Pembe"
+  ],
+  "parlak": {
+   "Kar": "Kahve"
+  },
+  "renk_not": "Kar, Kömür (kuyruk ucu), Pembe (kulak içi). Parlak: Kar -> Kahve (yaz kürkü).",
+  "huy": {
+   "kod": "H4",
+   "not": "uzanıp etrafa bakar"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Hızlı Isırık",
+   "fx": [],
+   "not": "iki kez arka arkaya atılır; arkasında soluk hız izi."
+  },
+  "hareket_not": "H4 (uzanıp etrafa bakar) · A4 · Özel \"Hızlı Isırık\": iki kez arka arkaya atılır; arkasında soluk hız izi.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "buz_kirpisi": {
+  "ad": "Buz Kirpisi",
+  "nadirlik": "nadir",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Gok",
+   "Mor"
+  ],
+  "parlak": {
+   "Gok": "Pembe"
+  },
+  "renk_not": "Kar, Gök, Mor (gölgeler). Parlak: Gök -> Pembe.",
+  "huy": {
+   "kod": "H2",
+   "not": "silkelenir, buz kırıntıları dökülür"
+  },
+  "saldiri": "A7",
+  "ozel": {
+   "ad": "Buz Dikenleri",
+   "fx": [],
+   "not": "savunma; saçaklar uzar."
+  },
+  "hareket_not": "H2 (silkelenir, buz kırıntıları dökülür) · A7 · Özel \"Buz Dikenleri\": savunma; saçaklar uzar.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kor_semender": {
+  "ad": "Kor Semenderi",
+  "nadirlik": "sıradan",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kirmizi",
+   "Sari",
+   "Komur"
+  ],
+  "parlak": {
+   "Kirmizi": "Lacivert",
+   "Sari": "Gok"
+  },
+  "renk_not": "Kırmızı, Sarı (karın ve alev), Kömür (benek). Parlak: Kırmızı -> Lacivert, Sarı -> Gök (mavi alev).",
+  "huy": {
+   "kod": "H6",
+   "not": "kuyruk alevine üfler, alev büyür"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Kıvılcım Tükürüğü",
+   "fx": [
+    "kivilcim"
+   ],
+   "not": "A9 ile kivilcim (yanma)."
+  },
+  "hareket_not": "H6 (kuyruk alevine üfler, alev büyür) · A4 · Özel \"Kıvılcım Tükürüğü\": A9 ile kivilcim (yanma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kivilcim_yarasa": {
+  "ad": "Kıvılcım Yarasası",
+  "nadirlik": "sıradan",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Komur",
+   "Turuncu",
+   "Sari"
+  ],
+  "parlak": {
+   "Turuncu": "Gok"
+  },
+  "renk_not": "Kömür, Turuncu, Sarı. Parlak: Turuncu -> Gök.",
+  "huy": {
+   "kod": "H2",
+   "not": "silkelenir, kivilcim saçar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Kor Kanat",
+   "fx": [
+    "alev"
+   ],
+   "not": "kanatları parlar, dalışın arkasında alev izi."
+  },
+  "hareket_not": "H2 (silkelenir, kivilcim saçar) · A8 · Özel \"Kor Kanat\": kanatları parlar, dalışın arkasında alev izi.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "magma_salyangoz": {
+  "ad": "Magma Salyangozu",
+  "nadirlik": "sıradan",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Komur",
+   "Turuncu",
+   "Sari"
+  ],
+  "parlak": {
+   "Turuncu": "Cimen"
+  },
+  "renk_not": "Kömür (kabuk), Turuncu (gövde ve lav), Sarı (parlak lav). Parlak: Turuncu -> Çimen (yeşil lav).",
+  "huy": {
+   "kod": "H1",
+   "not": "antenleri sırayla uzar kısalır"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Kızgın Kabuk",
+   "fx": [
+    "duman"
+   ],
+   "not": "savunma; kabuk kızarır, duman. Ağır yürüyüş."
+  },
+  "hareket_not": "H1 (antenleri sırayla uzar kısalır) · A1 · Özel \"Kızgın Kabuk\": savunma; kabuk kızarır, duman. Ağır yürüyüş.",
+  "yuruyus": "agir",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kul_koc": {
+  "ad": "Kül Koçu",
+  "nadirlik": "nadir",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Komur",
+   "Turuncu"
+  ],
+  "parlak": {
+   "Tas": "Kar"
+  },
+  "renk_not": "Taş (yün), Kömür (yüz ve boynuz), Turuncu (kor). Parlak: Taş -> Kar.",
+  "huy": {
+   "kod": "H2",
+   "not": "silkelenir, duman kalkar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Kor Toslaması",
+   "fx": [],
+   "not": "ayağıyla yeri iki kez eşeler, boynuzlar parlar, uzun atılış (sersem)."
+  },
+  "hareket_not": "H2 (silkelenir, duman kalkar) · A1 · Özel \"Kor Toslaması\": ayağıyla yeri iki kez eşeler, boynuzlar parlar, uzun atılış (sersem).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "yakut_ejder": {
+  "ad": "Yakut Ejderi",
+  "nadirlik": "epik",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kirmizi",
+   "Krem",
+   "Pembe"
+  ],
+  "parlak": {
+   "Kirmizi": "Cam"
+  },
+  "renk_not": "Kırmızı, Krem (karın), Pembe (yakut). Parlak: Kırmızı -> Çam.",
+  "huy": {
+   "kod": "H7",
+   "not": "hapşırır, burnundan duman çıkar"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Ejder Nefesi",
+   "fx": [
+    "kristal",
+    "alev"
+   ],
+   "not": "yakut parlar, A9 ile geniş alev yayı (yanma, alan). Epik parçacık: Pembe kristal parıltısı."
+  },
+  "hareket_not": "H7 (hapşırır, burnundan duman çıkar) · A3 · Özel \"Ejder Nefesi\": yakut parlar, A9 ile geniş alev yayı (yanma, alan). Epik parçacık: Pembe kristal parıltısı.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "lav_kurbagasi": {
+  "ad": "Lav Kurbağası",
+  "nadirlik": "sıradan",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Komur",
+   "Turuncu",
+   "Sari"
+  ],
+  "parlak": {
+   "Turuncu": "Mor"
+  },
+  "renk_not": "Kömür, Turuncu (çatlak), Sarı (karın ve kese). Parlak: Turuncu -> Mor.",
+  "huy": {
+   "kod": "H10",
+   "not": "boğaz kesesi şişip iner"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Lav Dili",
+   "fx": [
+    "lav"
+   ],
+   "not": "ağzı açılır, Turuncu dili hedefe uzanıp geri çekilir (kod çizer), lav damlaları (yanma)."
+  },
+  "hareket_not": "H10 (boğaz kesesi şişip iner) · A2 · Özel \"Lav Dili\": ağzı açılır, Turuncu dili hedefe uzanıp geri çekilir (kod çizer), lav damlaları (yanma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kivilcim_civciv": {
+  "ad": "Kıvılcım Civcivi",
+  "nadirlik": "sıradan",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Sari",
+   "Turuncu",
+   "Kirmizi"
+  ],
+  "parlak": {
+   "Sari": "Kar",
+   "Turuncu": "Gok"
+  },
+  "renk_not": "Sarı, Turuncu, Kırmızı (ibik ucu). Parlak: Sarı -> Kar, Turuncu -> Gök.",
+  "huy": {
+   "kod": "H11",
+   "not": "yeri gagalar, tüyü kabarır"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Kıvılcım Gagası",
+   "fx": [
+    "kivilcim"
+   ],
+   "not": "üç hızlı gaga darbesi, her birinde kivilcim."
+  },
+  "hareket_not": "H11 (yeri gagalar, tüyü kabarır) · A1 · Özel \"Kıvılcım Gagası\": üç hızlı gaga darbesi, her birinde kivilcim.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "obsidyen_kertenkele": {
+  "ad": "Obsidyen Kertenkelesi",
+  "nadirlik": "nadir",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Komur",
+   "Mor",
+   "Turuncu"
+  ],
+  "parlak": {
+   "Mor": "Kirmizi"
+  },
+  "renk_not": "Kömür, Mor (yansıma), Turuncu (ışık); karın Krem. Parlak: Mor -> Kırmızı.",
+  "huy": {
+   "kod": "H9",
+   "not": "plakalarında ışık gezer"
+  },
+  "saldiri": "A5",
+  "ozel": {
+   "ad": "Obsidyen Kabuk",
+   "fx": [],
+   "not": "savunma; top olur, plakalar kapanır."
+  },
+  "hareket_not": "H9 (plakalarında ışık gezer) · A5 · Özel \"Obsidyen Kabuk\": savunma; top olur, plakalar kapanır.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "fisilti": {
+  "ad": "Fısıltı",
+  "nadirlik": "sıradan",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Mor",
+   "Lacivert",
+   "Cam"
+  ],
+  "parlak": {
+   "Mor": "Cam"
+  },
+  "renk_not": "Mor (açık tonlar), Lacivert (gölge), Çam (ruh alevi). Parlak: Mor -> Çam.",
+  "huy": {
+   "kod": "H4",
+   "not": null
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Korkutma",
+   "fx": [
+    "ses_halkasi"
+   ],
+   "not": "bir an büyür, ağzı açılır, Mor ses_halkasi (sersem)."
+  },
+  "hareket_not": "H4, sonunda bir an soluklaşır (kod: saydamlık %50) ve saskin geri gelir · A1 · Özel \"Korkutma\": bir an büyür, ağzı açılır, Mor ses_halkasi (sersem).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "gece_pisi": {
+  "ad": "Gece Pisisi",
+  "nadirlik": "sıradan",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Lacivert",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Lacivert": "Krem"
+  },
+  "renk_not": "Lacivert, Mor (kulak içi ve gölge), Sarı (hilal ve çan). Parlak: Lacivert -> Krem.",
+  "huy": {
+   "kod": "H11",
+   "not": "patisini yalar, kulağını siler"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Gölge Pençesi",
+   "fx": [
+    "pence_izi"
+   ],
+   "not": "yere batar gibi alçalır, hedefin önünde belirir; Mor pence_izi."
+  },
+  "hareket_not": "H11 (patisini yalar, kulağını siler) · A3 · Özel \"Gölge Pençesi\": yere batar gibi alçalır, hedefin önünde belirir; Mor pence_izi.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "bosluk_kurdu": {
+  "ad": "Boşluk Kurdu",
+  "nadirlik": "sıradan",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Mor",
+   "Lacivert",
+   "Pembe"
+  ],
+  "parlak": {
+   "Mor": "Gok"
+  },
+  "renk_not": "Mor, Lacivert (ağız içi ve gölge), Pembe (dil). Parlak: Mor -> Gök.",
+  "huy": {
+   "kod": "H6",
+   "not": "kuyruk sallar, salyası damlar"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Mor Salya",
+   "fx": [
+    "kabarcik"
+   ],
+   "not": "A9 ile Mor kabarcik topu (zehir)."
+  },
+  "hareket_not": "H6 (kuyruk sallar, salyası damlar) · A4 · Özel \"Mor Salya\": A9 ile Mor kabarcik topu (zehir).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "gozmantar": {
+  "ad": "Gözmantar",
+  "nadirlik": "nadir",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Mor",
+   "Krem",
+   "Cam"
+  ],
+  "parlak": {
+   "Mor": "Kirmizi"
+  },
+  "renk_not": "Mor, Krem (sap), Çam (benek). Parlak: Mor -> Kırmızı.",
+  "huy": {
+   "kod": "H4",
+   "not": "gözü sağa sola gezer, uzun uzun kırpar"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Bakış",
+   "fx": [
+    "isik_halkasi"
+   ],
+   "not": "göz büyür, Çam isik_halkasi (körlük)."
+  },
+  "hareket_not": "H4 (gözü sağa sola gezer, uzun uzun kırpar) · A2 · Özel \"Bakış\": göz büyür, Çam isik_halkasi (körlük).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "ay_guvesi": {
+  "ad": "Ay Güvesi",
+  "nadirlik": "epik",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Mor",
+   "Kar",
+   "Sari"
+  ],
+  "parlak": {
+   "Mor": "Cam"
+  },
+  "renk_not": "Mor (kanat), Kar (gövde), Sarı (hilal). Parlak: Mor -> Çam.",
+  "huy": {
+   "kod": "H1",
+   "not": "antenlerini sırayla tarayıp düzeltir"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Ay Tozu",
+   "fx": [
+    "aytozu"
+   ],
+   "not": "kanat çırpar, geniş aytozu bulutu (sersem, alan). Epik parçacık: aytozu."
+  },
+  "hareket_not": "H1 (antenlerini sırayla tarayıp düzeltir) · A8 · Özel \"Ay Tozu\": kanat çırpar, geniş aytozu bulutu (sersem, alan). Epik parçacık: aytozu.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "murekkepcik": {
+  "ad": "Mürekkepçik",
+  "nadirlik": "sıradan",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Lacivert",
+   "Tas"
+  ],
+  "parlak": {
+   "Lacivert": "Kirmizi"
+  },
+  "renk_not": "Lacivert, Taş (cam hokka); tüy Kar. Parlak: Lacivert -> Kırmızı.",
+  "huy": {
+   "kod": "H7",
+   "not": "hapşırır, murekkep damlar"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Mürekkep Sıçratma",
+   "fx": [
+    "murekkep"
+   ],
+   "not": "A6 ile murekkep topu; hedefte leke (körlük)."
+  },
+  "hareket_not": "H7 (hapşırır, murekkep damlar) · A3 · Özel \"Mürekkep Sıçratma\": A6 ile murekkep topu; hedefte leke (körlük).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "fener_hayaleti": {
+  "ad": "Fener Hayaleti",
+  "nadirlik": "sıradan",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Krem",
+   "Komur",
+   "Cam"
+  ],
+  "parlak": {
+   "Cam": "Pembe"
+  },
+  "renk_not": "Krem (kâğıt), Kömür (çerçeve), Çam (alev); püskül Kırmızı (Usta'da vurgu). Parlak: Çam -> Pembe.",
+  "huy": {
+   "kod": "H9",
+   "not": "alevi titrer, parıldar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Ruh Feneri",
+   "fx": [
+    "ruh"
+   ],
+   "not": "ağzını açar, Çam ruh alevi fırlar."
+  },
+  "hareket_not": "H9 (alevi titrer, parıldar) · A1 (sallanıp çarpar) · Özel \"Ruh Feneri\": ağzını açar, Çam ruh alevi fırlar.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kara_kuzgun": {
+  "ad": "Kara Kuzgun",
+  "nadirlik": "nadir",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Lacivert",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Lacivert": "Kar"
+  },
+  "renk_not": "Lacivert (koyu tonlar), Mor (yansıma), Sarı (hazine). Parlak: Lacivert -> Kar.",
+  "huy": {
+   "kod": "H9",
+   "not": "hazinesi parlar, başını eğip bakar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Kuzgun Dalışı",
+   "fx": [
+    "golge"
+   ],
+   "not": "yüksekten dalar, arkasında golge tüyleri."
+  },
+  "hareket_not": "H9 (hazinesi parlar, başını eğip bakar) · A8 · Özel \"Kuzgun Dalışı\": yüksekten dalar, arkasında golge tüyleri.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "yildiz_tozu": {
+  "ad": "Yıldız Tozu",
+  "nadirlik": "sıradan",
+  "tip": "Yıldız",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Sari",
+   "Pembe"
+  ],
+  "parlak": {
+   "Sari": "Gok"
+  },
+  "renk_not": "Sarı, Pembe (kuyruk). Parlak: Sarı -> Gök.",
+  "huy": {
+   "kod": "H8",
+   "not": "kendi etrafında döner"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Göz Kamaştırma",
+   "fx": [
+    "isik_halkasi"
+   ],
+   "not": "bütün gövdesi parlar, Sarı isik_halkasi (körlük)."
+  },
+  "hareket_not": "H8 (kendi etrafında döner) · A1 · Özel \"Göz Kamaştırma\": bütün gövdesi parlar, Sarı isik_halkasi (körlük).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "nebula_kedisi": {
+  "ad": "Nebula Kedisi",
+  "nadirlik": "sıradan",
+  "tip": "Yıldız",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Mor",
+   "Pembe",
+   "Lacivert"
+  ],
+  "parlak": {
+   "Mor": "Turuncu"
+  },
+  "renk_not": "Mor, Pembe, Lacivert (gölge). Parlak: Mor -> Turuncu.",
+  "huy": {
+   "kod": "H5",
+   "not": "gerinip esner"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Yıldız Pençesi",
+   "fx": [
+    "yildiz",
+    "pence_izi"
+   ],
+   "not": "pence_izi + yildiz."
+  },
+  "hareket_not": "H5 (gerinip esner) · A3 · Özel \"Yıldız Pençesi\": pence_izi + yildiz.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "meteor_kaplumbaga": {
+  "ad": "Meteor Kaplumbağası",
+  "nadirlik": "sıradan",
+  "tip": "Yıldız",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Gok",
+   "Tas",
+   "Sari"
+  ],
+  "parlak": {
+   "Tas": "Kirmizi"
+  },
+  "renk_not": "Gök (ten), Taş (kabuk), Sarı (krater ışığı). Parlak: Taş -> Kırmızı.",
+  "huy": {
+   "kod": "H4",
+   "not": "yukarı, yıldızlara bakar"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Meteor Kabuğu",
+   "fx": [],
+   "not": "savunma; kabuğa girer, kraterler parlar. Ağır yürüyüş."
+  },
+  "hareket_not": "H4 (yukarı, yıldızlara bakar) · A2 · Özel \"Meteor Kabuğu\": savunma; kabuğa girer, kraterler parlar. Ağır yürüyüş.",
+  "yuruyus": "agir",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "takimyildiz_geyigi": {
+  "ad": "Takımyıldız Geyiği",
+  "nadirlik": "nadir",
+  "tip": "Yıldız",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Lacivert",
+   "Sari",
+   "Gok"
+  ],
+  "parlak": {
+   "Lacivert": "Kar"
+  },
+  "renk_not": "Lacivert, Sarı (yıldız), Gök (çizgi). Parlak: Lacivert -> Kar.",
+  "huy": {
+   "kod": "H9",
+   "not": "yıldızları sırayla yanıp söner"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Yıldız Yağmuru",
+   "fx": [
+    "yildiz"
+   ],
+   "not": "boynuzlar parlar, yukarıdan yildiz yağar (alan)."
+  },
+  "hareket_not": "H9 (yıldızları sırayla yanıp söner) · A1 · Özel \"Yıldız Yağmuru\": boynuzlar parlar, yukarıdan yildiz yağar (alan).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "isilbocek": {
+  "ad": "Işılböcek",
+  "nadirlik": "nadir",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Komur",
+   "Sari",
+   "Cimen"
+  ],
+  "parlak": {
+   "Sari": "Pembe"
+  },
+  "renk_not": "Kömür, Sarı (ışık), Çimen (kanat kabuğu). Parlak: Sarı -> Pembe.",
+  "huy": {
+   "kod": "H9",
+   "not": "ışığı nefes gibi yanıp söner"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Göz Kamaştırma",
+   "fx": [
+    "isik_halkasi"
+   ],
+   "not": "arkasını döner, Sarı isik_halkasi."
+  },
+  "hareket_not": "H9 (ışığı nefes gibi yanıp söner) · A1 · Özel \"Göz Kamaştırma\": arkasını döner, Sarı isik_halkasi.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "parilmantar": {
+  "ad": "Parıl Mantar",
+  "nadirlik": "nadir",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Gok",
+   "Cam",
+   "Kar"
+  ],
+  "parlak": {
+   "Gok": "Pembe"
+  },
+  "renk_not": "Gök (şapka), Çam (ışık), Kar (sap). Parlak: Gök -> Pembe.",
+  "huy": {
+   "kod": "H9",
+   "not": "şapkalar sırayla parlar"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Işıltı Sporları",
+   "fx": [
+    "spor"
+   ],
+   "not": "şapkalar sallanır, Çam spor yağmuru."
+  },
+  "hareket_not": "H9 (şapkalar sırayla parlar) · A1 · Özel \"Işıltı Sporları\": şapkalar sallanır, Çam spor yağmuru.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "gece_kelebegi": {
+  "ad": "Gece Kelebeği",
+  "nadirlik": "nadir",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Lacivert",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Lacivert": "Pembe"
+  },
+  "renk_not": "Lacivert (kanat), Mor (gövde), Sarı (hilal). Parlak: Lacivert -> Pembe (şafak).",
+  "huy": {
+   "kod": "H10",
+   "not": null
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Pul Fırtınası",
+   "fx": [
+    "yildiz",
+    "aytozu"
+   ],
+   "not": "hızla kanat çırpar, aytozu ve yildiz fırtınası."
+  },
+  "hareket_not": "H10 · A8 · Özel \"Pul Fırtınası\": hızla kanat çırpar, aytozu ve yildiz fırtınası.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "ruya_kuzusu": {
+  "ad": "Rüya Kuzusu",
+  "nadirlik": "epik",
+  "tip": "Ay",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Pembe",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Pembe": "Gok"
+  },
+  "renk_not": "Pembe (yün), Mor (yüz ve bacak), Sarı (çan). Parlak: Pembe -> Gök.",
+  "huy": {
+   "kod": "H12",
+   "not": "uyuklar, başı düşer, irkilir"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Ninni",
+   "fx": [
+    "nota",
+    "z"
+   ],
+   "not": "gözleri kapanır, nota süzülür + iyileştirme efekti. Epik parçacık: z."
+  },
+  "hareket_not": "H12 (uyuklar, başı düşer, irkilir) · A1 · Özel \"Ninni\": gözleri kapanır, nota süzülür + iyileştirme efekti. Epik parçacık: z.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "yarim"
+  }
+ },
+ "ay_tavsani": {
+  "ad": "Dolunay Tavşanı",
+  "nadirlik": "epik",
+  "tip": "Ay",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Kar": "Pembe"
+  },
+  "renk_not": "Kar, Mor (gölge ve kulak içi), Sarı (ay işareti). Parlak: Kar -> Pembe.",
+  "huy": {
+   "kod": "H3",
+   "not": null
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Ay Sıçrayışı",
+   "fx": [
+    "aytozu",
+    "isik_halkasi"
+   ],
+   "not": "çok yükseğe zıplar (bir an ekrandan çıkar), Sarı isik_halkasi ile iner. Epik parçacık: aytozu."
+  },
+  "hareket_not": "H3 · A2 · Özel \"Ay Sıçrayışı\": çok yükseğe zıplar (bir an ekrandan çıkar), Sarı isik_halkasi ile iner. Epik parçacık: aytozu.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "damlacik": {
+  "ad": "Damlacık",
+  "nadirlik": "nadir",
+  "tip": "Su",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Gok",
+   "Cam",
+   "Cimen"
+  ],
+  "parlak": {
+   "Gok": "Pembe"
+  },
+  "renk_not": "Gök, Çam (gölge), Çimen (yaprak). Parlak: Gök -> Pembe.",
+  "huy": {
+   "kod": "H2",
+   "not": "jöle gibi titrer, kabarcığı yer değiştirir"
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Su Fıskiyesi",
+   "fx": [
+    "su"
+   ],
+   "not": "A9 ile su."
+  },
+  "hareket_not": "H2 (jöle gibi titrer, kabarcığı yer değiştirir) · A2 · Özel \"Su Fıskiyesi\": A9 ile su.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "inci_istiridye": {
+  "ad": "İnci İstiridye",
+  "nadirlik": "nadir",
+  "tip": "Su",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Pembe"
+  ],
+  "parlak": {
+   "Tas": "Lacivert"
+  },
+  "renk_not": "Taş (kabuk), Pembe (gövde); inci Kar. Parlak: Taş -> Lacivert.",
+  "huy": {
+   "kod": "H10",
+   "not": "kapağını aralıp kapar"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Kabuğunu Kapat",
+   "fx": [],
+   "not": "savunma; kabuk kapanır, aralıktan gözler bakar."
+  },
+  "hareket_not": "H10 (kapağını aralıp kapar) · A4 (kapaklarıyla) · Özel \"Kabuğunu Kapat\": savunma; kabuk kapanır, aralıktan gözler bakar.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "gol_ejderi": {
+  "ad": "Göl Ejderi",
+  "nadirlik": "epik",
+  "tip": "Su",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Cam",
+   "Gok",
+   "Pembe"
+  ],
+  "parlak": {
+   "Cam": "Sari"
+  },
+  "renk_not": "Çam, Gök (karın), Pembe (yüzgeç). Parlak: Çam -> Sarı.",
+  "huy": {
+   "kod": "H7",
+   "not": "bir kabarcik üfler, patlayınca saskin"
+  },
+  "saldiri": "A5",
+  "ozel": {
+   "ad": "Dalga Çarpması",
+   "fx": [
+    "su",
+    "kabarcik"
+   ],
+   "not": "kuyruğunu savurur, geniş su dalgası (alan). Epik parçacık: kabarcik."
+  },
+  "hareket_not": "H7 (bir kabarcik üfler, patlayınca saskin) · A5 · Özel \"Dalga Çarpması\": kuyruğunu savurur, geniş su dalgası (alan). Epik parçacık: kabarcik.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "nilufer_kurbagasi": {
+  "ad": "Nilüfer Kurbağası",
+  "nadirlik": "nadir",
+  "tip": "Su",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Cimen",
+   "Pembe",
+   "Krem"
+  ],
+  "parlak": {
+   "Cimen": "Gok"
+  },
+  "renk_not": "Çimen, Pembe (nilüfer), Krem (karın). Parlak: Çimen -> Gök.",
+  "huy": {
+   "kod": "H3",
+   "not": null
+  },
+  "saldiri": "A2",
+  "ozel": {
+   "ad": "Nilüfer Şifası",
+   "fx": [
+    "cicek"
+   ],
+   "not": "çiçek açılır, cicek yaprakları + iyileştirme efekti."
+  },
+  "hareket_not": "H3 · A2 · Özel \"Nilüfer Şifası\": çiçek açılır, cicek yaprakları + iyileştirme efekti.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kirpi_baligi": {
+  "ad": "Kirpi Balığı",
+  "nadirlik": "nadir",
+  "tip": "Su",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Sari",
+   "Krem",
+   "Turuncu"
+  ],
+  "parlak": {
+   "Sari": "Mor"
+  },
+  "renk_not": "Sarı, Krem (karın), Turuncu (benek ve yüzgeç). Parlak: Sarı -> Mor.",
+  "huy": {
+   "kod": "H10",
+   "not": "yanaklarını şişirip indirir"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Şişip Diken",
+   "fx": [],
+   "not": "savunma; iki katına şişer, dikenler dışarı çıkar."
+  },
+  "hareket_not": "H10 (yanaklarını şişirip indirir) · A1 · Özel \"Şişip Diken\": savunma; iki katına şişer, dikenler dışarı çıkar.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "cicek_aslani": {
+  "ad": "Çiçek Aslanı",
+  "nadirlik": "efsanevi",
+  "tip": "Orman",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Sari",
+   "Pembe",
+   "Cimen"
+  ],
+  "parlak": {
+   "Pembe": "Gok"
+  },
+  "renk_not": "Sarı (tüy ve altın), Pembe (yapraklar), Çimen. Parlak: Pembe -> Gök.",
+  "huy": {
+   "kod": "H2",
+   "not": "yelesini silkeler, cicek yaprakları uçar"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Çiçek Kükremesi",
+   "fx": [
+    "cicek"
+   ],
+   "not": "ağzı açılır, cicek fırtınası + iyileştirme efekti."
+  },
+  "hareket_not": "H2 (yelesini silkeler, cicek yaprakları uçar) · A3 · Özel \"Çiçek Kükremesi\": ağzı açılır, cicek fırtınası + iyileştirme efekti.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kristal_yilan": {
+  "ad": "Kristal Yılan",
+  "nadirlik": "efsanevi",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Mor",
+   "Gok",
+   "Sari"
+  ],
+  "parlak": {
+   "Mor": "Cam"
+  },
+  "renk_not": "Mor, Gök (kristal), Sarı (altın). Parlak: Mor -> Çam.",
+  "huy": {
+   "kod": "H6",
+   "not": "çıngırağını sallar"
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Kristal Sokma",
+   "fx": [
+    "kristal",
+    "buz"
+   ],
+   "not": "başı hızla uzanır, kristal + buz (donma)."
+  },
+  "hareket_not": "H6 (çıngırağını sallar) · A4 · Özel \"Kristal Sokma\": başı hızla uzanır, kristal + buz (donma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "gunes_kusu": {
+  "ad": "Güneş Kuşu",
+  "nadirlik": "efsanevi",
+  "tip": "Kum",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Sari",
+   "Turuncu",
+   "Cam"
+  ],
+  "parlak": {
+   "Turuncu": "Pembe"
+  },
+  "renk_not": "Sarı, Turuncu, Çam (taş). Parlak: Turuncu -> Pembe.",
+  "huy": {
+   "kod": "H10",
+   "not": "kuyruk yelpazesini açıp kapar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Güneş Işını",
+   "fx": [
+    "isik_halkasi"
+   ],
+   "not": "kuyruk açılır, Sarı isik_halkasi (körlük, alan)."
+  },
+  "hareket_not": "H10 (kuyruk yelpazesini açıp kapar) · A8 · Özel \"Güneş Işını\": kuyruk açılır, Sarı isik_halkasi (körlük, alan).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kuzey_kurdu": {
+  "ad": "Kuzey Kurdu",
+  "nadirlik": "efsanevi",
+  "tip": "Buz",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Gok",
+   "Cam"
+  ],
+  "parlak": {
+   "Gok": "Mor"
+  },
+  "renk_not": "Kar, Gök, Çam (yele ucu); küpe Sarı. Parlak: Gök -> Mor.",
+  "huy": {
+   "kod": "H6",
+   "not": null
+  },
+  "saldiri": "A4",
+  "ozel": {
+   "ad": "Aurora Uluması",
+   "fx": [
+    "buz"
+   ],
+   "not": "başını kaldırıp ulur, Çam tonlu dalga + buz (donma)."
+  },
+  "hareket_not": "H6 · A4 · Özel \"Aurora Uluması\": başını kaldırıp ulur, Çam tonlu dalga + buz (donma).",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "anka_yavrusu": {
+  "ad": "Anka Yavrusu",
+  "nadirlik": "efsanevi",
+  "tip": "Ateş",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Turuncu",
+   "Kirmizi",
+   "Sari"
+  ],
+  "parlak": {
+   "Turuncu": "Gok",
+   "Kirmizi": "Lacivert"
+  },
+  "renk_not": "Turuncu, Kırmızı, Sarı; Bebek'te kül Taş. Parlak: Turuncu -> Gök, Kırmızı -> Lacivert (mavi anka).",
+  "huy": {
+   "kod": "H2",
+   "not": "silkelenir, duman kalkar"
+  },
+  "saldiri": "A8",
+  "ozel": {
+   "ad": "Küllerden Doğuş",
+   "fx": [
+    "alev"
+   ],
+   "not": "bir an kül yığınına çöker (ezilir, griye boyanır), sonra alev ile fışkırır (yanma, alan)."
+  },
+  "hareket_not": "H2 (silkelenir, duman kalkar) · A8 · Özel \"Küllerden Doğuş\": bir an kül yığınına çöker (ezilir, griye boyanır), sonra alev ile fışkırır (yanma, alan).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "yildiz_balinasi": {
+  "ad": "Yıldız Balinası",
+  "nadirlik": "efsanevi",
+  "tip": "Gölge",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Lacivert",
+   "Gok",
+   "Sari"
+  ],
+  "parlak": {
+   "Lacivert": "Mor"
+  },
+  "renk_not": "Lacivert, Gök (karın), Sarı (yıldız ve altın). Parlak: Lacivert -> Mor.",
+  "huy": {
+   "kod": "H9",
+   "not": "fıskiyesinden bir yildiz çıkar, bakıp mutlu olur"
+  },
+  "saldiri": "A1",
+  "ozel": {
+   "ad": "Yıldız Yağmuru",
+   "fx": [],
+   "not": "fıskiyeden yükselen yildizlar bütün hedeflere yağar (alan)."
+  },
+  "hareket_not": "H9 (fıskiyesinden bir yildiz çıkar, bakıp mutlu olur) · A1 · Özel \"Yıldız Yağmuru\": fıskiyeden yükselen yildizlar bütün hedeflere yağar (alan).",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "hilal_ejderi": {
+  "ad": "Hilal Ejderi",
+  "nadirlik": "epik",
+  "tip": "Ay",
+  "patron": false,
+  "ucar": true,
+  "aileler": [
+   "Mor",
+   "Kar",
+   "Sari"
+  ],
+  "parlak": {
+   "Mor": "Lacivert"
+  },
+  "renk_not": "Mor (açık tonlar), Kar (yele), Sarı (boynuz ve taş). Parlak: Mor -> Lacivert.",
+  "huy": {
+   "kod": "H5",
+   "not": null
+  },
+  "saldiri": "A5",
+  "ozel": {
+   "ad": "Hilal Nefesi",
+   "fx": [
+    "aytozu"
+   ],
+   "not": "A9 ile hilal biçimli aytozu dalgası (sersem, alan). Epik parçacık: aytozu. Kanat çırpmaz; gövdesi dalga gibi süzülür."
+  },
+  "hareket_not": "H5 · A5 · Özel \"Hilal Nefesi\": A9 ile hilal biçimli aytozu dalgası (sersem, alan). Epik parçacık: aytozu. Kanat çırpmaz; gövdesi dalga gibi süzülür.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kadim_kostebek": {
+  "ad": "Kadim Köstebek",
+  "nadirlik": "epik",
+  "tip": "Taş",
+  "patron": false,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Mor",
+   "Sari"
+  ],
+  "parlak": {
+   "Mor": "Cam"
+  },
+  "renk_not": "Taş (tüy), Mor (kristal), Sarı (gözlük); sakal Kar. Parlak: Mor -> Çam.",
+  "huy": {
+   "kod": "H12",
+   "not": "uyuklar, gözlüğü kayar, düzeltir"
+  },
+  "saldiri": "A3",
+  "ozel": {
+   "ad": "Kristal Deprem",
+   "fx": [
+    "kristal"
+   ],
+   "not": "bastonu yere vurur, hedeflerin altından kristal yükselir (alan). Ağır yürüyüş."
+  },
+  "hareket_not": "H12 (uyuklar, gözlüğü kayar, düzeltir) · A3 (bastonla) · Özel \"Kristal Deprem\": bastonu yere vurur, hedeflerin altından kristal yükselir (alan). Ağır yürüyüş.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "yildirim_baligi": {
+  "ad": "Yıldırım Yılanbalığı",
+  "nadirlik": "epik",
+  "tip": "Su",
+  "patron": false,
+  "ucar": false,
+  "aileler": [],
+  "parlak": {},
+  "renk_not": "Patronlar 4 renk ailesi kullanabilir (toplam en çok 20 renk).",
+  "huy": {
+   "kod": "H2",
+   "not": "titrer, kivilcim saçar"
+  },
+  "saldiri": "A5",
+  "ozel": {
+   "ad": "Şimşek Çarpması",
+   "fx": [
+    "kivilcim",
+    "simsek"
+   ],
+   "not": "yanakları parlar, hedefe yukarıdan simsek düşer (sersem). Epik parçacık: Sarı kivilcim."
+  },
+  "hareket_not": "H2 (titrer, kivilcim saçar) · A5 · Özel \"Şimşek Çarpması\": yanakları parlar, hedefe yukarıdan simsek düşer (sersem). Epik parçacık: Sarı kivilcim.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "agacbasi": {
+  "ad": "11.2 Ağaçbaşı",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": false,
+  "aileler": [
+   "Kahve",
+   "Cimen",
+   "Krem"
+  ],
+  "parlak": {
+   "Cimen": "Pembe",
+   "Kahve": "Kar"
+  },
+  "renk_not": "Kahve, Çimen, Krem; Faz 2'de Çimen yerine Turuncu. Parlak: Çimen -> Pembe (kiraz çiçeği), Kahve -> Kar.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "tas_golemi": {
+  "ad": "11.3 Taş Golemi",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": false,
+  "aileler": [
+   "Tas",
+   "Mor",
+   "Cimen",
+   "Pembe"
+  ],
+  "parlak": {
+   "Tas": "Kahve",
+   "Mor": "Cam"
+  },
+  "renk_not": "Taş, Mor (kristal), Çimen (yosun), Pembe (çiçek). Parlak: Taş -> Kahve, Mor -> Çam.",
+  "yuruyus": "agir",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "firtina_cakali": {
+  "ad": "11.4 Fırtına Çakalı",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": false,
+  "aileler": [
+   "Turuncu",
+   "Sari",
+   "Cam",
+   "Krem"
+  ],
+  "parlak": {
+   "Turuncu": "Lacivert"
+  },
+  "renk_not": "Turuncu (tüy), Sarı (kum ve altın), Çam (taş), Krem (göğüs). Parlak: Turuncu -> Lacivert.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "buzul_ayisi": {
+  "ad": "11.5 Buzul Ayısı",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": false,
+  "aileler": [
+   "Kar",
+   "Gok",
+   "Kirmizi",
+   "Komur"
+  ],
+  "parlak": {
+   "Kar": "Kahve",
+   "Gok": "Pembe"
+  },
+  "renk_not": "Kar, Gök (buzul), Kırmızı (atkı), Kömür (burun ve pençe). Parlak: Kar -> Kahve (boz ayı), Gök -> Pembe.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "magma_kaplumbaga": {
+  "ad": "11.6 Magma Kaplumbağası",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": false,
+  "aileler": [
+   "Komur",
+   "Kahve",
+   "Turuncu",
+   "Sari"
+  ],
+  "parlak": {
+   "Turuncu": "Cimen",
+   "Kahve": "Tas"
+  },
+  "renk_not": "Kömür (kabuk), Kahve (ten), Turuncu ve Sarı (lav). Parlak: Turuncu -> Çimen, Kahve -> Taş.",
+  "yuruyus": "agir",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "bosluk_bekcisi": {
+  "ad": "11.7 Boşluk Bekçisi",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": true,
+  "aileler": [
+   "Lacivert",
+   "Mor",
+   "Cam",
+   "Komur"
+  ],
+  "parlak": {
+   "Lacivert": "Kar",
+   "Cam": "Sari"
+  },
+  "renk_not": "Lacivert (pelerin), Mor (hayalet gövde), Çam (göz ve fener), Kömür (kapüşon içi ve boşluk). Parlak: Lacivert -> Kar, Çam -> Sarı.",
+  "yuruyus": "ucan",
+  "kanat": true,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ },
+ "kadim_bonk": {
+  "ad": "11.8 Kadim Bonk",
+  "nadirlik": null,
+  "tip": null,
+  "patron": true,
+  "ucar": false,
+  "aileler": [
+   "Lacivert",
+   "Mor",
+   "Pembe",
+   "Sari"
+  ],
+  "parlak": {
+   "Lacivert": "Gok",
+   "Pembe": "Sari"
+  },
+  "renk_not": "Lacivert (gövde), Mor ve Pembe (sarmal), Sarı (yıldız ve halka); Faz 3'te Kömür. Parlak: Lacivert -> Gök (gündüz göğü), Pembe -> Sarı.",
+  "yuruyus": "zipla",
+  "kanat": false,
+  "yuz": {
+   "varsayilan": "normal"
+  }
+ }
+}

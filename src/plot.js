@@ -1,4 +1,5 @@
 // K4 (1.0.21): ev ve insa (arsa, istasyonlar, tarla, ahir) world.js'ten ayrildi. Davranis ayni.
+import { glemTex, glemScale, attachGlemon, glemHappy } from './glemon2.js';
 import { GAME_W, GROUND_Y, ITEMS, BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, RANCH, ranchDropOf, BASE_REWARDS, HIVE, NAMES } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -83,12 +84,15 @@ export class PlotPart {
       const meta = this.gmeta[p.key].stages[p.stage];
       const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
       const x = g.x0 + 8 + Math.random() * (g.cols * 16 - 16);
-      const sp = this.add.sprite(x, GROUND_Y, `gs_${p.key}_${p.stage}`, p.shiny ? meta.n : 0)
-        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(7).setScale(p.stage === 2 ? 0.8 : 1).setFlipX(Math.random() < 0.5);
+      const [tex, fr0] = glemTex(this.gmeta, p.key, p.stage, p.shiny);
+      const sp = this.add.sprite(x, GROUND_Y, tex, fr0)
+        .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(7).setScale(glemScale(this.gmeta, p.key, p.stage === 2 ? 0.8 : 1)).setFlipX(Math.random() < 0.5);
       sp.play(k('durma'));
       const sh = this.add.image(x, GROUND_Y + 1, 'shadow').setDepth(6.9).setScale((meta.bodyW * sp.scale) / 18, 1);
       const mark = this.add.text(x, GROUND_Y - meta.ay * sp.scale - 4, '!', { fontFamily: 'BonkSym, "Jersey 15"', fontStyle: 'normal', fontSize: '11px', color: '#ffd04d', stroke: '#16121a', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(7.5);
-      const r = { p, sp, sh, mark, k, meta, tx: x, wait: 1000 + Math.random() * 4000 };
+      const r = { p, sp, sh, mark, k, meta, tx: x, wait: 1000 + Math.random() * 4000, nap: (this.ranch.length % 2) === 0 };
+      // v2: gece ahirdakilerin yarisi uyur (uyku), dokununca ve beslenince mutlu
+      attachGlemon(sp, { key: p.key, stage: p.stage, shiny: !!p.shiny, k, state: () => ({ sleep: r.nap && this.ranchNight() }) });
       sp.ranchPet = true;
       sp.setInteractive({ useHandCursor: true });
       sp.on('pointerdown', () => this.ranchTap(r));
@@ -98,19 +102,23 @@ export class PlotPart {
     }
   }
 
+  ranchNight() { return this.tod === 'gece'; }
+
   updateRanch(dt) {
     if (this.mode !== 'plot' || !this.ranch) return;
     const g = this.plotGeom();
     const now = gNow();
     for (const r of this.ranch) {
       if (!r.sp.active) continue;
+      if (r.sp._glem && r.nap && this.ranchNight()) { r.tx = r.sp.x; r.sh.x = r.sp.x; continue; }
       const dx = r.tx - r.sp.x;
       if (Math.abs(dx) > 1) {
         r.sp.x += Math.sign(dx) * Math.min(Math.abs(dx), 22 * dt / 1000);
         r.sp.setFlipX(dx > 0);
         if (r.sp.anims.currentAnim.key !== r.k('yurume')) r.sp.play(r.k('yurume'));
       } else {
-        if (r.sp.anims.currentAnim.key !== r.k('durma')) r.sp.play(r.k('durma'));
+        const ck = r.sp.anims.currentAnim.key;
+        if (ck !== r.k('durma') && ck !== r.k('huy') && ck !== r.k('mutlu') && ck !== r.k('uyku')) r.sp.play(r.k('durma'));
         r.wait -= dt;
         if (r.wait <= 0) {
           r.wait = 2000 + Math.random() * 5000;
@@ -127,6 +135,7 @@ export class PlotPart {
     if (this.busy || this.building || UI.panelOpen()) return;
     const top = GROUND_Y - r.meta.ay * r.sp.scale;
     const got = collectRanch(r.p);
+    if (r.sp._glem && !(r.nap && this.ranchNight())) { r.tx = r.sp.x; glemHappy(r.sp); }
     if (got) {
       this.giveDrop(got.id, got.n, `${petDisplayName(r.p)} bıraktı:`, true);
       r.mark.setVisible(false);

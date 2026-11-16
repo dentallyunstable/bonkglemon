@@ -5,6 +5,7 @@ import { $, show } from './ui.js';
 import { setSound, stopMusic, pauseMusic } from './audio.js';
 import { showLogin } from './login.js';
 import { makeAnim, makeAnimFrames } from './anim.js';
+import { preloadV2, createV2Anims } from './glemon2.js';
 import { WorldScene } from './world.js';
 import * as ART from './art.js';
 import { block, BLOCK_NAMES } from './blocks.js';
@@ -35,8 +36,10 @@ class BootScene extends Phaser.Scene {
     this.load.json('chargearjson', `assets/chars/${char}/gear.json`);
     // 0.4: her Glemon ve evrim asamasi tek resim: ust sira normal, alt sira parlak
     for (const [k, m] of Object.entries(gmeta)) {
+      if (m.v === 2) continue; // Plan v2 bicimi: glemon2.js yukler (16 sutunlu izgara, ayri parlak sayfa, yuz karolari)
       m.stages.forEach((st, s) => this.load.spritesheet(`gs_${k}_${s}`, `assets/glemons/${k}/${s}.png`, { frameWidth: st.w, frameHeight: st.h }));
     }
+    preloadV2(this, gmeta);
   }
 
   create() {
@@ -47,7 +50,9 @@ class BootScene extends Phaser.Scene {
       makeAnimFrames(this, `c_${a}`, 'char', m.frames, m.durations, LOOPING.has(a) ? -1 : 0);
     }
     // animasyon adi: g_<tur>_<asama>_<anim>[_p]
+    createV2Anims(this, gmeta);
     for (const [k, m] of Object.entries(gmeta)) {
+      if (m.v === 2) continue;
       m.stages.forEach((st, s) => {
         for (const [a, an] of Object.entries(m.anims)) {
           const loop = a === 'durma' || a === 'yurume' ? -1 : 0;
