@@ -8,7 +8,10 @@ Yanaklar her ifadede ayni yerde durur (bolum 4.2).
 """
 
 EXPRS = ['normal', 'yarim', 'kapali', 'mutlu', 'kizgin', 'aci', 'saskin', 'baygin',
-         'sersem', 'uzgun', 'bak_sol', 'bak_sag']
+         'sersem', 'uzgun', 'bak_sol', 'bak_sag', 'esneme', 'isir']
+# 2026-11-21: esneme (H5/H7/A9: kapali goz + acik agiz) ve isir (A4: kizgin goz + acik agiz) sona eklendi;
+# eski yuz sayfalari (12 ifade) bozulmaz, oyun her turun kendi exprs listesini kullanir.
+EYE_ALIAS = {'esneme': 'kapali', 'isir': 'kizgin'}
 
 # ---------------------------------------------------------------- K (4x5) Bebek, Genc
 K = {
@@ -59,6 +62,8 @@ MOUTH = {
     'uzgun':  ['.m.', 'm.m'],
     'bak_sol': ['mm'],
     'bak_sag': ['mm'],
+    'esneme': ['mm', 'rr'],
+    'isir':   ['mmm', 'rrr'],
 }
 
 TEMPLATES = {'K': K, 'O': O, 'B': B}
@@ -70,6 +75,7 @@ GAP = {'K': (4, 6), 'O': (5, 7), 'B': (7, 10)}   # goz arasi bosluk (1 - 1.5 goz
 def eyes(kalip, expr):
     """(sol, sag, dx) goz desenleri."""
     t = TEMPLATES[kalip]
+    expr = EYE_ALIAS.get(expr, expr)
     if expr in ('bak_sol', 'bak_sag'):
         e = t['normal']
         return e, e, (-1 if expr == 'bak_sol' else 1)

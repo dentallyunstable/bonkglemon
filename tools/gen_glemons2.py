@@ -27,7 +27,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STAGES = ['bebek', 'genc', 'usta']
 SPECIES = json.load(open(os.path.join(ROOT, 'tools/glemon_species.json'), encoding='utf8'))
 PART_COL = {(90, 160, 230): 'govde', (120, 220, 90): 'tepe', (240, 150, 60): 'kol_1', (230, 90, 160): 'kol_2',
-            (250, 230, 80): 'kulak_1', (200, 120, 250): 'kulak_2', (90, 230, 220): 'kuyruk', (250, 90, 90): 'esya'}
+            (250, 230, 80): 'kulak_1', (200, 120, 250): 'kulak_2', (90, 230, 220): 'kuyruk', (250, 90, 90): 'esya',
+            (160, 100, 40): 'kanat_1', (40, 120, 120): 'kanat_2', (200, 200, 200): 'kafa'}
 FOLLOW = ('tepe', 'kulak_1', 'kulak_2', 'kuyruk', 'esya', 'kol_1', 'kol_2')
 ORDER = ['durma', 'huy', 'yurume', 'hazirlik', 'saldiri', 'ozel', 'hasar', 'bayilma', 'uyku', 'mutlu', 'savunma']
 COLS = 16
@@ -47,6 +48,10 @@ DURS = {
     'savunma': [300, 300],
 }
 LOOP = {'durma', 'yurume', 'uyku', 'savunma'}
+ATK_FX = {'A3': 'pence_izi', 'A4': 'dis_izi'}
+RARITY = {'nadir': 'nadir', 'epik': 'epik', 'efsanevi': 'efsanevi', 'gizli': 'efsanevi'}
+REGION_FX = {'Orman': 'yaprak', 'Taş': 'tas', 'Kum': 'kum', 'Buz': 'kar', 'Ateş': 'kivilcim', 'Gölge': 'golge',
+             'Yıldız': 'yildiz', 'Su': 'su', 'Ay': 'aytozu', 'Gece': 'aytozu'}
 HIT = {'saldiri': 3, 'ozel': 4}
 
 
@@ -58,23 +63,72 @@ def F(**k):
 # dx,dy: butun Glemon (ileri = -x, Glemon sola bakar)  sq: +ezil/-uza (satir)  lean: ust govde (kafa) kayar
 # p: {parca: (dx,dy)} ek kayma  face: ifade (None = pisirilmis normal yuz)  flash: butun Glemon Parilti
 # ol: dis cizgi rengi  trail: hiz izi  glow: parlayan aile bir ton acilir  noface: yuz gorunmez
-def anim_durma(sp):
+def anim_durma(sp, rig):
+    if rig.fly:   # ucanlar ezilmez: 0,-1,-2,-1,0,+1 suzulur, kanat yukari/orta/asagi
+        return [F(dy=0), F(dy=-1), F(dy=-2), F(dy=-1), F(dy=0), F(dy=1)]
     return [F(), F(sq=1), F(sq=1), F(), F(sq=-1), F(sq=-1)]
 
 
-def huy_frames(code, sp):
-    """Bolum 5.5 huy kutuphanesi; parca yoksa govde ile calisir. Kutukcuk: H1 (filiz titrer, sonra sasirir)."""
-    if code == 'H1':
-        return [F(), F(p={'tepe': (-1, 0)}, face='bak_sol'), F(p={'tepe': (1, 0)}, face='bak_sol'),
-                F(p={'tepe': (-1, 0)}, face='bak_sol'), F(p={'tepe': (1, 0)}, face='bak_sol'),
-                F(p={'tepe': (0, -1)}), F(sq=-1, face='saskin'), F(sq=-1, face='saskin'), F(face='saskin'), F(face='saskin')]
+def first_part(rig, names):
+    for n in names:
+        if n in rig.parts:
+            return n
+    return None
+
+
+def huy_frames(code, sp, rig):
+    """Bolum 5.5 huy kutuphanesi (10 kare). Parca yoksa govde ile calisir. fx=True olan karede turun parcacigi cikar."""
+    if code == 'H1':     # kulak/anten/tepe iki kez titrer, gozler o yana bakar
+        t = first_part(rig, ('kulak_1', 'tepe', 'kulak_2', 'kuyruk', 'kanat_1'))
+        if not t:
+            return [F(), F(lean=-1, face='bak_sol'), F(lean=1, face='bak_sol'), F(lean=-1, face='bak_sol'), F(lean=1, face='bak_sol'),
+                    F(), F(sq=-1, face='saskin'), F(sq=-1, face='saskin'), F(face='saskin'), F(face='saskin')]
+        b = 'bak_sol' if rig.mil[t][0] < rig.C / 2 else 'bak_sag'
+        return [F(), F(p={t: (-1, 0)}, face=b), F(p={t: (1, 0)}, face=b), F(p={t: (-1, 0)}, face=b), F(p={t: (1, 0)}, face=b),
+                F(p={t: (0, -1)}), F(sq=-1, face='saskin'), F(sq=-1, face='saskin'), F(face='saskin'), F(face='saskin')]
     if code == 'H3':
         return [F(sq=1), F(dy=-2, sq=-1, face='mutlu'), F(dy=-1, face='mutlu'), F(sq=1, face='mutlu'), F(dy=-2, sq=-1, face='mutlu'),
                 F(dy=-1, face='mutlu'), F(sq=1, face='mutlu'), F(face='mutlu'), F(), F()]
     if code == 'H4':
         return [F(face='bak_sol', lean=-1)] * 3 + [F(face='bak_sag', lean=1)] * 3 + [F(face='kapali'), F(), F(), F()]
-    # varsayilan: silkelenme (H2)
-    return [F(dx=-1), F(dx=1), F(dx=-1), F(dx=1), F(dx=-1), F(dx=1), F(dx=-1), F(dx=1), F(), F()]
+    if code == 'H5':     # esneme: agiz acilir, goz kapali, govde uzar, sonra coker
+        return [F(face='yarim'), F(sq=-1, face='esneme'), F(sq=-2, face='esneme'), F(sq=-2, face='esneme'), F(sq=-1, face='esneme'),
+                F(sq=1, face='kapali'), F(sq=1, face='yarim'), F(face='yarim'), F(), F()]
+    if code == 'H6':     # kuyruk 4 kez saga sola, govde ters yone 1 piksel
+        t = first_part(rig, ('kuyruk', 'tepe', 'kulak_2', 'kulak_1', 'esya'))
+        if not t:
+            return [F(dx=1), F(dx=-1)] * 4 + [F(face='mutlu'), F()]
+        return [F(p={t: (-1, 0)}, dx=1), F(p={t: (1, 0)}, dx=-1)] * 4 + [F(face='mutlu'), F()]
+    if code == 'H7':     # hapsirma: geri cekil, hizla one egil, kapali goz, parcacik, sonra saskin
+        tp = {n: (0, -2) for n in ('tepe',) if n in rig.parts}
+        return [F(dx=1, sq=-1, face='yarim'), F(dx=2, sq=-1, face='esneme'), F(dx=2, sq=-1, face='esneme'),
+                F(dx=-2, sq=1, lean=-1, face='kapali', fx=True, dy=-1, p=tp), F(dx=-1, sq=1, face='kapali'),
+                F(face='saskin'), F(face='saskin'), F(face='saskin'), F(), F()]
+    if code == 'H8':     # donme: govde daralir, arkasi doner (yuz 2 kare gizli), genisler
+        return [F(), F(sq=-1), F(sq=-1, flip=True, bare=True, noface=True), F(sq=-1, flip=True, bare=True, noface=True), F(sq=-1),
+                F(sq=1, face='mutlu'), F(face='mutlu'), F(face='mutlu'), F(), F()]
+    if code == 'H9':     # isildama: parlayan parca tondan tona parlar, Glemon ona bakip mutlu olur
+        return [F(glow=True), F(), F(glow=True), F(face='saskin'), F(glow=True, face='saskin'), F(face='mutlu'),
+                F(sq=1, face='mutlu'), F(dy=-1, face='mutlu'), F(face='mutlu'), F()]
+    if code == 'H10':    # kanat / kabuk / yaka / yaprak acilir kapanir
+        if 'kanat_1' in rig.parts or 'kanat_2' in rig.parts:
+            w = ['yukari', 'orta', 'asagi', 'orta', 'yukari', 'orta', 'asagi', 'orta', 'yukari', 'yukari']
+            return [F(wing=s) for s in w]
+        out = {'kulak_1': (-1, -1), 'kulak_2': (1, -1), 'kol_1': (-1, -1), 'kol_2': (1, -1), 'tepe': (0, -1), 'esya': (0, -1)}
+        po = {n: v for n, v in out.items() if n in rig.parts}
+        if not po:
+            return [F(sq=-1), F(sq=-1), F(sq=1), F(sq=1)] * 2 + [F(), F()]
+        return [F(), F(p=po, sq=-1), F(p=po, sq=-1, face='mutlu'), F(p=po, face='mutlu'), F(), F(sq=1),
+                F(p=po, sq=-1), F(p=po, face='mutlu'), F(), F()]
+    if code == 'H11':    # koklama: kafa one 2 piksel, burun iki kez oynar, geri gelir (esyasi varsa agzina goturur)
+        e = {'esya': (1, -2)} if 'esya' in rig.parts else {}
+        return [F(lean=-1), F(lean=-2), F(lean=-2, sq=1, p=e), F(lean=-2), F(lean=-2, sq=1, p=e), F(lean=-2),
+                F(lean=-1, face='mutlu'), F(face='mutlu'), F(), F()]
+    if code == 'H12':    # uyuklama: yarim yuz, kafa yavasca duser, aniden kalkar, saskin
+        return [F(face='yarim'), F(face='yarim'), F(sq=1, face='yarim'), F(sq=1, face='kapali'), F(sq=2, face='kapali'),
+                F(sq=2, face='kapali'), F(sq=-1, dy=-1, face='saskin'), F(face='saskin'), F(face='saskin'), F()]
+    # varsayilan: silkelenme (H2), ilk karede parcacik
+    return [F(dx=-1, fx=True), F(dx=1), F(dx=-1), F(dx=1), F(dx=-1), F(dx=1), F(dx=-1), F(dx=1), F(), F()]
 
 
 def yurume_frames(kind):
@@ -86,31 +140,80 @@ def yurume_frames(kind):
             F(sq=1, p={'kulak_1': (0, 1), 'kulak_2': (0, 1)})]
 
 
-def saldiri_frames(code):
+BALL_HIDE = ('tepe', 'kulak_1', 'kulak_2', 'kol_1', 'kol_2', 'esya', 'kuyruk', 'kanat_1', 'kanat_2', 'kafa')
+
+
+def saldiri_frames(code, rig):
+    """Bolum 5.4 + 5.5: 6 kare, vurus karesi 3 (0'dan). Ileri = -x."""
+    if code == 'A2':     # zipla ez: one ve yukari zipla (6 yukari), ustune in, ezil
+        return [F(sq=1), F(dx=-3, dy=-6, sq=-1), F(dx=-6, dy=-5), F(dx=-8, sq=2), F(dx=-3), F(sq=1)]
+    if code == 'A3':     # pence: kol parcasi yay cizerek savrulur
+        k = first_part(rig, ('kol_1', 'kol_2', 'kulak_1', 'esya'))
+        p = (lambda v: {k: v}) if k else (lambda v: {})
+        return [F(dx=2, sq=1, p=p((1, -1))), F(dx=3, p=p((2, -3))), F(dx=-6, sq=-1, trail=2, p=p((0, -3))),
+                F(dx=-8, sq=1, p=p((-3, 1))), F(dx=-3, p=p((-1, 0))), F(sq=1)]
+    if code == 'A4':     # isirik: agiz acik atilir
+        return [F(dx=2, sq=1, face='kizgin'), F(dx=3, sq=1, face='isir'), F(dx=-6, sq=-1, trail=2, face='isir'),
+                F(dx=-8, sq=1, lean=-1, face='isir'), F(dx=-3), F(sq=1)]
+    if code == 'A5':     # kuyruk: yarim doner (arkasi one), kuyruk one savrulur
+        t = first_part(rig, ('kuyruk', 'tepe', 'esya'))
+        p = (lambda v: {t: v}) if t else (lambda v: {})
+        return [F(sq=-1), F(dx=1, sq=-1, flip=True, bare=True, noface=True),
+                F(dx=-5, flip=True, bare=True, noface=True, p=p((2, 0)), trail=2),
+                F(dx=-8, sq=1, flip=True, bare=True, noface=True, p=p((3, -1))), F(dx=-3, sq=-1), F(sq=1)]
+    if code == 'A6':     # firlatma: yerinden az oynar, mermi kodla ucar
+        return [F(dx=1, sq=1), F(dx=2, sq=1, face='kizgin'), F(dx=-1, sq=-1, face='kizgin'), F(dx=-2, sq=1, face='kizgin'),
+                F(dx=-1), F()]
+    if code == 'A7':     # yuvarlanma: top olur, ileri yuvarlanir, desen ceyrek tur doner
+        b = dict(hide=BALL_HIDE, bare=True, noface=True)
+        return [F(sq=1), F(dx=2, sq=2, **b), F(dx=-4, rot=1, trail=2, **b), F(dx=-8, rot=2, **b), F(dx=-4, rot=3, **b), F(sq=1)]
+    if code == 'A8':     # dalis (ucanlar): 4 yukari, capraz asagi
+        return [F(dy=-2), F(dx=1, dy=-4), F(dx=-4, dy=-2, trail=2), F(dx=-8, dy=1, sq=1), F(dx=-3), F()]
+    if code == 'A9':     # ufleme: yanaklar sisir, agizdan koni seklinde parcacik
+        return [F(dx=1, sq=-1, face='esneme'), F(dx=2, sq=1, face='kapali'), F(dx=1, sq=1, face='kapali'),
+                F(dx=-2, sq=-1, face='saskin'), F(dx=-1, face='saskin'), F()]
     hit = F(dx=-8, sq=1)
     if code == 'A1':     # tos: kafa parcasi 2 piksel daha ileride
         hit = F(dx=-8, sq=1, lean=-2)
-    elif code == 'A2':
-        hit = F(dx=-8, dy=0, sq=1)
     return [F(dx=2, sq=1), F(dx=3, sq=1), F(dx=-6, sq=-1, trail=2), hit, F(dx=-3), F(sq=1)]
 
 
-def ozel_frames(sp):
-    """Kutukcuk 'Kafa Atma': halkalar parlar, iki adim gerileyip tos (bolum 7.3 + 5.4 ozel)."""
+def ozel_code(sp):
+    import re
+    m = re.search(r'\bA([1-9])\b', (sp.get('ozel') or {}).get('not', '') or '')
+    return 'A' + m.group(1) if m else sp.get('saldiri')
+
+
+def ozel_frames(sp, rig, key):
+    """Bolum 5.4: 1-3 guc toplama (ezil, titre, dis cizgi tek karelerde Parilti), 4 patlama (uza, beyaz parilti),
+    5-6 hamle (ozel hamlenin saldiri tipiyle), 7-8 toparlanma. Vurus karesi 4."""
     g = 'parla'
-    return [F(dx=2, sq=1, glow=g, ol='Parilti', face='kizgin'), F(dx=4, sq=1, glow=g, face='kizgin'),
-            F(dx=3, sq=1, glow=g, ol='Parilti', face='kizgin'), F(dx=-4, sq=-1, flash=True),
-            F(dx=-8, sq=1, lean=-2), F(dx=-6, lean=-1), F(dx=-3), F(sq=1)]
+    if key == 'kutukcuk':   # onaylanan Kutukcuk 'Kafa Atma'
+        return [F(dx=2, sq=1, glow=g, ol='Parilti', face='kizgin'), F(dx=4, sq=1, glow=g, face='kizgin'),
+                F(dx=3, sq=1, glow=g, ol='Parilti', face='kizgin'), F(dx=-4, sq=-1, flash=True),
+                F(dx=-8, sq=1, lean=-2), F(dx=-6, lean=-1), F(dx=-3), F(sq=1)]
+    a = saldiri_frames(ozel_code(sp), rig)
+    return [F(dx=1, sq=1, glow=g, ol='Parilti', face='kizgin'), F(dx=2, sq=1, glow=g, face='kizgin'),
+            F(dx=1, sq=1, glow=g, ol='Parilti', face='kizgin'), F(sq=-1, flash=True),
+            a[3], a[2] if a[2].get('rot') else dict(a[4]), a[4], a[5]]
 
 
-def frames_for(sp, walk):
-    return {
-        'durma': anim_durma(sp),
-        'huy': huy_frames(sp.get('huy', {}).get('kod'), sp),
+def savunma_frames(sp, rig):
+    if 'kafa' in rig.parts:   # kabuk: kafa ve kollar gizlenir, kabuk 2 piksel iner
+        h = ('kafa', 'kol_1', 'kol_2', 'kulak_1', 'kulak_2', 'kuyruk')
+        return [F(dy=2, hide=h, noface=True, ol='Kar-1'), F(dy=2, sq=1, hide=h, noface=True, ol='Kar-1')]
+    return [F(sq=2, p={'kol_1': (1, 1), 'kol_2': (-1, 1)}, ol='Kar-1', face='kizgin'),
+            F(sq=1, p={'kol_1': (1, 1), 'kol_2': (-1, 1)}, ol='Kar-1', face='kizgin')]
+
+
+def frames_for(sp, walk, rig, key):
+    fr = {
+        'durma': anim_durma(sp, rig),
+        'huy': huy_frames(sp.get('huy', {}).get('kod'), sp, rig),
         'yurume': yurume_frames(walk),
         'hazirlik': [F(dx=2, sq=1, face='kizgin'), F(dx=1, sq=1, ol='Sari-1', face='kizgin'), F(dx=2, sq=1, face='kizgin')],
-        'saldiri': saldiri_frames(sp.get('saldiri')),
-        'ozel': ozel_frames(sp),
+        'saldiri': saldiri_frames(sp.get('saldiri'), rig),
+        'ozel': ozel_frames(sp, rig, key),
         'hasar': [F(dx=3, flash=True), F(dx=4, sq=1, face='aci'), F(dx=2, face='aci'), F()],
         'bayilma': [F(dx=-2, face='sersem'), F(dx=2, face='sersem'), F(sq=-1, face='sersem'), F(sq=2, face='baygin'),
                     F(sq=3, p={'tepe': (0, 1), 'kol_1': (0, 1), 'kol_2': (0, 1)}, face='baygin'),
@@ -118,9 +221,23 @@ def frames_for(sp, walk):
         'uyku': [F(sq=s, p={'tepe': (0, 1), 'kulak_1': (0, 1), 'kulak_2': (0, 1)}, face='kapali') for s in (2, 3, 3, 2)],
         'mutlu': [F(sq=1, face='mutlu'), F(dy=-4, sq=-1, p={'kol_1': (0, -1), 'kol_2': (0, -1), 'tepe': (0, -1)}, face='mutlu'),
                   F(sq=1, face='mutlu'), F(dy=-2, face='mutlu'), F(sq=1, face='mutlu'), F(face='mutlu')],
-        'savunma': [F(sq=2, p={'kol_1': (1, 1), 'kol_2': (-1, 1)}, ol='Kar-1', face='kizgin'),
-                    F(sq=1, p={'kol_1': (1, 1), 'kol_2': (-1, 1)}, ol='Kar-1', face='kizgin')],
+        'savunma': savunma_frames(sp, rig),
     }
+    if rig.fly:
+        # ucanlar: ezilme yerine suzulme; kanatli olanlar her karede yukari/orta/asagi cirpar, kanatsizlarin alt kenari dalgalanir
+        cyc = ['yukari', 'orta', 'asagi']
+        for a in list(fr):
+            fr[a] = frames = [dict(x) for x in fr[a]]
+            for i, f in enumerate(frames):
+                if a in ('uyku', 'bayilma'):
+                    if a == 'uyku':
+                        f.pop('sq', None); f['dy'] = (0, 1, 1, 0)[i]; f['wing'] = 'orta'
+                    continue
+                if a in ('durma', 'yurume') and 'sq' in f:
+                    f.pop('sq')
+                f.setdefault('wing', cyc[i % 3])
+                f.setdefault('ripple', 1 if i % 2 == 0 else -1)
+    return fr
 
 
 # ---------------------------------------------------------------- yardimcilar
@@ -209,12 +326,24 @@ class Rig:
                         pts.append((x, y, dx, dy)); break
             self.attach[n] = pts
         self.glow_family = cfg.get('parla_aile')
+        self.fly = bool(self.info.get('ucar'))
+        # kanat koku: govdeye degen piksellerin ortalama satiri (yoksa govdeye en yakin satir)
+        self.wroot = {}
+        for n in ('kanat_1', 'kanat_2'):
+            if n in self.parts:
+                pts = self.attach.get(n) or []
+                if pts:
+                    self.wroot[n] = sum(p[1] for p in pts) / len(pts)
+                else:
+                    ys, xs = np.where(self.parts[n])
+                    self.wroot[n] = float(ys.max())
 
     # -- govde donusumleri
-    def body(self, sq, lean):
+    def body(self, sq, lean, src=None):
         C = self.C
+        src = self.ic if src is None else src
         g = np.zeros_like(self.ic)
-        g[self.parts['govde']] = self.ic[self.parts['govde']]
+        g[self.parts['govde']] = src[self.parts['govde']]
         y0, xw = self.y_sq, self.x_w
         if sq > 0:
             n = sq
@@ -259,12 +388,14 @@ class Rig:
         """f: olceklenmis kare tarifi. follow: {parca: (dx,dy)} gecikmeli kafa kaymasi."""
         C = self.C
         sq, lean = f.get('sq', 0), f.get('lean', 0)
-        g = self.body(sq, lean)
+        src = self.bare if f.get('bare') else self.ic
+        g = self.body(sq, lean, src)
         hdx, hdy = lean, sq
         canvas = np.zeros_like(g)
         layers = []
+        hide = set(f.get('hide') or ())
         for n, m in self.parts.items():
-            if n == 'govde':
+            if n == 'govde' or n in hide:
                 continue
             mx, my = self.mil[n]
             if my < self.y_sq:
@@ -286,8 +417,10 @@ class Rig:
             layers.append((n, m, pdx, pdy, gdx, gdy))
         # dolgu: govdeye degen piksel, govdenin yeni yerinden parcanin yeni yerine kadar uzatilir
         for n, m, pdx, pdy, gdx, gdy in layers:
+            if n.startswith('kanat') and f.get('wing') not in (None, 'yukari'):
+                continue
             for x, y, ax, ay in self.attach[n]:
-                c = self.ic[y, x]
+                c = src[y, x]
                 sx, sy = x + gdx, y + gdy
                 ex_, ey_ = x + pdx, y + pdy
                 path = []
@@ -302,12 +435,46 @@ class Rig:
                         canvas[py_, px_] = c
         sel = g[..., 3] > 0
         canvas[sel] = g[sel]
+        wing = f.get('wing')
         for n, m, pdx, pdy, gdx, gdy in layers:
             ys, xs = np.where(m)
+            if n.startswith('kanat') and wing in ('orta', 'asagi'):
+                # kanat cirpma (5.7): orta = yukseklik koke dogru %60, asagi = ortanin koke gore aynasi
+                r = self.wroot[n]
+                rows = sorted(set(ys.tolist()), key=lambda y: -abs(y - r))   # koke yakin satirlar en son (ustte kalir)
+                for yy in rows:
+                    for x in xs[ys == yy]:
+                        ny = r + (yy - r) * 0.6
+                        if wing == 'asagi':
+                            ny = r - (yy - r) * 0.6
+                        X, Y = x + pdx, int(round(ny)) + pdy
+                        if 0 <= X < C and 0 <= Y < C:
+                            canvas[Y, X] = src[yy, x]
+                continue
             for y, x in zip(ys, xs):
                 X, Y = x + pdx, y + pdy
                 if 0 <= X < C and 0 <= Y < C:
-                    canvas[Y, X] = self.ic[y, x]
+                    canvas[Y, X] = src[y, x]
+        if f.get('flip'):          # arkasi donuk (H8, A5): yatay ayna, kayma sonra uygulanir
+            canvas = canvas[:, ::-1].copy()
+        if f.get('rot'):           # yuvarlanma (A7): govde merkezinde ceyrek tur
+            m = canvas[..., 3] > 0
+            ys, xs = np.where(m)
+            cy, cx = (ys.min() + ys.max() + 1) / 2.0, (xs.min() + xs.max() + 1) / 2.0
+            S = int(max(ys.max() - ys.min(), xs.max() - xs.min())) + 2
+            pad = np.zeros((C + 2 * S, C + 2 * S, 4), canvas.dtype)
+            pad[S:S + C, S:S + C] = canvas
+            y0, x0 = int(round(cy - S / 2.0)) + S, int(round(cx - S / 2.0)) + S
+            reg = pad[y0:y0 + S, x0:x0 + S].copy()
+            pad[y0:y0 + S, x0:x0 + S] = np.rot90(reg, -int(f['rot']))
+            canvas = pad[S:S + C, S:S + C].copy()
+        if f.get('ripple'):        # kanatsiz ucanlar: alt 3 satir 1 piksel saga sola
+            m = canvas[..., 3] > 0
+            ys = np.where(m.any(1))[0]
+            r = int(f['ripple'])
+            for y in range(ys.max() - 2, ys.max() + 1):
+                if not any(n.startswith('kanat') for n in self.parts):
+                    canvas[y] = np.roll(canvas[y], r, axis=0)
         # butun Glemon kaymasi (tuvalden tasmasin)
         dx, dy = f.get('dx', 0), f.get('dy', 0)
         m = canvas[..., 3] > 0
@@ -402,7 +569,7 @@ def face_tiles(rig, pal, colors):
         cols = dict(colors)
         if pal:
             cols['m'] = pal.get(tuple(colors['m']), colors['m'])
-        GF.stamp(put, rig.info['kalip'], e, g['lx'], g['rx'], g['ey'], cols)
+        GF.stamp(put, rig.info['kalip'], e, g['lx'], g['rx'], g['ey'], cols, skip_mouth=not rig.info.get('agiz', True))
         tiles.append(t)
     return tiles
 
@@ -423,7 +590,8 @@ def build(key):
     for si, stage in enumerate(STAGES):
         rig = Rig(key, stage, cfg)
         C = rig.C
-        recipes = frames_for(sp, walk)
+        rig.fly = rig.fly or bool(sp.get('ucar'))
+        recipes = frames_for(sp, walk, rig, key)
         allf, allp, faces = [], [], []
         start = 0
         anims = {}
@@ -447,6 +615,9 @@ def build(key):
                 an['loopFrom'] = 1
             if any(exprs):
                 an['faces'] = exprs
+            fxat = [i for i, f in enumerate(fr) if f.get('fx')]
+            if fxat:
+                an['fxAt'] = fxat[0]
             anims[a] = an
             start += len(fr)
         n = len(allf)
@@ -476,8 +647,15 @@ def build(key):
         entry['anims'] = anims
         gif_frames.append((stage, allf, allp, anims, faces, tn, rig))
     oz = sp.get('ozel') or {}
-    entry['fx'] = {'huy': None, 'saldiri': 'vurus_yildizi', 'ozel': oz.get('fx') or ['vurus_yildizi'],
-                   'mutlu': 'kalp', 'uyku': 'z', 'bayilma': 'yildiz', 'nadir': None}
+    part = (oz.get('fx') or [None])[0]
+    if part in (None, 'vurus_yildizi', 'isik_halkasi', 'ses_halkasi', 'pence_izi', 'z', 'nota'):
+        part = REGION_FX.get(sp.get('tip'), 'toz')
+    atk = sp.get('saldiri') or 'A1'
+    entry['atk'] = atk
+    entry['ozAtk'] = ozel_code(sp) or atk
+    entry['fx'] = {'huy': part, 'saldiri': ATK_FX.get(atk, 'vurus_yildizi'), 'ozel': oz.get('fx') or ['vurus_yildizi'],
+                   'mermi': part, 'mutlu': 'kalp', 'uyku': 'z', 'bayilma': 'yildiz',
+                   'nadir': RARITY.get(sp.get('nadirlik'))}
     entry['exprs'] = GF.EXPRS
     allmeta[key] = entry
     txt = json.dumps(allmeta, separators=(',', ':'))   # once metin: hata olursa dosya bozulmaz
@@ -528,6 +706,33 @@ def preview_gif(key, stages):
         blank = out[-1].copy()
         out.append(blank); durs.append(300)
     out[0].save(os.path.join(ROOT, f'onizleme/{key}_anim.gif'), save_all=True, append_images=out[1:], duration=durs, loop=0)
+    # durgun kare tablosu (gozden gecirmek icin): her asama icin 61 kare, animasyon basina bir satir, 2 kat
+    S2 = 2
+    sheets = []
+    for stage, allf, allp, anims, faces, tn, rig in stages:
+        C = rig.C
+        mx = max(len(DURS[a]) for a in ORDER)
+        sh = Image.new('RGB', (mx * (C * S2 + 2) + 70, len(ORDER) * (C * S2 + 2)), (58, 70, 84))
+        from PIL import ImageDraw
+        dr = ImageDraw.Draw(sh)
+        for r, a in enumerate(ORDER):
+            an = anims[a]
+            dr.text((2, r * (C * S2 + 2) + 4), a, fill=(230, 230, 230))
+            for i in range(len(DURS[a])):
+                idx = an['start'] + i
+                im = Image.fromarray(allf[idx], 'RGBA')
+                ex = (an.get('faces') or [None] * len(DURS[a]))[i]
+                if ex and faces[idx]:
+                    t = Image.fromarray(tn[GF.EXPRS.index(ex)], 'RGBA')
+                    im.paste(t, tuple(faces[idx]), t)
+                im = im.resize((C * S2, C * S2), Image.NEAREST)
+                sh.paste(im, (70 + i * (C * S2 + 2), r * (C * S2 + 2)), im)
+        sheets.append(sh)
+    W2 = max(x.width for x in sheets); H2 = sum(x.height + 6 for x in sheets)
+    big = Image.new('RGB', (W2, H2), (30, 26, 34)); y = 0
+    for x in sheets:
+        big.paste(x, (0, y)); y += x.height + 6
+    big.save(os.path.join(ROOT, f'onizleme/{key}_kareler.png'))
 
 
 if __name__ == '__main__':
