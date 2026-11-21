@@ -641,9 +641,17 @@ def build(key):
         ik.paste(Image.fromarray(allf[0], 'RGBA'), (0, 0)); ik.paste(Image.fromarray(allp[0], 'RGBA'), (C, 0))
         ik.save(os.path.join(outdir, f'{si}_ikon.png'), optimize=True)
         info = rig.info
-        entry['stages'].append({
+        stent = {
             'w': C, 'h': C, 'ax': C // 2, 'ay': C - 2, 'bodyW': info['govde_gen'], 'bodyH': C - 2 - info['govde_ust'],
-            'n': n, 'cols': COLS, 'face': {'w': fw, 'h': fh, 'pos': faces}, 'kalip': info['kalip']})
+            'n': n, 'cols': COLS, 'face': {'w': fw, 'h': fh, 'pos': faces}, 'kalip': info['kalip']}
+        # nadir turlerin parlayan parcasi: yuz kutusu disindaki Parilti pikselleri (oyun 2 sn'de bir orada isildatir)
+        par = np.array(BP.tone('Parilti'))
+        gm_ = (allf[0][..., 3] > 0) & (allf[0][..., :3] == par).all(2)
+        gm_[fy:fy + fh, fx:fx + fw] = False
+        if gm_.any():
+            ys_, xs_ = np.where(gm_)
+            stent['glow'] = [int(round(xs_.mean())), int(round(ys_.mean()))]
+        entry['stages'].append(stent)
         entry['anims'] = anims
         gif_frames.append((stage, allf, allp, anims, faces, tn, rig))
     oz = sp.get('ozel') or {}

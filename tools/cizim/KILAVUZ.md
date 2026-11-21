@@ -45,8 +45,12 @@ Uçan türlerde her fonksiyonun başına `d.flyer = True` yaz (araç gövdeyi 8 
 | genc | 56x56 | 32-38 | 38 | K (4x5) | 4-6 (öneri 5) |
 | usta | 64x64 | 42-48 | 48 | O (5x6) | 5-7 (öneri 6) |
 
-Koordinatlar tuval pikselidir, (0,0) sol üst. Çizimi kabaca tuvalin ortasına çiz; araç gövdeyi yatayda ortalar ve
-ayakları tabandan 4. satıra oturtur (yüz de aynı kayar). "Gövde boyu" tepe/kulak/kanat/kuyruk/eşya hariç ölçülür.
+Koordinatlar tuval pikselidir, (0,0) sol üst; kesirli sayı olabilir. Çizimi kabaca tuvalin ortasına çiz; araç gövdeyi
+yatayda ortalar ve ayakları tabandan 4. satıra oturtur (yüz de aynı kayar). Tuvalin biraz dışına taşan çizim kaybolmaz
+(araç geniş bir alanda çizer, sonra yerleştirir); yerleştirdikten sonra hâlâ sığmıyorsa "UYARI" yazar.
+"Gövde boyu" = en alttaki pikselden (ayak dahil), tepe/kulak/kanat/kuyruk/eşya OLMAYAN en üst piksele kadar, +3 (çizgiler).
+Kol ve gövde parçaları sayılır. Silüeti belirleyen büyük şapka/miğfer `govde` kalabilir.
+"En geniş" = `govde` parçasının genişliği +2.
 Kafa / boy oranı: Bebek %55-60, Genç %48-52, Usta %40-45. Bebek neredeyse sadece kafadır.
 
 ## Şekiller

@@ -32,9 +32,12 @@ LIGHT = LIGHT / np.linalg.norm(LIGHT)
 
 
 # ---------------------------------------------------------------- sekil rasterlama
+PAD = 16   # cizim tuvalden genis bir calisma alaninda yapilir; yerlestirmeden sonra tuvale kirpilir
+
+
 def _grid(W, H):
     ys, xs = np.mgrid[0:H, 0:W]
-    return xs + 0.5, ys + 0.5
+    return xs + 0.5 - PAD, ys + 0.5 - PAD
 
 
 def m_ellipse(W, H, c, r, rot=0):
@@ -95,7 +98,7 @@ def m_pix(W, H, at, rows):
     m = np.zeros((H, W), bool)
     for y, r in enumerate(rows):
         for x, ch in enumerate(r):
-            X, Y = at[0] + x, at[1] + y
+            X, Y = int(round(at[0])) + x + PAD, int(round(at[1])) + y + PAD
             if ch not in '. ' and 0 <= X < W and 0 <= Y < H:
                 m[Y, X] = True
     return m
@@ -170,7 +173,8 @@ class Drawing:
 
     def __init__(self, stage):
         self.stage = stage
-        self.W, self.H = SIZE[stage]
+        self.CW, self.CH = SIZE[stage]                    # asil tuval
+        self.W, self.H = self.CW + 2 * PAD, self.CH + 2 * PAD   # calisma alani
         self.shapes = []
         self.names = {}
         self.face = None
@@ -241,7 +245,8 @@ class Drawing:
 
     def set_face(self, cx, ey, gap=None, mouth=True, ten=None, lx=None, rx=None):
         """cx: iki gozun ortasi, ey: gozlerin ust satiri. gap: goz arasi bosluk (varsayilan kalibin en kucugu+1)."""
-        self.face = {'cx': cx, 'ey': ey, 'gap': gap, 'mouth': mouth, 'lx': lx, 'rx': rx}
+        r = lambda v: None if v is None else int(round(v))
+        self.face = {'cx': cx, 'ey': r(ey), 'gap': r(gap), 'mouth': mouth, 'lx': r(lx), 'rx': r(rx)}
         if ten:
             self.ten = ten
 
@@ -267,7 +272,7 @@ class Drawing:
             if s['shade'] == 'pix':
                 for y, r in enumerate(s['rows']):
                     for x, ch in enumerate(r):
-                        X, Y = s['at'][0] + x, s['at'][1] + y
+                        X, Y = int(round(s['at'][0])) + x + PAD, int(round(s['at'][1])) + y + PAD
                         if ch in '. ' or not (0 <= X < W and 0 <= Y < H):
                             continue
                         nm = s['key'][ch]
@@ -438,14 +443,16 @@ def draw_stage(key, stage, mod):
     d = Drawing(stage)
     mod.STAGES[stage](d)
     d.render()
-    W, H = d.W, d.H
+    W, H = d.CW, d.CH
     col, alpha, part = d.col, d.alpha, d.part
     if not alpha.any():
         raise SystemExit(f'{key} {stage}: bos cizim')
     # yerlestir: govde yatayda ortada; ayak alttan 2 piksel yukarida (cizgi dahil), ucanlarda +8 (patron +10)
     ys, xs = np.where(alpha)
+    ys, xs = ys - PAD, xs - PAD                       # tuval koordinati
     gm = alpha & (part == 'govde')
     gys, gxs = np.where(gm)
+    gxs = gxs - PAD
     axis = (gxs.min() + gxs.max()) / 2.0
     ox = int(round((W - 1) / 2.0 - axis))
     lift = 0
@@ -455,9 +462,11 @@ def draw_stage(key, stage, mod):
     if getattr(mod, 'NO_AUTOPLACE', False):
         ox = oy = 0
     def sh(a, fill):
-        o = np.full_like(a, fill)
-        y0, y1 = max(0, oy), min(H, H + oy); x0, x1 = max(0, ox), min(W, W + ox)
-        o[y0:y1, x0:x1] = a[y0 - oy:y1 - oy, x0 - ox:x1 - ox]
+        # tuvaldeki (Y, X) = calisma alanindaki (Y - oy + PAD, X - ox + PAD)
+        o = np.full((H, W) + a.shape[2:], fill, dtype=a.dtype)
+        GH, GW = a.shape[:2]
+        y0, y1 = max(0, oy - PAD), min(H, GH + oy - PAD); x0, x1 = max(0, ox - PAD), min(W, GW + ox - PAD)
+        o[y0:y1, x0:x1] = a[y0 - oy + PAD:y1 - oy + PAD, x0 - ox + PAD:x1 - ox + PAD]
         return o
     if ys.min() + oy < 1 or xs.min() + ox < 1 or xs.max() + ox > W - 2:
         d.notes.append('UYARI: cizim tuvale sigmiyor ya da kenara degiyor')
