@@ -1,0 +1,41 @@
+{
+ "anahtar": "kiragi_tilki",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 45,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 28
+ },
+ "ten": "Kar",
+ "yuz_kutusu": [
+  21,
+  27,
+  22,
+  10
+ ],
+ "govde_ust": 18,
+ "ayak": 60,
+ "govde_gen": 32,
+ "aileler": [
+  "Gok",
+  "Kar"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 26,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "kuyruk"
+ ]
+}

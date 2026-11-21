@@ -12,7 +12,7 @@ import { ARENA } from './art.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner, icon } from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
-import { attachGlemon, glemAnim, glemFx, glemHappy, isV2, glemSprite, glemShot, glemCone } from './glemon2.js';
+import { attachGlemon, glemAnim, glemFx, glemHappy, isV2, glemSprite, glemShot, glemCone, ensureGlemon, glemPreload } from './glemon2.js';
 import { teamInfo, teamAura, petDisplayName, fightBond, recordDrop, tickNest, zoneBonus, homeOf } from './pets.js';
 import { now as gNow } from './clock.js';
 
@@ -128,6 +128,8 @@ export class Battle {
     const sprite = glemSprite(this.scene, x, this.gy, spec.key, stage, !!spec.shiny)
       .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(scale);
     if (spec.golden) sprite.setTint(0xffd86a);
+    // v2 patron: faz cizimlerini simdiden yukle (faz gecisinde beklemesin)
+    if (data.boss && v2) glemPreload(this.scene, this.w.gmeta[spec.key].stages.map((_, s) => [spec.key, s, !!spec.shiny]));
     sprite.play(k(v2 && spec.sleeping ? 'uyku' : 'durma'));
     if (spec.sleeping && !v2) sprite.anims.timeScale = 0.35;
     const shadow = this.scene.add.image(x, this.gy + 1, 'shadow').setDepth(7).setScale((meta.bodyW * scale) / 18, 1);
@@ -1627,7 +1629,27 @@ export class Battle {
     sfx('roar');
     if (S.save.settings.shake !== false) this.scene.cameras.main.shake(400, 0.012);
     if (e.sprite.active) { e.sprite.setTint(0xff9a8a); this.scene.time.delayedCall(260, () => { if (e.sprite.active) e.sprite.clearTint(); }); }
+    if (e.sprite._glem && this.w.gmeta[e.key].stages[e.ph]) this.restageBoss(e, e.ph);
     this.renderEnemy(e);
+  }
+
+  // Plan v2 (11.1): patron faz animasyonuyla yeni fazin cizimine gecer ve savas sonuna kadar oyle kalir
+  restageBoss(e, s) {
+    const key = e.key; const sh = !!e.shiny;
+    const k = (a) => `g_${key}_${s}_${a}${sh ? '_p' : ''}`;
+    ensureGlemon(this.scene, key, s, sh).then((ok) => {
+      if (!ok || !e.alive || !e.sprite.active || !e.sprite._glem) return;
+      e.stage = s; e.k = k; e.meta = this.w.gmeta[key].stages[s];
+      e.sprite._glem.restage(s, k);
+      e.sprite.setTexture(`gs_${key}_${s}${sh ? '_p' : ''}`, 0);
+      playAnim(e.sprite, k('faz'), 1).then(() => { if (e.alive && e.sprite.active) e.sprite.play(k('durma')); });
+      // 8. karede yere oturur: toz ve kisa sarsinti
+      this.scene.time.delayedCall(830, () => {
+        if (!e.sprite.active) return;
+        glemFx(this.scene, e.sprite.x, this.gy - 4, 'toz', { n: 5, spread: e.meta.bodyW * e.scale * 0.8, rise: 6, scale: 2, dur: 600, depth: e.sprite.depth + 1 });
+        if (S.save.settings.shake !== false) this.scene.cameras.main.shake(160, 0.006);
+      });
+    });
   }
 
   killEnemy(e) {
@@ -1981,7 +2003,7 @@ export class Battle {
     floatText(e.sprite.x, this.topY(e) - 10, act.name, 'info');
     sfx('roar');
     this.scene.cameras.main.shake(300, 0.01);
-    await playAnim(e.sprite, e.k('saldiri'), 0.8);
+    await playAnim(e.sprite, glemAnim(e.k, 'cagir', 'saldiri'), e.sprite._glem ? 1 : 0.8);
     e.sprite.play(e.k('durma'));
     const used = new Set(this.alive().map((x) => x.homeX));
     for (const x of this.arena ? [190, 344] : [206, 356]) {

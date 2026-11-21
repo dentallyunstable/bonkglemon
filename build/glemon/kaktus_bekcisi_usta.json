@@ -1,0 +1,42 @@
+{
+ "anahtar": "kaktus_bekcisi",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 47,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 38
+ },
+ "ten": "Cimen",
+ "yuz_kutusu": [
+  21,
+  37,
+  22,
+  10
+ ],
+ "govde_ust": 21,
+ "ayak": 60,
+ "govde_gen": 41,
+ "aileler": [
+  "Cimen",
+  "Krem",
+  "Pembe",
+  "Turuncu"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 33,
+ "denetim": [
+  "renk birlestirme: Krem-3>2"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2"
+ ]
+}

@@ -1,0 +1,38 @@
+{
+ "anahtar": "buzcuk",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 48,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 26
+ },
+ "ten": "Gok",
+ "yuz_kutusu": [
+  21,
+  25,
+  22,
+  10
+ ],
+ "govde_ust": 19,
+ "ayak": 60,
+ "govde_gen": 42,
+ "aileler": [
+  "Cimen",
+  "Gok",
+  "Kahve",
+  "Kar"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 14,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "parcalar": [
+  "govde"
+ ]
+}

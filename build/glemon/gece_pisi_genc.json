@@ -1,0 +1,46 @@
+{
+ "anahtar": "gece_pisi",
+ "asama": "genc",
+ "kaynak": "cizim",
+ "tuval": 56,
+ "tuval_h": 56,
+ "kalip": "K",
+ "boy": 28,
+ "goz": {
+  "lx": 22,
+  "rx": 31,
+  "ey": 35
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  19,
+  34,
+  19,
+  9
+ ],
+ "govde_ust": 17,
+ "ayak": 52,
+ "govde_gen": 30,
+ "aileler": [
+  "Lacivert",
+  "Mor",
+  "Sari"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 23,
+ "denetim": [
+  "govde boyu 28 (kural 32-38)"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "kuyruk"
+ ]
+}

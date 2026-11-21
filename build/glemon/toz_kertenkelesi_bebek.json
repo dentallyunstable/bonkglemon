@@ -1,0 +1,40 @@
+{
+ "anahtar": "toz_kertenkelesi",
+ "asama": "bebek",
+ "kaynak": "cizim",
+ "tuval": 48,
+ "tuval_h": 48,
+ "kalip": "K",
+ "boy": 30,
+ "goz": {
+  "lx": 18,
+  "rx": 27,
+  "ey": 23
+ },
+ "ten": "Sari",
+ "yuz_kutusu": [
+  15,
+  22,
+  19,
+  9
+ ],
+ "govde_ust": 20,
+ "ayak": 44,
+ "govde_gen": 30,
+ "aileler": [
+  "Sari",
+  "Turuncu"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 17,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kuyruk",
+  "tepe"
+ ]
+}

@@ -16,33 +16,33 @@ def alev(d, x, y, h, w, part, name, kirmizi=True):
 
 
 def bebek(d):
-    ayak = lambda x: d.ellipse('Turuncu', (x, 46), (3.2, 1.8), line=True, noshadow=True)
+    ayak = lambda x: d.ellipse('Turuncu', (x, 48), (3.2, 1.8), line=True, noshadow=True)
     ayak(19); ayak(29)
-    d.ellipse('Sari', (24, 36), (13.4, 10.8), name='kafa', cast=1)
-    d.circle('Sari', (11.5, 38), 2.8, part='kol_1', line=True)
-    d.circle('Sari', (36.5, 38), 2.8, part='kol_2', line=True)
+    d.ellipse('Sari', (24, 38.5), (14, 10), name='kafa', cast=1)
+    d.circle('Sari', (11.5, 40), 2.8, part='kol_1', line=True)
+    d.circle('Sari', (36.5, 40), 2.8, part='kol_2', line=True)
     # kabuk sapka: kafanin ustunde, kenari zikzak
-    d.ellipse('Krem', (24, 26), (10.5, 7.5), name='sapka', part='tepe', line=True, inbox=(0, 0, 47, 27), cast=1)
+    d.ellipse('Krem', (24, 29.5), (10.5, 6.5), name='sapka', line=True, inbox=(0, 0, 47, 29.5), cast=1)
     for i, x in enumerate((15, 18.5, 22, 25.5, 29, 32.5)):
-        d.poly('Krem', [(x - 1.8, 26), (x + 1.8, 26), (x, 29.5 if i % 2 else 28)], part='tepe', join='sapka')
-    d.circle('Turuncu', (20, 22), 1.3, part='tepe', clip='sapka', shift=0)
-    d.circle('Turuncu', (28.5, 21.5), 1.2, part='tepe', clip='sapka', shift=0)
+        d.poly('Krem', [(x - 1.8, 29.5), (x + 1.8, 29.5), (x, 32.5 if i % 2 else 31)], part='tepe', join='sapka')
+    d.circle('Turuncu', (20, 24), 1.3, clip='sapka', shift=0)
+    d.circle('Turuncu', (28.5, 23.5), 1.2, clip='sapka', shift=0)
     # tek kivilcim tuyu
-    d.capsule('Turuncu', (24, 21), (24, 12), (3.2, 2.0), part='tepe', line=True, name='tuy')
-    d.capsule('Kirmizi', (24, 15), (24, 11.5), (1.8, 1.2), part='tepe', clip='tuy', shift=0)
-    d.pix((23, 16), ['oo'], {'o': 'Parilti'}, part='tepe')
-    gaga(d, 24, 36.5)
-    d.set_face(24, 31, gap=5, mouth=False)
+    d.capsule('Turuncu', (24, 23), (24, 13), (3.2, 2.0), part='tepe', line=True, name='tuy')
+    d.capsule('Kirmizi', (24, 17), (24, 12.5), (1.8, 1.2), part='tepe', clip='tuy', shift=0)
+    d.pix((23, 18), ['oo'], {'o': 'Parilti'}, part='tepe')
+    gaga(d, 24, 39.5)
+    d.set_face(24, 34, gap=5, mouth=False)
 
 
 def genc(d):
     cx = 28
-    ayak = lambda x: d.ellipse('Turuncu', (x, 53), (3.6, 2), line=True, noshadow=True)
+    ayak = lambda x: d.ellipse('Turuncu', (x, 56), (3.6, 2), line=True, noshadow=True)
     ayak(22); ayak(34)
-    d.curve('Turuncu', [(41, 46), (46, 42)], (3.6, 2.4), part='kuyruk', line=True)
-    d.ellipse('Sari', (28, 45), (13.5, 9.5), name='govde', cast=1)
-    d.ellipse('Sari', (28, 37), (14, 11.5), name='kafa', join='govde')
-    d.ellipse('Krem', (28, 49), (8, 4.5), part='govde', clip='govde', shift=-1, inbox=(0, 47, 55, 60))
+    d.curve('Turuncu', [(41, 48), (47, 42)], (4.6, 3.0), part='kuyruk', line=True)
+    d.ellipse('Sari', (28, 46.5), (13.5, 10.5), name='govde', cast=1)
+    d.ellipse('Sari', (28, 36), (14.5, 12), name='kafa', join='govde')
+    d.ellipse('Krem', (28, 51), (8, 4.5), part='govde', clip='govde', shift=-1, inbox=(0, 47, 55, 60))
     # kanatlar, ucu turuncu
     d.ellipse('Sari', (13.5, 44), (3.4, 6.2), rot=14, part='kol_1', line=True)
     d.ellipse('Sari', (42.5, 44), (3.4, 6.2), rot=-14, part='kol_2', line=True)
@@ -61,20 +61,16 @@ def genc(d):
 
 def usta(d):
     cx = 32
-    # yelpaze alev kuyruk (arkada)
-    for ang, h in ((-58, 15), (0, 19), (58, 15)):
-        import math
-        a = math.radians(ang)
-        bx, by = cx + math.sin(a) * 8, 52 - math.cos(a) * 2
-        tx, ty = cx + math.sin(a) * 22, 52 - math.cos(a) * h - 6
-        d.capsule('Turuncu', (bx, by), (tx, ty), (5.0, 3.0), part='kuyruk', line=True, name='k%d' % ang)
-        d.capsule('Kirmizi', ((bx + tx * 2) / 3, (by + ty * 2) / 3), (tx, ty), (2.6, 1.4), part='kuyruk', clip='k%d' % ang, shift=0)
-    d.pix((cx - 1, 33), ['oo'], {'o': 'Parilti'}, part='kuyruk') if False else None
-    ayak = lambda x: d.ellipse('Turuncu', (x, 60), (4.2, 2.2), line=True, noshadow=True)
+    # yelpaze alev kuyruk (arkada, sagda)
+    for k, (tx, ty) in enumerate(((59, 52), (58, 40), (51, 31))):
+        d.capsule('Turuncu', (45, 58), (tx, ty), (7.0, 3.2), part='kuyruk', line=True, name='k%d' % k)
+        d.capsule('Kirmizi', (46 + (tx - 46) * 0.55, 58 + (ty - 58) * 0.55), (tx, ty), (3.4, 1.4), part='kuyruk', clip='k%d' % k, shift=0)
+    d.pix((54, 42), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    ayak = lambda x: d.ellipse('Turuncu', (x, 64), (4.2, 2.2), line=True, noshadow=True)
     ayak(25); ayak(39)
-    d.ellipse('Sari', (32, 49), (16.5, 12.5), name='govde', cast=1)
-    d.ellipse('Sari', (32, 37), (15.5, 14), name='kafa', join='govde')
-    d.ellipse('Krem', (32, 54), (10, 5.5), part='govde', clip='govde', shift=-1, inbox=(0, 51, 63, 63))
+    d.ellipse('Sari', (32, 51), (16.5, 13), name='govde', cast=1)
+    d.ellipse('Sari', (32, 36.5), (15.5, 14.5), name='kafa', join='govde')
+    d.ellipse('Krem', (32, 56), (10, 5.5), part='govde', clip='govde', shift=-1, inbox=(0, 51, 63, 63))
     d.ellipse('Sari', (14.5, 49), (4, 8), rot=14, part='kol_1', line=True)
     d.ellipse('Sari', (49.5, 49), (4, 8), rot=-14, part='kol_2', line=True)
     d.capsule('Turuncu', (13.5, 53), (14.5, 56.5), (3.4, 2.6), part='kol_1', line=True)

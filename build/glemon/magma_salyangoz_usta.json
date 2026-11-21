@@ -1,0 +1,41 @@
+{
+ "anahtar": "magma_salyangoz",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 48,
+ "goz": {
+  "lx": 22,
+  "rx": 33,
+  "ey": 48
+ },
+ "ten": "Turuncu",
+ "yuz_kutusu": [
+  19,
+  47,
+  22,
+  10
+ ],
+ "govde_ust": 33,
+ "ayak": 60,
+ "govde_gen": 45,
+ "aileler": [
+  "Komur",
+  "Sari",
+  "Turuncu"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 49,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kafa",
+  "tepe"
+ ]
+}

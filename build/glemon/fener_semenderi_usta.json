@@ -1,0 +1,42 @@
+{
+ "anahtar": "fener_semenderi",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 44,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 30
+ },
+ "ten": "Pembe",
+ "yuz_kutusu": [
+  21,
+  29,
+  22,
+  10
+ ],
+ "govde_ust": 21,
+ "ayak": 60,
+ "govde_gen": 34,
+ "aileler": [
+  "Mor",
+  "Pembe",
+  "Sari"
+ ],
+ "renk": 13,
+ "tek_piksel_duzeltme": 60,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "kuyruk"
+ ]
+}

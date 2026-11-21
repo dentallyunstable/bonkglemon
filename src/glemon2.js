@@ -193,9 +193,9 @@ export function attachGlemon(sprite, { key, stage, shiny, k, state = null, idle 
   const gm = GMETA && GMETA[key];
   if (!gm || gm.v !== 2 || !sprite || !sprite.scene) return null;
   const scene = sprite.scene;
-  const st = gm.stages[stage];
+  let st = gm.stages[stage];
   const exprs = gm.exprs;
-  const fk = `gy_${key}_${stage}`;
+  let fk = `gy_${key}_${stage}`;
   const face = scene.add.image(sprite.x, sprite.y, scene.textures.exists(fk) ? fk : '__glemph', 0).setOrigin(0, 0).setVisible(false);
   const now = () => scene.time.now;
   const ctl = {
@@ -204,6 +204,8 @@ export function attachGlemon(sprite, { key, stage, shiny, k, state = null, idle 
     blinkAt: now() + 2600 + Math.random() * 2600, blinkSeq: null,
     idleAt: now() + 4000 + Math.random() * 5000, fxAt: 0,
     setFace(name, ms) { this.over = name; this.overUntil = now() + (ms || 0); },
+    // patron faz degisimi: ayni sprite yeni asamanin sayfasina gecer
+    restage(s, k2) { stage = s; st = gm.stages[s]; fk = `gy_${key}_${s}`; this.stage = s; this.st = st; this.k = k2; k = k2; },
   };
   sprite._glem = ctl;
   const upd = () => {

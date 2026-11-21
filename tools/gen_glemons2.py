@@ -47,6 +47,10 @@ DURS = {
     'mutlu': [90] * 6,
     'savunma': [300, 300],
 }
+DURS['faz'] = [140, 140, 140, 90, 90, 90, 140, 140, 140, 140]
+DURS['cagir'] = [140, 140, 110, 160, 140, 160]
+# Patronlar (bolum 11.1): mutlu ve uyku yok; faz (10) ve cagir (6) var; durma 1.4 kat yavas; mesafeler 2 kat
+BOSS_ORDER = ['durma', 'huy', 'yurume', 'hazirlik', 'saldiri', 'ozel', 'hasar', 'bayilma', 'savunma', 'faz', 'cagir']
 LOOP = {'durma', 'yurume', 'uyku', 'savunma'}
 ATK_FX = {'A3': 'pence_izi', 'A4': 'dis_izi'}
 RARITY = {'nadir': 'nadir', 'epik': 'epik', 'efsanevi': 'efsanevi', 'gizli': 'efsanevi'}
@@ -206,6 +210,22 @@ def savunma_frames(sp, rig):
             F(sq=1, p={'kol_1': (1, 1), 'kol_2': (-1, 1)}, ol='Kar-1', face='kizgin')]
 
 
+def faz_frames():
+    """11.1 faz: 1-3 titrer (aci yuz, ESKI cizim) · 4-5 Parilti · 6 yeni cizim beyaz siluet · 7 yeni cizim 2 satir uzamis ·
+    8 yere oturur (toz, sarsinti kodla) · 9-10 kizgin yuz. old=True kareler bir onceki fazin kuklasiyla cizilir."""
+    return [F(dx=-1, face='aci', old=True), F(dx=1, face='aci', old=True), F(dx=-1, face='aci', old=True),
+            F(flash=True, old=True), F(flash=True, old=True), F(flash=True),
+            F(sq=-1), F(sq=1, fx=True), F(face='kizgin'), F(face='kizgin')]
+
+
+def cagir_frames(rig):
+    """11.1 cagir: 1-2 guc toplar · 3 yavruyu tasiyan parca yukari firlar · 4 yavru duser (kod) · 5-6 toparlanir."""
+    t = first_part(rig, ('tepe', 'esya', 'kulak_1', 'kol_1', 'kol_2'))
+    p = (lambda v: {t: v}) if t else (lambda v: {})
+    return [F(sq=1, glow=True, face='kizgin'), F(sq=1, dx=1, glow=True, ol='Parilti', face='kizgin'),
+            F(sq=-1, p=p((0, -3))), F(p=p((0, -1)), fx=True), F(sq=1), F()]
+
+
 def frames_for(sp, walk, rig, key):
     fr = {
         'durma': anim_durma(sp, rig),
@@ -297,7 +317,8 @@ class Rig:
         self.bare = load_rgba(base + '_yuzsuz.png')
         self.shell = load_rgba(base + '_kafasiz.png') if os.path.exists(base + '_kafasiz.png') else None
         mk = np.asarray(Image.open(os.path.join(ROOT, f'assets/glemons/kukla/{key}_{stage}_maske.png')).convert('RGB'))
-        self.C = self.ic.shape[0]
+        self.H, self.W = self.ic.shape[:2]
+        self.C = self.W
         self.parts = {}
         for col, name in PART_COL.items():
             m = (mk == np.array(col)).all(2) & (self.ic[..., 3] > 0)
@@ -323,7 +344,7 @@ class Rig:
             for y, x in zip(ys, xs):
                 for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                     yy, xx = y + dy, x + dx
-                    if 0 <= yy < self.C and 0 <= xx < self.C and g[yy, xx]:
+                    if 0 <= yy < self.H and 0 <= xx < self.W and g[yy, xx]:
                         pts.append((x, y, dx, dy)); break
             self.attach[n] = pts
         self.glow_family = cfg.get('parla_aile')
@@ -388,7 +409,7 @@ class Rig:
 
     def render(self, f, follow, pal=None, glow=False):
         """f: olceklenmis kare tarifi. follow: {parca: (dx,dy)} gecikmeli kafa kaymasi."""
-        C = self.C
+        W, H = self.W, self.H
         sq, lean = f.get('sq', 0), f.get('lean', 0)
         src = self.bare if f.get('bare') else self.ic
         hide = set(f.get('hide') or ())
@@ -436,7 +457,7 @@ class Rig:
                 while xx != ex_:
                     path.append((xx, ey_)); xx += 1 if ex_ > xx else -1
                 for px_, py_ in path:
-                    if 0 <= px_ < C and 0 <= py_ < C and g[py_, px_, 3] == 0:
+                    if 0 <= px_ < W and 0 <= py_ < H and g[py_, px_, 3] == 0:
                         canvas[py_, px_] = c
         sel = g[..., 3] > 0
         canvas[sel] = g[sel]
@@ -453,12 +474,12 @@ class Rig:
                         if wing == 'asagi':
                             ny = r - (yy - r) * 0.6
                         X, Y = x + pdx, int(round(ny)) + pdy
-                        if 0 <= X < C and 0 <= Y < C:
+                        if 0 <= X < W and 0 <= Y < H:
                             canvas[Y, X] = src[yy, x]
                 continue
             for y, x in zip(ys, xs):
                 X, Y = x + pdx, y + pdy
-                if 0 <= X < C and 0 <= Y < C:
+                if 0 <= X < W and 0 <= Y < H:
                     canvas[Y, X] = src[y, x]
         if f.get('flip'):          # arkasi donuk (H8, A5): yatay ayna, kayma sonra uygulanir
             canvas = canvas[:, ::-1].copy()
@@ -467,12 +488,12 @@ class Rig:
             ys, xs = np.where(m)
             cy, cx = (ys.min() + ys.max() + 1) / 2.0, (xs.min() + xs.max() + 1) / 2.0
             S = int(max(ys.max() - ys.min(), xs.max() - xs.min())) + 2
-            pad = np.zeros((C + 2 * S, C + 2 * S, 4), canvas.dtype)
-            pad[S:S + C, S:S + C] = canvas
+            pad = np.zeros((H + 2 * S, W + 2 * S, 4), canvas.dtype)
+            pad[S:S + H, S:S + W] = canvas
             y0, x0 = int(round(cy - S / 2.0)) + S, int(round(cx - S / 2.0)) + S
             reg = pad[y0:y0 + S, x0:x0 + S].copy()
             pad[y0:y0 + S, x0:x0 + S] = np.rot90(reg, -int(f['rot']))
-            canvas = pad[S:S + C, S:S + C].copy()
+            canvas = pad[S:S + H, S:S + W].copy()
         if f.get('ripple'):        # kanatsiz ucanlar: alt 3 satir 1 piksel saga sola
             m = canvas[..., 3] > 0
             ys = np.where(m.any(1))[0]
@@ -484,11 +505,11 @@ class Rig:
         dx, dy = f.get('dx', 0), f.get('dy', 0)
         m = canvas[..., 3] > 0
         ys, xs = np.where(m)
-        dx = max(1 - xs.min(), min(C - 2 - xs.max(), dx))
-        dy = max(1 - ys.min(), min(C - 3 - ys.max(), dy))
+        dx = max(1 - xs.min(), min(W - 2 - xs.max(), dx))
+        dy = max(1 - ys.min(), min(H - 3 - ys.max(), dy))
         out = np.zeros_like(canvas)
-        x0, x1 = max(0, dx), min(C, C + dx)
-        y0, y1 = max(0, dy), min(C, C + dy)
+        x0, x1 = max(0, dx), min(W, W + dx)
+        y0, y1 = max(0, dy), min(H, H + dy)
         out[y0:y1, x0:x1] = canvas[y0 - dy:y1 - dy, x0 - dx:x1 - dx]
         if f.get('glow') and self.glow_family:
             fam = BP.FAMILIES[self.glow_family]
@@ -514,7 +535,7 @@ class Rig:
                 y = int(ys.min() + (ys.max() - ys.min()) * t)
                 xr = np.where(m[y])[0].max()
                 for k in range(2, 2 + f['trail']):
-                    if xr + k < C:
+                    if xr + k < W:
                         out[y, xr + k, :3] = BP.tone('Kar-1'); out[y, xr + k, 3] = 255
         if f.get('flash'):
             out[out[..., 3] > 0, :3] = BP.tone('Parilti')
@@ -587,31 +608,71 @@ def build(key):
     gj = os.path.join(ROOT, 'assets/glemons/glemons.json')
     allmeta = json.load(open(gj))
     old = allmeta.get(key, {})
+    boss = bool(sp.get('patron'))
     entry = {'v': 2, 'fly': bool(sp.get('ucar')), 'stages': [], 'anims': {}, 'fx': {}}
+    if boss:
+        entry['boss'] = True
+        sp = dict(sp)
+        sp.setdefault('saldiri', 'A2')
+        walk = 'ucan' if sp.get('ucar') else 'agir'
+    stages = STAGES
+    if boss:
+        stages = ['patron', 'faz2'] + (['faz3'] if os.path.exists(os.path.join(ROOT, f'build/glemon/{key}_faz3.json')) else [])
+    order = BOSS_ORDER if boss else ORDER
+    durs_all = dict(DURS)
+    if boss:
+        durs_all['durma'] = [int(round(d * 1.4)) for d in DURS['durma']]
     outdir = os.path.join(ROOT, 'assets/glemons', key)
     os.makedirs(outdir, exist_ok=True)
     gif_frames = []
     face_prev = []
-    for si, stage in enumerate(STAGES):
+    prev = None   # (rig, tiles normal, tiles shiny): faz animasyonunun eski cizimi
+    for si, stage in enumerate(stages):
         rig = Rig(key, stage, cfg)
-        C = rig.C
+        W, H = rig.W, rig.H
+        if boss:
+            rig.k, rig.maxsq = 2, 2
         rig.fly = rig.fly or bool(sp.get('ucar'))
         recipes = frames_for(sp, walk, rig, key)
+        if boss:
+            recipes['faz'] = faz_frames()
+            recipes['cagir'] = cagir_frames(rig)
+        colors = face_colors(rig.info['ten'], rig.info.get('goz_renk'), rig.info.get('yanak', True))
+        tn = face_tiles(rig, None, colors)
+        tp = face_tiles(rig, pal, colors)
+        old = prev or (rig, tn, tp)
         allf, allp, faces = [], [], []
         start = 0
         anims = {}
-        for a in ORDER:
+        for a in order:
             fr = [scale_frame(f, rig.k, rig.maxsq, a) for f in recipes[a]]
-            assert len(fr) == len(DURS[a]), a
+            assert len(fr) == len(durs_all[a]), a
             fol = follow_offsets(fr, a in LOOP)
             exprs = []
             for f, fo in zip(fr, fol):
                 follow = {n: fo for n in FOLLOW}
-                im, pos = rig.render(f, follow)
-                imp, _ = rig.render(f, follow, pal=pal)
+                if f.get('old'):     # onceki fazin cizimi; yuz kareye pisirilir (oyundaki yuz karosu yeni faza ait)
+                    orig, otn, otp = old
+                    im, pos = orig.render(f, follow)
+                    imp, _ = orig.render(f, follow, pal=pal)
+                    ex = f.get('face')
+                    if ex and pos:
+                        for img, tl in ((im, otn), (imp, otp)):
+                            t = tl[GF.EXPRS.index(ex)]
+                            th, tw = t.shape[:2]
+                            x0, y0 = pos
+                            reg = img[max(0, y0):y0 + th, max(0, x0):x0 + tw]
+                            tt = t[max(0, -y0):max(0, -y0) + reg.shape[0], max(0, -x0):max(0, -x0) + reg.shape[1]]
+                            mm = tt[..., 3] > 0
+                            reg[mm] = tt[mm]
+                    pos = None
+                    exprs.append(None)
+                else:
+                    im, pos = rig.render(f, follow)
+                    imp, _ = rig.render(f, follow, pal=pal)
+                    exprs.append(f.get('face'))
                 allf.append(im); allp.append(imp); faces.append(pos)
-                exprs.append(f.get('face'))
-            an = {'start': start, 'durs': DURS[a]}
+            an = {'start': start, 'durs': durs_all[a]}
             if a in LOOP:
                 an['loop'] = True
             if a in HIT:
@@ -628,13 +689,11 @@ def build(key):
         n = len(allf)
         rows = (n + COLS - 1) // COLS
         for frames, suf in ((allf, ''), (allp, '_p')):
-            sheet = Image.new('RGBA', (C * COLS, C * rows), (0, 0, 0, 0))
+            sheet = Image.new('RGBA', (W * COLS, H * rows), (0, 0, 0, 0))
             for i, im in enumerate(frames):
-                sheet.paste(Image.fromarray(im, 'RGBA'), ((i % COLS) * C, (i // COLS) * C))
+                sheet.paste(Image.fromarray(im, 'RGBA'), ((i % COLS) * W, (i // COLS) * H))
             sheet.save(os.path.join(outdir, f'{si}{suf}.png'), optimize=True)
-        colors = face_colors(rig.info['ten'], rig.info.get('goz_renk'), rig.info.get('yanak', True))
-        tn = face_tiles(rig, None, colors)
-        tp = face_tiles(rig, pal, colors)
+        prev = (rig, tn, tp)
         fx, fy, fw, fh = rig.face
         ys = Image.new('RGBA', (fw * len(tn), fh * 2), (0, 0, 0, 0))
         for i, (a, b) in enumerate(zip(tn, tp)):
@@ -642,12 +701,12 @@ def build(key):
             ys.paste(Image.fromarray(b, 'RGBA'), (i * fw, fh))
         ys.save(os.path.join(outdir, f'{si}_yuz.png'), optimize=True)
         face_prev.append(ys)
-        ik = Image.new('RGBA', (C * 2, C), (0, 0, 0, 0))
-        ik.paste(Image.fromarray(allf[0], 'RGBA'), (0, 0)); ik.paste(Image.fromarray(allp[0], 'RGBA'), (C, 0))
+        ik = Image.new('RGBA', (W * 2, H), (0, 0, 0, 0))
+        ik.paste(Image.fromarray(allf[0], 'RGBA'), (0, 0)); ik.paste(Image.fromarray(allp[0], 'RGBA'), (W, 0))
         ik.save(os.path.join(outdir, f'{si}_ikon.png'), optimize=True)
         info = rig.info
         stent = {
-            'w': C, 'h': C, 'ax': C // 2, 'ay': C - 2, 'bodyW': info['govde_gen'], 'bodyH': C - 2 - info['govde_ust'],
+            'w': W, 'h': H, 'ax': W // 2, 'ay': H - 2, 'bodyW': info['govde_gen'], 'bodyH': H - 2 - info['govde_ust'],
             'n': n, 'cols': COLS, 'face': {'w': fw, 'h': fh, 'pos': faces}, 'kalip': info['kalip']}
         # nadir turlerin parlayan parcasi: yuz kutusu disindaki Parilti pikselleri (oyun 2 sn'de bir orada isildatir)
         par = np.array(BP.tone('Parilti'))
@@ -693,56 +752,56 @@ def face_colors(sfam, goz=None, yanak=True):
 
 
 def preview_gif(key, stages):
-    """onizleme/<anahtar>_anim.gif: 11 animasyon sirayla, 3 kat, savas arka plani renginde; uc asama yan yana."""
+    """onizleme/<anahtar>_anim.gif: animasyonlar sirayla, 3 kat; asamalar yan yana. onizleme/<anahtar>_kareler.png: butun kareler."""
     S = 3
-    W = sum(st[6].C for st in stages) * S + 20
-    H = max(st[6].C for st in stages) * S + 16
+    W = sum(st[6].W for st in stages) * S + 20
+    H = max(st[6].H for st in stages) * S + 16
     out = []
     durs = []
-    for a in ORDER:
-        n = len(DURS[a])
-        reps = 2 if a in LOOP else 1
+    names = list(stages[0][3].keys())
+    for a in names:
+        n = len(stages[0][3][a]['durs'])
+        reps = 2 if stages[0][3][a].get('loop') else 1
         for r in range(reps):
             for i in range(n):
                 fr = Image.new('RGB', (W, H), (58, 70, 84))
                 x = 4
                 for stage, allf, allp, anims, faces, tn, rig in stages:
-                    an = anims[a]
-                    idx = an['start'] + i
-                    im = Image.fromarray(allf[idx], 'RGBA')
-                    ex = (an.get('faces') or [None] * n)[i]
-                    if ex and faces[idx]:
-                        t = Image.fromarray(tn[GF.EXPRS.index(ex)], 'RGBA')
-                        im.paste(t, tuple(faces[idx]), t)
-                    im = im.resize((im.width * S, im.height * S), Image.NEAREST)
-                    fr.paste(im, (x, H - im.height - 4), im)
-                    x += rig.C * S + 6
+                    an = anims.get(a)
+                    if an and i < len(an['durs']):
+                        idx = an['start'] + i
+                        im = Image.fromarray(allf[idx], 'RGBA')
+                        ex = (an.get('faces') or [None] * n)[i]
+                        if ex and faces[idx]:
+                            t = Image.fromarray(tn[GF.EXPRS.index(ex)], 'RGBA')
+                            im.paste(t, tuple(faces[idx]), t)
+                        im = im.resize((im.width * S, im.height * S), Image.NEAREST)
+                        fr.paste(im, (x, H - im.height - 4), im)
+                    x += rig.W * S + 6
                 out.append(fr)
-                durs.append(DURS[a][i])
+                durs.append(stages[0][3][a]['durs'][i])
         blank = out[-1].copy()
         out.append(blank); durs.append(300)
     out[0].save(os.path.join(ROOT, f'onizleme/{key}_anim.gif'), save_all=True, append_images=out[1:], duration=durs, loop=0)
-    # durgun kare tablosu (gozden gecirmek icin): her asama icin 61 kare, animasyon basina bir satir, 2 kat
     S2 = 2
     sheets = []
+    from PIL import ImageDraw
     for stage, allf, allp, anims, faces, tn, rig in stages:
-        C = rig.C
-        mx = max(len(DURS[a]) for a in ORDER)
-        sh = Image.new('RGB', (mx * (C * S2 + 2) + 70, len(ORDER) * (C * S2 + 2)), (58, 70, 84))
-        from PIL import ImageDraw
+        Wc, Hc = rig.W, rig.H
+        mx = max(len(an['durs']) for an in anims.values())
+        sh = Image.new('RGB', (mx * (Wc * S2 + 2) + 70, len(anims) * (Hc * S2 + 2)), (58, 70, 84))
         dr = ImageDraw.Draw(sh)
-        for r, a in enumerate(ORDER):
-            an = anims[a]
-            dr.text((2, r * (C * S2 + 2) + 4), a, fill=(230, 230, 230))
-            for i in range(len(DURS[a])):
+        for r, (a, an) in enumerate(anims.items()):
+            dr.text((2, r * (Hc * S2 + 2) + 4), a, fill=(230, 230, 230))
+            for i in range(len(an['durs'])):
                 idx = an['start'] + i
                 im = Image.fromarray(allf[idx], 'RGBA')
-                ex = (an.get('faces') or [None] * len(DURS[a]))[i]
+                ex = (an.get('faces') or [None] * len(an['durs']))[i]
                 if ex and faces[idx]:
                     t = Image.fromarray(tn[GF.EXPRS.index(ex)], 'RGBA')
                     im.paste(t, tuple(faces[idx]), t)
-                im = im.resize((C * S2, C * S2), Image.NEAREST)
-                sh.paste(im, (70 + i * (C * S2 + 2), r * (C * S2 + 2)), im)
+                im = im.resize((Wc * S2, Hc * S2), Image.NEAREST)
+                sh.paste(im, (70 + i * (Wc * S2 + 2), r * (Hc * S2 + 2)), im)
         sheets.append(sh)
     W2 = max(x.width for x in sheets); H2 = sum(x.height + 6 for x in sheets)
     big = Image.new('RGB', (W2, H2), (30, 26, 34)); y = 0

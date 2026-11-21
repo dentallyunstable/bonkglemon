@@ -243,12 +243,13 @@ class Drawing:
         """Saydam bosluk acar (iki bacak arasi gibi)."""
         return self.add(kind, None, part='govde', cut=True, shade='none', **kw)
 
-    def set_face(self, cx, ey, gap=None, mouth=True, ten=None, lx=None, rx=None, goz=None, yanak=True):
-        """goz: goz rengi (varsayilan Murekkep; parlayan gozler icin ornek 'Cam-1'). yanak=False: yanak basilmaz."""
+    def set_face(self, cx, ey, gap=None, mouth=True, ten=None, lx=None, rx=None, goz=None, yanak=True, tek=False, kalip=None):
+        """cx: iki gozun ortasi, ey: gozlerin ust satiri. gap: goz arasi bosluk (varsayilan kalibin en kucugu+1).
+        goz: goz rengi (varsayilan Murekkep; parlayan gozler icin ornek 'Cam-1'). yanak=False: yanak basilmaz.
+        tek=True: tek, ortada bir goz (yalniz Gozmantar gibi istisnalar). kalip: 'K'/'O'/'B' goz kalibini zorlar."""
         self.goz, self.yanak = goz, yanak
-        """cx: iki gozun ortasi, ey: gozlerin ust satiri. gap: goz arasi bosluk (varsayilan kalibin en kucugu+1)."""
         r = lambda v: None if v is None else int(round(v))
-        self.face = {'cx': cx, 'ey': r(ey), 'gap': r(gap), 'mouth': mouth, 'lx': r(lx), 'rx': r(rx)}
+        self.face = {'cx': cx, 'ey': r(ey), 'gap': r(gap), 'mouth': mouth, 'lx': r(lx), 'rx': r(rx), 'tek': tek, 'kalip': kalip}
         if ten:
             self.ten = ten
 
@@ -494,12 +495,14 @@ def draw_stage(key, stage, mod):
         shell = (c2, a2)
     bare = col.copy()
     # yuz
-    kal = KALIP[stage]
+    kal = (d.face or {}).get('kalip') or KALIP[stage]
     ew, eh = GF.SIZE[kal]
     f = d.face
     if f is None:
         raise SystemExit(f'{key} {stage}: set_face yok')
-    if f['lx'] is not None:
+    if f.get('tek'):
+        lx = rx = int(round(f['cx'] + ox - ew / 2.0))
+    elif f['lx'] is not None:
         lx, rx = f['lx'] + ox, f['rx'] + ox
     else:
         gap = f['gap'] if f['gap'] is not None else GF.GAP[kal][0] + 1
@@ -508,7 +511,7 @@ def draw_stage(key, stage, mod):
     ey = f['ey'] + oy
     gmin, gmax = GF.GAP[kal]
     g = rx - lx - ew
-    if not (gmin <= g <= gmax):
+    if not f.get('tek') and not (gmin <= g <= gmax):
         d.notes.append(f'UYARI: goz araligi {g} (kural {gmin}-{gmax})')
     ten = d.ten or Counter(x for x in d.fam.flatten() if x).most_common(1)[0][0]
     colors = face_colors(ten, getattr(d, 'goz', None), getattr(d, 'yanak', True))
@@ -520,7 +523,7 @@ def draw_stage(key, stage, mod):
     OA, OM = outline(A, alpha)
     # renk siniri (16, patron 20): ic renklerden en az kullanilani ayni ailenin komsu tonuna katar
     limit = 20 if stage in ('patron', 'faz2', 'faz3') else 16
-    face_cols = set(tuple(int(v) for v in c) for c in colors.values())
+    face_cols = set(tuple(int(v) for v in c) for c in colors.values() if c is not None)
     merged = []
     while True:
         cols_all = set(tuple(int(v) for v in OA[y, x]) for y, x in zip(*np.where(OM)))

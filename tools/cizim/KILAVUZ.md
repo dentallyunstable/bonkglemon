@@ -105,6 +105,8 @@ Bir parça mutlaka gövdeye değmeli (yoksa animasyonda kopuk durur). Aşağı s
 - Ten (yanak/ağız rengi) en çok kullanılan aileden otomatik seçilir; gerekirse `ten='Krem'` ver.
 - Parlayan gözler (ör. hayalet, mumya, Boşluk Bekçisi): `goz='Cam-1'` göz rengini değiştirir (parıltı yine sol üstte).
   Yanak istemeyen türler: `yanak=False`. Kirpik çizilmez.
+- Tek gözlü istisna (yalnız tarif "tek göz" diyorsa, ör. Gözmantar): `d.set_face(cx, ey, tek=True, kalip='O')`.
+  `kalip` göz kalıbını zorlar: 'K' 4x5, 'O' 5x6, 'B' 7x8. Tek göz ortada durur, yanaklar iki yanında, ağız altında.
 
 ## Sık hatalar
 
@@ -135,3 +137,26 @@ Bir parça mutlaka gövdeye değmeli (yoksa animasyonda kopuk durur). Aşağı s
    Silüet her aşamada değişiyor mu? Oyundaki 1x boyda okunuyor mu? Yüz temiz mi? Kütükçük'ün yanında aynı oyundan gibi mi?
 4. `DENETIM` satırı `ok` (renk birleştirme notu kabul).
 5. Bitince: türün dosyasının başına 1-2 satır açıklama, varsa kararların (ör. "yaprak Cam ailesinde, gövdeden ayrılsın").
+
+## Patronlar (yalnız patron çizenler için)
+
+Tarif: TARIFLER.md Bölüm 11 (11.1 kurallar + her patronun kendi başlığı). Dosya yapısı aynı, aşamalar farklı:
+```python
+def patron(d): ...      # normal hali
+def faz2(d): ...        # ikinci faz: AYRI çizim (aynı yaratık, öfkeli/değişmiş)
+STAGES = {'patron': patron, 'faz2': faz2}          # Kadim Bonk: + 'faz3'
+```
+| Aşama | Tuval | Gövde boyu | En geniş | Göz kalıbı | Göz boşluğu |
+|---|---|---|---|---|---|
+| patron / faz2 / faz3 | 96x80 (en x boy) | 50-58 | 72 | B (7x8) | 7-10 (öneri 8) |
+
+- Ayaklar yine tabandan 4. satıra oturur; uçan patron (`d.flyer = True`) 10 piksel havada durur.
+- 4 renk ailesi + Krem/Kar, en çok 20 renk. Yuvarlak, iri gözlü, pembe yanaklı: korkunç DEĞİL; büyük, ağır, heybetli, tatlı.
+- Taşıdığı yavru(lar) (tarifte "iki Kütükçük bebek", "omzunda iki Mıcır" gibi) çizimin üstünde görünür ve `part='tepe'`
+  olmalı: "cagir" (çağırma) animasyonu `tepe` parçasını yukarı fırlatır. `tepe`'yi başka bir şey için KULLANMA
+  (büyük taç/yaprak/kaya tacı `govde` kalsın). Yavruların yüzünü elle bas: `d.pix` ile 1x2 Murekkep gözler (2 göz), istersen 1 piksel ağız.
+  Yavru küçük ama tanınır olsun (rengi ve imzası kendi türünün çizimiyle aynı: tools/cizim/<yavru>.py'deki bebek).
+- Kollar `kol_1`/`kol_2` olmalı (saldırı ve faz animasyonları onları oynatır). Kanatlı uçan patron: `kanat_1`/`kanat_2`.
+- faz2: aynı yaratık, aynı göz yeri yakınında; tarifteki değişiklikler (renk dönüşümü, parlayan çatlak, kalkan kökler...)
+  silüeti belirgin değiştirsin. Öfke yüzü kodla gelir (kızgın ifade); normal yüz faz2'de de `set_face` ile basılır.
+- Parlayan gözlü patron (Boşluk Bekçisi): `goz='Cam-1'`.

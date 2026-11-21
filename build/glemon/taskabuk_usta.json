@@ -1,0 +1,40 @@
+{
+ "anahtar": "taskabuk",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 42,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 48
+ },
+ "ten": "Cam",
+ "yuz_kutusu": [
+  21,
+  47,
+  22,
+  10
+ ],
+ "govde_ust": 30,
+ "ayak": 60,
+ "govde_gen": 42,
+ "aileler": [
+  "Cam",
+  "Mor",
+  "Tas"
+ ],
+ "renk": 15,
+ "tek_piksel_duzeltme": 18,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "parcalar": [
+  "govde",
+  "kafa",
+  "kol_1",
+  "kol_2"
+ ]
+}

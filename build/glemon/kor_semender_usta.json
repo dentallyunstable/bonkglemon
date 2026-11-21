@@ -1,0 +1,43 @@
+{
+ "anahtar": "kor_semender",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 44,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 29
+ },
+ "ten": "Sari",
+ "yuz_kutusu": [
+  21,
+  28,
+  22,
+  10
+ ],
+ "govde_ust": 21,
+ "ayak": 60,
+ "govde_gen": 36,
+ "aileler": [
+  "Kirmizi",
+  "Komur",
+  "Sari"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 30,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kuyruk",
+  "tepe"
+ ]
+}

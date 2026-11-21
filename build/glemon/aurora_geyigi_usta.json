@@ -1,0 +1,47 @@
+{
+ "anahtar": "aurora_geyigi",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 43,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 35
+ },
+ "ten": "Kar",
+ "yuz_kutusu": [
+  21,
+  34,
+  22,
+  10
+ ],
+ "govde_ust": 8,
+ "ayak": 60,
+ "govde_gen": 36,
+ "aileler": [
+  "Cam",
+  "Kar",
+  "Krem",
+  "Mor"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 78,
+ "denetim": [
+  "renk birlestirme: Mor-4>3, Krem-4>3, Cam-4>3, Mor-1>2"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "tepe"
+ ]
+}

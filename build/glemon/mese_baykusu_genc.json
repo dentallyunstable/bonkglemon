@@ -1,0 +1,40 @@
+{
+ "anahtar": "mese_baykusu",
+ "asama": "genc",
+ "kaynak": "cizim",
+ "tuval": 56,
+ "tuval_h": 56,
+ "kalip": "K",
+ "boy": 38,
+ "goz": {
+  "lx": 22,
+  "rx": 31,
+  "ey": 20
+ },
+ "ten": "Krem",
+ "yuz_kutusu": [
+  19,
+  19,
+  19,
+  9
+ ],
+ "govde_ust": 11,
+ "ayak": 44,
+ "govde_gen": 30,
+ "aileler": [
+  "Cimen",
+  "Kahve",
+  "Krem"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 27,
+ "denetim": [],
+ "agiz": true,
+ "ucar": true,
+ "parcalar": [
+  "govde",
+  "kanat_1",
+  "kanat_2",
+  "tepe"
+ ]
+}

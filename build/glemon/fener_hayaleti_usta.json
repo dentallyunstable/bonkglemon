@@ -1,0 +1,46 @@
+{
+ "anahtar": "fener_hayaleti",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 42,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 25
+ },
+ "ten": "Krem",
+ "yuz_kutusu": [
+  21,
+  24,
+  22,
+  10
+ ],
+ "govde_ust": 19,
+ "ayak": 52,
+ "govde_gen": 40,
+ "aileler": [
+  "Cam",
+  "Kirmizi",
+  "Komur",
+  "Krem"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 41,
+ "denetim": [
+  "UYARI: cizim tuvale sigmiyor ya da kenara degiyor"
+ ],
+ "agiz": true,
+ "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "kol_2",
+  "tepe"
+ ]
+}
