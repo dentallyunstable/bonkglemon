@@ -26,7 +26,7 @@ KALIP = {'bebek': 'K', 'genc': 'K', 'usta': 'O', 'patron': 'B', 'faz2': 'B', 'fa
 BODY_RANGE = {'bebek': (26, 30, 30), 'genc': (32, 38, 38), 'usta': (42, 48, 48), 'patron': (50, 58, 72), 'faz2': (50, 58, 72), 'faz3': (50, 58, 72)}
 PART_COL = {'govde': (90, 160, 230), 'tepe': (120, 220, 90), 'kol_1': (240, 150, 60), 'kol_2': (230, 90, 160),
             'kulak_1': (250, 230, 80), 'kulak_2': (200, 120, 250), 'kuyruk': (90, 230, 220), 'esya': (250, 90, 90),
-            'kanat_1': (160, 100, 40), 'kanat_2': (40, 120, 120)}
+            'kanat_1': (160, 100, 40), 'kanat_2': (40, 120, 120), 'kafa': (200, 200, 200)}
 LIGHT = np.array([-0.55, -0.62, 0.56])
 LIGHT = LIGHT / np.linalg.norm(LIGHT)
 
@@ -533,6 +533,8 @@ def draw_stage(key, stage, mod):
     govde_ust = int(np.where(widths >= widths.max() * 0.6)[0][0])   # glemon_import ile ayni tanim
     fams = sorted(set(x for x in d.fam.flatten() if x and x != 'Parilti'))
     nt = alpha & ~np.isin(part, ['tepe', 'kulak_1', 'kulak_2', 'kanat_1', 'kanat_2', 'kuyruk', 'esya'])
+    if not nt.any():
+        nt = alpha
     body_h = int(rows.max() - np.where(nt.any(1))[0].min() + 3)   # cizgi dahil, tepe/kulak haric
     lo, hi, wmax = BODY_RANGE[stage]
     issues = list(d.notes)
