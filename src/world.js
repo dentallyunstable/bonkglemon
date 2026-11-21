@@ -1,5 +1,5 @@
 // Ana sahne: us (ev, depo, harita, maden girisi) ve zindan odalari.
-import { glemTex, glemScale, attachGlemon, accAnchor, glemHeadOffset } from './glemon2.js';
+import { glemScale, attachGlemon, accAnchor, glemHeadOffset, glemSprite } from './glemon2.js';
 import { GAME_W, GROUND_Y, ITEMS, SKILLS, STAGES, ABILITIES, ORES, RECIPES, ANIM_POOLS, CURRENCY, BUILD, CAMP, CLASS_RULES, WEAPON_SKILL, TREE2, FIRE, TOK, RARITY, CAPE_COLORS, STATION_LVL } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -93,8 +93,7 @@ export class WorldScene extends Phaser.Scene {
     S.teamPets().forEach((p, i) => {
       const meta = this.gmeta[p.key].stages[p.stage];
       const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
-      const [tex, fr0] = glemTex(this.gmeta, p.key, p.stage, p.shiny);
-      const f = this.add.sprite(this.player.x - 24 - i * 22, GROUND_Y, tex, fr0)
+      const f = glemSprite(this, this.player.x - 24 - i * 22, GROUND_Y, p.key, p.stage, !!p.shiny)
         .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(9 - i * 0.1).setScale(glemScale(this.gmeta, p.key, p.stage === 2 ? 0.8 : 1));
       f.play(k('durma'));
       attachGlemon(f, { key: p.key, stage: p.stage, shiny: !!p.shiny, k });
@@ -123,6 +122,7 @@ export class WorldScene extends Phaser.Scene {
       const tx = p.x + side * (26 + f.slot * 22);
       const dx = tx - f.x;
       const moving = Math.abs(dx) > 3;
+      if (f._glemWait) { if (moving) f.x += Math.sign(dx) * Math.min(Math.abs(dx), 90 * dt / 1000); f.y = GROUND_Y; f.shadow.x = f.x; continue; }
       if (moving) {
         const sp = Math.min(Math.abs(dx), (Math.abs(dx) > 60 ? 200 : 90) * dt / 1000);
         f.x += Math.sign(dx) * sp;

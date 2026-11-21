@@ -12,7 +12,7 @@ import { ARENA } from './art.js';
 import { $, el, button, floatText, feed, timingBar, dodgePrompt, banner, icon } from './ui.js';
 import { sfx } from './audio.js';
 import { playAnim, wait } from './anim.js';
-import { glemTex, attachGlemon, glemAnim, glemFx, glemHappy, isV2 } from './glemon2.js';
+import { attachGlemon, glemAnim, glemFx, glemHappy, isV2, glemSprite, glemShot, glemCone } from './glemon2.js';
 import { teamInfo, teamAura, petDisplayName, fightBond, recordDrop, tickNest, zoneBonus, homeOf } from './pets.js';
 import { now as gNow } from './clock.js';
 
@@ -124,9 +124,8 @@ export class Battle {
     const v2 = isV2(this.w.gmeta, spec.key);
     const zoom = this.arena ? (data.boss && !v2 ? 1.5 : 2) : 1;
     const scale = (spec.golden ? 1.35 : 1) * zoom;
-    const [tex, fr0] = glemTex(this.w.gmeta, spec.key, stage, spec.shiny);
     const k = (a) => `g_${spec.key}_${stage}_${a}${spec.shiny ? '_p' : ''}`;
-    const sprite = this.scene.add.sprite(x, this.gy, tex, fr0)
+    const sprite = glemSprite(this.scene, x, this.gy, spec.key, stage, !!spec.shiny)
       .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(scale);
     if (spec.golden) sprite.setTint(0xffd86a);
     sprite.play(k(v2 && spec.sleeping ? 'uyku' : 'durma'));
@@ -177,6 +176,11 @@ export class Battle {
     const names = special ? [].concat(c.gm.fx.ozel || []) : [c.gm.fx.saldiri];
     const x = target && target.sprite ? target.sprite.x : this.px();
     const y = target && target.sprite ? target.sprite.y - (target.meta.bodyH * (target.scale || 1)) * 0.6 : this.py() - 14;
+    // A6 firlatma: mermi ucar; A9 ufleme: agizdan koni (bolum 5.5)
+    const code = special ? c.gm.ozAtk : c.gm.atk;
+    const sx = a.sprite.x; const sy = a.sprite.y - c.st.bodyH * Math.abs(a.sprite.scaleY) * 0.45;
+    if (code === 'A6') { glemShot(this.scene, sx, sy, x, y, (special && names[0]) || c.gm.fx.mermi); return; }
+    if (code === 'A9') { glemCone(this.scene, sx, sy, x, y, (special && names[0]) || c.gm.fx.mermi); if (!special) return; }
     names.filter(Boolean).forEach((n, i) => glemFx(this.scene, x, y, n, { n: n === 'vurus_yildizi' ? 1 : 3, spread: 18, rise: n === 'vurus_yildizi' ? 2 : 16, scale: 2, dur: 450 + i * 150, depth: 40 }));
   }
   // 0.13.5 Sonsuz Kule kurali
@@ -216,8 +220,7 @@ export class Battle {
       const st = S.petStats(p, team);
       const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
       const sc = pos.scale * (p.stage === 2 && !isV2(this.w.gmeta, p.key) ? 0.85 : 1);
-      const [ptex, pfr] = glemTex(this.w.gmeta, p.key, p.stage, p.shiny);
-      const sprite = this.scene.add.sprite(pos.x, pos.y, ptex, pfr)
+      const sprite = glemSprite(this.scene, pos.x, pos.y, p.key, p.stage, !!p.shiny)
         .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(18 - i).setScale(sc).setFlipX(true);
       sprite.play(k('durma'));
       const shadow = this.scene.add.image(pos.x, pos.y + 1, 'shadow').setDepth(17 - i).setScale((meta.bodyW * sc) / 18, sc * 0.8);

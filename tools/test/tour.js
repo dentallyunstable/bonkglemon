@@ -105,7 +105,7 @@ async function openGame(opts = {}) {
   const ctx = await browser.newContext(opts.phone ? { viewport: { width: 740, height: 360 }, isMobile: true, hasTouch: true } : { viewport: { width: 1152, height: 648 } });
   const page = await ctx.newPage();
   const errs = [];
-  page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
+  page.on('pageerror', (e) => errs.push('pageerror: ' + e.message + (process.env.STACK ? ' @ ' + (e.stack || '').split('\n').slice(1, 4).join(' | ') : '')));
   await page.goto(`http://localhost:${srv.address().port}/index.html#t${opts.char || 'dunstable'}`);
   await page.waitForFunction(() => window.__BG && window.__P && window.__S && window.__S.save, null, { timeout: 30000 });
   await page.waitForTimeout(1500);

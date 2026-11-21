@@ -11,6 +11,7 @@ import { openPrep, openCredits } from './panels.js';
 import { shinyMastery } from './pets.js';
 import { fullMoon, todayRule, PUL, clockOk, dayNum, weekNum, addPul } from './goals.js';
 import { now as gNow } from './clock.js';
+import { glemPreload } from './glemon2.js';
 import { PLAYER_HOME, weighted, pick } from './wconst.js';
 
 export class DungeonPart {
@@ -356,6 +357,13 @@ export class DungeonPart {
   }
 
   async enterFloor(f) {
+    // Plan v2 tembel yukleme: bolgenin Glemonlarini ve patronunu arka planda yukle (ilk savasa hazir olsun)
+    try {
+      const z = zoneOf(f);
+      const list = (ZONE_SPAWNS[z.key] || []).flatMap(([k]) => [0, 1, 2].map((s) => [k, s, false]));
+      if (z.boss) list.push([z.boss, 0, false]);
+      glemPreload(this, list.filter(([k, s]) => this.gmeta[k] && this.gmeta[k].stages[s]));
+    } catch (err) { /* yukleme yalniz hizlandirir */ }
     if (this.inKule()) {
       if (f > 1 && f - 1 > (S.run.kf || 0)) this.kuleCleared(f - 1);
       // merdivende soluklanma: her yeni katta canin %10'u dolar

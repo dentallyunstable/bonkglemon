@@ -30,7 +30,7 @@ const KEY = process.argv[3] || 'kutukcuk';
       const w = window.__BG;
       const panel = document.querySelector('#panel.show');
       if (panel) { const b = [...panel.querySelectorAll('button.btn')].find((x) => /Yola çık|Devam|Tamam|Kat 1/.test(x.textContent)) || panel.querySelector('button.close'); if (b) b.click(); }
-      else if (!w.busy && !w.battle) {
+      else if (!w.busy && !(w.battle && w.battle.arena)) {
         const acts = [...document.querySelectorAll('#actions button')].filter((b) => !b.disabled);
         const pref = acts.find((b) => /Savaş|Saldır|İlerle|Devam|İn/.test(b.textContent)) || acts.find((b) => !/Eve dön|Kaç|Gizlice/.test(b.textContent));
         if (pref) pref.click();

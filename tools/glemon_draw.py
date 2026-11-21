@@ -243,7 +243,9 @@ class Drawing:
         """Saydam bosluk acar (iki bacak arasi gibi)."""
         return self.add(kind, None, part='govde', cut=True, shade='none', **kw)
 
-    def set_face(self, cx, ey, gap=None, mouth=True, ten=None, lx=None, rx=None):
+    def set_face(self, cx, ey, gap=None, mouth=True, ten=None, lx=None, rx=None, goz=None, yanak=True):
+        """goz: goz rengi (varsayilan Murekkep; parlayan gozler icin ornek 'Cam-1'). yanak=False: yanak basilmaz."""
+        self.goz, self.yanak = goz, yanak
         """cx: iki gozun ortasi, ey: gozlerin ust satiri. gap: goz arasi bosluk (varsayilan kalibin en kucugu+1)."""
         r = lambda v: None if v is None else int(round(v))
         self.face = {'cx': cx, 'ey': r(ey), 'gap': r(gap), 'mouth': mouth, 'lx': r(lx), 'rx': r(rx)}
@@ -424,10 +426,13 @@ def rgba(a, m):
     return Image.fromarray(out, 'RGBA')
 
 
-def face_colors(sfam):
+def face_colors(sfam, goz=None, yanak=True):
     cheek = 'Pembe-3' if sfam in ('Pembe', 'Kirmizi', 'Turuncu') else 'Pembe-2'
-    return {'#': BP.tone('Murekkep'), 'o': BP.tone('Parilti'), 'i': BP.tone('Mor-2'), 'w': BP.tone('Kar-1'),
-            't': BP.tone('Gok-1'), 'm': BP.tone(sfam + '-4'), 'r': BP.tone('Kirmizi-3'), 'cheek': BP.tone(cheek)}
+    c = {'#': BP.tone(goz or 'Murekkep'), 'o': BP.tone('Parilti'), 'i': BP.tone('Mor-2'), 'w': BP.tone('Kar-1'),
+         't': BP.tone('Gok-1'), 'm': BP.tone(sfam + '-4'), 'r': BP.tone('Kirmizi-3'), 'cheek': BP.tone(cheek)}
+    if not yanak:
+        c['cheek'] = None
+    return c
 
 
 def load_species(key):
@@ -477,6 +482,16 @@ def draw_stage(key, stage, mod):
             for ch, nm in s['key'].items():
                 keep.add(BP.tone(nm))
     nfix = clean(col, alpha, keep)
+    # kabuklu turler: kafa ve kollar olmadan da ciz (savunmada kabugun arkasi gorunsun)
+    shell = None
+    if any(s_['part'] == 'kafa' for s_ in d.shapes):
+        d2 = Drawing(stage)
+        d2.shapes = [s_ for s_ in d.shapes if s_['part'] not in ('kafa', 'kol_1', 'kol_2')]
+        d2.names = d.names
+        d2.render()
+        c2 = sh(d2.col, 0); a2 = sh(d2.alpha, False)
+        clean(c2, a2, keep)
+        shell = (c2, a2)
     bare = col.copy()
     # yuz
     kal = KALIP[stage]
@@ -496,7 +511,7 @@ def draw_stage(key, stage, mod):
     if not (gmin <= g <= gmax):
         d.notes.append(f'UYARI: goz araligi {g} (kural {gmin}-{gmax})')
     ten = d.ten or Counter(x for x in d.fam.flatten() if x).most_common(1)[0][0]
-    colors = face_colors(ten)
+    colors = face_colors(ten, getattr(d, 'goz', None), getattr(d, 'yanak', True))
     A = col.copy()
     def put(x, y, c):
         if 0 <= x < W and 0 <= y < H:
@@ -560,9 +575,14 @@ def draw_stage(key, stage, mod):
         'boy': body_h, 'goz': {'lx': int(lx), 'rx': int(rx), 'ey': int(ey)}, 'ten': ten, 'yuz_kutusu': [int(v) for v in lay['box']],
         'govde_ust': govde_ust, 'ayak': int(rows.max()), 'govde_gen': bw, 'aileler': fams, 'renk': len(cols),
         'tek_piksel_duzeltme': nfix, 'denetim': issues, 'agiz': bool(f['mouth']), 'ucar': bool(d.flyer),
+        'goz_renk': getattr(d, 'goz', None), 'yanak': getattr(d, 'yanak', True),
     }
     os.makedirs(os.path.join(ROOT, 'build/glemon'), exist_ok=True)
     base = os.path.join(ROOT, f'build/glemon/{key}_{stage}')
+    if shell is not None:
+        rgba(*shell).save(base + '_kafasiz.png')
+    elif os.path.exists(base + '_kafasiz.png'):
+        os.remove(base + '_kafasiz.png')
     rgba(OA, OM).save(base + '.png')
     rgba(A, alpha).save(base + '_ic.png')
     rgba(bare, alpha).save(base + '_yuzsuz.png')

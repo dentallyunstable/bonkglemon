@@ -2,7 +2,7 @@
 // 12 blok genis bir kuyu. Karakter bloklar arasinda yurur, bir blok yukari ziplar,
 // merdivenle tirmanir, bosluga duser. Her 10 satirda yeni katman; derinlerde karanlik,
 // lav, su, cakil, magara cepleri (Glemon), fosil, antik sandik ve jeotlar var.
-import { glemScale, attachGlemon } from './glemon2.js';
+import { glemScale, attachGlemon, glemSprite, isV2 } from './glemon2.js';
 import {
   SECRETS, GAME_W, ITEMS, ORES, ZONES, ZONE_SPAWNS, GLEMONS, CURRENCY, SHAFT, LAYERS, layerOf, oreDepthOf,
   oreWeights, mineXpMult, mineHardBonus, FOSSILS, GEODE_GEMS, NAMES } from './data.js';
@@ -218,10 +218,10 @@ export const ShaftMixin = {
       const cv = caveOf(v.seed, r, c);
       if (cv && cv.mon && !v.cv[cv.id] && r === cv.r0 + 1 && c === cv.c0 + 1 && this.kindAt(r, c) === null) {
         const g = this.caveGlemon(cv, r);
-        if (g && this.textures.exists(`gs_${g}_0`)) {
+        if (g && (isV2(this.gmeta, g) || this.textures.exists(`gs_${g}_0`))) {
           const meta = this.gmeta[g].stages[0];
-          const s = this.add.sprite(x + 8, y + 16, `gs_${g}_0`, 0).setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(glemScale(this.gmeta, g, 0.75));
-          if (this.anims.exists(`g_${g}_0_durma`)) s.play(`g_${g}_0_durma`);
+          const s = glemSprite(this, x + 8, y + 16, g, 0, false).setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(8).setScale(glemScale(this.gmeta, g, 0.75));
+          if (this.anims.exists(`g_${g}_0_durma`) || s._glemWait) s.play(`g_${g}_0_durma`);
           // v2: magara cebinde uyur; oyuncu yaklasinca saskin yuzle uyanir
           const gk = (a) => `g_${g}_0_${a}`;
           attachGlemon(s, { key: g, stage: 0, shiny: false, k: gk, state: () => ({ sleep: !this.player || Math.hypot(this.player.x - s.x, this.player.y - s.y) > 40 }) });

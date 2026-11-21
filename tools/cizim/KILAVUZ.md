@@ -103,6 +103,15 @@ Bir parça mutlaka gövdeye değmeli (yoksa animasyonda kopuk durur). Aşağı s
   Çünkü oyunda diğer ifadeler bu alanın üstüne bir karo olarak konur.
 - Ağzı olmayan türler (gaga, hortum vb. kendi çizimindeyse): `d.set_face(..., mouth=False)` ve gagayı yüz alanının DIŞINA çiz.
 - Ten (yanak/ağız rengi) en çok kullanılan aileden otomatik seçilir; gerekirse `ten='Krem'` ver.
+- Parlayan gözler (ör. hayalet, mumya, Boşluk Bekçisi): `goz='Cam-1'` göz rengini değiştirir (parıltı yine sol üstte).
+  Yanak istemeyen türler: `yanak=False`. Kirpik çizilmez.
+
+## Sık hatalar
+
+- `pix` anahtarında aile adı değil ton adı yaz: `'Kar-1'`, `'Kahve-4'`, `'Parilti'`.
+- `join='ad'` yalnız `name='ad'` verilmiş bir şekle katılır; `join` ile eklenen şekle ad verilmez, ana şeklin adını kullan.
+- Araç `govde` parçasını yatayda ortalar ve en alttaki pikseli yere oturtur: gövdenin altına sarkan uç (kuyruk, sargı)
+  yerleşimi değiştirir. Büyük kuyruk/kanat da tuvale sığmalı (UYARI'ya bak).
 
 ## Stil (Kütükçük gibi olsun)
 

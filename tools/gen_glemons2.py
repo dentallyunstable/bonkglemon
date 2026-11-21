@@ -295,6 +295,7 @@ class Rig:
         self.info = json.load(open(base + '.json', encoding='utf8'))
         self.ic = load_rgba(base + '_ic.png')
         self.bare = load_rgba(base + '_yuzsuz.png')
+        self.shell = load_rgba(base + '_kafasiz.png') if os.path.exists(base + '_kafasiz.png') else None
         mk = np.asarray(Image.open(os.path.join(ROOT, f'assets/glemons/kukla/{key}_{stage}_maske.png')).convert('RGB'))
         self.C = self.ic.shape[0]
         self.parts = {}
@@ -339,11 +340,12 @@ class Rig:
                     self.wroot[n] = float(ys.max())
 
     # -- govde donusumleri
-    def body(self, sq, lean, src=None):
+    def body(self, sq, lean, src=None, mask=None):
         C = self.C
         src = self.ic if src is None else src
+        mask = self.parts['govde'] if mask is None else mask
         g = np.zeros_like(self.ic)
-        g[self.parts['govde']] = src[self.parts['govde']]
+        g[mask] = src[mask]
         y0, xw = self.y_sq, self.x_w
         if sq > 0:
             n = sq
@@ -389,11 +391,14 @@ class Rig:
         C = self.C
         sq, lean = f.get('sq', 0), f.get('lean', 0)
         src = self.bare if f.get('bare') else self.ic
-        g = self.body(sq, lean, src)
+        hide = set(f.get('hide') or ())
+        if 'kafa' in hide and self.shell is not None:     # kabuk savunmasi: kafa ve kollarin arkasi
+            g = self.body(sq, lean, self.shell, self.shell[..., 3] > 0)
+        else:
+            g = self.body(sq, lean, src)
         hdx, hdy = lean, sq
         canvas = np.zeros_like(g)
         layers = []
-        hide = set(f.get('hide') or ())
         for n, m in self.parts.items():
             if n == 'govde' or n in hide:
                 continue
@@ -627,7 +632,7 @@ def build(key):
             for i, im in enumerate(frames):
                 sheet.paste(Image.fromarray(im, 'RGBA'), ((i % COLS) * C, (i // COLS) * C))
             sheet.save(os.path.join(outdir, f'{si}{suf}.png'), optimize=True)
-        colors = face_colors(rig.info['ten'])
+        colors = face_colors(rig.info['ten'], rig.info.get('goz_renk'), rig.info.get('yanak', True))
         tn = face_tiles(rig, None, colors)
         tp = face_tiles(rig, pal, colors)
         fx, fy, fw, fh = rig.face
@@ -678,10 +683,13 @@ def build(key):
     print(key, 'ok', [s['n'] for s in entry['stages']])
 
 
-def face_colors(sfam):
+def face_colors(sfam, goz=None, yanak=True):
     cheek = 'Pembe-3' if sfam in ('Pembe', 'Kirmizi', 'Turuncu') else 'Pembe-2'
-    return {'#': BP.tone('Murekkep'), 'o': BP.tone('Parilti'), 'i': BP.tone('Mor-2'), 'w': BP.tone('Kar-1'),
-            't': BP.tone('Gok-1'), 'm': BP.tone(sfam + '-4'), 'r': BP.tone('Kirmizi-3'), 'cheek': BP.tone(cheek)}
+    c = {'#': BP.tone(goz or 'Murekkep'), 'o': BP.tone('Parilti'), 'i': BP.tone('Mor-2'), 'w': BP.tone('Kar-1'),
+         't': BP.tone('Gok-1'), 'm': BP.tone(sfam + '-4'), 'r': BP.tone('Kirmizi-3'), 'cheek': BP.tone(cheek)}
+    if not yanak:
+        c['cheek'] = None
+    return c
 
 
 def preview_gif(key, stages):

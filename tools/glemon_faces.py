@@ -104,7 +104,7 @@ def stamp(px, kalip, expr, lx, rx, ey, colors, skip_mouth=False):
     Yanaklar, agiz ve gozler basilir. '.' dokunulmaz."""
     el, er, dx = eyes(kalip, expr)
     lay = layout(kalip, lx, rx, ey)
-    for (cx, cy, cw, ch) in lay['cheeks']:
+    for (cx, cy, cw, ch) in (lay['cheeks'] if colors.get('cheek') is not None else []):
         for yy in range(ch):
             for xx in range(cw):
                 px(cx + xx, cy + yy, colors['cheek'])

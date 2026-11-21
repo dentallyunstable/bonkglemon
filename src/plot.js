@@ -1,5 +1,5 @@
 // K4 (1.0.21): ev ve insa (arsa, istasyonlar, tarla, ahir) world.js'ten ayrildi. Davranis ayni.
-import { glemTex, glemScale, attachGlemon, glemHappy } from './glemon2.js';
+import { glemScale, attachGlemon, glemHappy, glemSprite } from './glemon2.js';
 import { GAME_W, GROUND_Y, ITEMS, BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, RANCH, ranchDropOf, BASE_REWARDS, HIVE, NAMES } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -84,8 +84,7 @@ export class PlotPart {
       const meta = this.gmeta[p.key].stages[p.stage];
       const k = (a) => `g_${p.key}_${p.stage}_${a}${p.shiny ? '_p' : ''}`;
       const x = g.x0 + 8 + Math.random() * (g.cols * 16 - 16);
-      const [tex, fr0] = glemTex(this.gmeta, p.key, p.stage, p.shiny);
-      const sp = this.add.sprite(x, GROUND_Y, tex, fr0)
+      const sp = glemSprite(this, x, GROUND_Y, p.key, p.stage, !!p.shiny)
         .setOrigin(meta.ax / meta.w, meta.ay / meta.h).setDepth(7).setScale(glemScale(this.gmeta, p.key, p.stage === 2 ? 0.8 : 1)).setFlipX(Math.random() < 0.5);
       sp.play(k('durma'));
       const sh = this.add.image(x, GROUND_Y + 1, 'shadow').setDepth(6.9).setScale((meta.bodyW * sp.scale) / 18, 1);
@@ -109,7 +108,7 @@ export class PlotPart {
     const g = this.plotGeom();
     const now = gNow();
     for (const r of this.ranch) {
-      if (!r.sp.active) continue;
+      if (!r.sp.active || r.sp._glemWait) continue;
       if (r.sp._glem && r.nap && this.ranchNight()) { r.tx = r.sp.x; r.sh.x = r.sp.x; continue; }
       const dx = r.tx - r.sp.x;
       if (Math.abs(dx) > 1) {
