@@ -5,7 +5,7 @@ import { $, show } from './ui.js';
 import { setSound, stopMusic, pauseMusic } from './audio.js';
 import { showLogin } from './login.js';
 import { makeAnim, makeAnimFrames } from './anim.js';
-import { preloadV2, createV2Anims } from './glemon2.js';
+import { preloadV2, createV2Anims, loadGlemIcons } from './glemon2.js';
 import { WorldScene } from './world.js';
 import * as ART from './art.js';
 import { block, BLOCK_NAMES } from './blocks.js';
@@ -154,6 +154,7 @@ function startGame(char, charMeta, gmeta, npc) {
 async function main() {
   try {
     const gmeta = await loadJson('assets/glemons/glemons.json');
+    loadGlemIcons();   // derlemede ikon paketi arka planda gelir
     const npc = await loadJson('assets/npc/hanci.json');
     const charMeta = {};
     await Promise.all(CHARACTERS.map(async (c) => { charMeta[c.key] = await loadJson(`assets/chars/${c.key}/anims.json`); }));

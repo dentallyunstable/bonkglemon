@@ -2,6 +2,7 @@
 import { sfx } from './audio.js';
 import { GAME_W, GAME_H, ITEMS, RARITY } from './data.js';
 import { iconUrl } from './art.js';
+import { glemIcon } from './glemon2.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -336,7 +337,7 @@ export function glemonImg(gmeta, key, stage = 0, shiny = false, scale = 2, sil =
   d.style.height = `calc(${st.h * scale} * var(--u))`;
   if (gmeta[key].v === 2) {
     // Plan v2: arayuz yalniz kucuk ikon dosyasini kullanir (normal | parlak yan yana)
-    d.style.backgroundImage = `url(assets/glemons/${key}/${stage}_ikon.png)`;
+    glemIcon(key, stage, (u) => { d.style.backgroundImage = `url(${u})`; });
     d.style.backgroundSize = `calc(${st.w * 2 * scale} * var(--u)) calc(${st.h * scale} * var(--u))`;
     d.style.backgroundPosition = `${shiny ? '100%' : '0'} 0`;
     return d;

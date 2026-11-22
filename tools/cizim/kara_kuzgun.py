@@ -1,7 +1,8 @@
 # Kara Kuzgun (Golge, nadir, ucar). Tarif: TARIFLER.md. Tombul Lacivert kuzgun yavrusu; buyuk Mor gaga, tuylerde Mor yansima, Sari hazine (dugme, anahtar, yuzuk).
 # Baykuslardan farki: kulak tutami ve yuz diski yok; gaga yuz kutusunun disinda, kanatlar yukari acik, kuyruk yelpaze.
-# Renk: Lacivert (tuy), Mor (yansima, gaga), Sari (hazine). Parlak: Lacivert -> Kar.
+# Renk: Lacivert (koyu tonlar: tuy, gaga), Mor (ince yansima serit), Sari (hazine). Parlak: Lacivert -> Kar.
 PARLA = 'Sari'
+DK = -0.8   # govde isik kaymasi: neredeyse siyah (Lacivert-3/4)
 
 
 import math
@@ -12,19 +13,42 @@ def mir(pts, cx):
 
 
 def kanat(d, cx, W, sheen, nm=('w1', 'w2')):
-    d.poly('Lacivert', W, part='kanat_1', line=True, name=nm[0], lift=-0.02)
-    d.poly('Lacivert', mir(W, cx), part='kanat_2', line=True, name=nm[1], lift=-0.02)
+    d.poly('Lacivert', W, part='kanat_1', line=True, name=nm[0], lift=DK)
+    d.poly('Lacivert', mir(W, cx), part='kanat_2', line=True, name=nm[1], lift=DK)
     for (a, b, w) in sheen:
         d.capsule('Mor', a, b, w, clip=nm[0], tone=2, part='kanat_1')
         d.capsule('Mor', (2 * cx - a[0], a[1]), (2 * cx - b[0], b[1]), w, clip=nm[1], tone=2, part='kanat_2')
 
 
 def gaga(d, cx, y, w, h):
-    """Buyuk kuzgun gagasi: genis tabanli, kancali uc. y ust kenar."""
-    d.poly('Mor', [(cx - w, y), (cx + w, y), (cx + w * 0.9, y + h * 0.5), (cx + w * 0.4, y + h * 0.85), (cx, y + h), (cx - w * 0.4, y + h * 0.85), (cx - w * 0.9, y + h * 0.5)],
-           line=True, name='gaga', lift=0.22, noshadow=True)
-    d.capsule('Mor', (cx - w * 0.8, y + h * 0.52), (cx + w * 0.8, y + h * 0.52), 0.55, clip='gaga', shift=1)
-    d.capsule('Mor', (cx, y + 0.5), (cx, y + h * 0.4), 0.9, clip='gaga', shift=-1)
+    """Iri, koyu kuzgun gagasi: genis tabanli, hafif kancali uc. Ustunde ince acik vurgu."""
+    d.poly('Lacivert', [(cx - w, y), (cx + w, y), (cx + w * 0.9, y + h * 0.5), (cx + w * 0.4, y + h * 0.85), (cx, y + h), (cx - w * 0.4, y + h * 0.85), (cx - w * 0.9, y + h * 0.5)],
+           line=True, name='gaga', lift=0.1, noshadow=True)
+    d.capsule('Lacivert', (cx - w * 0.8, y + h * 0.52), (cx + w * 0.8, y + h * 0.52), 0.55, clip='gaga', shift=1)
+    d.capsule('Lacivert', (cx - w * 0.45, y + 1.2), (cx - w * 0.1, y + h * 0.4), 1.0, clip='gaga', tone=1)
+
+
+def tutam(d, cx, top, n=3):
+    """Bas ustunde 2-3 tuylu kucuk tutam (tepe)."""
+    xs = (-2.8, 0, 2.8) if n == 3 else (-2, 2)
+    for k, x in enumerate(xs):
+        h = 4 if k == 1 and n == 3 else 3
+        d.capsule('Lacivert', (cx + x * 0.7, top + 2), (cx + x * 1.0, top - h), (2.4, 1.6), part='tepe', line=True, lift=DK + 0.25)
+
+
+def tepe_parilti(d, cx, top):
+    d.pix((cx - 1, top + 1), ['.oo'], {'o': 'Mor-2'}, keep=True)
+
+
+def tuyyaka(d, pts, r):
+    """Gogus/bogaz sivri tuy yakasi: asagi sivri ucgen tuyler, govdeye katilir."""
+    for x, y in pts:
+        d.poly('Lacivert', [(x - r, y - 1), (x + r, y - 1), (x + 0.3, y + r * 1.9)], join='kafa')
+
+
+def govde_ac(d, nm='kafa', yuz=None):
+    """Sol ustte yumusak isik lekesi + ince Mor yansima serit(ler) + gozlerin cevresinde bir ton acik yuz alani."""
+    pass
 
 
 def dugme(d, x, y, r=2.5):
@@ -39,16 +63,18 @@ def zincir(d, pts, w=0.9):
 def bebek(d):
     d.flyer = True
     cx = 24
-    W = [(14, 37), (9, 30), (5, 25), (4, 32), (6, 38), (12, 42)]
-    kanat(d, cx, W, [((12, 35), (7, 28), 1.0)])
-    # tuy kuyruk ucu
-    d.ellipse('Lacivert', (cx, 34.5), (12.8, 11), name='kafa', cast=1, lift=0.0)
-    d.capsule('Mor', (16.5, 30), (20.5, 26.5), 0.9, clip='kafa', tone=2)
-    d.capsule('Mor', (29, 27), (32, 30), 0.9, clip='kafa', tone=2)
+    W = [(14, 37), (9, 30), (6, 25), (4.5, 31), (7, 33), (4.5, 37), (8, 40), (12, 42)]
+    kanat(d, cx, W, [((12, 35), (8, 28), 1.0)])
+    d.ellipse('Lacivert', (cx, 34.5), (12.8, 11), name='kafa', cast=1, lift=DK)
+    d.ellipse('Lacivert', (cx - 5, 29), (4.5, 3), clip='kafa', shift=-1)
+    d.capsule('Mor', (16.5, 30), (20, 26.8), 0.9, clip='kafa', tone=2)
+    d.capsule('Mor', (29, 27), (31.5, 29.5), 0.9, clip='kafa', tone=2)
+    d.ellipse('Lacivert', (cx, 33), (9.5, 4.8), clip='kafa', tone=3, shade='flat')
     for x, y in ((15, 40), (33, 40), (24, 45), (19, 44.5), (29, 44.5)):
         d.circle('Lacivert', (x, y), 3, join='kafa')
+    tuyyaka(d, [(16, 43), (20, 45.5), (28, 45.5), (32, 43)], 2.3)
+    tutam(d, cx, 23.5)
     gaga(d, cx, 36.5, 4.0, 8.5)
-    d.pix((22, 44), ['.oo.', 'ooxo', 'oxxo', '.oo.'], {'o': 'Sari-3', 'x': 'Sari-1'}) if False else None
     dugme(d, cx, 46.5, 2.8)
     d.pix((cx - 2, 45), ['oo'], {'o': 'Parilti'})
     d.set_face(cx, 30, gap=5, mouth=False)
@@ -57,16 +83,19 @@ def bebek(d):
 def genc(d):
     d.flyer = True
     cx = 28
-    W = [(16, 41), (10, 32), (5, 24), (3, 31), (4, 39), (8, 45), (14, 46)]
-    kanat(d, cx, W, [((13, 38), (7, 27), 1.2), ((10, 42), (5, 35), 1.0)])
-    d.ellipse('Lacivert', (cx, 37), (14.5, 13), name='kafa', cast=1, lift=0.0)
-    d.capsule('Mor', (17.5, 31), (22.5, 26.5), 1.0, clip='kafa', tone=2)
-    d.capsule('Mor', (34, 30), (38, 35), 1.0, clip='kafa', tone=2)
+    W = [(16, 41), (10, 32), (6, 24), (4.5, 30), (8, 33), (4, 38), (8, 42), (5, 46), (14, 47)]
+    kanat(d, cx, W, [((13, 38), (8, 27), 1.2), ((10, 43), (6, 36), 1.0)])
+    d.ellipse('Lacivert', (cx, 37), (14.5, 13), name='kafa', cast=1, lift=DK)
+    d.ellipse('Lacivert', (cx - 6, 31), (5, 3.2), clip='kafa', shift=-1)
+    d.capsule('Mor', (17.5, 31), (22, 27), 1.0, clip='kafa', tone=2)
+    d.capsule('Mor', (34, 30), (37, 34), 1.0, clip='kafa', tone=2)
     d.capsule('Mor', (21, 47), (24, 50), 1.0, clip='kafa', tone=2)
+    d.ellipse('Lacivert', (cx, 36), (10.5, 5.2), clip='kafa', tone=3, shade='flat')
     for x, y in ((15.5, 43), (40.5, 43), (28, 48.5), (22, 48), (34, 48)):
         d.circle('Lacivert', (x, y), 3.4, join='kafa')
+    tuyyaka(d, [(16.5, 46), (21, 49.5), (26, 50.5), (30, 50.5), (35, 49.5), (39.5, 46)], 2.6)
+    tutam(d, cx, 24)
     gaga(d, cx, 37, 4.6, 9.5)
-    # kolye: dugme boynunda
     zincir(d, [(15.5, 42), (19, 48), (28, 51), (37, 48), (40.5, 42)])
     dugme(d, cx, 52, 2.8)
     d.pix((cx - 1.5, 50.5), ['oo'], {'o': 'Parilti'})
@@ -76,22 +105,25 @@ def genc(d):
 def usta(d):
     d.flyer = True
     cx = 32
-    # yelpaze kuyruk: govdenin arkasindan acilan tuyler
-    d.ellipse('Lacivert', (cx, 56), (15, 7.5), part='kuyruk', name='kyr', line=True, lift=-0.06)
-    for i, x in enumerate((-12.5, -6.3, 0, 6.3, 12.5)):
-        y = 62.5 - abs(x) * 0.22
-        d.circle('Lacivert', (cx + x, y), 3.3, part='kuyruk', join='kyr')
-        d.capsule('Mor', (cx + x * 0.3, 55), (cx + x, y - 0.5), 0.8, part='kuyruk', clip='kyr', tone=2)
-    W = [(19, 45), (12, 34), (6, 24), (3, 17), (2, 28), (2, 40), (6, 48), (14, 50)]
-    kanat(d, cx, W, [((15, 41), (7, 24), 1.3), ((11, 45), (4, 33), 1.2), ((7, 43), (5, 38), 1.0)])
-    d.ellipse('Lacivert', (cx, 41), (16.5, 16.2), name='kafa', cast=1, lift=0.0)
-    d.capsule('Mor', (18, 33), (24.5, 27), 1.1, clip='kafa', tone=2)
-    d.capsule('Mor', (42, 30), (46, 36), 1.1, clip='kafa', tone=2)
+    # yelpaze kuyruk: sivri uclu tuyler
+    d.ellipse('Lacivert', (cx, 55), (13, 6), part='kuyruk', name='kyr', line=True, lift=DK)
+    for x in (-13, -6.5, 0, 6.5, 13):
+        y = 63.5 - abs(x) * 0.28
+        d.poly('Lacivert', [(cx + x * 0.35 - 3, 54), (cx + x * 0.35 + 3, 54), (cx + x + 2.4, y - 2), (cx + x, y + 1.5), (cx + x - 2.4, y - 2)], part='kuyruk', join='kyr')
+        d.capsule('Mor', (cx + x * 0.3, 56), (cx + x * 0.97, y - 1), 0.8, part='kuyruk', clip='kyr', tone=2)
+    W = [(19, 45), (12, 34), (7, 24), (4.5, 17), (4, 25), (1.5, 30), (3.5, 36), (1.5, 42), (5, 47), (9, 51), (14, 50)]
+    kanat(d, cx, W, [((15, 41), (8, 24), 1.3), ((11, 45), (5, 33), 1.2), ((8, 46), (5, 40), 1.0)])
+    d.ellipse('Lacivert', (cx, 42), (17, 18.5), name='kafa', cast=1, lift=DK)
+    d.ellipse('Lacivert', (cx - 7, 33), (6, 3.6), clip='kafa', shift=-1)
+    d.capsule('Mor', (18, 33), (24, 27.5), 1.1, clip='kafa', tone=2)
+    d.capsule('Mor', (42, 31), (45, 36), 1.1, clip='kafa', tone=2)
     d.capsule('Mor', (21, 49), (25, 52), 1.1, clip='kafa', tone=2)
+    d.ellipse('Lacivert', (cx, 40.5), (12, 6.2), clip='kafa', tone=3, shade='flat')
     for x, y in ((17, 46), (47, 46), (32, 56), (24, 55), (40, 55)):
         d.circle('Lacivert', (x, y), 3.8, join='kafa')
+    tuyyaka(d, [(18, 49), (22, 53), (27, 56), (32, 57), (37, 56), (42, 53), (46, 49)], 3.0)
+    tutam(d, cx, 23.5)
     gaga(d, cx, 39.5, 5.2, 10.5)
-    # kolye: dugme, anahtar, yuzuk
     zincir(d, [(17, 46), (21, 51), (32, 54.5), (43, 51), (47, 46)], 1.0)
     dugme(d, 22.5, 54, 2.9)
     d.pix((21, 52), ['oo'], {'o': 'Parilti'})

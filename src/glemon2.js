@@ -26,6 +26,51 @@ const pending = new Map();          // doku anahtari -> Promise
 const lastUse = new Map();          // doku anahtari -> son kullanim zamani (LRU)
 let GAME = null;
 
+// Test kopyasi (claude.ai artifact) en cok ~500 dosya tutabilir; bu yuzden derlemede her turun resimleri tek bir
+// assets/glemons/<tur>.pak.json dosyasinda (base64) gelir, ikonlar da tek ikonlar.json dosyasinda. Gelistirmede tek tek dosyalar.
+const PAK = (typeof __DEV__ !== 'undefined' && !__DEV__) || (typeof __PAK__ !== 'undefined' && __PAK__);   // __PAK__: yalniz test derlemesi
+const paks = new Map();             // tur -> Promise<{dosya: base64}>
+const blobs = new Map();            // 'tur/dosya' -> Promise<url>
+function pakOf(key) {
+  if (!paks.has(key)) {
+    paks.set(key, fetch(`assets/glemons/${key}.pak.json`).then((r) => (r.ok ? r.json() : {})).catch(() => ({})));
+  }
+  return paks.get(key);
+}
+function b64Blob(b64) {
+  const bin = atob(b64);
+  const a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return URL.createObjectURL(new Blob([a], { type: 'image/png' }));
+}
+// Bir tur dosyasinin adresi (gelistirmede yol, derlemede paketten blob adresi)
+export function glemUrl(key, file) {
+  const path = `assets/glemons/${key}/${file}`;
+  if (!PAK) return Promise.resolve(path);
+  const id = `${key}/${file}`;
+  if (!blobs.has(id)) blobs.set(id, pakOf(key).then((p) => (p[file] ? b64Blob(p[file]) : path)));
+  return blobs.get(id);
+}
+let ICONS = null;                   // 'tur/asama' -> data adresi (derlemede)
+let iconsP = null;
+export function loadGlemIcons() {
+  if (!PAK) return Promise.resolve();
+  if (!iconsP) {
+    iconsP = fetch('assets/glemons/ikonlar.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})).then((m) => {
+      ICONS = {};
+      for (const [k, b] of Object.entries(m)) ICONS[k] = `data:image/png;base64,${b}`;
+    });
+  }
+  return iconsP;
+}
+// Arayuz ikonu: hazirsa hemen, degilse yuklenince cb(url) cagrilir
+export function glemIcon(key, stage, cb) {
+  const path = `assets/glemons/${key}/${stage}_ikon.png`;
+  if (!PAK) { cb(path); return; }
+  if (ICONS) { cb(ICONS[`${key}/${stage}`] || path); return; }
+  loadGlemIcons().then(() => cb(ICONS[`${key}/${stage}`] || path));
+}
+
 export function preloadV2(scene, gmeta) {
   GMETA = gmeta;
   GAME = scene.game;
@@ -89,9 +134,10 @@ export function ensureGlemon(scene, key, stage, shiny) {
   const tex = `gs_${key}_${stage}${shiny ? '_p' : ''}`;
   lastUse.set(tex, Date.now());
   if (glemReady(scene, key, stage, shiny) && scene.textures.exists(`gy_${key}_${stage}`)) return Promise.resolve(true);
+  const sheet = (tk, file, fw, fh) => glemUrl(key, file).then((u) => (scene.sys && scene.load ? loadSheet(scene, tk, u, fw, fh) : false));
   const jobs = [
-    loadSheet(scene, tex, `assets/glemons/${key}/${stage}${shiny ? '_p' : ''}.png`, st.w, st.h),
-    loadSheet(scene, `gy_${key}_${stage}`, `assets/glemons/${key}/${stage}_yuz.png`, st.face.w, st.face.h),
+    sheet(tex, `${stage}${shiny ? '_p' : ''}.png`, st.w, st.h),
+    sheet(`gy_${key}_${stage}`, `${stage}_yuz.png`, st.face.w, st.face.h),
   ];
   return Promise.all(jobs).then((r) => {
     if (!scene.sys || !r[0]) return false;

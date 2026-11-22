@@ -4,6 +4,13 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 1.0.27 (Glemon yenileme: hepsi yeni çizimde)
+
+- 78 Glemon'un tamamı (Bebek, Genç, Usta) ve 7 patron, Plan v2 kurallarıyla yeniden çizildi: aynı palet, aynı göz kalıbı, Kütükçük ile aynı 11 animasyon ve yüz ifadeleri.
+- Patronlar 96x80 ve faz animasyonuyla 2. aşama çizimine geçer; Kadim Bonk 3 aşamalı.
+- Taşınan yavrular (tepe parçası) çağırma animasyonunda fırlatılır.
+- Araçlar: tools/glemon_draw.py (kodla çizim), tools/cizim/<anahtar>.py (her türün çizimi), tools/test/boss_preview.js (patron faz testi).
+
 ## Sürüm 1.0.26 (Glemon yenileme denemesi: Kütükçük)
 
 - Kütükçük, Eren'in çizimleriyle yeni Bonk stilinde: 3 aşama (Bebek, Genç, Usta), ortak palet, ortak göz kalıbı.

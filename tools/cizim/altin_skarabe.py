@@ -1,4 +1,4 @@
-# Altin Skarabe (Kum, epik). Tarif: TARIFLER.md. Gunes topunu hazinesi gibi tasiyan altin bocek.
+# Altin Skarabe (Kum, epik). Tarif: TARIFLER.md. Gunes topunu hazinesi gibi tasiyan altin bocek: kubbe kabuk, koyu bas/pronotum, ortada dikis (iki kanat kilifi), her yanda 3 bacak, tombul uclu antenler.
 # Renk: Sari (govde, top), Lacivert (cizgi, boynuz), Cam (turkuaz tas). Parlak: Sari -> Tas.
 PARLA = 'Sari'
 
@@ -12,55 +12,86 @@ def top(d, cx, cy, r, part='esya'):
 
 
 def anten(d, cx, y, dx, part='tepe'):
-    d.capsule('Lacivert', (cx - dx, y), (cx - dx - 2, y - 5), (1.6, 1.2), part=part, name='a1', line=False)
-    d.capsule('Lacivert', (cx + dx, y), (cx + dx + 2, y - 5), (1.6, 1.2), part=part, name='a2', line=False)
-    d.circle('Lacivert', (cx - dx - 2, y - 5.5), 1.5, part=part, lift=0.1)
-    d.circle('Lacivert', (cx + dx + 2, y - 5.5), 1.5, part=part, lift=0.1)
+    """Kisa, ucu yuvarlak topuzlu antenler (y = kafa ustu)."""
+    for sg in (-1, 1):
+        d.capsule('Lacivert', (cx + sg * dx, y + 1), (cx + sg * (dx + 1.6), y - 3), (2.2, 1.8), part=part, line=False, lift=0.05)
+        d.circle('Lacivert', (cx + sg * (dx + 1.8), y - 4), 1.9, part=part, lift=0.1)
+
+
+def bacak(d, x, y, sg, part='kol_1', w=3.0, L=2.0):
+    """Yanlardan gorunen kisa, koyu, tombul bacak."""
+    d.capsule('Lacivert', (x, y), (x + sg * L, y + 1.2), w, part=part, line=True, lift=0.0)
+
+
+def govde(d, cx, cy, rx, ry, pron_ry, pron_dy, seam_y0, seam_y1, hl):
+    """Kubbe kabuk + koyu pronotum bandi + ortada dikis + iki kanat kilifinin kendi sol-ust isigi."""
+    d.ellipse('Sari', (cx, cy), (rx, ry), name='g', cast=1, lift=0.0)
+    for sg, (hx, hy, hr) in ((-1, hl[0]), (1, hl[1])):
+        d.ellipse('Sari', (hx, hy), (hr, hr * 0.8), clip='g', shift=-1)
+    d.capsule('Lacivert', (cx, seam_y0), (cx, seam_y1), 1.1, clip='g', tone=3)
+    # koyu bas/pronotum bandi (yuz burada, duz zemin)
+    d.ellipse('Sari', (cx, cy - pron_dy), (rx - 2.6, pron_ry), name='pr', line=True, lift=-0.55, noshadow=True)
+    # pronotum ile kanat kiliflari arasinda net koyu cizgi
+    by = cy - pron_dy + pron_ry
+    d.curve('Sari', [(cx - (rx - 4.2), by - pron_ry * 0.55), (cx - (rx - 8), by - 0.8), (cx, by + 0.2), (cx + (rx - 8), by - 0.8), (cx + (rx - 4.2), by - pron_ry * 0.55)], 1.0, clip='g', tone=4)
 
 
 def bebek(d):
-    d.ellipse('Sari', (24, 33), (13.5, 10), name='g', cast=1, lift=-0.08)
-    d.ellipse('Sari', (24, 24.5), (6, 2.4), clip='g', shift=-1)
-    anten(d, 24, 24, 4)
-    # on ayaklariyla toba sarilmis
-    top(d, 24, 44.5, 6, 'kol_1')
-    d.capsule('Sari', (12, 39), (18, 46), 3.8, part='kol_1', line=True)
-    d.capsule('Sari', (36, 39), (30, 46), 3.8, part='kol_2', line=True)
-    d.set_face(24, 31, gap=5)
+    cx = 24
+    # arka ve orta bacaklar (kabugun arkasinda)
+    for yy in (36.5, 42.5):
+        bacak(d, 11.5, yy, -1, 'kol_1')
+        bacak(d, 36.5, yy, 1, 'kol_2')
+    govde(d, cx, 34.5, 14, 10.5, 6.4, 3.8, 36.5, 44.5, ((19, 41.5, 3.2), (29.5, 41.5, 3.2)))
+    d.ellipse('Sari', (cx, 30.5), (8, 3.4), clip='pr', shift=-1)
+    anten(d, cx, 25.5, 4.5)
+    # ust bacaklarla bilye kadar topa sarilmis
+    top(d, 24, 45.5, 5.6, 'kol_1')
+    d.capsule('Lacivert', (13, 40.5), (19, 46.5), 3.2, part='kol_1', line=True)
+    d.capsule('Lacivert', (35, 40.5), (29, 46.5), 3.2, part='kol_2', line=True)
+    d.set_face(24, 30.5, gap=5)
 
 
 def genc(d):
-    d.ellipse('Sari', (28, 40), (15.5, 14.2), name='g', cast=1, lift=-0.08)
-    # kabukta lacivert cizgiler (yuz alaninin disinda, yanlarda)
-    d.curve('Lacivert', [(17, 44), (16, 49), (19, 54)], 1.1, clip='g', shift=0)
-    d.curve('Lacivert', [(39, 44), (40, 49), (37, 54)], 1.1, clip='g', shift=0)
-    d.capsule('Lacivert', (28, 50), (28, 55), 1.1, clip='g', shift=0)
-    d.curve('Lacivert', [(12, 40), (11.5, 46), (14, 50)], 1.0, clip='g', shift=0)
-    d.curve('Lacivert', [(44, 40), (44.5, 46), (42, 50)], 1.0, clip='g', shift=0)
-    anten(d, 28, 28, 4)
-    # top basin ustunde, kollar kaldirmis
-    d.capsule('Sari', (13, 40), (19, 25), 3.8, part='kol_1', line=True)
-    d.capsule('Sari', (43, 40), (37, 25), 3.8, part='kol_2', line=True)
-    top(d, 28, 20, 8)
-    d.set_face(28, 37, gap=5)
+    cx = 28
+    for yy in (45.5, 52):
+        bacak(d, 12.5, yy, -1, 'kol_1', w=3.4)
+        bacak(d, 43.5, yy, 1, 'kol_2', w=3.4)
+    govde(d, cx, 42.5, 17.5, 15.2, 8, 5.4, 44, 57, ((22.5, 49, 3.8), (34, 49, 3.8)))
+    d.ellipse('Sari', (cx, 36), (9.5, 4), clip='pr', shift=-1)
+    # kabukta lacivert cizgiler (her kilifta iki egri serit)
+    for sg in (-1, 1):
+        d.curve('Lacivert', [(cx + sg * 4, 47), (cx + sg * 7.5, 50), (cx + sg * 8.5, 54)], 1.0, clip='g', tone=3)
+        d.curve('Lacivert', [(cx + sg * 10, 46), (cx + sg * 12, 50), (cx + sg * 11.5, 53)], 1.0, clip='g', tone=3)
+    anten(d, cx, 28, 5.5)
+    # on bacaklar topu basin ustune kaldirmis
+    d.capsule('Lacivert', (13.5, 38), (20, 30), 3.4, part='kol_1', line=True)
+    d.capsule('Lacivert', (42.5, 38), (36, 30), 3.4, part='kol_2', line=True)
+    top(d, 28, 21, 8)
+    d.set_face(28, 36.5, gap=5)
 
 
 def usta(d):
-    d.ellipse('Sari', (32, 47), (18.5, 20), name='g', cast=1, lift=-0.08)
+    cx = 32
+    for yy in (52, 58.5, 65):
+        bacak(d, 12, yy, -1, 'kol_1', w=3.8, L=2.0)
+        bacak(d, 52, yy, 1, 'kol_2', w=3.8, L=2.0)
+    govde(d, cx, 47.5, 21.5, 19.5, 11, 8.2, 52, 66.5, ((24, 56, 5), (40, 56, 5)))
+    d.ellipse('Sari', (cx, 33), (11, 4.2), clip='pr', shift=-1)
     # kabuk cizgileri
-    d.curve('Lacivert', [(15, 42), (13.5, 52), (17, 62)], 1.2, clip='g', shift=0)
-    d.curve('Lacivert', [(49, 42), (50.5, 52), (47, 62)], 1.2, clip='g', shift=0)
-    d.capsule('Lacivert', (32, 58), (32, 66), 1.1, clip='g', shift=0)
-    d.curve('Lacivert', [(20, 60), (32, 63), (44, 60)], 1.0, clip='g', shift=0)
-    d.capsule('Sari', (17, 55), (13, 63), 4.4, part='kol_1', line=True)
-    d.capsule('Sari', (47, 55), (51, 63), 4.4, part='kol_2', line=True)
+    for sg in (-1, 1):
+        for a, b, c in (((4, 54), (8, 58), (9, 64)), ((10.5, 52), (13.5, 57), (13.5, 62))):
+            d.curve('Lacivert', [(cx + sg * a[0], a[1]), (cx + sg * b[0], b[1]), (cx + sg * c[0], c[1])], 1.2, clip='g', tone=3)
     # turkuaz tas
-    d.poly('Cam', [(32, 52), (36.5, 57), (32, 62), (27.5, 57)], part='govde', name='tas', line=True)
+    d.poly('Cam', [(32, 52.5), (36.5, 57.5), (32, 62.5), (27.5, 57.5)], part='govde', name='tas', line=True)
     d.pix((30, 55), ['o'], {'o': 'Parilti'}, part='govde')
-    # iki boynuz ve aralarinda gunes
-    d.curve('Lacivert', [(21, 30), (16, 21), (19, 12)], 3.6, part='tepe', name='b1', line=False, lift=0.05)
-    d.curve('Lacivert', [(43, 30), (48, 21), (45, 12)], 3.6, part='tepe', name='b2', line=False, lift=0.05)
-    top(d, 32, 17, 9.4, 'tepe')
+    # on bacaklar
+    d.capsule('Lacivert', (15, 51), (11.5, 57), 4.0, part='kol_1', line=True)
+    d.capsule('Lacivert', (49, 51), (52.5, 57), 4.0, part='kol_2', line=True)
+    # iki kisa boynuz ve aralarinda gunes
+    d.curve('Lacivert', [(22, 31), (17.5, 23), (20, 15)], 3.6, part='tepe', name='b1', line=False, lift=0.05)
+    d.curve('Lacivert', [(42, 31), (46.5, 23), (44, 15)], 3.6, part='tepe', name='b2', line=False, lift=0.05)
+    top(d, 32, 18, 8.6, 'tepe')
     d.set_face(32, 40, gap=6)
 
 
