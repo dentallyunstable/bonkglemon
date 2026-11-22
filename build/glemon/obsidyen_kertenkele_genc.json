@@ -7,27 +7,27 @@
  "kalip": "K",
  "boy": 38,
  "goz": {
-  "lx": 22,
-  "rx": 31,
-  "ey": 24
+  "lx": 21,
+  "rx": 30,
+  "ey": 26
  },
  "ten": "Komur",
  "yuz_kutusu": [
-  19,
-  23,
+  18,
+  25,
   19,
   9
  ],
- "govde_ust": 13,
+ "govde_ust": 19,
  "ayak": 52,
- "govde_gen": 32,
+ "govde_gen": 31,
  "aileler": [
   "Komur",
   "Krem",
   "Mor"
  ],
  "renk": 12,
- "tek_piksel_duzeltme": 76,
+ "tek_piksel_duzeltme": 37,
  "denetim": [],
  "agiz": true,
  "ucar": false,

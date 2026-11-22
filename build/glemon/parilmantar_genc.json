@@ -5,29 +5,30 @@
  "tuval": 56,
  "tuval_h": 56,
  "kalip": "K",
- "boy": 38,
+ "boy": 36,
  "goz": {
   "lx": 22,
   "rx": 31,
-  "ey": 32
+  "ey": 34
  },
- "ten": "Kar",
+ "ten": "Gok",
  "yuz_kutusu": [
   19,
-  31,
+  33,
   19,
   9
  ],
- "govde_ust": 20,
+ "govde_ust": 21,
  "ayak": 52,
  "govde_gen": 30,
  "aileler": [
   "Cam",
   "Gok",
-  "Kar"
+  "Kar",
+  "Komur"
  ],
- "renk": 15,
- "tek_piksel_duzeltme": 10,
+ "renk": 16,
+ "tek_piksel_duzeltme": 16,
  "denetim": [],
  "agiz": true,
  "ucar": false,

@@ -9,18 +9,18 @@
  "goz": {
   "lx": 24,
   "rx": 35,
-  "ey": 34
+  "ey": 33
  },
  "ten": "Sari",
  "yuz_kutusu": [
   21,
-  33,
+  32,
   22,
   10
  ],
- "govde_ust": 5,
+ "govde_ust": 25,
  "ayak": 60,
- "govde_gen": 38,
+ "govde_gen": 46,
  "aileler": [
   "Cam",
   "Krem",
@@ -29,12 +29,14 @@
   "Turuncu"
  ],
  "renk": 16,
- "tek_piksel_duzeltme": 27,
+ "tek_piksel_duzeltme": 51,
  "denetim": [
   "renk birlestirme: Cam-4>3, Lacivert-1>2, Turuncu-4>3, Cam-3>2"
  ],
  "agiz": true,
  "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "govde",
   "kol_1",

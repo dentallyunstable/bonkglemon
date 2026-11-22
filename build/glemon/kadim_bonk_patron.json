@@ -5,22 +5,22 @@
  "tuval": 96,
  "tuval_h": 80,
  "kalip": "B",
- "boy": 61,
+ "boy": 56,
  "goz": {
   "lx": 37,
   "rx": 52,
-  "ey": 32
+  "ey": 37
  },
  "ten": "Lacivert",
  "yuz_kutusu": [
   34,
-  31,
+  36,
   28,
   12
  ],
- "govde_ust": 32,
+ "govde_ust": 46,
  "ayak": 76,
- "govde_gen": 62,
+ "govde_gen": 56,
  "aileler": [
   "Komur",
   "Lacivert",
@@ -28,11 +28,9 @@
   "Pembe",
   "Sari"
  ],
- "renk": 17,
- "tek_piksel_duzeltme": 64,
- "denetim": [
-  "govde boyu 61 (kural 44-58)"
- ],
+ "renk": 18,
+ "tek_piksel_duzeltme": 58,
+ "denetim": [],
  "agiz": true,
  "ucar": false,
  "goz_renk": null,

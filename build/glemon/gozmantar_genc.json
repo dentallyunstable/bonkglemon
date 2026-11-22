@@ -4,19 +4,19 @@
  "kaynak": "cizim",
  "tuval": 56,
  "tuval_h": 56,
- "kalip": "O",
+ "kalip": "B",
  "boy": 36,
  "goz": {
-  "lx": 26,
-  "rx": 26,
+  "lx": 24,
+  "rx": 24,
   "ey": 37
  },
  "ten": "Mor",
  "yuz_kutusu": [
-  23,
+  21,
   36,
-  11,
-  10
+  13,
+  12
  ],
  "govde_ust": 21,
  "ayak": 52,

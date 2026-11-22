@@ -4,19 +4,19 @@
  "kaynak": "cizim",
  "tuval": 48,
  "tuval_h": 48,
- "kalip": "O",
+ "kalip": "B",
  "boy": 30,
  "goz": {
-  "lx": 22,
-  "rx": 22,
+  "lx": 20,
+  "rx": 20,
   "ey": 32
  },
  "ten": "Mor",
  "yuz_kutusu": [
-  19,
+  17,
   31,
-  11,
-  10
+  13,
+  12
  ],
  "govde_ust": 19,
  "ayak": 44,
@@ -26,7 +26,7 @@
   "Mor"
  ],
  "renk": 11,
- "tek_piksel_duzeltme": 4,
+ "tek_piksel_duzeltme": 2,
  "denetim": [],
  "agiz": true,
  "ucar": false,

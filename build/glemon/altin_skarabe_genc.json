@@ -5,22 +5,22 @@
  "tuval": 56,
  "tuval_h": 56,
  "kalip": "K",
- "boy": 33,
+ "boy": 32,
  "goz": {
   "lx": 22,
   "rx": 31,
-  "ey": 36
+  "ey": 31
  },
  "ten": "Sari",
  "yuz_kutusu": [
   19,
-  35,
+  30,
   19,
   9
  ],
- "govde_ust": 23,
+ "govde_ust": 26,
  "ayak": 52,
- "govde_gen": 32,
+ "govde_gen": 38,
  "aileler": [
   "Krem",
   "Lacivert",
@@ -28,10 +28,12 @@
   "Turuncu"
  ],
  "renk": 14,
- "tek_piksel_duzeltme": 22,
+ "tek_piksel_duzeltme": 52,
  "denetim": [],
  "agiz": true,
  "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "esya",
   "govde",

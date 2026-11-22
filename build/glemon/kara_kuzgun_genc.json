@@ -18,7 +18,7 @@
   19,
   9
  ],
- "govde_ust": 18,
+ "govde_ust": 19,
  "ayak": 44,
  "govde_gen": 34,
  "aileler": [
@@ -26,8 +26,8 @@
   "Mor",
   "Sari"
  ],
- "renk": 14,
- "tek_piksel_duzeltme": 33,
+ "renk": 12,
+ "tek_piksel_duzeltme": 29,
  "denetim": [],
  "agiz": false,
  "ucar": true,
@@ -36,6 +36,7 @@
  "parcalar": [
   "govde",
   "kanat_1",
-  "kanat_2"
+  "kanat_2",
+  "tepe"
  ]
 }

@@ -26,8 +26,8 @@
   "Mor",
   "Sari"
  ],
- "renk": 14,
- "tek_piksel_duzeltme": 23,
+ "renk": 10,
+ "tek_piksel_duzeltme": 20,
  "denetim": [],
  "agiz": false,
  "ucar": true,
@@ -36,6 +36,7 @@
  "parcalar": [
   "govde",
   "kanat_1",
-  "kanat_2"
+  "kanat_2",
+  "tepe"
  ]
 }
