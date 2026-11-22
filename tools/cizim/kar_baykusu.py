@@ -40,8 +40,7 @@ def bebek(d):
     ayak(d, cx, 46.5, 5)
     d.ellipse('Kar', (cx, 35.5), (13.5, 12.5), name='govde', cast=1, lift=0.14)
     # minik kulak tuyleri (tepe)
-    d.ellipse('Kar', (cx - 8, 22), (2.4, 4.4), rot=-22, part='tepe', line=True, lift=0.1)
-    d.ellipse('Kar', (cx + 8, 22), (2.4, 4.4), rot=22, part='tepe', line=True, lift=0.1)
+    tuy(d, cx, 8, 24.5, 5, 3.2)
     gaga(d, cx, 38, 1.8, 1.6)
     d.set_face(cx, 31, gap=5, mouth=False)
 
@@ -62,10 +61,16 @@ def genc(d):
     # karin lekeleri
     for x, y in ((-5, 52), (0, 51), (5, 52.5), (-2.5, 55), (3, 55.5)):
         d.capsule('Tas', (cx + x - 0.7, y), (cx + x + 0.7, y + 1.3), 0.9, clip='govde', tone=2)
-    d.ellipse('Kar', (cx - 8.5, 18.5), (2.6, 5.2), rot=-22, part='tepe', line=True, lift=0.1)
-    d.ellipse('Kar', (cx + 8.5, 18.5), (2.6, 5.2), rot=22, part='tepe', line=True, lift=0.1)
+    tuy(d, cx, 8.5, 22, 6, 3.6)
     gaga(d, cx, 35.5, 1.9, 1.7)
     d.set_face(cx, 28, gap=5, mouth=False)
+
+
+def tuy(d, cx, dx, y, h, w):
+    """Baykus kulak tuyu: kafanin ust kosesinden disa yatik sivri ucgen (tavsan kulagi gibi uzun/yuvarlak degil)."""
+    for sx in (-1, 1):
+        x = cx + sx * dx
+        d.poly('Kar', [(x - sx * w, y + 2), (x + sx * w * 0.6, y + 2), (x + sx * w * 0.9, y - h)], part='tepe', line=True, lift=0.1)
 
 
 def flake(d, x, y, part='tepe'):
@@ -93,10 +98,9 @@ def usta(d):
         d.circle('Kar', (cx + x, 51.5 + (0.9 if abs(x) in (4, 8.5) else 0)), 3.3, join='yaka')
     for x, y in ((-7, 57), (-1, 56.5), (6, 57.5), (-4, 60), (3, 60.5)):
         d.capsule('Tas', (cx + x - 0.7, y), (cx + x + 0.7, y + 1.3), 0.9, clip='govde', tone=2)
-    d.ellipse('Kar', (cx - 10, 21), (3.0, 5.2), rot=-22, part='tepe', line=True, lift=0.1)
-    d.ellipse('Kar', (cx + 10, 21), (3.0, 5.2), rot=22, part='tepe', line=True, lift=0.1)
-    flake(d, cx - 10, 16)
-    flake(d, cx + 10, 16)
+    tuy(d, cx, 10, 23.5, 7, 4.2)
+    flake(d, cx - 13, 15)
+    flake(d, cx + 13, 15)
     gaga(d, cx, 38.5, 2.2, 1.9)
     d.set_face(cx, 31, gap=6, mouth=False)
 

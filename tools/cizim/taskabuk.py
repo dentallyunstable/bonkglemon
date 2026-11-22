@@ -39,14 +39,21 @@ def usta(d):
     d.circle('Tas', (45, 29), 1.6, clip='kabuk', shift=1)
     # ustu acik oyuk, icinde buyuk mor kristaller
     d.ellipse('Mor', (32, 24.5), (13.5, 5.2), name='oyuk', line=True, lift=-0.1)
-    d.capsule('Mor', (23, 25), (21, 18), 4.0, name='k1', line=True)
-    d.capsule('Mor', (29, 25), (29, 13), 4.6, name='k2', line=True)
-    d.capsule('Mor', (36, 25), (38, 15), 4.2, name='k3', line=True)
-    d.capsule('Mor', (42, 25), (45, 19), 3.4, name='k4', line=True)
+    # sivri uclu, farkli boy ve acida kristal kumesi (tac gibi sira olmasin: solda buyuk kume, sagda tek kucuk)
+    def kr(n, bx, by, ang, L, w):
+        import math
+        t = math.radians(ang); sx, sy = math.sin(t), -math.cos(t); px, py = -sy, sx
+        tip = (bx + sx * L, by + sy * L); mid = (bx + sx * (L - w * 0.9), by + sy * (L - w * 0.9))
+        pts = [(bx - px * w / 2, by - py * w / 2), (mid[0] - px * w / 2, mid[1] - py * w / 2), tip,
+               (mid[0] + px * w / 2, mid[1] + py * w / 2), (bx + px * w / 2, by + py * w / 2)]
+        d.poly('Mor', pts, name=n, line=True)
+        d.poly('Mor', [(bx, by), (mid[0], mid[1]), tip, (mid[0] + px * w / 2, mid[1] + py * w / 2), (bx + px * w / 2, by + py * w / 2)], clip=n, shift=1)
+    kr('k1', 24, 26, -28, 9, 4.6)
+    kr('k2', 29, 26, -6, 15, 6.0)
+    kr('k3', 34, 26, 14, 10, 4.8)
+    kr('k4', 42, 26, 32, 6, 3.6)
     d.ellipse('Mor', (32, 26.5), (13, 3.4), name='oyuk2', line=True, lift=0.1)
-    d.rect('Mor', (28, 15, 28, 21), clip='k2', shift=-1)
-    d.rect('Mor', (21, 20, 21, 23), clip='k1', shift=-1)
-    d.rect('Mor', (37, 17, 37, 22), clip='k3', shift=-1)
+    d.pix((27, 16), ['oo'], {'o': 'Parilti'})
     # tas plakali ayaklar
     d.ellipse('Cam', (14, 46), (4.4, 3.2), part='kol_1', line=True)
     d.ellipse('Cam', (51, 46), (4.4, 3.2), part='kol_2', line=True)

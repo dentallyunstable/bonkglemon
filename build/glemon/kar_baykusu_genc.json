@@ -27,10 +27,12 @@
   "Tas"
  ],
  "renk": 12,
- "tek_piksel_duzeltme": 36,
+ "tek_piksel_duzeltme": 31,
  "denetim": [],
  "agiz": false,
  "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "govde",
   "kanat_1",

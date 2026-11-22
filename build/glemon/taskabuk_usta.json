@@ -18,7 +18,7 @@
   22,
   10
  ],
- "govde_ust": 30,
+ "govde_ust": 31,
  "ayak": 60,
  "govde_gen": 42,
  "aileler": [
@@ -31,6 +31,8 @@
  "denetim": [],
  "agiz": true,
  "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "govde",
   "kafa",

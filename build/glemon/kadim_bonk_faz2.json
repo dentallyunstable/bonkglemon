@@ -1,0 +1,47 @@
+{
+ "anahtar": "kadim_bonk",
+ "asama": "faz2",
+ "kaynak": "cizim",
+ "tuval": 96,
+ "tuval_h": 80,
+ "kalip": "B",
+ "boy": 66,
+ "goz": {
+  "lx": 37,
+  "rx": 52,
+  "ey": 31
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  34,
+  30,
+  28,
+  12
+ ],
+ "govde_ust": 24,
+ "ayak": 76,
+ "govde_gen": 62,
+ "aileler": [
+  "Komur",
+  "Lacivert",
+  "Mor",
+  "Pembe",
+  "Sari"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 112,
+ "denetim": [
+  "govde boyu 66 (kural 44-58)"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "kol_2",
+  "tepe"
+ ]
+}

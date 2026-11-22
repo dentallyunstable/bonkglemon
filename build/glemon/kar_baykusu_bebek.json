@@ -26,10 +26,12 @@
   "Sari"
  ],
  "renk": 10,
- "tek_piksel_duzeltme": 19,
+ "tek_piksel_duzeltme": 20,
  "denetim": [],
  "agiz": false,
  "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "govde",
   "kanat_1",

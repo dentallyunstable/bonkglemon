@@ -74,11 +74,11 @@ def genc(d):
 def usta(d):
     d.flyer = True
     cx = 32
-    # uc uzun kivrik kuyruk tuyu (arkada)
+    # uc uzun kivrik kuyruk tuyu (arkada, hepsi saga savrulur: iki yanda simetrik dursa ahtapot kolu gibi okunuyordu)
     for i, pts in enumerate((
-        [(38, 56), (47, 60), (55, 57), (58, 50), (55, 45)],
-        [(36, 52), (46, 51), (53, 44), (52, 35), (47, 32)],
-        [(26, 56), (17, 61), (9, 58), (6, 51), (9, 46)],
+        [(39, 50), (48, 53), (56, 51), (60, 45), (57, 40.5)],
+        [(38, 46), (47, 45), (54, 39), (55, 32), (51, 29)],
+        [(38, 54), (46, 58), (54, 58.5), (60, 56), (61, 52)],
     )):
         d.curve('Kirmizi', pts, (8.5, 3.2), part='kuyruk', line=True, name='kt%d' % i)
         d.curve('Turuncu', pts[1:], 2.4, part='kuyruk', clip='kt%d' % i, shift=-1)

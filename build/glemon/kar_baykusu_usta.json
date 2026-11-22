@@ -18,7 +18,7 @@
   22,
   10
  ],
- "govde_ust": 10,
+ "govde_ust": 11,
  "ayak": 52,
  "govde_gen": 36,
  "aileler": [
@@ -27,10 +27,12 @@
   "Tas"
  ],
  "renk": 12,
- "tek_piksel_duzeltme": 61,
+ "tek_piksel_duzeltme": 49,
  "denetim": [],
  "agiz": false,
  "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "govde",
   "kanat_1",
