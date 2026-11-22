@@ -23,7 +23,7 @@ import glemon_faces as GF
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SIZE = {'bebek': (48, 48), 'genc': (56, 56), 'usta': (64, 64), 'patron': (96, 80), 'faz2': (96, 80), 'faz3': (96, 80)}
 KALIP = {'bebek': 'K', 'genc': 'K', 'usta': 'O', 'patron': 'B', 'faz2': 'B', 'faz3': 'B'}
-BODY_RANGE = {'bebek': (26, 30, 30), 'genc': (32, 38, 38), 'usta': (42, 48, 48), 'patron': (50, 58, 72), 'faz2': (50, 58, 72), 'faz3': (50, 58, 72)}
+BODY_RANGE = {'bebek': (26, 30, 30), 'genc': (32, 38, 38), 'usta': (42, 48, 48), 'patron': (44, 58, 72), 'faz2': (44, 58, 72), 'faz3': (44, 58, 72)}
 PART_COL = {'govde': (90, 160, 230), 'tepe': (120, 220, 90), 'kol_1': (240, 150, 60), 'kol_2': (230, 90, 160),
             'kulak_1': (250, 230, 80), 'kulak_2': (200, 120, 250), 'kuyruk': (90, 230, 220), 'esya': (250, 90, 90),
             'kanat_1': (160, 100, 40), 'kanat_2': (40, 120, 120), 'kafa': (200, 200, 200)}
@@ -290,6 +290,8 @@ class Drawing:
             if s['mark']:
                 # desen: altindaki parcanin tonunu (shift ile kaydirilmis) kendi ailesinde kullanir
                 for y, x in zip(*np.where(m & alpha)):
+                    if fam[y, x] in ('Parilti', 'Murekkep') and s['fam'] != 'Parilti':
+                        continue    # parilti ve murekkep pikselleri desenle ezilmez
                     t = s['tone'] or max(1, min(4, tone[y, x] + s['shift']))
                     if s['fam'] in ('Parilti',):
                         c = BP.tone('Parilti'); f, t = 'Parilti', 0
@@ -476,6 +478,9 @@ def draw_stage(key, stage, mod):
         return o
     if ys.min() + oy < 1 or xs.min() + ox < 1 or xs.max() + ox > W - 2:
         d.notes.append('UYARI: cizim tuvale sigmiyor ya da kenara degiyor')
+    if stage in ('patron', 'faz2', 'faz3') and ys.min() + oy < 9:
+        # savasta 2 kat buyur ve ayaklar ekranin 149. satirinda: 9. satirin ustu ekrandan tasar
+        d.notes.append(f'UYARI: patron cok uzun, en ust piksel {int(ys.min() + oy)}. satirda (en az 9 olmali)')
     col = sh(col, 0); alpha = sh(alpha, False); part = sh(part, '')
     keep = {BP.tone('Parilti')}
     for s in d.shapes:

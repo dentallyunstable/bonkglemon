@@ -1,0 +1,41 @@
+{
+ "anahtar": "meteor_kaplumbaga",
+ "asama": "bebek",
+ "kaynak": "cizim",
+ "tuval": 48,
+ "tuval_h": 48,
+ "kalip": "K",
+ "boy": 30,
+ "goz": {
+  "lx": 12,
+  "rx": 21,
+  "ey": 29
+ },
+ "ten": "Gok",
+ "yuz_kutusu": [
+  9,
+  28,
+  19,
+  9
+ ],
+ "govde_ust": 20,
+ "ayak": 44,
+ "govde_gen": 30,
+ "aileler": [
+  "Gok",
+  "Tas"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 16,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kafa",
+  "kol_1",
+  "kol_2"
+ ]
+}

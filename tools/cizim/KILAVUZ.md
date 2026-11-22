@@ -148,9 +148,11 @@ STAGES = {'patron': patron, 'faz2': faz2}          # Kadim Bonk: + 'faz3'
 ```
 | Aşama | Tuval | Gövde boyu | En geniş | Göz kalıbı | Göz boşluğu |
 |---|---|---|---|---|---|
-| patron / faz2 / faz3 | 96x80 (en x boy) | 50-58 | 72 | B (7x8) | 7-10 (öneri 8) |
+| patron / faz2 / faz3 | 96x80 (en x boy) | 44-58 | 72 | B (7x8) | 7-10 (öneri 8) |
 
 - Ayaklar yine tabandan 4. satıra oturur; uçan patron (`d.flyer = True`) 10 piksel havada durur.
+- EN ÜST piksel en az 9. satırda olmalı (savaşta üstü ekrandan taşar; araç UYARI verir). Yani her şey dahil en çok ~67 satır boy.
+  Büyük taç/kanat/boynuz bu sınıra sığsın; gövde çok uzun olmasın, geniş ve tombul olsun.
 - 4 renk ailesi + Krem/Kar, en çok 20 renk. Yuvarlak, iri gözlü, pembe yanaklı: korkunç DEĞİL; büyük, ağır, heybetli, tatlı.
 - Taşıdığı yavru(lar) (tarifte "iki Kütükçük bebek", "omzunda iki Mıcır" gibi) çizimin üstünde görünür ve `part='tepe'`
   olmalı: "cagir" (çağırma) animasyonu `tepe` parçasını yukarı fırlatır. `tepe`'yi başka bir şey için KULLANMA

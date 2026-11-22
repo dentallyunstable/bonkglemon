@@ -1,0 +1,44 @@
+{
+ "anahtar": "ay_guvesi",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 41,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 24
+ },
+ "ten": "Kar",
+ "yuz_kutusu": [
+  21,
+  23,
+  22,
+  10
+ ],
+ "govde_ust": 18,
+ "ayak": 52,
+ "govde_gen": 40,
+ "aileler": [
+  "Kar",
+  "Mor",
+  "Sari"
+ ],
+ "renk": 15,
+ "tek_piksel_duzeltme": 76,
+ "denetim": [
+  "govde boyu 41 (kural 42-48)"
+ ],
+ "agiz": true,
+ "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kanat_1",
+  "kanat_2",
+  "tepe"
+ ]
+}

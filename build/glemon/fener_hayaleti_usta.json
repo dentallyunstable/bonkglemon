@@ -5,20 +5,20 @@
  "tuval": 64,
  "tuval_h": 64,
  "kalip": "O",
- "boy": 42,
+ "boy": 45,
  "goz": {
   "lx": 24,
   "rx": 35,
-  "ey": 25
+  "ey": 29
  },
  "ten": "Krem",
  "yuz_kutusu": [
   21,
-  24,
+  28,
   22,
   10
  ],
- "govde_ust": 19,
+ "govde_ust": 23,
  "ayak": 52,
  "govde_gen": 40,
  "aileler": [
@@ -28,10 +28,8 @@
   "Krem"
  ],
  "renk": 16,
- "tek_piksel_duzeltme": 41,
- "denetim": [
-  "UYARI: cizim tuvale sigmiyor ya da kenara degiyor"
- ],
+ "tek_piksel_duzeltme": 34,
+ "denetim": [],
  "agiz": true,
  "ucar": true,
  "goz_renk": null,

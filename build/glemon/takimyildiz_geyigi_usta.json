@@ -1,0 +1,44 @@
+{
+ "anahtar": "takimyildiz_geyigi",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 42,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 34
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  21,
+  33,
+  22,
+  10
+ ],
+ "govde_ust": 18,
+ "ayak": 60,
+ "govde_gen": 32,
+ "aileler": [
+  "Gok",
+  "Lacivert",
+  "Sari"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 19,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "tepe"
+ ]
+}

@@ -1,0 +1,46 @@
+{
+ "anahtar": "bosluk_kurdu",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 43,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 29
+ },
+ "ten": "Mor",
+ "yuz_kutusu": [
+  21,
+  28,
+  22,
+  10
+ ],
+ "govde_ust": 18,
+ "ayak": 60,
+ "govde_gen": 38,
+ "aileler": [
+  "Lacivert",
+  "Mor",
+  "Pembe",
+  "Sari"
+ ],
+ "renk": 10,
+ "tek_piksel_duzeltme": 35,
+ "denetim": [],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "kuyruk"
+ ]
+}

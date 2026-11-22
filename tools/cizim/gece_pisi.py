@@ -14,10 +14,10 @@ def kulaklar(d, cx, L, I):
     d.poly('Mor', mir(I, cx), part='kulak_2', clip='e2', tone=2)
 
 
-def hilal(d, x, y, r, rot_dx=1.6):
+def hilal(d, x, y, r):
     d.circle('Sari', (x, y), r, part='kuyruk', name='hl', line=True)
-    d.circle('Sari', (x - rot_dx, y - 0.4), r - 0.8, part='kuyruk', sub='hl')
-    d.pix((int(x + r - 2), int(y - r + 1)), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    d.circle('Sari', (x - 2.6, y), r - 0.6, part='kuyruk', sub='hl')
+    d.pix((int(x + r - 3), int(y - 2)), ['o', 'o'], {'o': 'Parilti'}, part='kuyruk')
 
 
 def yildiz(d, x, y):
@@ -26,50 +26,47 @@ def yildiz(d, x, y):
 
 def bebek(d):
     cx = 24
-    kulaklar(d, cx, [(11, 31), (9, 15), (13, 11), (23, 23), (22, 31)], [(12.5, 28), (11.5, 17), (14, 15.5), (20, 23), (20, 28)])
-    # kisa kuyruk
-    d.capsule('Lacivert', (35, 44), (41, 40), 4.4, part='kuyruk', line=True, lift=0.05)
-    d.ellipse('Lacivert', (24, 35.5), (12.5, 11), name='g', cast=1, lift=0.12)
-    d.ellipse('Lacivert', (24, 44), (7, 3.5), clip='g', shift=-1)
-    d.circle('Lacivert', (16, 46), 3.2, join='g')
-    d.circle('Lacivert', (32, 46), 3.2, join='g')
-    d.set_face(24, 33, gap=5)
+    kulaklar(d, cx, [(12, 28), (11, 13), (14, 10), (22, 21), (22, 28)], [(13.5, 25), (13, 15), (15, 13.5), (19, 20), (19, 25)])
+    d.capsule('Lacivert', (33, 44), (40, 41), 4.4, part='kuyruk', line=True, lift=0.05)
+    d.ellipse('Lacivert', (24, 39.5), (10.5, 7), name='g', cast=1, lift=0.12)
+    d.ellipse('Lacivert', (24, 30), (13, 10.5), name='h', lift=0.12, join='g')
+    d.ellipse('Lacivert', (24, 43), (5, 3), clip='g', shift=-1)
+    d.capsule('Lacivert', (19, 43), (19, 46), 4.4, part='kol_1', line=True, lift=0.15)
+    d.capsule('Lacivert', (29, 43), (29, 46), 4.4, part='kol_2', line=True, lift=0.15)
+    d.set_face(24, 30, gap=5)
 
 
 def genc(d):
     cx = 28
-    kulaklar(d, cx, [(13, 32), (10, 14), (14, 9), (26, 22), (25, 32)], [(14.5, 29), (12.5, 16), (15, 13.5), (23, 22), (23, 29)])
-    # uzun kuyruk, ucu hilal
-    d.curve('Lacivert', [(40, 49), (48, 49), (51, 42), (48, 36)], 4.6, part='kuyruk', line=True, lift=0.05)
-    hilal(d, 48, 33, 5.2)
-    d.ellipse('Lacivert', (28, 40), (14, 12.5), name='g', cast=1, lift=0.12)
-    d.ellipse('Lacivert', (28, 49), (8, 4), clip='g', shift=-1)
-    d.circle('Lacivert', (19, 51), 3.4, join='g')
-    d.circle('Lacivert', (37, 51), 3.4, join='g')
-    d.capsule('Lacivert', (17, 47), (19, 52), 4.6, part='kol_1', line=True, lift=0.1)
-    d.capsule('Lacivert', (39, 47), (37, 52), 4.6, part='kol_2', line=True, lift=0.1)
-    yildiz(d, 28, 29)
-    d.set_face(28, 36, gap=5)
+    kulaklar(d, cx, [(15, 28), (13, 10), (16, 6), (26, 18), (26, 28)], [(16.5, 25), (15.5, 12), (17, 10.5), (23, 18), (23, 25)])
+    d.curve('Lacivert', [(38, 52), (47, 53), (50, 46), (48, 40)], 4.6, part='kuyruk', line=True, lift=0.05)
+    hilal(d, 47, 34, 6)
+    d.ellipse('Lacivert', (28, 43.5), (11.5, 10), name='g', cast=1, lift=0.12)
+    d.ellipse('Lacivert', (28, 32), (14, 11.5), name='h', join='g', lift=0.12)
+    d.ellipse('Lacivert', (28, 49), (6, 4.5), clip='g', shift=-1)
+    d.capsule('Lacivert', (22, 49), (22, 53), 5, part='kol_1', line=True, lift=0.15)
+    d.capsule('Lacivert', (34, 49), (34, 53), 5, part='kol_2', line=True, lift=0.15)
+    yildiz(d, 28, 25)
+    d.set_face(28, 31, gap=5)
 
 
 def usta(d):
     cx = 32
-    kulaklar(d, cx, [(15, 34), (11, 12), (16, 6), (31, 22), (30, 34)], [(16.5, 31), (13.5, 14), (16.5, 11), (27, 22), (27, 31)])
-    d.curve('Lacivert', [(46, 57), (55, 56), (58, 48), (55, 40)], 5.6, part='kuyruk', line=True, lift=0.05)
-    hilal(d, 54, 36, 6.4)
-    d.ellipse('Lacivert', (32, 44), (17, 15.5), name='g', cast=1, lift=0.12)
-    d.ellipse('Lacivert', (32, 54), (10, 4.5), clip='g', shift=-1)
-    d.circle('Lacivert', (21, 57), 3.8, join='g')
-    d.circle('Lacivert', (43, 57), 3.8, join='g')
-    d.capsule('Lacivert', (20, 53), (22, 59), 5.2, part='kol_1', line=True, lift=0.1)
-    d.capsule('Lacivert', (44, 53), (42, 59), 5.2, part='kol_2', line=True, lift=0.1)
-    # altin can tasmasi
-    d.capsule('Sari', (22, 50.5), (42, 50.5), 2.2, part='esya', line=True)
-    d.circle('Sari', (32, 54), 2.8, part='esya', line=True, lift=0.1)
-    d.pix((31, 54), ['o'], {'o': 'Lacivert-3'}, part='esya')
-    for x, y in ((20, 38), (44, 40), (22, 28)):
+    kulaklar(d, cx, [(16, 31), (13, 8), (17, 3), (30, 17), (30, 31)], [(17.5, 28), (16, 10), (18, 8.5), (26, 17), (26, 28)])
+    d.curve('Lacivert', [(43, 58), (53, 59), (57, 50), (54, 44)], 5.6, part='kuyruk', line=True, lift=0.05)
+    hilal(d, 53, 38, 7.2)
+    d.ellipse('Lacivert', (32, 49.5), (13.5, 11.5), name='g', cast=1, lift=0.12)
+    d.ellipse('Lacivert', (32, 34), (16.5, 13.5), name='h', join='g', lift=0.12)
+    d.ellipse('Lacivert', (32, 56), (7, 4.5), clip='g', shift=-1)
+    d.capsule('Lacivert', (25, 55), (25, 59.5), 5.6, part='kol_1', line=True, lift=0.15)
+    d.capsule('Lacivert', (39, 55), (39, 59.5), 5.6, part='kol_2', line=True, lift=0.15)
+    # altin can tasmasi (yuzun altinda)
+    d.capsule('Sari', (24, 47.5), (40, 47.5), 2.0, part='esya', line=True)
+    d.circle('Sari', (32, 51), 2.6, part='esya', line=True, lift=0.1)
+    d.pix((31, 51), ['o'], {'o': 'Lacivert-3'}, part='esya')
+    for x, y in ((22, 53), (42, 53), (32, 26)):
         yildiz(d, x, y)
-    d.set_face(32, 40, gap=6)
+    d.set_face(32, 35, gap=6)
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}

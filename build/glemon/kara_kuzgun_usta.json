@@ -1,0 +1,42 @@
+{
+ "anahtar": "kara_kuzgun",
+ "asama": "usta",
+ "kaynak": "cizim",
+ "tuval": 64,
+ "tuval_h": 64,
+ "kalip": "O",
+ "boy": 43,
+ "goz": {
+  "lx": 24,
+  "rx": 35,
+  "ey": 20
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  21,
+  19,
+  22,
+  10
+ ],
+ "govde_ust": 16,
+ "ayak": 52,
+ "govde_gen": 40,
+ "aileler": [
+  "Lacivert",
+  "Mor",
+  "Sari"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 50,
+ "denetim": [],
+ "agiz": false,
+ "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kanat_1",
+  "kanat_2",
+  "kuyruk"
+ ]
+}

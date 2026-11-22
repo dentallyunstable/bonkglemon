@@ -53,23 +53,22 @@ def genc(d):
 def usta(d):
     d.flyer = True
     cx = 32
-    d.curve('Komur', [(cx - 4, 10), (cx - 4, 4), (cx + 4, 4), (cx + 4, 10)], 2.0, part='tepe', line=True)
-    d.poly('Komur', [(cx - 10, 17), (cx - 5, 9.5), (cx + 5, 9.5), (cx + 10, 17)], part='tepe', name='cati', line=True)
-    d.rect('Kirmizi', (cx - 9, 15.5, cx + 9, 18.5), rad=1, part='tepe', line=True)
-    d.ellipse('Krem', (cx, 23.5), (10.5, 5.5), name='ustkat', part='tepe', line=True, cast=1)
-    d.capsule('Komur', (cx - 10.5, 21), (cx - 10.5, 26), 1.2, clip='ustkat', tone=2, part='tepe')
-    d.capsule('Komur', (cx + 10.5, 21), (cx + 10.5, 26), 1.2, clip='ustkat', tone=2, part='tepe')
-    d.pix((cx - 2, 20), ALEV_S, C, part='tepe')
-    kapak(d, cx, 27, 31, 12, 'orta')
-    d.ellipse('Krem', (cx, 44), (19.5, 15), name='kagit', cast=1, lift=0.05)
-    kapak(d, cx, 56, 60.5, 12.5, 'alt')
-    kaburga(d, cx, 33, 54, 17, 1.5)
-    d.pix((cx - 3, 31.5), ALEV_B, C, part='govde')
+    d.poly('Komur', [(cx - 10, 19), (cx - 5, 14.5), (cx + 5, 14.5), (cx + 10, 19)], part='tepe', name='cati', line=True)
+    d.rect('Kirmizi', (cx - 9, 18, cx + 9, 21), rad=1, part='tepe', line=True)
+    d.ellipse('Krem', (cx, 26), (10.5, 5.2), name='ustkat', line=True, cast=1)
+    d.capsule('Komur', (cx - 10.5, 21), (cx - 10.5, 26), 1.2, clip='ustkat', tone=2)
+    d.capsule('Komur', (cx + 10.5, 21), (cx + 10.5, 26), 1.2, clip='ustkat', tone=2)
+    d.pix((cx - 2, 22.5), ALEV_S, C)
+    kapak(d, cx, 29, 33, 12, 'orta')
+    d.ellipse('Krem', (cx, 44), (19.5, 13.5), name='kagit', cast=1, lift=0.05)
+    kapak(d, cx, 54.5, 58.5, 12.5, 'alt')
+    kaburga(d, cx, 35, 53, 17, 1.5)
+    d.pix((cx - 3, 33), ALEV_B, C, part='govde')
     for s, p in ((-1, 'kol_1'), (1, 'kol_2')):
         d.capsule('Krem', (cx + s * 18.5, 42), (cx + s * 23, 50), (3.8, 3.4), part=p, line=True)
-    puskul(d, cx - 6, 60, 1.1)
-    puskul(d, cx + 6, 60, 1.1)
-    d.set_face(cx, 39, gap=6)
+    puskul(d, cx - 6, 58, 0.8)
+    puskul(d, cx + 6, 58, 0.8)
+    d.set_face(cx, 40, gap=6)
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}

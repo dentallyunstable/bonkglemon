@@ -1,0 +1,41 @@
+{
+ "anahtar": "murekkepcik",
+ "asama": "bebek",
+ "kaynak": "cizim",
+ "tuval": 48,
+ "tuval_h": 48,
+ "kalip": "K",
+ "boy": 31,
+ "goz": {
+  "lx": 18,
+  "rx": 27,
+  "ey": 23
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  15,
+  22,
+  19,
+  9
+ ],
+ "govde_ust": 20,
+ "ayak": 44,
+ "govde_gen": 30,
+ "aileler": [
+  "Kar",
+  "Lacivert",
+  "Tas"
+ ],
+ "renk": 13,
+ "tek_piksel_duzeltme": 2,
+ "denetim": [
+  "govde boyu 31 (kural 26-30)"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde"
+ ]
+}

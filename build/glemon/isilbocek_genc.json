@@ -1,0 +1,47 @@
+{
+ "anahtar": "isilbocek",
+ "asama": "genc",
+ "kaynak": "cizim",
+ "tuval": 56,
+ "tuval_h": 56,
+ "kalip": "K",
+ "boy": 36,
+ "goz": {
+  "lx": 22,
+  "rx": 31,
+  "ey": 32
+ },
+ "ten": "Krem",
+ "yuz_kutusu": [
+  19,
+  31,
+  19,
+  9
+ ],
+ "govde_ust": 25,
+ "ayak": 52,
+ "govde_gen": 32,
+ "aileler": [
+  "Cimen",
+  "Komur",
+  "Krem",
+  "Sari"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 32,
+ "denetim": [
+  "renk birlestirme: Sari-4>3, Cimen-3>2"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kanat_1",
+  "kol_1",
+  "kol_2",
+  "kuyruk",
+  "tepe"
+ ]
+}
