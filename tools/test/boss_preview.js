@@ -42,6 +42,18 @@ const FLOOR = +(process.argv[4] || 10);
   for (let i = 0; i < 6; i++) { await p.waitForTimeout(220); await p.screenshot({ path: `${OUT}/2_faz_${i}.png` }); }
   await p.waitForTimeout(2000);
   await p.screenshot({ path: `${OUT}/3_faz2.png` });
+  // 3 asamali patron (Kadim Bonk): canini tekrar esigin altina indir, faz3'u de cek
+  const more = await p.evaluate(() => {
+    const b = window.__BG.battle; const e = b.enemies.find((x) => x.data.boss);
+    const n = b.w.gmeta[e.key] ? b.w.gmeta[e.key].stages.length : 0;
+    if (e.ph + 1 >= n) return false;
+    e.hp = Math.round(e.maxHp * 0.15); b.checkPhase(e); return true;
+  });
+  if (more) {
+    for (let i = 0; i < 6; i++) { await p.waitForTimeout(220); await p.screenshot({ path: `${OUT}/4_faz_${i}.png` }); }
+    await p.waitForTimeout(2000);
+    await p.screenshot({ path: `${OUT}/5_faz3.png` });
+  }
   const info = await p.evaluate(() => {
     const b = window.__BG.battle; const e = b.enemies.find((x) => x.data.boss);
     return { ph: e.ph, stage: e.stage, tex: e.sprite.texture.key, anim: e.sprite.anims.currentAnim && e.sprite.anims.currentAnim.key };

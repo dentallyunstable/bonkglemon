@@ -9,14 +9,14 @@ def benek(d, x, y, r, name):
 
 
 def bebek(d):
-    d.ellipse('Krem', (24, 37), (9.5, 6.8), name='sap', cast=1, lift=0.05)
+    d.ellipse('Krem', (24, 37.5), (10, 7.5), name='sap', cast=1, lift=0.05)
     d.circle('Krem', (18.5, 42.5), 2.8, join='sap')
     d.circle('Krem', (29.5, 42.5), 2.8, join='sap')
     d.ellipse('Mor', (24, 25.5), (11.8, 8.5), name='cap', cast=1, inbox=(0, 0, 48, 30), lift=0.08)
     d.ellipse('Mor', (24, 29.5), (13, 1.6), join='cap')
     d.ellipse('Mor', (19.5, 20), (3.2, 2), clip='cap', shift=-1)
     d.ellipse('Mor', (29.5, 24), (2, 1.4), clip='cap', shift=-1)
-    d.set_face(24, 32, tek=True, kalip='O')
+    d.set_face(24, 32, tek=True, kalip='B')
 
 
 def genc(d):
@@ -32,7 +32,7 @@ def genc(d):
         d.pix((int(x - 1), int(y - 1)), ['oo'], {'o': 'Parilti'})
     d.ellipse('Mor', (22, 20), (3.5, 2.2), clip='cap', shift=-1)
     d.ellipse('Mor', (36, 24), (2, 1.4), clip='cap', shift=-1)
-    d.set_face(28, 35, tek=True, kalip='O')
+    d.set_face(28, 35, tek=True, kalip='B')
 
 
 def bebe(d, x, y, cx_cap=None):
