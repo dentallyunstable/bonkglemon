@@ -1,0 +1,45 @@
+{
+ "anahtar": "magma_kaplumbaga",
+ "asama": "faz2",
+ "kaynak": "cizim",
+ "tuval": 96,
+ "tuval_h": 80,
+ "kalip": "B",
+ "boy": 52,
+ "goz": {
+  "lx": 37,
+  "rx": 52,
+  "ey": 57
+ },
+ "ten": "Kahve",
+ "yuz_kutusu": [
+  34,
+  56,
+  28,
+  12
+ ],
+ "govde_ust": 41,
+ "ayak": 76,
+ "govde_gen": 70,
+ "aileler": [
+  "Kahve",
+  "Komur",
+  "Krem",
+  "Sari",
+  "Turuncu"
+ ],
+ "renk": 17,
+ "tek_piksel_duzeltme": 93,
+ "denetim": [],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kafa",
+  "kol_1",
+  "kol_2"
+ ]
+}

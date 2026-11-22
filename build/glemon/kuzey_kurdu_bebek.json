@@ -18,19 +18,17 @@
   19,
   9
  ],
- "govde_ust": 16,
+ "govde_ust": 15,
  "ayak": 44,
- "govde_gen": 32,
+ "govde_gen": 30,
  "aileler": [
   "Gok",
   "Kar",
   "Komur"
  ],
  "renk": 9,
- "tek_piksel_duzeltme": 11,
- "denetim": [
-  "govde genisligi 32 > 30"
- ],
+ "tek_piksel_duzeltme": 9,
+ "denetim": [],
  "agiz": false,
  "ucar": false,
  "goz_renk": null,

@@ -47,10 +47,10 @@ def bebek(d):
     E = [(11.5, 28), (9.5, 17.5), (13, 14.5), (22, 21), (22, 27)]
     kulak(d, cx, E, 1, (3.4, 3.2))
     kulak(d, cx, E, 2, (3.4, 3.2))
-    d.ellipse('Kar', (cx, 34), (12.4, 10), name='g', cast=1, lift=0.05)
+    d.ellipse('Kar', (cx, 34), (12, 10), name='g', cast=1, lift=0.05)
     d.ellipse('Kar', (cx, 26), (10, 5.5), clip='g', shift=1)
-    yanak_tutam(d, cx, 37, 11, 4, -1)
-    yanak_tutam(d, cx, 37, 11, 4, 1)
+    yanak_tutam(d, cx, 37, 9.5, 4, -1)
+    yanak_tutam(d, cx, 37, 9.5, 4, 1)
     d.circle('Kar', (17, 43.5), 3.2, join='g')
     d.circle('Kar', (31, 43.5), 3.2, join='g')
     d.circle('Kar', (cx, 44.5), 3.2, join='g')
@@ -68,11 +68,11 @@ def genc(d):
     d.ellipse('Kar', (cx - 6, 52.5), (4, 2.6), part='kol_1', line=True, noshadow=True)
     d.ellipse('Kar', (cx + 6, 52.5), (4, 2.6), part='kol_2', line=True, noshadow=True)
     # kabarik boyun yelesi: kafanin altinda genis, kenarlari sivri, uclari yesil
-    d.ellipse('Kar', (cx, 42.5), (15.5, 7), name='yele', lift=-0.1, cast=1)
+    d.ellipse('Kar', (cx, 43), (15.5, 7.5), name='yele', lift=-0.1, cast=1)
     for k, x in enumerate((-13, -9, -4.5, 0, 4.5, 9, 13)):
-        d.capsule('Kar', (cx + x * 0.9, 44), (cx + x * 1.05, 49.5 - abs(x) * 0.12), (4.0, 1.6), join='yele')
-    for x, y in ((-13.6, 47), (-9.5, 49.2), (-4.7, 50), (0, 50.4), (4.7, 50), (9.5, 49.2), (13.6, 47)):
-        d.circle('Cam', (cx + x, y), 2.4, clip='yele', tone=2)
+        d.capsule('Kar', (cx + x * 0.9, 44), (cx + x * 1.05, 51 - abs(x) * 0.2), (4.2, 1.8), join='yele')
+    for x, y in ((-13.6, 48.5), (-9.5, 50.6), (-4.7, 51.4), (0, 51.6), (4.7, 51.4), (9.5, 50.6), (13.6, 48.5)):
+        d.circle('Cam', (cx + x, y), 3.4, clip='yele', tone=2)
     d.ellipse('Kar', (cx, 33), (13.4, 10.8), name='g', cast=1, lift=0.05)
     d.ellipse('Kar', (cx, 25), (11, 5.5), clip='g', shift=1)
     yanak_tutam(d, cx, 37.5, 12, 4.5, -1)
@@ -83,23 +83,23 @@ def genc(d):
 
 def usta(d):
     cx = 31
-    d.curve('Kar', [(42, 56), (52, 55), (55, 46)], (6.5, 3.8), part='kuyruk', line=True, lift=-0.08)
+    d.curve('Kar', [(42, 58), (52, 57), (55, 48)], (6.5, 3.8), part='kuyruk', line=True, lift=-0.08)
     E = [(15.5, 28), (12.5, 12.5), (17, 8.5), (28, 17.5), (28, 26)]
     kulak(d, cx, E, 1, (4.4, 4.0))
     kulak(d, cx, E, 2, (4.4, 4.0))
     kupe(d, 14.2, 17.5)
-    d.ellipse('Kar', (cx, 50), (13, 8.5), name='gv', cast=1, lift=-0.04)
-    d.ellipse('Kar', (cx - 7, 57), (4.6, 2.8), part='kol_1', line=True, noshadow=True)
-    d.ellipse('Kar', (cx + 7, 57), (4.6, 2.8), part='kol_2', line=True, noshadow=True)
+    d.ellipse('Kar', (cx, 52), (13, 8.5), name='gv', cast=1, lift=-0.04)
+    d.ellipse('Kar', (cx - 7, 59), (4.6, 2.8), part='kol_1', line=True, noshadow=True)
+    d.ellipse('Kar', (cx + 7, 59), (4.6, 2.8), part='kol_2', line=True, noshadow=True)
     # omuzlara pelerin gibi inen yele: ust sira yesil, alt sira maviye doner
-    d.ellipse('Kar', (cx, 42), (20, 8.5), name='yele', lift=-0.12, cast=1)
+    d.ellipse('Kar', (cx, 43), (20, 9), name='yele', lift=-0.12, cast=1)
     xs = (-19, -15, -11, -7, -3.5, 0, 3.5, 7, 11, 15, 19)
     for x in xs:
-        d.capsule('Kar', (cx + x * 0.9, 43), (cx + x * 1.02, 50.5 - abs(x) * 0.12), (4.4, 1.8), join='yele')
+        d.capsule('Kar', (cx + x * 0.9, 43), (cx + x * 1.02, 52.5 - abs(x) * 0.2), (4.8, 2.0), join='yele')
     for x in xs:
-        y = 51.2 - abs(x) * 0.12
+        y = 53 - abs(x) * 0.2
         fam = 'Cam' if abs(x) <= 8 else 'Gok'
-        d.circle(fam, (cx + x * 1.02, y), 2.9, clip='yele', tone=2)
+        d.circle(fam, (cx + x * 1.02, y), 3.8, clip='yele', tone=2)
     d.ellipse('Cam', (cx, 40), (6, 2.2), clip='yele', tone=2) if False else None
     d.ellipse('Kar', (cx, 33), (15, 11.6), name='g', cast=1, lift=0.05)
     d.ellipse('Kar', (cx, 25), (12.5, 6), clip='g', shift=1)

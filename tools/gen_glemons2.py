@@ -576,7 +576,8 @@ def follow_offsets(frames, loop):
     return out
 
 
-def face_tiles(rig, pal, colors):
+def face_tiles(rig, pal, colors, dflt='normal'):
+    """dflt: tarifteki varsayilan yuz; 'normal' karosu onunla basilir (goz kirpma sonrasi ona doner)."""
     fx, fy, fw, fh = rig.face
     base = rig.bare.copy()
     if pal:
@@ -595,7 +596,7 @@ def face_tiles(rig, pal, colors):
         cols = dict(colors)
         if pal:
             cols['m'] = pal.get(tuple(colors['m']), colors['m'])
-        GF.stamp(put, rig.info['kalip'], e, g['lx'], g['rx'], g['ey'], cols, skip_mouth=not rig.info.get('agiz', True))
+        GF.stamp(put, rig.info['kalip'], dflt if e == 'normal' else e, g['lx'], g['rx'], g['ey'], cols, skip_mouth=not rig.info.get('agiz', True))
         tiles.append(t)
     return tiles
 
@@ -638,8 +639,8 @@ def build(key):
             recipes['faz'] = faz_frames()
             recipes['cagir'] = cagir_frames(rig)
         colors = face_colors(rig.info['ten'], rig.info.get('goz_renk'), rig.info.get('yanak', True))
-        tn = face_tiles(rig, None, colors)
-        tp = face_tiles(rig, pal, colors)
+        tn = face_tiles(rig, None, colors, (sp.get("yuz") or {}).get("varsayilan") or "normal")
+        tp = face_tiles(rig, pal, colors, (sp.get("yuz") or {}).get("varsayilan") or "normal")
         old = prev or (rig, tn, tp)
         allf, allp, faces = [], [], []
         start = 0

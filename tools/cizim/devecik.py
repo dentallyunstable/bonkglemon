@@ -11,13 +11,21 @@ def dudak(d, cx, y, rx, ry):
 
 
 def kulaklar(d, x1, x2, y, r):
-    d.ellipse('Kahve', (x1, y), (r * 1.4, r * 0.8), part='kulak_1', line=True, rot=-25)
-    d.ellipse('Kahve', (x2, y), (r * 1.4, r * 0.8), part='kulak_2', line=True, rot=25)
+    """Kucuk, yuvarlak, yukarida duran deve kulaklari (ayi gibi yana sarkmasin)."""
+    d.ellipse('Kahve', (x1, y), (r * 0.9, r * 1.1), part='kulak_1', line=True, rot=-30)
+    d.ellipse('Kahve', (x2, y), (r * 0.9, r * 1.1), part='kulak_2', line=True, rot=30)
+
+
+def bacak(d, x, top, bot, w, part):
+    """Ince uzun deve bacagi: dizde topuz, altta koyu toynak."""
+    d.capsule('Kahve', (x, top), (x, bot), w, part=part, line=True, name='b' + part)
+    d.circle('Kahve', (x, (top + bot) / 2 + 1), w / 2 + 0.6, join='b' + part)
+    d.rect('Kahve', (x - w / 2, bot - 1, x + w / 2, bot + 1), clip='b' + part, tone=4)
 
 
 def bebek(d):
     d.ellipse('Kahve', (25, 23), (5.4, 6), part='tepe', name='h', line=True, lift=0.06)
-    kulaklar(d, 12.5, 35.5, 28, 2.8)
+    kulaklar(d, 14.5, 33.5, 25.5, 2.8)
     d.ellipse('Kahve', (24, 35), (13.5, 12.4), name='g', cast=1)
     dudak(d, 24, 43.5, 6.4, 3.6)
     d.set_face(24, 32, gap=5)
@@ -26,26 +34,26 @@ def bebek(d):
 def genc(d):
     d.ellipse('Kahve', (21, 24), (6, 7.2), part='tepe', name='h1', line=True, lift=0.06)
     d.ellipse('Kahve', (35, 24), (6, 7.2), part='tepe', name='h2', line=True, lift=0.06)
-    kulaklar(d, 12.5, 43.5, 31, 3.2)
-    d.ellipse('Kahve', (28, 40.5), (15, 17), name='g', cast=1)
-    d.capsule('Kahve', (14, 52), (18, 55), 4.4, part='kol_1', line=True)
-    d.capsule('Kahve', (42, 52), (38, 55), 4.4, part='kol_2', line=True)
-    dudak(d, 28, 49.5, 7, 3.8)
+    kulaklar(d, 15.5, 40.5, 28.5, 3.2)
+    bacak(d, 21, 48, 57, 4.2, 'kol_1')
+    bacak(d, 35, 48, 57, 4.2, 'kol_2')
+    d.ellipse('Kahve', (28, 39), (15, 14.5), name='g', cast=1)
+    dudak(d, 28, 47, 7, 3.8)
     # kirmizi desenli kilim iki hormucun arasinda
     d.rect('Kirmizi', (22, 22, 34, 32), rad=2, part='esya', name='kl', line=True)
     d.pix((26, 24), ['.#.', '#.#', '.#.'], {'#': 'Krem-1'}, part='esya')
     d.capsule('Krem', (23, 30.5), (33, 30.5), 0.7, part='esya', clip='kl', shift=0)
-    d.set_face(28, 36, gap=5)
+    d.set_face(28, 34, gap=5)
 
 
 def usta(d):
     d.ellipse('Kahve', (21, 25), (7.6, 9), part='tepe', name='h1', line=True, lift=0.06)
     d.ellipse('Kahve', (43, 25), (7.6, 9), part='tepe', name='h2', line=True, lift=0.06)
-    kulaklar(d, 13.5, 50.5, 33, 3.6)
-    d.ellipse('Kahve', (32, 45.5), (17.5, 21.5), name='g', cast=1)
-    d.capsule('Kahve', (16, 60), (20, 63), 5, part='kol_1', line=True)
-    d.capsule('Kahve', (48, 60), (44, 63), 5, part='kol_2', line=True)
-    dudak(d, 32, 54.5, 8, 4.2)
+    kulaklar(d, 16, 48, 31, 3.6)
+    bacak(d, 24, 56, 66, 5, 'kol_1')
+    bacak(d, 40, 56, 66, 5, 'kol_2')
+    d.ellipse('Kahve', (32, 43), (17.5, 18.5), name='g', cast=1)
+    dudak(d, 32, 52, 8, 4.2)
     # puskullu kilim
     d.rect('Kirmizi', (26, 22, 38, 33), rad=2, part='esya', name='kl', line=True)
     d.capsule('Krem', (27, 25.5), (37, 25.5), 0.7, part='esya', clip='kl', shift=0)
@@ -58,9 +66,9 @@ def usta(d):
     d.pix((26, 15), ['#'], {'#': 'Kirmizi-3'}, part='tepe')
     d.capsule('Kirmizi', (33, 19), (38, 18.5), 1.2, part='tepe', clip='kus', shift=1)
     # boyunda can
-    d.capsule('Kirmizi', (23, 59.5), (41, 59.5), 1.2, part='esya', line=True)
-    d.circle('Krem', (32, 63), 2.6, part='esya', line=True, lift=0.1)
-    d.set_face(32, 40, gap=6)
+    d.capsule('Kirmizi', (22, 58), (42, 58), 1.2, part='esya', line=True)
+    d.circle('Krem', (32, 61.5), 2.6, part='esya', line=True, lift=0.1)
+    d.set_face(32, 38, gap=6)
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}

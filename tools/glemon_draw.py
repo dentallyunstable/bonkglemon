@@ -526,7 +526,11 @@ def draw_stage(key, stage, mod):
     def put(x, y, c):
         if 0 <= x < W and 0 <= y < H:
             A[y, x] = c
-    lay = GF.stamp(put, kal, 'normal', lx, rx, ey, colors, skip_mouth=not f['mouth'])
+    try:   # tarifteki varsayilan yuz (Devecik, Ruya Kuzusu: 'yarim' uykulu gozler)
+        dflt = json.load(open(os.path.join(ROOT, 'tools/glemon_species.json'), encoding='utf8')).get(key, {}).get('yuz', {}).get('varsayilan') or 'normal'
+    except (OSError, ValueError):
+        dflt = 'normal'
+    lay = GF.stamp(put, kal, dflt, lx, rx, ey, colors, skip_mouth=not f['mouth'])
     OA, OM = outline(A, alpha)
     # renk siniri (16, patron 20): ic renklerden en az kullanilani ayni ailenin komsu tonuna katar
     limit = 20 if stage in ('patron', 'faz2', 'faz3') else 16

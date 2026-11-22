@@ -5,20 +5,20 @@
  "tuval": 64,
  "tuval_h": 64,
  "kalip": "O",
- "boy": 41,
+ "boy": 43,
  "goz": {
   "lx": 24,
   "rx": 35,
-  "ey": 32
+  "ey": 30
  },
  "ten": "Kar",
  "yuz_kutusu": [
   21,
-  31,
+  29,
   22,
   10
  ],
- "govde_ust": 16,
+ "govde_ust": 14,
  "ayak": 60,
  "govde_gen": 42,
  "aileler": [
@@ -29,10 +29,8 @@
   "Sari"
  ],
  "renk": 14,
- "tek_piksel_duzeltme": 33,
- "denetim": [
-  "govde boyu 41 (kural 42-48)"
- ],
+ "tek_piksel_duzeltme": 24,
+ "denetim": [],
  "agiz": false,
  "ucar": false,
  "goz_renk": null,

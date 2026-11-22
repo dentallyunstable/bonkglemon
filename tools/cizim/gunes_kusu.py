@@ -72,20 +72,20 @@ def usta(d):
     d.flyer = True
     cx = 32
     # tam gunes: govdenin arkasinda 16 isin
-    isinlar(d, (cx, 37), 12, 27.5, [i * 22.5 for i in range(16) if i not in (0, 15, 8)], w=(5.0, 3.6), pre='g', low=7)
+    isinlar(d, (cx, 37), 13, 29.5, [i * 22.5 for i in range(16) if i not in (0, 15, 8, 6, 7, 9, 10)], w=(5.0, 3.6), pre='g', low=7)
     W = [(18, 41), (12, 31), (8, 31), (6, 37), (8, 43), (15, 46)]
     kanat(d, W, cx, (3.8, 3.4), (9, 33))
     # uc tuylu tepelik
     for i, (dx, tx, ty) in enumerate(((-6, -7, 17), (0, 0, 15), (6, 7, 17))):
-        d.capsule('Turuncu', (cx + dx * 0.5, 26), (cx + tx, ty + 1), (3.2, 2.6), part='tepe', line=True, name='t%d' % i)
-        d.circle('Sari', (cx + tx, ty), 2.4, part='tepe', line=True, lift=0.1)
-    d.ellipse('Sari', (cx, 37), (17.5, 15), name='govde', cast=1, lift=0.05)
-    d.ellipse('Sari', (cx, 44.5), (11.5, 6), clip='govde', shift=-1)
-    gaga(d, cx, 42.5, 3.2, 2.0)
+        d.capsule('Turuncu', (cx + dx * 0.5, 23), (cx + tx, ty - 2), (3.2, 2.6), part='tepe', line=True, name='t%d' % i)
+        d.circle('Sari', (cx + tx, ty - 3), 2.4, part='tepe', line=True, lift=0.1)
+    d.ellipse('Sari', (cx, 38), (19, 18.5), name='govde', cast=1, lift=0.05)
+    d.ellipse('Sari', (cx, 47.5), (12.5, 7.5), clip='govde', shift=-1)
+    gaga(d, cx, 42, 3.2, 2.0)
     # gogus tasi
-    d.poly('Cam', [(cx, 46), (cx + 2.6, 48.6), (cx, 51.4), (cx - 2.6, 48.6)], line=True, name='tas', lift=0.1)
-    d.pix((cx - 1, 47), ['oo'], {'o': 'Parilti'})
-    bacak(d, cx, 50, 7)
+    d.poly('Cam', [(cx, 47.5), (cx + 2.6, 50.1), (cx, 52.9), (cx - 2.6, 50.1)], line=True, name='tas', lift=0.1)
+    d.pix((cx - 1, 48.5), ['oo'], {'o': 'Parilti'})
+    bacak(d, cx, 55, 7)
     d.set_face(cx, 33, gap=6, mouth=False)
 
 
