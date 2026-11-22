@@ -30,6 +30,8 @@
  "denetim": [],
  "agiz": true,
  "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
  "parcalar": [
   "govde",
   "kulak_1",

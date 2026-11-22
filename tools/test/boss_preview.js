@@ -32,7 +32,8 @@ const FLOOR = +(process.argv[4] || 10);
   }
   if (!inBattle) { console.log('patron savasi acilmadi'); await p.screenshot({ path: `${OUT}/0_hata.png` }); await g.close(); process.exit(1); }
   console.log('dusmanlar', inBattle.join(','));
-  await p.waitForTimeout(2500);
+  await p.evaluate(() => { const b = window.__BG.battle; b.enemies.forEach((e) => { e.atk = 0; }); });   // test: oyuncu olmesin
+  await p.waitForTimeout(1500);
   await p.screenshot({ path: `${OUT}/1_patron.png` });
   await p.evaluate(() => {
     const b = window.__BG.battle; const e = b.enemies.find((x) => x.data.boss);

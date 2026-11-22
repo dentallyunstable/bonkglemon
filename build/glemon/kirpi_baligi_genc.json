@@ -1,0 +1,41 @@
+{
+ "anahtar": "kirpi_baligi",
+ "asama": "genc",
+ "kaynak": "cizim",
+ "tuval": 56,
+ "tuval_h": 56,
+ "kalip": "K",
+ "boy": 34,
+ "goz": {
+  "lx": 22,
+  "rx": 31,
+  "ey": 33
+ },
+ "ten": "Sari",
+ "yuz_kutusu": [
+  19,
+  32,
+  19,
+  9
+ ],
+ "govde_ust": 26,
+ "ayak": 52,
+ "govde_gen": 38,
+ "aileler": [
+  "Krem",
+  "Sari",
+  "Turuncu"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 33,
+ "denetim": [],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2"
+ ]
+}

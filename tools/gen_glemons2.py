@@ -748,6 +748,8 @@ def face_colors(sfam, goz=None, yanak=True):
          't': BP.tone('Gok-1'), 'm': BP.tone(sfam + '-4'), 'r': BP.tone('Kirmizi-3'), 'cheek': BP.tone(cheek)}
     if not yanak:
         c['cheek'] = None
+    elif isinstance(yanak, str):      # ozel yanak rengi, ornek 'Sari-1' (kor gibi parlayan yanak)
+        c['cheek'] = BP.tone(yanak)
     return c
 
 

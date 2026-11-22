@@ -1,0 +1,45 @@
+{
+ "anahtar": "kuzey_kurdu",
+ "asama": "genc",
+ "kaynak": "cizim",
+ "tuval": 56,
+ "tuval_h": 56,
+ "kalip": "K",
+ "boy": 35,
+ "goz": {
+  "lx": 22,
+  "rx": 31,
+  "ey": 28
+ },
+ "ten": "Kar",
+ "yuz_kutusu": [
+  19,
+  27,
+  19,
+  9
+ ],
+ "govde_ust": 14,
+ "ayak": 52,
+ "govde_gen": 34,
+ "aileler": [
+  "Cam",
+  "Gok",
+  "Kar",
+  "Komur"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 25,
+ "denetim": [],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "kuyruk"
+ ]
+}

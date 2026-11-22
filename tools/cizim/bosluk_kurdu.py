@@ -27,29 +27,42 @@ def burun(d, cx, ey):
     d.pix((cx - 1, ey + 4), ['##'], {'#': 'Lacivert-4'})
 
 
+def sarkik(d, cx, top, side, n):
+    """Kafanin ust yanindan one sarkan yavru kulagi (govdenin ONUNDE), ucu Lacivert."""
+    L = [(cx - 9.5, top), (cx - 4.5, top - 1.5), (cx - 8, top + 6), (cx - 11.5, top + 10.5), (cx - 13.5, top + 7)]
+    if side > 0:
+        L = mir(L, cx)
+    d.poly('Mor', L, part='kulak_%d' % (1 if side < 0 else 2), name=n, line=True, lift=-0.1)
+    tip = [(cx - 15, top + 6), (cx - 8, top + 6), (cx - 10, top + 12), (cx - 15, top + 10)]
+    d.poly('Lacivert', mir(tip, cx) if side > 0 else tip, clip=n, tone=3)
+
+
+def burun_cikinti(d, cx, y, rx, ry):
+    """Kurt burnu: acik renk cikinti, ustunde ucgen Lacivert burun."""
+    d.ellipse('Mor', (cx, y), (rx, ry), name='bu', shade='flat', tone=1, line=True)
+    d.pix((int(cx) - 1, int(y - ry) + 1), ['###', '.#.'], {'#': 'Lacivert-4'}, keep=True)
+
+
 def bebek(d):
     cx = 24
-    L = [(15, 27), (9, 24), (6, 34), (7, 40), (12, 37), (15, 33)]
-    d.poly('Mor', L, part='kulak_1', line=True, lift=-0.2)
-    d.poly('Mor', mir(L, cx), part='kulak_2', line=True, lift=-0.2)
     d.ellipse('Mor', (24, 36), (13.5, 11.5), name='g', cast=1, lift=0.1)
     for x, y in ((14, 44), (34, 44), (24, 47)):
         d.circle('Mor', (x, y), 3.4, join='g')
     d.ellipse('Mor', (24, 44), (6, 4), clip='g', shift=-1)
     d.curve('Mor', [(37, 45), (43, 44), (44, 38)], 4.2, part='kuyruk', line=True)
-    d.set_face(24, 32, gap=5, mouth=False)
-    burun(d, 24, 32)
-    d.pix((22, 38), ['###'], {'#': 'Lacivert-4'})
-    d.pix((23, 39), ['##', '##'], {'#': 'Pembe-2'})
-    damla(d, 27, 40, 1.8)
+    sarkik(d, cx, 26, -1, 'k1')
+    sarkik(d, cx, 26, 1, 'k2')
+    burun_cikinti(d, 24.5, 39, 4.6, 3.0)
+    d.set_face(24, 30, gap=5, mouth=False)
+    d.pix((23, 42), ['##', '##'], {'#': 'Pembe-2'})
+    damla(d, 27, 41, 1.8)
 
 
 def genc(d):
     cx = 28
-    d.poly('Mor', [(15, 30), (9, 27), (7, 36), (8, 42), (13, 40), (16, 36)], part='kulak_1', line=True, lift=-0.2)
-    e = [(20, 28), (21, 17), (25, 12), (34, 26)]
+    e = [(31, 27), (36, 16), (38.5, 14.5), (41, 30)]
     d.poly('Mor', e, part='kulak_2', name='e2', line=True, lift=-0.05)
-    d.poly('Lacivert', [(22.5, 25), (23, 18), (26, 16), (30.5, 25)], part='kulak_2', clip='e2', tone=2)
+    d.poly('Lacivert', [(33.5, 26), (37, 19), (38.5, 18), (39.5, 27)], part='kulak_2', clip='e2', tone=2)
     d.ellipse('Mor', (28, 37), (13.5, 11.5), name='g', cast=1, lift=0.1)
     d.ellipse('Mor', (28, 47), (11, 8.5), name='b', cast=1, join='g')
     for x, y in ((18, 52), (38, 52), (28, 55)):
@@ -61,17 +74,17 @@ def genc(d):
     d.capsule('Mor', (21, 53), (21, 56), 4.6, part='kol_1', line=True, lift=0.05)
     d.capsule('Mor', (35, 53), (35, 56), 4.6, part='kol_2', line=True, lift=0.05)
     d.curve('Mor', [(40, 50), (47, 50), (48, 42)], 4.8, part='kuyruk', line=True)
-    d.set_face(28, 33, gap=5, mouth=False)
-    burun(d, 28, 33)
-    d.pix((26, 39), ['###'], {'#': 'Lacivert-4'})
-    d.pix((27, 40), ['##', '##'], {'#': 'Pembe-2'})
-    damla(d, 31, 41, 2.0)
+    sarkik(d, 28, 28, -1, 'e1')
+    burun_cikinti(d, 28.5, 41.5, 5.0, 3.2)
+    d.set_face(28, 32, gap=5, mouth=False)
+    d.pix((27, 44), ['##', '##'], {'#': 'Pembe-2'})
+    damla(d, 32, 43, 2.0)
 
 
 def usta(d):
     cx = 32
-    kL = [(17, 32), (16, 19), (19, 12), (25, 10), (29, 13), (26, 16), (31, 28)]
-    iL = [(19.5, 28), (19, 20), (22, 16), (27, 24)]
+    kL = [(16, 30), (17, 20), (15, 15), (19, 15.5), (22.5, 19), (29, 27)]
+    iL = [(18.5, 27.5), (19, 21), (21.5, 20.5), (25.5, 26)]
     d.poly('Mor', kL, part='kulak_1', name='e1', line=True, lift=-0.05)
     d.poly('Lacivert', iL, part='kulak_1', clip='e1', tone=2)
     d.poly('Mor', mir(kL, cx), part='kulak_2', name='e2', line=True, lift=-0.05)
@@ -89,10 +102,11 @@ def usta(d):
         d.circle('Mor', (x, 59.5), 3.8, part='govde', join='m')
     d.capsule('Mor', (23, 60), (23, 62.5), 5.2, part='kol_1', line=True, lift=0.05)
     d.capsule('Mor', (41, 60), (41, 62.5), 5.2, part='kol_2', line=True, lift=0.05)
-    d.set_face(cx, 33, gap=6, mouth=False)
-    burun(d, cx, 33)
-    agiz(d, cx, 45.5, 5.2, 3.4, yildiz=True)
-    damla(d, 38, 48, 2.0)
+    d.ellipse('Mor', (cx, 45), (7.5, 5), name='bu', shade='flat', tone=1, line=True)
+    d.pix((cx - 1, 41), ['###', '.#.'], {'#': 'Lacivert-4'}, keep=True)
+    agiz(d, cx + 0.5, 47, 4.2, 2.6, yildiz=True)
+    d.set_face(cx, 32, gap=6, mouth=False)
+    damla(d, 37, 49, 2.0)
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}

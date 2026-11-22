@@ -104,7 +104,7 @@ Bir parça mutlaka gövdeye değmeli (yoksa animasyonda kopuk durur). Aşağı s
 - Ağzı olmayan türler (gaga, hortum vb. kendi çizimindeyse): `d.set_face(..., mouth=False)` ve gagayı yüz alanının DIŞINA çiz.
 - Ten (yanak/ağız rengi) en çok kullanılan aileden otomatik seçilir; gerekirse `ten='Krem'` ver.
 - Parlayan gözler (ör. hayalet, mumya, Boşluk Bekçisi): `goz='Cam-1'` göz rengini değiştirir (parıltı yine sol üstte).
-  Yanak istemeyen türler: `yanak=False`. Kirpik çizilmez.
+  Yanak istemeyen türler: `yanak=False`. Tarif yanakları parlatıyorsa renk ver: `yanak='Sari-1'`. Kirpik çizilmez.
 - Tek gözlü istisna (yalnız tarif "tek göz" diyorsa, ör. Gözmantar): `d.set_face(cx, ey, tek=True, kalip='O')`.
   `kalip` göz kalıbını zorlar: 'K' 4x5, 'O' 5x6, 'B' 7x8. Tek göz ortada durur, yanaklar iki yanında, ağız altında.
 

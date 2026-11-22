@@ -2369,9 +2369,15 @@
   "tip": "Su",
   "patron": false,
   "ucar": false,
-  "aileler": [],
-  "parlak": {},
-  "renk_not": "Patronlar 4 renk ailesi kullanabilir (toplam en çok 20 renk).",
+  "aileler": [
+   "Lacivert",
+   "Sari",
+   "Gok"
+  ],
+  "parlak": {
+   "Lacivert": "Cam"
+  },
+  "renk_not": "Lacivert, Sarı, Gök (karın ve yüzgeç). Parlak: Lacivert -> Çam.",
   "huy": {
    "kod": "H2",
    "not": "titrer, kivilcim saçar"

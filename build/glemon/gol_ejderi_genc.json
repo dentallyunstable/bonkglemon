@@ -1,0 +1,48 @@
+{
+ "anahtar": "gol_ejderi",
+ "asama": "genc",
+ "kaynak": "cizim",
+ "tuval": 56,
+ "tuval_h": 56,
+ "kalip": "K",
+ "boy": 32,
+ "goz": {
+  "lx": 22,
+  "rx": 31,
+  "ey": 32
+ },
+ "ten": "Cam",
+ "yuz_kutusu": [
+  19,
+  31,
+  19,
+  9
+ ],
+ "govde_ust": 23,
+ "ayak": 52,
+ "govde_gen": 30,
+ "aileler": [
+  "Cam",
+  "Gok",
+  "Kar",
+  "Pembe"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 42,
+ "denetim": [
+  "renk birlestirme: Gok-4>3, Kar-2>3"
+ ],
+ "agiz": true,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "kuyruk",
+  "tepe"
+ ]
+}

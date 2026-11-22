@@ -9,16 +9,16 @@
  "goz": {
   "lx": 24,
   "rx": 35,
-  "ey": 29
+  "ey": 28
  },
  "ten": "Mor",
  "yuz_kutusu": [
   21,
-  28,
+  27,
   22,
   10
  ],
- "govde_ust": 18,
+ "govde_ust": 20,
  "ayak": 60,
  "govde_gen": 38,
  "aileler": [
@@ -28,7 +28,7 @@
   "Sari"
  ],
  "renk": 10,
- "tek_piksel_duzeltme": 35,
+ "tek_piksel_duzeltme": 26,
  "denetim": [],
  "agiz": false,
  "ucar": false,
