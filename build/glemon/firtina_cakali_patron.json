@@ -2,25 +2,25 @@
  "anahtar": "firtina_cakali",
  "asama": "patron",
  "kaynak": "cizim",
- "tuval": 96,
- "tuval_h": 80,
- "kalip": "B",
- "boy": 58,
+ "tuval": 52,
+ "tuval_h": 42,
+ "kalip": "b",
+ "boy": 30,
  "goz": {
-  "lx": 37,
-  "rx": 52,
-  "ey": 31
+  "lx": 20,
+  "rx": 28,
+  "ey": 18
  },
  "ten": "Turuncu",
  "yuz_kutusu": [
-  34,
-  30,
-  28,
-  12
+  17,
+  17,
+  18,
+  8
  ],
- "govde_ust": 31,
- "ayak": 76,
- "govde_gen": 56,
+ "govde_ust": 18,
+ "ayak": 40,
+ "govde_gen": 30,
  "aileler": [
   "Cam",
   "Komur",
@@ -30,12 +30,14 @@
   "Turuncu"
  ],
  "renk": 18,
- "tek_piksel_duzeltme": 84,
+ "tek_piksel_duzeltme": 61,
  "denetim": [],
  "agiz": true,
  "ucar": false,
  "goz_renk": null,
  "yanak": true,
+ "px": 2,
+ "yan": false,
  "parcalar": [
   "govde",
   "kol_1",

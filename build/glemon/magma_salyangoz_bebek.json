@@ -2,37 +2,41 @@
  "anahtar": "magma_salyangoz",
  "asama": "bebek",
  "kaynak": "cizim",
- "tuval": 48,
- "tuval_h": 48,
- "kalip": "K",
- "boy": 28,
+ "tuval": 28,
+ "tuval_h": 26,
+ "kalip": "k",
+ "boy": 15,
  "goz": {
-  "lx": 14,
-  "rx": 23,
-  "ey": 31
+  "lx": 10,
+  "rx": 14,
+  "ey": 18
  },
  "ten": "Turuncu",
  "yuz_kutusu": [
-  11,
-  30,
-  19,
-  9
+  7,
+  17,
+  12,
+  7
  ],
- "govde_ust": 20,
- "ayak": 44,
- "govde_gen": 30,
+ "govde_ust": 13,
+ "ayak": 24,
+ "govde_gen": 17,
  "aileler": [
   "Komur",
   "Sari",
   "Turuncu"
  ],
- "renk": 13,
- "tek_piksel_duzeltme": 18,
- "denetim": [],
+ "renk": 12,
+ "tek_piksel_duzeltme": 21,
+ "denetim": [
+  "govde genisligi 17 > 16"
+ ],
  "agiz": true,
  "ucar": false,
  "goz_renk": null,
  "yanak": true,
+ "px": 2,
+ "yan": false,
  "parcalar": [
   "govde",
   "kafa"

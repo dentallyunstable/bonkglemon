@@ -2,24 +2,24 @@
  "anahtar": "patlakmantar",
  "asama": "usta",
  "kaynak": "cizim",
- "tuval": 32,
- "tuval_h": 32,
+ "tuval": 36,
+ "tuval_h": 34,
  "kalip": "o",
  "boy": 23,
  "goz": {
-  "lx": 12,
-  "rx": 17,
-  "ey": 20
+  "lx": 14,
+  "rx": 19,
+  "ey": 22
  },
  "ten": "Kirmizi",
  "yuz_kutusu": [
-  9,
-  19,
+  11,
+  21,
   13,
   7
  ],
- "govde_ust": 12,
- "ayak": 30,
+ "govde_ust": 14,
+ "ayak": 32,
  "govde_gen": 24,
  "aileler": [
   "Kirmizi",
@@ -33,6 +33,7 @@
  "goz_renk": null,
  "yanak": true,
  "px": 2,
+ "yan": false,
  "parcalar": [
   "esya",
   "govde",

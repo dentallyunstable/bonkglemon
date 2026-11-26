@@ -2,25 +2,25 @@
  "anahtar": "tas_golemi",
  "asama": "faz2",
  "kaynak": "cizim",
- "tuval": 96,
- "tuval_h": 80,
- "kalip": "B",
- "boy": 58,
+ "tuval": 52,
+ "tuval_h": 42,
+ "kalip": "b",
+ "boy": 30,
  "goz": {
-  "lx": 37,
-  "rx": 52,
-  "ey": 31
+  "lx": 20,
+  "rx": 28,
+  "ey": 17
  },
  "ten": "Tas",
  "yuz_kutusu": [
-  34,
-  30,
-  28,
-  12
+  17,
+  16,
+  18,
+  8
  ],
- "govde_ust": 27,
- "ayak": 76,
- "govde_gen": 72,
+ "govde_ust": 15,
+ "ayak": 40,
+ "govde_gen": 38,
  "aileler": [
   "Cimen",
   "Komur",
@@ -28,13 +28,17 @@
   "Pembe",
   "Tas"
  ],
- "renk": 17,
- "tek_piksel_duzeltme": 77,
- "denetim": [],
+ "renk": 16,
+ "tek_piksel_duzeltme": 55,
+ "denetim": [
+  "govde genisligi 38 > 37"
+ ],
  "agiz": true,
  "ucar": false,
  "goz_renk": null,
  "yanak": true,
+ "px": 2,
+ "yan": false,
  "parcalar": [
   "govde",
   "kol_1",

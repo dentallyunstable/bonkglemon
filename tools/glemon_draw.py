@@ -26,7 +26,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # GLEMON_INCE=1 ile eski ince (1 piksel) cizim.
 F = 1 if os.environ.get('GLEMON_INCE') == '1' else 2
 SIZE_FULL = {'bebek': (48, 48), 'genc': (56, 56), 'usta': (64, 64), 'patron': (96, 80), 'faz2': (96, 80), 'faz3': (96, 80)}
-SIZE = {k: (w // F, h // F) for k, (w, h) in SIZE_FULL.items()}
+# iri pikselde dis cizgi 2 oyun pikseli kalin: kanatlar/kulaklar kenara degmesin diye yanlara 2, uste 2 piksel pay
+SIZE = {k: (w // F + (4 if F == 2 else 0), h // F + (2 if F == 2 else 0)) for k, (w, h) in SIZE_FULL.items()}
 KALIP = {'bebek': 'K', 'genc': 'K', 'usta': 'O', 'patron': 'B', 'faz2': 'B', 'faz3': 'B'}
 if F == 2:
     KALIP = {k: v.lower() for k, v in KALIP.items()}

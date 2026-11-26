@@ -755,9 +755,11 @@ def build(key):
             ry = Rig(key, stage + '_yan', cfg)
             ry.fly = rig.fly
             fr = [scale_frame(f, ry.k, ry.maxsq, 'yurume') for f in yan_frames(walk)]
-            if ry.fly:
-                for f in fr:
+            if ry.fly:     # ucanlar yandan da kanat cirpar (kanat yoksa alt kenar dalgalanir)
+                for i, f in enumerate(fr):
                     f.pop('sq', None)
+                    f.setdefault('wing', ['yukari', 'orta', 'asagi'][i % 3])
+                    f.setdefault('ripple', 1 if i % 2 == 0 else -1)
             fol = follow_offsets(fr, True)
             yf = [ry.render(f, {n: fo for n in FOLLOW})[0] for f, fo in zip(fr, fol)]
             yp = [ry.render(f, {n: fo for n in FOLLOW}, pal=pal)[0] for f, fo in zip(fr, fol)]

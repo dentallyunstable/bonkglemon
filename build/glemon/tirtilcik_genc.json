@@ -2,25 +2,25 @@
  "anahtar": "tirtilcik",
  "asama": "genc",
  "kaynak": "cizim",
- "tuval": 56,
- "tuval_h": 56,
- "kalip": "K",
- "boy": 36,
+ "tuval": 32,
+ "tuval_h": 30,
+ "kalip": "k",
+ "boy": 19,
  "goz": {
-  "lx": 16,
-  "rx": 25,
-  "ey": 30
+  "lx": 10,
+  "rx": 14,
+  "ey": 17
  },
  "ten": "Cimen",
  "yuz_kutusu": [
-  13,
-  29,
-  19,
-  9
+  7,
+  16,
+  12,
+  7
  ],
- "govde_ust": 23,
- "ayak": 52,
- "govde_gen": 36,
+ "govde_ust": 13,
+ "ayak": 28,
+ "govde_gen": 20,
  "aileler": [
   "Cam",
   "Cimen",
@@ -28,12 +28,16 @@
   "Sari"
  ],
  "renk": 16,
- "tek_piksel_duzeltme": 29,
+ "tek_piksel_duzeltme": 21,
  "denetim": [
-  "renk birlestirme: Cam-4>3, Cam-1>2, Sari-3>2"
+  "renk birlestirme: Cam-2>3"
  ],
  "agiz": true,
  "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": false,
  "parcalar": [
   "esya",
   "govde",

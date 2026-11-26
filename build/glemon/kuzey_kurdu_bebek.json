@@ -2,37 +2,39 @@
  "anahtar": "kuzey_kurdu",
  "asama": "bebek",
  "kaynak": "cizim",
- "tuval": 48,
- "tuval_h": 48,
- "kalip": "K",
- "boy": 26,
+ "tuval": 28,
+ "tuval_h": 26,
+ "kalip": "k",
+ "boy": 14,
  "goz": {
-  "lx": 18,
-  "rx": 27,
-  "ey": 27
+  "lx": 11,
+  "rx": 15,
+  "ey": 16
  },
  "ten": "Kar",
  "yuz_kutusu": [
+  8,
   15,
-  26,
-  19,
-  9
+  12,
+  7
  ],
- "govde_ust": 15,
- "ayak": 44,
- "govde_gen": 30,
+ "govde_ust": 10,
+ "ayak": 24,
+ "govde_gen": 16,
  "aileler": [
   "Gok",
   "Kar",
   "Komur"
  ],
  "renk": 9,
- "tek_piksel_duzeltme": 9,
+ "tek_piksel_duzeltme": 7,
  "denetim": [],
  "agiz": false,
  "ucar": false,
  "goz_renk": null,
  "yanak": true,
+ "px": 2,
+ "yan": false,
  "parcalar": [
   "govde",
   "kulak_1",

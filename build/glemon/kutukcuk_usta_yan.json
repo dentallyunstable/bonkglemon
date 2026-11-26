@@ -2,24 +2,24 @@
  "anahtar": "kutukcuk",
  "asama": "usta_yan",
  "kaynak": "cizim",
- "tuval": 32,
- "tuval_h": 32,
+ "tuval": 36,
+ "tuval_h": 34,
  "kalip": "o",
  "boy": 21,
  "goz": {
-  "lx": 6,
-  "rx": 6,
-  "ey": 19
+  "lx": 8,
+  "rx": 8,
+  "ey": 21
  },
  "ten": "Kahve",
  "yuz_kutusu": [
-  6,
-  19,
+  8,
+  21,
   4,
   3
  ],
- "govde_ust": 7,
- "ayak": 30,
+ "govde_ust": 9,
+ "ayak": 32,
  "govde_gen": 24,
  "aileler": [
   "Cimen",
