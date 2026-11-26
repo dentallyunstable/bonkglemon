@@ -79,3 +79,46 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def radyal(d, cx, cy, ad, n, r0, r1, ang0, ang1, w=0.9):
+    import math
+    for i in range(n):
+        a = math.radians(ang0 + (ang1 - ang0) * i / (n - 1))
+        d.capsule('Tas', (cx + r0 * math.cos(a), cy + r0 * math.sin(a)), (cx + r1 * math.cos(a), cy + r1 * math.sin(a)), w, clip=ad, shift=1)
+
+
+def kabuk_yan(d, hx, hy, ux, uy, urx, ury, lx, ly, lrx, lry, pk, n_u, n_l, w=0.9):
+    # arkada menteşe, ust kapak (arka), pembe yaratik, alt kapak (on)
+    d.ellipse('Tas', (ux, uy), (urx, ury), name='ust', cast=1, lift=0.06, rot=-8)
+    d.ellipse('Tas', (ux - urx * 0.35, uy - ury * 0.55), (urx * 0.3, 2.0), clip='ust', shift=-1, rot=-20)
+    radyal(d, hx, hy, 'ust', n_u, urx * 0.45, urx * 1.1, 190, 260, w)
+    d.ellipse('Pembe', pk[0], pk[1], name='pink', cast=1, lift=0.05)
+    d.ellipse('Tas', (lx, ly), (lrx, lry), name='alt', lift=-0.02, rot=6)
+    d.ellipse('Tas', (lx - 1, ly - lry * 0.6), (lrx * 0.85, 1.8), clip='alt', shift=-2)
+    radyal(d, hx, hy - 2, 'alt', n_l, lrx * 0.5, lrx * 1.1, 95, 150, w)
+
+
+def bebek_yan(d):
+    kabuk_yan(d, 36, 36, 29, 29, 12.5, 8.5, 28, 41, 12.5, 6.2, ((22, 34), (9.5, 6.5)), 5, 4)
+    inci(d, 14.5, 41, 2.6)
+    d.set_face_side(17, 30)
+
+
+def genc_yan(d):
+    kabuk_yan(d, 41, 38, 33, 30, 15.5, 10, 33, 47, 15.5, 6.5, ((24, 38), (11.5, 8.5)), 6, 5)
+    d.ellipse('Pembe', (16, 46), (3.4, 2.8), part='kol_1', line=True)
+    inci(d, 14, 47.5, 3.4, part='kol_1')
+    d.set_face_side(17, 33)
+
+
+def usta_yan(d):
+    kabuk_yan(d, 48, 42, 38, 31, 20, 12, 38, 53, 19.5, 7.5, ((27, 41), (14, 10.5)), 8, 6, 1.1)
+    for x, y in ((53, 55), (47, 60)):
+        inci(d, x, y, 2.2)
+    d.ellipse('Pembe', (19, 53), (4, 3.2), part='kol_1', line=True)
+    inci(d, 16, 54, 4.6, part='kol_1')
+    d.set_face_side(20, 37)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

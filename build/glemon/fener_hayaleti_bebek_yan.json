@@ -1,0 +1,45 @@
+{
+ "anahtar": "fener_hayaleti",
+ "asama": "bebek_yan",
+ "kaynak": "cizim",
+ "tuval": 28,
+ "tuval_h": 26,
+ "kalip": "k",
+ "boy": 17,
+ "goz": {
+  "lx": 9,
+  "rx": 9,
+  "ey": 11
+ },
+ "ten": "Krem",
+ "yuz_kutusu": [
+  9,
+  11,
+  4,
+  3
+ ],
+ "govde_ust": 7,
+ "ayak": 20,
+ "govde_gen": 14,
+ "aileler": [
+  "Cam",
+  "Kirmizi",
+  "Komur",
+  "Krem"
+ ],
+ "renk": 13,
+ "tek_piksel_duzeltme": 9,
+ "denetim": [
+  "govde boyu 17 (kural 13-16)"
+ ],
+ "agiz": false,
+ "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "esya",
+  "govde"
+ ]
+}

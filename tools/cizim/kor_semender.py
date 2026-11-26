@@ -76,3 +76,62 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bacak_y(d, x, y, part, w=3.6):
+    """Yandan kisa bacak, parmaklar sola bakar."""
+    d.capsule('Kirmizi', (x, y), (x - 2, y + 3), w, part=part, line=True)
+    d.pix((int(x) - 5, int(y) + 3), ['#.#.#'], {'#': 'Kirmizi-4'}, part=part, keep=True)
+
+
+def bebek_yan(d):
+    # kuyruk arkadan yukari kivrilir, ucunda mum alevi
+    d.curve('Kirmizi', [(32, 44), (40, 47), (44, 42), (42, 35)], (4.4, 2.8), part='kuyruk', line=True, name='ku')
+    alev(d, 40, 28, A_KUCUK)
+    bacak_y(d, 33, 45, 'kol_2')
+    d.ellipse('Kirmizi', (27, 40), (10.5, 7.5), name='g', cast=1)
+    d.ellipse('Kirmizi', (21, 31.5), (12.5, 9), name='kafa', lift=0.08, cast=1)
+    d.ellipse('Kirmizi', (11.5, 34), (3.6, 3.4), join='kafa')
+    d.ellipse('Sari', (19, 42.5), (4.8, 3), clip='g', shift=-1)
+    d.pix2((6, 17), ['#'], {'#': 'Komur-4'})
+    bacak_y(d, 22, 45, 'kol_1')
+    d.set_face_side(14, 28)
+
+
+def genc_yan(d):
+    d.curve('Kirmizi', [(36, 49), (46, 52), (50, 46), (47, 38)], (5.0, 3.0), part='kuyruk', line=True, name='ku')
+    alev(d, 44, 29, A_ORTA)
+    bacak_y(d, 37, 51, 'kol_2', 4.0)
+    d.ellipse('Kirmizi', (31, 44), (12, 9), name='g', cast=1)
+    d.ellipse('Kirmizi', (24, 32.5), (14.5, 10.5), name='kafa', lift=0.08, cast=1)
+    d.ellipse('Kirmizi', (12.5, 35.5), (4, 3.8), join='kafa')
+    d.ellipse('Sari', (22, 47.5), (5, 4), clip='g', shift=-1)
+    d.curve('Sari', [(20, 47), (26, 47)], 1.0, clip='g', shift=1)
+    for x, y, r in ((29, 28, 1.8), (35, 38, 1.7), (24, 24.5, 1.5), (37, 45, 1.6)):
+        benek(d, x, y, r, 'kafa' if y < 40 else 'g')
+    d.pix2((6, 18), ['#'], {'#': 'Komur-4'})
+    bacak_y(d, 25, 51, 'kol_1', 4.0)
+    d.set_face_side(14, 29)
+
+
+def usta_yan(d):
+    d.curve('Kirmizi', [(41, 56), (52, 60), (56, 53), (52, 45)], (6.0, 3.4), part='kuyruk', line=True, name='ku')
+    alev(d, 48, 33, A_BUYUK)
+    bacak_y(d, 41, 58, 'kol_2', 4.6)
+    d.ellipse('Kirmizi', (35, 50), (14, 11), name='g', cast=1)
+    d.ellipse('Kirmizi', (27, 35), (17.5, 12.5), name='kafa', lift=0.08, cast=2)
+    d.ellipse('Kirmizi', (13.5, 38), (4.6, 4.2), join='kafa')
+    d.ellipse('Sari', (24, 54), (6.5, 4.4), clip='g', shift=-1)
+    for yy in (52.5, 55.5):
+        d.curve('Sari', [(20, yy), (28, yy)], 1.0, clip='g', shift=1)
+    for x, y, r in ((33, 30, 2.0), (21, 27, 1.7), (40, 38, 1.8), (42, 48, 1.8), (36, 55, 1.6)):
+        benek(d, x, y, r, 'kafa' if y < 42 else 'g')
+    # basta kucuk alev dilleri
+    alev(d, 22, 15, A_KUCUK, part='tepe')
+    alev(d, 31, 13, A_KUCUK, part='tepe')
+    d.pix2((7, 20), ['#'], {'#': 'Komur-4'})
+    bacak_y(d, 27, 58, 'kol_1', 4.6)
+    d.set_face_side(15, 31, yanak='Sari-1')
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

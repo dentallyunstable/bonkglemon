@@ -61,3 +61,33 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    d.ellipse('Lacivert', (23, 29.5), (11.2, 10.2), name='damla', cast=1, lift=0.12)
+    hokka(d, 24, 36, 8.5, 42.5, 13.5, 5.4)
+    d.set_face_side(14, 26)
+
+
+def genc_yan(d):
+    d.capsule('Lacivert', (36, 38), (41, 45), (3.8, 3.4), part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Lacivert', (26, 31), (13.5, 12.5), name='damla', cast=1, lift=0.12)
+    hokka(d, 28, 40, 10, 48, 15.5, 7.5)
+    kalem(d, 10, 47, -10, 18, wd=3.0)
+    d.capsule('Lacivert', (20, 38), (12, 46), (3.8, 3.4), part='kol_1', line=True, lift=0.12)
+    d.circle('Lacivert', (11.5, 46), 2.8, part='kol_1', line=True, lift=0.12)
+    d.set_face_side(16, 29)
+
+
+def usta_yan(d):
+    d.capsule('Lacivert', (43, 34), (48, 27), (4.2, 3.6), part='kol_2', line=True, lift=-0.1)
+    d.capsule('Lacivert', (45, 45), (50, 52), (4.2, 3.6), part='kol_2', line=True, lift=-0.1)
+    kalem(d, 36, 22, 22, 19, part='tepe', wd=3.2)
+    d.ellipse('Lacivert', (30, 32), (15, 14), name='damla', cast=1, lift=0.12)
+    d.capsule('Lacivert', (20, 34), (12, 27), (4.2, 3.6), part='kol_1', line=True, lift=0.12)
+    hokka(d, 32, 43, 12, 51, 18.5, 9.5)
+    d.capsule('Lacivert', (17, 43), (11, 52), (4.2, 3.6), part='kol_1', line=True, lift=0.12)
+    d.set_face_side(18, 30)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

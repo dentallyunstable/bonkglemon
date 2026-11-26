@@ -66,3 +66,65 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def kulak_yan_k(d, x, y, r, part, name, back=False):
+    d.circle('Kar', (x, y), r, part=part, name=name, line=True, lift=-0.08 if back else 0.1)
+    d.circle('Pembe', (x - 0.3, y + 0.5), r - 1.6, part=part, clip=name, tone=2 if back else 1)
+
+
+def bebek_yan(d):
+    d.curve('Kar', [(33, 46), (40, 45), (41, 37)], 4.6, part='kuyruk', name='ku', line=True, lift=0.1)
+    d.circle('Komur', (41, 35.5), 2.6, part='kuyruk', line=True, tone=2)
+    kulak_yan_k(d, 30, 25, 4.0, 'kulak_2', 'k2', back=True)
+    d.capsule('Kar', (30, 46), (31, 49), 2.8, part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Kar', (26, 37), (13.5, 12.5), name='g', cast=1, lift=0.2)
+    d.ellipse('Kar', (14.5, 39), (4.2, 3.2), join='g')
+    d.pix2((5, 19), ['#'], {'#': 'Komur-4'})
+    kulak_yan_k(d, 22, 24.5, 4.2, 'kulak_1', 'k1')
+    d.capsule('Kar', (20, 46), (19, 49), 2.8, part='kol_1', line=True, lift=0.1)
+    d.set_face_side(16, 32)
+
+
+def genc_yan(d):
+    kulak_yan_k(d, 36, 21.5, 4.6, 'kulak_2', 'k2', back=True)
+    d.capsule('Kar', (34, 52), (35, 56.5), 3.2, part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Kar', (31, 39.5), (13.5, 15), name='g', cast=1, lift=0.2)
+    d.ellipse('Kar', (17.5, 37), (5, 4), join='g')
+    d.circle('Kar', (23, 33), 9, join='g')
+    d.pix2((7, 18), ['#'], {'#': 'Komur-4'})
+    kulak_yan_k(d, 25.5, 21.5, 4.6, 'kulak_1', 'k1')
+    # kuyruk boyna bir tur, ucu arkada sarkar
+    d.ellipse('Kar', (31, 45), (14.5, 4.4), name='sar', part='kuyruk', line=True, cast=1, lift=-0.12)
+    for x in (-8, -3, 3, 8):
+        d.capsule('Kar', (31 + x - 0.5, 42.3), (31 + x + 0.5, 47.5), 1.0, part='kuyruk', clip='sar', shift=1)
+    d.capsule('Kar', (41, 46), (44, 52.5), (3.8, 3.4), part='kuyruk', name='uc', line=True, lift=-0.12)
+    d.capsule('Komur', (43.5, 51.5), (45, 56.6), 3.6, part='kuyruk', line=True, noshadow=True)
+    d.capsule('Kar', (25, 52), (24, 56.5), 3.2, part='kol_1', line=True, lift=0.1)
+    d.set_face_side(19, 32)
+
+
+def usta_yan(d):
+    kulak_yan_k(d, 41, 19.5, 5.2, 'kulak_2', 'k2', back=True)
+    d.capsule('Kar', (37, 58), (38, 62), 3.6, part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Kar', (34, 42), (15.5, 18.5), name='g', cast=1, lift=0.2)
+    d.ellipse('Kar', (19.5, 38), (6, 4.6), join='g')
+    d.circle('Kar', (25, 33), 10, join='g')
+    d.pix2((7, 20), ['#'], {'#': 'Komur-4'})
+    d.ellipse('Kar', (31, 52), (9, 8), name='karin', join='g', lift=0.3)
+    for x, y in ((24, 57), (28, 59), (32, 59.5)):
+        d.circle('Kar', (x, y), 3.0, join='g')
+    kulak_yan_k(d, 28.5, 19, 5.2, 'kulak_1', 'k1')
+    # kuyruk iki tur, ucu omuzdan arkaya sarkar
+    d.ellipse('Kar', (33, 51), (16, 4.2), name='sar2', part='kuyruk', line=True, cast=1, lift=-0.15)
+    d.ellipse('Kar', (33, 46.5), (15.4, 4.2), name='sar1', part='kuyruk', line=True, cast=1, lift=-0.08)
+    for x in (-10, -5, 0, 5, 10):
+        d.capsule('Kar', (33 + x - 0.5, 43.5), (33 + x + 0.5, 49), 1.0, part='kuyruk', clip='sar1', shift=1)
+        d.capsule('Kar', (33 + x + 1.5, 48.5), (33 + x + 2.5, 54), 1.0, part='kuyruk', clip='sar2', shift=1)
+    d.capsule('Kar', (44, 47), (47, 56), (4.2, 3.8), part='kuyruk', name='uc', line=True, lift=-0.12)
+    d.capsule('Komur', (46.5, 55), (47.5, 61.5), (4.2, 3.8), part='kuyruk', line=True, noshadow=True)
+    d.capsule('Kar', (26, 58), (25, 62), 3.6, part='kol_1', line=True, lift=0.1)
+    d.set_face_side(20, 33)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

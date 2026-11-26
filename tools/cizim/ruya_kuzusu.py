@@ -74,3 +74,62 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def kulak_yan(d, x, y, ln, part, lift, w=(4.2, 3.0), back=3):
+    d.capsule('Mor', (x, y), (x + back, y + ln), w, part=part, line=True, lift=lift)
+
+
+def bacak_yan(d, x1, x2, y, w):
+    d.ellipse('Mor', (x2, y + 1), (w, w * 0.8), part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Mor', (x1, y + 1), (w, w * 0.8), part='kol_1', line=True)
+
+
+def bebek_yan(d):
+    yun(d, 27, 31, 12, 10.5, 10, 3.9)
+    d.circle('Pembe', (22, 21.5), 3.4, join='yun')
+    d.circle('Pembe', (27, 20.5), 3.0, join='yun')
+    kulak_yan(d, 28, 35, 11, 'kulak_2', -0.15, back=2)
+    bacak_yan(d, 21, 33, 41, 3.4)
+    d.ellipse('Mor', (16, 37), (8, 7.2), name='yuz', lift=0.22, cast=1)
+    kulak_yan(d, 23, 36, 11, 'kulak_1', -0.1, back=1)
+    d.set_face_side(12, 33, ten='Pembe') if False else d.set_face_side(12, 33)
+
+
+def genc_yan(d):
+    yun(d, 32, 35, 15, 12.5, 12, 4.3)
+    for dx in (-3, 3, 9):
+        d.circle('Pembe', (28 + dx, 23.5 - (1.5 if dx == 3 else 0)), 3.8, join='yun')
+    kulak_yan(d, 32, 40, 11, 'kulak_2', -0.15, back=2)
+    bacak_yan(d, 22, 38, 46, 3.8)
+    d.ellipse('Mor', (18, 41), (9, 8), name='yuz', lift=0.22, cast=1)
+    d.pix((30, 28), STAR, {'o': 'Sari-1'}, part='govde')
+    d.pix((41, 33), STAR, {'o': 'Sari-1'}, part='govde')
+    kulak_yan(d, 27, 41, 12, 'kulak_1', -0.1, back=1)
+    d.pix((21, 48), CRES, {'o': 'Sari-1'}, part='esya')
+    d.pix((22, 49), ['oo'], {'o': 'Parilti'}, part='esya')
+    d.set_face_side(12, 37)
+
+
+def usta_yan(d):
+    yun(d, 38, 44, 19.5, 11.5, 14, 4.8, name='alt', start=0.2)
+    yun(d, 36, 33, 16.5, 12.5, 12, 4.8, name='ust', start=0.5)
+    kulak_yan(d, 35, 44, 12, 'kulak_2', -0.15, (5, 3.6), back=2)
+    bacak_yan(d, 25, 43, 53, 4.2)
+    d.ellipse('Mor', (19, 42), (10, 8.5), name='yuz', lift=0.22, cast=1)
+    kulak_yan(d, 29, 45, 13, 'kulak_1', -0.1, (5, 3.6), back=1)
+    d.poly('Mor', [(13, 31), (15, 24), (21, 18), (28, 17), (34, 22), (35, 31)], part='tepe', name='takke', line=True, lift=0.05)
+    d.curve('Mor', [(31, 19), (40, 17), (46, 23)], 4.4, part='tepe', line=True)
+    d.ellipse('Pembe', (24, 31), (12, 2.8), part='tepe', line=True, name='kenar', lift=0.05)
+    d.circle('Sari', (47, 28), 3.8, part='esya', line=True, lift=0.12)
+    d.pix((45, 26), ['oo', 'o.'], {'o': 'Parilti'}, part='esya')
+    d.pix((22, 23), ['oo', 'o.'], {'o': 'Sari-1'}, part='tepe')
+    d.pix((36, 28), STAR, {'o': 'Sari-1'}, part='govde')
+    d.pix((50, 40), STAR, {'o': 'Sari-1'}, part='govde')
+    d.pix((23, 52), CRES, {'o': 'Sari-1'}, part='esya')
+    d.pix((24, 53), ['oo'], {'o': 'Parilti'}, part='esya')
+    d.set_face_side(12, 38)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

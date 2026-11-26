@@ -86,3 +86,62 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def dil_yan(d, x, y):
+    """Catalli dil, burnun onunden sola uzanir (x,y = tam boy, dilin sag ucu)."""
+    d.pix2((x // 2 - 2, y // 2 - 1), ['#.', '##', '#.'], {'#': 'Pembe-2'})
+
+
+def bebek_yan(d):
+    d.curve('Mor', [(35, 46), (42, 46.5), (44, 41)], (4.0, 2.2), part='kuyruk', line=True, lift=-0.08)
+    kristal(d, (44, 36.5), 3.8, 2.0, part='kuyruk', name='ck')
+    halka(d, (27, 43), 13.5, 6.3, 'c1', cast=1)
+    elmas(d, 18, 46)
+    elmas(d, 35, 46)
+    d.ellipse('Mor', (23, 31.5), (11.6, 10), name='kafa', cast=1, lift=0.06)
+    d.ellipse('Mor', (12.5, 34), (4.6, 3.6), join='kafa')
+    d.set_face_side(15, 29)
+    dil_yan(d, 9, 36)
+
+
+def genc_yan(d):
+    d.curve('Mor', [(42, 52), (49, 52), (50, 46)], (4.4, 2.6), part='kuyruk', line=True, lift=-0.1)
+    for i, (y, h, w) in enumerate(((43, 3.4, 1.8), (38.5, 4.2, 2.3), (33, 5.0, 2.8))):
+        kristal(d, (50, y), h, w, part='kuyruk', name='ck%d' % i, lift=0.08 + 0.04 * i)
+    halka(d, (29, 49), 15.5, 6.2, 'c1', cast=1)
+    elmas(d, 20, 51)
+    elmas(d, 38, 51)
+    for x, y in ((41, 46), (35, 41.5)):
+        kristal(d, (x, y), 3.2, 1.7, name='pl_%d_%d' % (x, y), lift=0.0)
+    halka(d, (28, 42.5), 12.6, 5.4, 'c2', cast=1, lift=-0.04)
+    d.ellipse('Mor', (24, 31), (12.6, 10.6), name='kafa', cast=1, lift=0.06)
+    d.ellipse('Mor', (12, 34), (5.0, 3.8), join='kafa')
+    elmas(d, 22, 45)
+    elmas(d, 33, 45)
+    d.set_face_side(15, 29)
+    dil_yan(d, 8, 36)
+
+
+def usta_yan(d):
+    d.curve('Mor', [(47, 59), (55, 58), (56, 52)], (5.0, 3.0), part='kuyruk', line=True, lift=-0.1)
+    for i, (y, h, w) in enumerate(((49, 4.2, 2.2), (43.5, 5.2, 2.8), (37, 6.4, 3.4))):
+        kristal(d, (56, y), h, w, part='kuyruk', name='ck%d' % i, lift=0.06 + 0.05 * i)
+    halka(d, (32, 55), 18, 6.8, 'c1', cast=1, lift=-0.12)
+    for x in (19, 32, 45):
+        elmas(d, x, 58 if x == 32 else 56)
+    halka(d, (32, 49), 14.8, 6.0, 'c2', cast=1, lift=-0.08)
+    for x in (23, 41):
+        elmas(d, x, 51)
+    for i, (dx, dy, h, w) in enumerate(((2, 24, 5.6, 2.6), (8, 19, 6.6, 3.0), (14, 17, 7.6, 3.4), (19, 21, 6.6, 3.0))):
+        kristal(d, (29 + dx, dy + 2), h, w, part='tepe', name='tp%d' % i, lift=0.04 + 0.04 * i)
+    halka(d, (30, 43), 11.8, 5.4, 'c3', cast=1, band=False, lift=-0.02)
+    d.ellipse('Mor', (27, 31.5), (13.6, 11.6), name='kafa', cast=1, lift=0.06)
+    d.ellipse('Mor', (14, 35), (5.4, 4.0), join='kafa')
+    d.curve('Sari', [(18, 41), (27, 45), (37, 41)], 2.8, name='halka', line=True, lift=0.3, cast=1)
+    d.set_face_side(17, 30)
+    dil_yan(d, 9, 37)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

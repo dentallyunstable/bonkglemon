@@ -136,3 +136,58 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, kanatlari ustte
+def kuzgun_yan(d, s, ox, oy, dugme_var=True, anahtar=False):
+    """Bebek olcusunda tasarla, s ile buyut. (ox, oy) = bebek (24, 44) noktasinin yeri."""
+    P = lambda x, y: (ox + (x - 24) * s, oy + (y - 44) * s)
+    L = lambda pts: [P(*q) for q in pts]
+    d.poly('Lacivert', L([(30, 32), (32, 23), (37, 16), (40, 24), (38, 34)]), part='kanat_2', name='wf', line=True, lift=DK - 0.12)
+    d.capsule('Mor', P(33, 30), P(36, 21), 1.0 * s, clip='wf', tone=2, part='kanat_2')
+    d.poly('Lacivert', L([(34, 36), (43, 33), (45.5, 38), (35, 43)]), part='kuyruk', name='ky', line=True, lift=DK)
+    d.capsule('Mor', P(37, 38), P(44, 36.5), 0.8 * s, clip='ky', tone=2, part='kuyruk')
+    d.ellipse('Lacivert', P(27, 37), (10.5 * s, 10 * s), name='kafa', cast=1, lift=DK)
+    d.circle('Lacivert', P(20, 33), 10 * s, join='kafa')
+    d.ellipse('Lacivert', P(17, 27), (4.5 * s, 3 * s), clip='kafa', shift=-1)
+    d.ellipse('Lacivert', P(21, 40), (7 * s, 4 * s), clip='kafa', tone=3, shade='flat')
+    for k, (x, y) in enumerate(((19, 23.5), (23, 23))):
+        q = P(x, y)
+        d.capsule('Lacivert', (q[0], q[1] + 2), (q[0] + 1.2 * s, q[1] - (3.5 + k) * s), (2.4 * s, 1.6 * s), part='tepe', line=True, lift=DK + 0.25)
+    d.pix(P(17, 26), ['.oo'], {'o': 'Mor-2'}, keep=True)
+    b = L([(11.5, 35), (3.5, 38.5), (11.5, 42.5)])
+    d.poly('Lacivert', b, line=True, name='gaga', lift=0.1, noshadow=True)
+    d.capsule('Lacivert', (b[0][0] - 1, b[0][1] + 3.3 * s), (b[1][0] + 3, b[1][1] + 0.5), 0.6, clip='gaga', shift=1)
+    d.poly('Lacivert', L([(25, 35), (33, 33), (39, 39), (34, 44), (26, 42)]), part='kanat_1', name='wn', line=True, lift=DK + 0.12)
+    d.capsule('Mor', P(28, 36), P(37, 38.5), 1.0 * s, clip='wn', tone=2, part='kanat_1')
+    if dugme_var:
+        c = P(20.5, 44)
+        d.circle('Sari', c, 2.5 * s, line=True, part='govde', lift=0.1)
+        d.pix((round(c[0]) - 1, round(c[1]) - 1), ['oo'], {'o': 'Parilti'})
+    return P
+
+
+def bebek_yan(d):
+    d.flyer = True
+    kuzgun_yan(d, 1.0, 24, 44)
+    d.set_face_side(14, 28)
+
+
+def genc_yan(d):
+    d.flyer = True
+    P = kuzgun_yan(d, 1.15, 26, 49)
+    d.curve('Sari', [P(15, 42), P(19, 47.5), P(26, 48)], 0.9, shade='flat', tone=3, noshadow=True)
+    d.set_face_side(*[int(round(v / 2)) * 2 for v in P(14.5, 29)])
+
+
+def usta_yan(d):
+    d.flyer = True
+    P = kuzgun_yan(d, 1.3, 28, 54, dugme_var=False)
+    c = P(20, 44)
+    d.circle('Sari', c, 3.0, line=True, part='govde', lift=0.1)
+    d.pix((round(c[0]) - 1, round(c[1]) - 1), ['oo'], {'o': 'Parilti'})
+    d.pix((round(c[0]) + 4, round(c[1]) - 1), ['.###.', '#...#', '#...#', '.###.', '..#..', '..##.', '..#..', '..##.'], {'#': 'Sari-2'}, part='govde')
+    d.set_face_side(*[int(round(v / 2)) * 2 for v in P(14.5, 29)])
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

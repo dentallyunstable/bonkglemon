@@ -97,3 +97,57 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+
+def bebek_yan(d):
+    cx = 21
+    d.curve('Sari', [(30, 42), (37, 44), (40, 39)], 3.2, part='kuyruk', line=True)
+    tomurcuk(d, (40.5, 35.5), 0.95)
+    d.ellipse('Sari', (30, 40), (7.5, 5.5), name='rump', lift=-0.04)
+    d.ellipse('Sari', (33, 43.5), (4, 2.4), part='kol_2', line=True, noshadow=True, lift=-0.1)
+    yapraklar(d, (cx, 31), 9.6, 3.7, 4.4, 10, off=18, lift=-0.04)
+    kulak(d, 26, 20, 3.0, 2)
+    kulak(d, 16.5, 21, 3.0, 1)
+    d.ellipse('Sari', (cx - 1, 32), (9.4, 8.8), name='kafa', cast=1, lift=0.04)
+    d.ellipse('Sari', (13, 35), (3.4, 2.8), join='kafa')
+    d.ellipse('Sari', (20, 43), (4.2, 2.6), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(13, 29)
+
+
+def genc_yan(d):
+    cx = 23
+    d.curve('Sari', [(34, 46), (41, 47), (45, 45)], 3.2, part='kuyruk', line=True)
+    cicek(d, (46.5, 41), 5, 3.4, 2.4, 3.0, rot=-60, mer=1.9)
+    d.ellipse('Sari', (33, 43), (11, 7), name='govde', cast=1, lift=-0.04)
+    d.ellipse('Sari', (38, 48), (4.4, 2.6), part='kol_2', line=True, noshadow=True, lift=-0.1)
+    yapraklar(d, (cx, 31), 12.2, 4.2, 5.2, 12, off=0, lift=-0.14, pre='d')
+    yapraklar(d, (cx, 31), 8.8, 3.6, 4.4, 9, off=20, lift=0.02, pre='e')
+    kulak(d, 29, 17, 3.3, 2)
+    kulak(d, 17.5, 19, 3.3, 1)
+    d.ellipse('Sari', (cx - 1, 32), (9.6, 9.0), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Sari', (14.5, 35.5), (3.6, 3.0), join='kafa')
+    d.ellipse('Sari', (20, 48), (4.2, 2.6), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(13, 30)
+
+
+def usta_yan(d):
+    cx = 25
+    d.curve('Sari', [(38, 52), (47, 53), (52, 50)], 3.8, part='kuyruk', line=True)
+    cicek(d, (54.5, 46), 7, 3.9, 2.5, 3.1, rot=0, mer=2.2)
+    d.ellipse('Sari', (38, 48), (12.5, 8.5), name='govde', cast=1, lift=-0.04)
+    d.ellipse('Sari', (42, 56), (4.6, 3.0), part='kol_2', line=True, noshadow=True, lift=-0.1)
+    d.ellipse('Cimen', (47, 58), (4.6, 2.2), rot=15, part='esya', line=True, name='y2')
+    yapraklar(d, (cx, 33), 15.4, 4.8, 6.0, 14, off=0, lift=-0.2, pre='a')
+    yapraklar(d, (cx, 33), 12.2, 4.4, 5.4, 12, off=15, lift=-0.07, pre='b')
+    yapraklar(d, (cx, 33), 9.2, 3.8, 4.6, 10, off=0, lift=0.05, pre='c')
+    kulak(d, 32, 15, 3.6, 2)
+    kulak(d, 17, 19, 3.6, 1)
+    d.ellipse('Sari', (cx - 1, 34), (11.2, 10.2), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Sari', (14.5, 38), (4, 3.2), join='kafa')
+    d.curve('Sari', [(cx - 8, 44), (cx - 1, 47), (cx + 8, 45)], 2.8, name='halka', line=True, lift=0.3, cast=1)
+    d.ellipse('Sari', (26, 55), (5, 3.2), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(14, 31)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

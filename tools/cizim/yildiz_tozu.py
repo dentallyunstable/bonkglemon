@@ -46,3 +46,36 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, sol uc "burun"
+def bebek_yan(d):
+    d.flyer = True
+    yildiz(d, 26, 30, 12.5, 9.5, 12, rot=-108, cast=1)
+    d.set_face_side(18, 28)
+
+
+def genc_yan(d):
+    d.flyer = True
+    d.curve('Pembe', [(33, 42), (38, 45), (42, 40), (46, 43), (49, 37)], (6.4, 3.0), part='kuyruk', name='k', line=True)
+    d.curve('Pembe', [(37, 44), (41, 41), (45, 42)], 2.4, part='kuyruk', clip='k', shift=-1)
+    d.pix((39, 43), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    yildiz(d, 24, 33, 15, 11, 14, rot=-108, cast=1)
+    d.set_face_side(18, 30)
+
+
+def usta_yan(d):
+    d.flyer = True
+    cx, cy = 32, 36
+    d.ellipse('Pembe', (cx, cy + 2), (25, 7), rot=-6, part='esya', name='h', line=True, lift=0.1)
+    d.ellipse('Pembe', (cx, cy + 2), (22.6, 4.6), rot=-6, part='esya', sub='h')
+    yildiz(d, cx, cy, 19.5, 14, 18, tw=5.4, rot=-108, cast=1)
+    d.ellipse('Pembe', (cx, cy + 2), (25, 7), rot=-6, part='esya', name='h2', inbox=(8, cy + 6, 56, 60), line=True, lift=0.1)
+    d.ellipse('Pembe', (cx, cy + 2), (22.6, 4.6), rot=-6, part='esya', sub='h2')
+    for (x, y) in ((10, 19), (55, 21)):
+        d.pix((x - 3, y - 3), ['..#..', '.###.', '#####', '.###.', '..#..'], {'#': 'Sari-2'}, part='esya')
+        d.pix((x - 1, y - 1), ['oo'], {'o': 'Parilti'}, part='esya')
+    d.set_face_side(22, 34)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

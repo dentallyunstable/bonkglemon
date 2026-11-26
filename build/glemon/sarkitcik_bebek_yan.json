@@ -1,0 +1,44 @@
+{
+ "anahtar": "sarkitcik",
+ "asama": "bebek_yan",
+ "kaynak": "cizim",
+ "tuval": 28,
+ "tuval_h": 26,
+ "kalip": "k",
+ "boy": 18,
+ "goz": {
+  "lx": 8,
+  "rx": 8,
+  "ey": 15
+ },
+ "ten": "Tas",
+ "yuz_kutusu": [
+  8,
+  15,
+  4,
+  3
+ ],
+ "govde_ust": 13,
+ "ayak": 24,
+ "govde_gen": 16,
+ "aileler": [
+  "Cam",
+  "Tas"
+ ],
+ "renk": 9,
+ "tek_piksel_duzeltme": 6,
+ "denetim": [
+  "govde boyu 18 (kural 13-16)"
+ ],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "tepe"
+ ]
+}

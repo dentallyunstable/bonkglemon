@@ -73,3 +73,52 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    d.ellipse('Komur', (33, 44.5), (6.2, 4.4), part='kol_2', line=True, rot=10)
+    d.ellipse('Komur', (26, 39.5), (15.5, 9.2), name='kafa', cast=1, lift=0.08)
+    d.circle('Komur', (17, 31.5), 6.6, join='kafa')
+    d.ellipse('Komur', (10, 41.5), (4, 3.6), join='kafa')
+    d.ellipse('Sari', (21, 46), (8, 3.4), part='govde', clip='kafa', shift=-2, inbox=(0, 44, 47, 50))
+    catlak(d, [(30, 33), (33, 37), (31, 41)], 1.7, 'kafa')
+    catlak(d, [(37, 40), (34, 42.5), (36, 45)], 1.6, 'kafa')
+    d.ellipse('Komur', (14, 46.5), (4.2, 2.6), part='kol_1', line=True)
+    d.set_face_side(12, 29)
+
+
+def genc_yan(d):
+    d.ellipse('Komur', (40, 52), (7.0, 5.0), part='kol_2', line=True, rot=10)
+    d.ellipse('Komur', (31, 46.5), (18.5, 10.5), name='govde', cast=1, lift=0.05)
+    d.circle('Komur', (19.5, 35), 7.4, join='govde')
+    d.ellipse('Komur', (11, 46), (4.6, 4.2), join='govde')
+    d.ellipse('Turuncu', (16, 50), (6.4, 4.0), name='kese', line=True, cast=1, part='govde')
+    d.ellipse('Sari', (16.5, 50.4), (3.8, 1.8), part='govde', clip='kese', shift=-1)
+    for pts in ([(40, 40), (36, 43), (39, 47)], [(36, 43), (31, 44)], [(44, 47), (41, 50)], [(28, 38), (31, 41)], [(26, 53), (28, 56)], [(14, 40), (17, 42)]):
+        catlak(d, pts, 1.5, 'govde')
+    d.pix((26, 38), ['oo'], {'o': 'Sari-1'}, part='govde')
+    d.ellipse('Komur', (17, 56), (4.6, 2.8), part='kol_1', line=True)
+    d.set_face_side(13, 31)
+
+
+def usta_yan(d):
+    d.ellipse('Komur', (46, 58), (8.0, 5.6), part='kol_2', line=True, rot=10)
+    d.ellipse('Komur', (36, 52), (22.5, 11.5), name='govde', cast=1, lift=0.05)
+    d.circle('Komur', (21, 38), 8.8, join='govde')
+    d.ellipse('Komur', (13, 51), (5.2, 4.6), join='govde')
+    d.ellipse('Turuncu', (40, 40.5), (7.0, 2.8), name='golet', line=True, part='tepe')
+    d.ellipse('Sari', (40, 40.8), (4.4, 1.3), part='tepe', clip='golet', shift=-1)
+    d.ellipse('Turuncu', (17, 56), (7.2, 4.4), name='kese', line=True, cast=1, part='govde')
+    d.ellipse('Sari', (17.5, 56.4), (4.6, 2.0), part='govde', clip='kese', shift=-1)
+    for pts in ([(46, 46), (42, 49), (45, 54)], [(42, 49), (37, 50)], [(52, 53), (49, 57)], [(30, 43), (33, 47)], [(30, 58), (32, 62)], [(14, 45), (17, 47)], [(50, 46), (53, 50)]):
+        catlak(d, pts, 1.6, 'govde')
+    d.pix((26, 42), ['oo'], {'o': 'Sari-1'}, part='govde')
+    d.ellipse('Komur', (22, 62), (5.4, 3.0), part='kol_1', line=True)
+    for x in (18.5, 22, 25.5):
+        d.circle('Turuncu', (x, 63.3), 1.6, part='kol_1', line=True)
+    for x in (44, 47, 50):
+        d.circle('Turuncu', (x, 63.3), 1.6, part='kol_2', line=True)
+    d.set_face_side(14, 34)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

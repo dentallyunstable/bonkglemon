@@ -1,0 +1,49 @@
+{
+ "anahtar": "gunes_kusu",
+ "asama": "usta_yan",
+ "kaynak": "cizim",
+ "tuval": 36,
+ "tuval_h": 34,
+ "kalip": "o",
+ "boy": 20,
+ "goz": {
+  "lx": 13,
+  "rx": 13,
+  "ey": 17
+ },
+ "ten": "Sari",
+ "yuz_kutusu": [
+  13,
+  17,
+  4,
+  3
+ ],
+ "govde_ust": 13,
+ "ayak": 28,
+ "govde_gen": 22,
+ "aileler": [
+  "Cam",
+  "Sari",
+  "Turuncu"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 33,
+ "denetim": [
+  "govde boyu 20 (kural 21-25)"
+ ],
+ "agiz": false,
+ "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "govde",
+  "kanat_1",
+  "kanat_2",
+  "kol_1",
+  "kol_2",
+  "kuyruk",
+  "tepe"
+ ]
+}

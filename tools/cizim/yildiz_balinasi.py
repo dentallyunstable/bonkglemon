@@ -84,7 +84,7 @@ def usta(d):
     # takimyildiz: cizgiler + yildizlar
     pts = [(16, 42), (21, 35), (28, 32), (37, 33), (43, 38), (48, 45)]
     for a, b in zip(pts, pts[1:]):
-        d.capsule('Sari', a, b, 1.0, clip='kafa', tone=3)
+        d.capsule('Sari', a, b, 1.3, clip='kafa', tone=3)
     for i, (x, y) in enumerate(pts):
         d.circle('Sari', (x, y), 1.5 if i % 2 == 0 else 1.1, clip='kafa', tone=2)
     d.pix((20, 34), ['oo'], {'o': 'Parilti'}, part='govde')
@@ -98,3 +98,65 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, havada yuzer
+def balina_yan(d, s, ox, oy):
+    """Bebek olcusunda tasarla, (24,44) capasi (ox,oy), olcek s. Kuyruk saga, fiskiye tepede."""
+    P = lambda x, y: (ox + (x - 24) * s, oy + (y - 44) * s)
+    # kuyruk: sap yukari kivrilir, hilal yuzgec
+    d.curve('Lacivert', [P(33, 42), P(38, 41), P(40.5, 35)], (5.0 * s, 3.0 * s), part='kuyruk', line=True, name='k', lift=-0.05)
+    d.ellipse('Lacivert', P(41.5, 31), (2.8 * s, 5.6 * s), rot=20, part='kuyruk', join='k')
+    # uzak yuzgec
+    d.ellipse('Lacivert', P(30, 49), (4.2 * s, 2.5 * s), rot=-35, part='kol_2', line=True, lift=-0.2)
+    d.ellipse('Lacivert', P(22, 40), (14.5 * s, 11.5 * s), name='kafa', cast=1)
+    d.ellipse('Gok', P(20, 46), (11.5 * s, 6 * s), name='karin', clip='kafa', shift=0)
+    fiskiye_y(d, P(19, 29), s)
+    d.ellipse('Lacivert', P(23, 48), (4.4 * s, 2.7 * s), rot=-30, part='kol_1', line=True)
+    return P
+
+
+def fiskiye_y(d, q, s):
+    x, y = q
+    d.ellipse('Lacivert', (x, y + 1), (2.2, 1.0), clip='kafa', shift=1)
+    d.capsule('Gok', (x, y), (x, y - 4 * s), (1.8, 1.2), part='tepe', line=True)
+    yildiz(d, x, y - 4 * s - 2)
+    return x, y
+
+
+def bebek_yan(d):
+    d.flyer = True
+    P = balina_yan(d, 1.0, 24, 44)
+    d.set_face_side(12, 36)
+
+
+def genc_yan(d):
+    d.flyer = True
+    P = balina_yan(d, 1.17, 26, 50)
+    for x, y, r in ((24, 33, 1.5), (30, 32, 1.6), (35, 37, 1.4), (28, 39, 1.3)):
+        benek(d, *P(x, y), 'kafa', r)
+    d.pix(P(23, 33), ['oo'], {'o': 'Parilti'}, part='govde')
+    cx, cy = P(10, 47)
+    d.capsule('Gok', (cx, cy), (cx + 5, cy), 0.5, clip='karin', shift=1)
+    d.set_face_side(14, 40)
+
+
+def usta_yan(d):
+    d.flyer = True
+    P = balina_yan(d, 1.38, 26, 57)
+    pts = [P(13, 38), P(19, 33.5), P(26, 32.5), P(32, 35), P(37, 38.5)]
+    for a, b in zip(pts, pts[1:]):
+        d.capsule('Sari', a, b, 1.3, clip='kafa', tone=3)
+    for i, q in enumerate(pts):
+        d.circle('Sari', q, 2.0 if i % 2 == 0 else 1.5, clip='kafa', tone=2)
+    d.pix((round(pts[1][0]) - 1, round(pts[1][1]) - 1), ['oo'], {'o': 'Parilti'}, part='govde')
+    q = P(40.5, 38)
+    d.ellipse('Sari', q, (3.2, 2.4), part='kuyruk', line=True, lift=0.1)
+    d.pix((round(q[0]) - 1, round(q[1]) - 1), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    fx, fy = P(19, 29)
+    yildiz(d, fx - 8, fy - 8, big=False)
+    yildiz(d, fx + 8, fy - 8, big=False)
+    d.set_face_side(*[int(round(v / 2)) * 2 for v in P(10.5, 37)])
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

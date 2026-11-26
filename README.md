@@ -4,6 +4,14 @@ Arkadaşlarınla (en fazla 3 kişi) oynanan 2D piksel bir web oyunu. Zindana in,
 **Glemon** adlı yaratıklarla savaş, eşya topla, becerilerini 1'den 99'a kadar kas
 ve okulda arkadaşlarına profil kartını göster.
 
+## Sürüm 1.0.28 (Glemonlar iri piksel + yürürken yandan)
+
+- Eren'in isteği: Glemonlar daha pikselli, oyuncu ve bloklarla aynı piksel iriliğinde. Hepsi yarım çözünürlükte çizilip oyunda 2 kat büyütülür (Kütükçük dahil, 7 patron dahil).
+- Glemonlar yürürken yandan görünür (takip eden Glemon, ahır), dururken ve savaşta 3/4. Her türün her aşaması için yandan çizim ve 6 karelik yandan yürüme animasyonu.
+- Düzeltme: Glemonların sol şeridi ezilmede gövdeden ayrı oynuyordu (artık iki yan simetrik).
+- Düzeltme: Takip eden Glemon koşarken yürüme animasyonu sürekli baştan başlıyordu.
+- Araçlar: glemon_draw.py iri piksel modu (GLEMON_INCE=1 ile eski ince), pix2 (elle iri piksel), <aşama>_yan çizimleri ve set_face_side; tools/glemon_kucult.py; tools/glemon_yan_onizle.py; kılavuz tools/cizim/YANDAN.md.
+
 ## Sürüm 1.0.27 (Glemon yenileme: hepsi yeni çizimde)
 
 - 78 Glemon'un tamamı (Bebek, Genç, Usta) ve 7 patron, Plan v2 kurallarıyla yeniden çizildi: aynı palet, aynı göz kalıbı, Kütükçük ile aynı 11 animasyon ve yüz ifadeleri.

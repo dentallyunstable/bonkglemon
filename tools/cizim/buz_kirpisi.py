@@ -66,3 +66,69 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    # sirt sacaklari arkada (sagda), cok kisa
+    sacak(d, (31, 30), (36.5, 23), (4.4, 3.2), lift=-0.15)
+    sacak(d, (35, 35), (42, 31), (4.4, 3.2), lift=-0.2)
+    sacak(d, (36, 41), (43, 41), (4.2, 3.0), lift=-0.22)
+    d.circle('Kar', (28, 25.5), 3.2, part='kulak_2', line=True, lift=-0.05)
+    d.ellipse('Kar', (26, 36), (13.5, 12.4), name='g', cast=1, lift=0.18)
+    d.ellipse('Kar', (15, 38.5), (4.4, 3.4), join='g')
+    d.ellipse('Mor', (26, 49), (13, 4.2), clip='g', tone=2, shift=-1)
+    d.pix2((5, 19), ['#'], {'#': 'Komur-4'})
+    d.circle('Kar', (22, 26), 3.4, part='kulak_1', line=True, lift=0.1)
+    # alin percemi one dogru dokulur
+    for x, y2, w in ((16, 29.5, 3.4), (20.5, 28.2, 3.6), (25, 27.5, 3.4)):
+        sacak(d, (x + 3, 24), (x, y2), (w, 2.0), lift=0.05)
+    d.ellipse('Kar', (21, 48.5), (3.2, 2.6), part='kol_1', line=True, lift=0.1)
+    d.ellipse('Kar', (32, 48.5), (3.2, 2.6), part='kol_2', line=True, lift=-0.05)
+    d.set_face_side(16, 32)
+
+
+def genc_yan(d):
+    # sirt boyunca kisa yuvarlak uclu sacaklar (sagda)
+    for i, (a, b) in enumerate((((33, 29), (36, 20)), ((37, 32), (44.5, 26)), ((40, 37), (48, 34)),
+                                ((42, 43), (49.5, 42)), ((40, 49), (47, 50)))):
+        sacak(d, a, b, (5.0, 3.6), lift=-0.12 - 0.02 * i)
+    d.circle('Kar', (30, 28.5), 3.6, part='kulak_2', line=True, lift=-0.05)
+    d.ellipse('Kar', (29, 41.5), (15, 14.8), name='g', cast=1, lift=0.18)
+    d.ellipse('Kar', (16, 44), (5, 3.8), join='g')
+    d.ellipse('Mor', (29, 58.8), (14, 4.6), clip='g', tone=2, shift=-1)
+    d.pix2((6, 22), ['#'], {'#': 'Komur-4'})
+    d.circle('Kar', (23.5, 29), 3.6, part='kulak_1', line=True, lift=0.1)
+    d.ellipse('Kar', (23, 55.5), (3.6, 3), part='kol_1', line=True, lift=0.1)
+    d.ellipse('Kar', (35, 55.5), (3.6, 3), part='kol_2', line=True, lift=-0.05)
+    for x, y2, w in ((16, 33.5, 4.2), (20.5, 32, 4.4), (25, 31, 4.4)):
+        sacak(d, (x + 3, 26.5), (x, y2), (w, 2.2), lift=0.05)
+    d.set_face_side(17, 36)
+
+
+def usta_yan(d):
+    # arkada iki sira parlak, katmanli sacak
+    for i, (a, b, w) in enumerate((((35, 32), (44, 17), 7.2), ((38, 38), (51, 28), 7.4), ((40, 45), (54, 40), 7.2),
+                                   ((40, 53), (53, 52), 6.8))):
+        sacak(d, a, b, (w, w - 2.8), lift=-0.2 + 0.03 * (i % 3))
+    d.circle('Kar', (33, 30), 3.8, part='kulak_2', line=True, lift=-0.05)
+    d.ellipse('Kar', (31, 46.5), (17.5, 19), name='g', cast=1, lift=0.18)
+    d.ellipse('Kar', (24, 38), (14, 11.5), join='g')
+    d.ellipse('Kar', (16, 46), (5.5, 4), join='g')
+    d.ellipse('Mor', (31, 68.5), (16, 5), clip='g', tone=2, shift=-1)
+    d.pix2((7, 24), ['#'], {'#': 'Komur-4'})
+    for i, (a, b, w) in enumerate((((29, 29), (32, 15), 5.4), ((34, 33), (40, 22), 5.6))):
+        sacak(d, a, b, (w, w - 2.2), lift=0.0)
+    d.circle('Kar', (26, 30), 3.8, part='kulak_1', line=True, lift=0.1)
+    d.ellipse('Kar', (24, 63.5), (4, 3.4), part='kol_1', line=True, lift=0.1)
+    d.ellipse('Kar', (38, 63.5), (4, 3.4), part='kol_2', line=True, lift=-0.05)
+    # percem one dogru akar
+    for x, y2, w in ((16, 36, 4.8), (20.5, 34, 5.0), (25, 33, 5.0)):
+        sacak(d, (x + 4, 27), (x, y2), (w, 2.4), lift=0.08)
+    sacak(d, (22, 27), (14, 40), (4.6, 2.2), lift=0.12)
+    d.pix((22, 29), ['oo'], {'o': 'Parilti'}, part='tepe')
+    # burun ucunda buz damlasi
+    d.circle('Gok', (11, 47.5), 1.5, part='esya', line=True, lift=0.15)
+    d.set_face_side(18, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

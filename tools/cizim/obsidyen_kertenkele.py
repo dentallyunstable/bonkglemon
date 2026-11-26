@@ -97,3 +97,61 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    plaka(d, 21, 26, 3.3, 5.2, rot=-10)
+    plaka(d, 29, 28, 3.6, 5.4, rot=25)
+    plaka(d, 35, 35, 3.4, 5.0, rot=60)
+    d.curve('Komur', [(33, 46), (40, 50.5), (45, 47), (44.5, 41)], (8.0, 2.2), part='kuyruk', line=True)
+    d.capsule('Komur', (31, 46), (33, 49), 5.4, part='kol_2', line=True)
+    d.ellipse('Komur', (26, 41), (11.5, 8.5), name='g', cast=1)
+    d.ellipse('Komur', (19, 34), (10.5, 8.0), name='kafa', join='g')
+    d.ellipse('Komur', (11.5, 37), (4.6, 3.6), join='g')
+    d.ellipse('Krem', (23, 45.5), (8, 4.6), part='govde', clip='g', shift=0, inbox=(0, 43, 80, 80))
+    d.capsule('Komur', (19, 46), (17, 49), 5.6, part='kol_1', line=True)
+    parmak(d, 17, 51, 'kol_1', -2); parmak(d, 33, 51, 'kol_2', -2)
+    d.pix2((5, 18), ['#'], {'#': 'Komur-4'})
+    d.set_face_side(14, 31)
+
+
+def genc_yan(d):
+    plaka(d, 22, 28, 3.5, 5.6, rot=-12)
+    plaka(d, 30, 29, 4.0, 6.0, rot=15)
+    plaka(d, 37, 34, 4.0, 5.8, rot=45)
+    d.curve('Komur', [(36, 53), (43, 58), (48, 54.5), (48, 46.5)], (9.5, 2.4), part='kuyruk', line=True)
+    for x, y, rx, ry, r in ((43, 55.5, 2.2, 3.2, 100), (48.5, 50, 2.1, 3.0, 50)):
+        plaka(d, x, y, rx, ry, r, part='kuyruk')
+    d.capsule('Komur', (33, 52), (35, 55.5), 5.8, part='kol_2', line=True)
+    d.ellipse('Komur', (28, 46.5), (13, 10.5), name='g', cast=1)
+    d.ellipse('Komur', (20, 38), (11.5, 9.2), name='kafa', join='g')
+    d.ellipse('Komur', (11.5, 41), (5, 4), join='g')
+    d.ellipse('Krem', (24, 51.5), (9, 5.2), part='govde', clip='g', shift=0, inbox=(0, 48, 80, 80))
+    d.capsule('Komur', (20, 52), (17.5, 55.5), 6.0, part='kol_1', line=True)
+    parmak(d, 17.5, 58, 'kol_1', -2); parmak(d, 35, 58, 'kol_2', -2)
+    d.pix2((5, 20), ['#'], {'#': 'Komur-4'})
+    d.set_face_side(14, 35)
+
+
+def usta_yan(d):
+    for x, y, rx, ry, r in ((24, 27, 3.8, 5.8, -14), (32, 27, 4.4, 6.6, 12), (40, 32, 4.4, 6.6, 42), (45, 41, 4.0, 6.0, 66)):
+        plaka(d, x, y, rx, ry, r, isik=True)
+    d.curve('Komur', [(40, 58), (47, 63.5), (52, 59), (52, 51)], (11.0, 4.0), part='kuyruk', line=True)
+    for x, y, rx, ry, r in ((46, 59.5, 2.4, 3.4, 85), (51.5, 54, 2.2, 3.2, 40)):
+        plaka(d, x, y, rx, ry, r, part='kuyruk', isik=True)
+    d.circle('Mor', (52, 46.5), 4.6, part='kuyruk', line=True, name='topuz')
+    d.circle('Komur', (52.5, 47), 3.2, part='kuyruk', clip='topuz', shift=0)
+    d.pix((52, 47), ['oo', 'oo'], {'o': 'Turuncu-1'}, part='kuyruk')
+    d.pix((49, 43), ['oo', 'o.'], {'o': 'Parilti'}, part='kuyruk')
+    d.capsule('Komur', (38, 57), (40, 61), 6.2, part='kol_2', line=True)
+    d.ellipse('Komur', (31, 51), (16.5, 12.5), name='g')
+    d.ellipse('Komur', (22, 39), (13, 10.5), name='kafa', join='g')
+    d.ellipse('Komur', (11.5, 43), (5.6, 4.4), join='g')
+    d.ellipse('Krem', (26, 57), (10.5, 6.0), part='govde', clip='g', shift=0, inbox=(0, 52, 80, 80))
+    d.capsule('Komur', (21, 57), (18, 61), 6.6, part='kol_1', line=True)
+    parmak(d, 18, 64, 'kol_1', -2); parmak(d, 40, 64, 'kol_2', -2)
+    d.pix2((5, 22), ['#'], {'#': 'Komur-4'})
+    d.set_face_side(14, 36)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

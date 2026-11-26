@@ -102,3 +102,60 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yosun topu
+def bebek_yan(d):
+    yosun(d, 27, 34, 12.8, 11.8, ((-150, 2.8), (-110, 2.8), (-70, 2.8), (-30, 2.8), (165, 2.2), (20, 2.2)), ticks=False)
+    d.ellipse('Cam', (16, 44.5), (3.6, 3.4), name='sakal', line=True, cast=1)
+    d.capsule('Cam', (15, 45), (15, 47.6), 1.1, clip='sakal', shift=1)
+    d.capsule('Cam', (18, 45), (18, 47.6), 1.1, clip='sakal', shift=1)
+    d.capsule('Cam', (27, 24), (28, 18), 1.1, part='tepe', line=True)
+    d.circle('Cam', (23.8, 18.5), 2.8, part='tepe', line=True, lift=0.1)
+    d.circle('Cam', (32.2, 18.5), 2.8, part='tepe', line=True, lift=0.1)
+    d.circle('Cam', (28, 14), 2.8, part='tepe', line=True, lift=0.1)
+    d.pix((27, 12.5), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.ellipse('Cimen', (24, 41), (2.8, 3.6), rot=-15, part='kol_1', line=True)
+    d.set_face_side(16, 30)
+
+
+def genc_yan(d):
+    d.capsule('Kahve', (14, 56), (13, 33), 1.7, part='esya', name='baston', line=True)
+    d.circle('Kahve', (13, 32.5), 2.1, part='esya', join='baston')
+    yosun(d, 30, 39, 15.5, 13, ((-155, 3.2), (-120, 3.4), (-85, 3.4), (-50, 3.4), (-20, 3.2), (165, 2.6), (15, 2.6)), cast=2, ticks=False)
+    d.ellipse('Cam', (19, 49), (6.4, 5.0), name='sakal', line=True, cast=1, lift=0.1)
+    d.capsule('Cam', (19, 50), (19, 57), (6.6, 2.6), join='sakal')
+    for x, y0, y1, t in ((16.5, 47, 53, -1), (19.5, 48, 56, 1), (22.5, 47, 53, -1)):
+        d.capsule('Cam', (x, y0), (x, y1), 1.0, clip='sakal', shift=t)
+    mantar(d, 28, 24.5, 3.6)
+    mantar(d, 37, 25.5, 3.0)
+    d.capsule('Cam', (32, 25), (32, 22), 1.0, part='tepe', line=True)
+    d.circle('Krem', (32, 20.5), 1.7, part='tepe', line=True)
+    d.pix((31, 20), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.capsule('Cam', (18, 33), (23, 31.8), (1.1, 1.5), part='govde', line=False)
+    d.ellipse('Cimen', (25, 46), (3.4, 4), rot=-15, part='kol_1', line=True)
+    d.set_face_side(18, 35)
+
+
+def usta_yan(d):
+    d.capsule('Kahve', (12, 61), (11, 23), 2.0, part='esya', name='baston', line=True)
+    d.ellipse('Krem', (11, 18.5), (3.0, 4.0), part='esya', line=True, lift=0.3)
+    d.pix((10, 16), ['ooo', 'oo.'], {'o': 'Parilti'}, part='esya')
+    yosun(d, 34, 40, 21, 17.5, ((-160, 4), (-135, 4.4), (-110, 4.4), (-85, 4.4), (-60, 4.4), (-35, 4.2), (-15, 3.6), (170, 3.4), (15, 3.4)), cast=2, ticks=False)
+    d.ellipse('Cam', (20, 54), (7.5, 5.6), name='sakal', line=True, cast=1, lift=0.1)
+    d.capsule('Cam', (20, 55), (20, 62), (8.6, 2.8), join='sakal')
+    for x, y0, y1, t in ((16.5, 51, 56, -1), (20, 52, 59, 1), (23.5, 51, 56, -1)):
+        d.capsule('Cam', (x, y0), (x, y1), 1.0, clip='sakal', shift=t)
+    d.ellipse('Cimen', (33, 24.5), (11, 4.2), name='bahce', part='tepe', line=True, lift=0.1)
+    mantar(d, 27, 19.5, 4.4)
+    mantar(d, 41, 20.5, 3.6)
+    for x, y in ((34, 15), (37.5, 18.5), (22, 21)):
+        d.capsule('Cam', (x, y + 2), (x, y + 6), 1.0, part='tepe', line=True)
+        d.circle('Krem', (x, y), 2.2, part='tepe', line=True)
+    d.pix((33, 14), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.capsule('Cam', (18, 34.5), (24, 33.5), (1.2, 1.6), part='govde')
+    d.ellipse('Cimen', (22, 52), (3.8, 4.6), rot=-15, part='kol_1', line=True)
+    d.set_face_side(18, 38)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

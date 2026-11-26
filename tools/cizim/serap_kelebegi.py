@@ -88,3 +88,65 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, ucar
+def kanat_yan(d, c, r, rot, name, part, lift=0.0, wavy=0, desen=None, tone_far=False):
+    """Tek yuvarlak kanat (yan gorunum). desen=(yaricap, buyuk_mu)."""
+    d.ellipse('Turuncu', c, r, rot=rot, part=part, name=name, line=True, lift=lift)
+    if wavy:
+        for k in range(wavy[0]):
+            a = math.radians(wavy[1] + k * wavy[2])
+            ex, ey = r
+            px, py = ex * 0.96 * math.cos(a), ey * 0.96 * math.sin(a)
+            R = math.radians(rot)
+            d.circle('Turuncu', (c[0] + px * math.cos(R) - py * math.sin(R), c[1] + px * math.sin(R) + py * math.cos(R)), wavy[3], part=part, join=name)
+    if desen:
+        gr, big = desen
+        d.circle('Cam', (c[0] - 1, c[1] - 1), gr, part=part, clip=name, tone=3)
+        d.circle('Krem', (c[0] - 1, c[1] - 1), gr * 0.68, part=part, clip=name, tone=1)
+        d.circle('Cam', (c[0] - 1, c[1] - 1), gr * 0.4, part=part, clip=name, tone=1)
+        if big:
+            d.pix((int(c[0] - 3), int(c[1] - 3)), ['oo'], {'o': 'Parilti'}, part=part)
+
+
+def anten_yan(d, x, y, h):
+    """Yakin anten one (sola) kivrik, uzak anten arkada."""
+    d.curve('Turuncu', [(x + 3, y), (x + 2, y - h), (x - 2, y - h - 1.5)], 1.4, part='tepe', line=False)
+    d.circle('Turuncu', (x - 2.5, y - h - 1.5), 1.5, part='tepe', lift=0.15)
+    d.curve('Turuncu', [(x + 6, y), (x + 6, y - h + 1), (x + 3, y - h - 1.5)], 1.4, part='tepe', line=False, lift=-0.15)
+    d.circle('Turuncu', (x + 2.5, y - h - 1.5), 1.5, part='tepe', lift=-0.05)
+
+
+def bebek_yan(d):
+    d.flyer = True
+    kanat_yan(d, (36, 25), (7, 9.6), 28, 'w2', 'kanat_2', lift=-0.15, desen=(2.4, False))
+    govde(d, 22, 36.5, 12.8, 13, [(14, 44, 2.6), (30, 45, 2.6)])
+    anten_yan(d, 17, 24.5, 6)
+    kanat_yan(d, (33, 27), (7.4, 10), 24, 'w1', 'kanat_1', desen=(2.8, False))
+    d.set_face_side(12, 33)
+
+
+def genc_yan(d):
+    d.flyer = True
+    kanat_yan(d, (43, 26), (8.2, 12.4), 30, 'w2', 'kanat_2', lift=-0.15, desen=(3.4, False))
+    kanat_yan(d, (39, 47), (6.2, 5.8), -25, 'a2', 'kanat_2', lift=-0.2)
+    govde(d, 26, 40.5, 14.2, 16.2, [(17, 50, 3), (33, 51, 3)])
+    anten_yan(d, 20, 25.5, 7)
+    kanat_yan(d, (38, 29), (8.8, 12.6), 26, 'w1', 'kanat_1', desen=(3.8, False))
+    kanat_yan(d, (35, 48), (6.6, 6.2), -20, 'a1', 'kanat_1', lift=-0.06)
+    d.set_face_side(14, 37)
+
+
+def usta_yan(d):
+    d.flyer = True
+    kanat_yan(d, (47, 31), (10, 14), 28, 'w2', 'kanat_2', lift=-0.15, wavy=(5, 160, 40, 3), desen=(4.4, False))
+    kanat_yan(d, (44, 58), (7, 6.4), -28, 'a2', 'kanat_2', lift=-0.2, wavy=(4, 110, 45, 2.6))
+    govde(d, 30, 46.5, 17, 20.5, [(20, 58, 3.4), (40, 59, 3.4)])
+    anten_yan(d, 23, 28.5, 7)
+    kanat_yan(d, (43, 34), (10.8, 14.2), 24, 'w1', 'kanat_1', wavy=(5, 160, 40, 3), desen=(5.0, True))
+    kanat_yan(d, (40, 58), (7.4, 6.6), -22, 'a1', 'kanat_1', lift=-0.06, wavy=(4, 110, 45, 2.6))
+    d.set_face_side(16, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

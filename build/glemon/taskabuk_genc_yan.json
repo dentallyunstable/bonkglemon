@@ -1,0 +1,45 @@
+{
+ "anahtar": "taskabuk",
+ "asama": "genc_yan",
+ "kaynak": "cizim",
+ "tuval": 32,
+ "tuval_h": 30,
+ "kalip": "k",
+ "boy": 21,
+ "goz": {
+  "lx": 7,
+  "rx": 7,
+  "ey": 22
+ },
+ "ten": "Tas",
+ "yuz_kutusu": [
+  7,
+  22,
+  4,
+  3
+ ],
+ "govde_ust": 15,
+ "ayak": 28,
+ "govde_gen": 24,
+ "aileler": [
+  "Cam",
+  "Mor",
+  "Tas"
+ ],
+ "renk": 15,
+ "tek_piksel_duzeltme": 19,
+ "denetim": [
+  "govde boyu 21 (kural 16-20)"
+ ],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2"
+ ]
+}

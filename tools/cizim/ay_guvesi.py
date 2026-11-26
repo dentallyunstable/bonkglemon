@@ -91,3 +91,69 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def anten_y(d, base, tip, n, r, part='tepe'):
+    bx, by = base
+    tx, ty = tip
+    d.capsule('Kar', (bx, by), (tx, ty), (1.8, 1.2), part=part)
+    for i in range(1, n + 1):
+        t = i / (n + 1)
+        x = bx + (tx - bx) * t
+        y = by + (ty - by) * t
+        k = r * (1 - 0.4 * t)
+        d.ellipse('Kar', (x + k * 0.8, y + 0.4), (k, 1.0), rot=30, part=part)
+        d.ellipse('Kar', (x - k * 0.8, y - 0.8), (k, 1.0), rot=-30, part=part)
+
+
+def bebek_yan(d):
+    d.flyer = True
+    d.poly('Mor', [(30, 29), (35, 13), (43, 11), (46, 21), (43, 32), (35, 37)], part='kanat_2', line=True, name='w2', lift=-0.2)
+    anten_y(d, (18, 26), (13, 14), 3, 2.6)
+    d.ellipse('Kar', (23, 35.5), (12.5, 10.5), name='kafa', cast=1, lift=0.03)
+    for x, y in ((29, 41), (33, 38), (22, 44.5), (17, 43.5)):
+        d.circle('Kar', (x, y), 3, join='kafa')
+    d.poly('Mor', [(24, 31), (28, 16), (35, 11), (40, 19), (38, 32), (30, 39)], part='kanat_1', line=True, name='w1', lift=0.04)
+    d.set_face_side(14, 32)
+
+
+def genc_yan(d):
+    d.flyer = True
+    d.poly('Mor', [(31, 34), (37, 20), (46, 13), (52, 18), (52, 32), (46, 42)], part='kanat_2', line=True, name='w2', lift=-0.2)
+    hilal(d, (47, 25), 4.0, 'kanat_2', 'h2', -1.6, -0.2)
+    anten_y(d, (18, 28), (12, 12), 4, 3.2)
+    d.ellipse('Kar', (24, 40), (13.5, 12.5), name='kafa', cast=1, lift=0.03)
+    d.circle('Kar', (35, 45), 8, join='kafa')
+    for x, y in ((31, 50), (24, 51), (17, 47), (38, 51)):
+        d.circle('Kar', (x, y), 3.2, join='kafa')
+    d.ellipse('Kar', (22, 50), (8, 3.4), name='yaka', line=True, lift=0.1)
+    for x, y, r in ((15, 49, 2.6), (19, 52.5, 2.7), (25, 53.5, 2.8), (30, 51.5, 2.6)):
+        d.circle('Kar', (x, y), r, join='yaka')
+    d.poly('Mor', [(26, 36), (29, 22), (36, 15), (44, 19), (46, 31), (42, 43), (33, 46)], part='kanat_1', line=True, name='w1', lift=0.04)
+    hilal(d, (37, 27), 4.6, 'kanat_1', 'h1', -1.8, -0.4)
+    d.pix((37, 24), ['oo'], {'o': 'Parilti'}, part='kanat_1')
+    d.set_face_side(14, 37)
+
+
+def usta_yan(d):
+    d.flyer = True
+    d.poly('Mor', [(35, 38), (40, 23), (48, 14), (56, 18), (57, 33), (52, 46)], part='kanat_2', line=True, name='w2', lift=-0.2)
+    hilal(d, (51, 28), 5.2, 'kanat_2', 'h2', -2.2, -0.4)
+    d.poly('Mor', [(34, 46), (46, 48), (53, 54), (50, 61), (40, 58)], part='kanat_2', line=True, lift=-0.24)
+    d.curve('Mor', [(48, 58), (52, 62), (50, 64)], (3.6, 1.8), part='kanat_2', line=True, lift=-0.2)
+    anten_y(d, (19, 29), (13, 14), 5, 3.2)
+    d.ellipse('Kar', (27, 42), (14, 16.8), name='kafa', cast=1, lift=0.03)
+    d.circle('Kar', (40, 50), 10, join='kafa')
+    for x, y in ((35, 56), (28, 57), (20, 53), (43, 57)):
+        d.circle('Kar', (x, y), 3.6, join='kafa')
+    d.ellipse('Kar', (25, 54), (9, 4.2), name='yaka', line=True, lift=0.1)
+    for x, y, r in ((17, 53, 3.0), (21.5, 57, 3.2), (28, 59, 3.3), (34, 56.5, 3.0)):
+        d.circle('Kar', (x, y), r, join='yaka')
+    d.poly('Mor', [(30, 42), (33, 27), (40, 18), (48, 21), (50, 36), (46, 48), (37, 52)], part='kanat_1', line=True, name='w1', lift=0.04)
+    hilal(d, (41, 31), 5.8, 'kanat_1', 'h1', -2.4, -0.6)
+    d.pix((41, 26), ['ooo', 'o..'], {'o': 'Parilti'}, part='kanat_1')
+    d.circle('Sari', (45, 45), 1.8, part='kanat_1', line=True)
+    d.set_face_side(16, 34)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

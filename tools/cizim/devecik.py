@@ -12,7 +12,7 @@ def dudak(d, cx, y, rx, ry):
 
 def kulaklar(d, x1, x2, y, r):
     """Kucuk, yuvarlak, yukarida duran deve kulaklari (ayi gibi yana sarkmasin)."""
-    d.ellipse('Kahve', (x1, y), (r * 0.9, r * 1.1), part='kulak_1', line=True, rot=-30)
+    d.ellipse('Kahve', (x1, y), (r * 0.9, r * 1.1), part='kulak_1', line=True, rot=-10)
     d.ellipse('Kahve', (x2, y), (r * 0.9, r * 1.1), part='kulak_2', line=True, rot=30)
 
 
@@ -72,3 +72,73 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def dudak_yan(d, x, y, rx, ry):
+    """Yandan kalin krem burun yastigi (solda) + burun deligi."""
+    d.ellipse('Krem', (x, y), (rx, ry), name='dudak', line=True, lift=0.05, noshadow=True)
+    d.pix2((int((x - rx) / 2) + 1, int(y / 2) - 1), ['#'], {'#': 'Kahve-4'})
+
+
+def kulaklar_yan(d, x, y, r):
+    d.ellipse('Kahve', (x + r * 2.2, y), (r * 0.9, r * 1.1), part='kulak_2', line=True, rot=10, tone=2)
+    d.ellipse('Kahve', (x, y), (r * 0.9, r * 1.1), part='kulak_1', line=True, rot=-10)
+
+
+def bebek_yan(d):
+    d.capsule('Kahve', (36, 41), (39, 44), 2.6, part='kuyruk', line=True)
+    d.capsule('Kahve', (31, 45), (31, 48), 4.2, part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Kahve', (33, 25), (5.4, 6), part='tepe', name='h', line=True, lift=0.06)
+    d.ellipse('Kahve', (26, 35), (13.5, 12.4), name='g', cast=1)
+    d.circle('Kahve', (17, 37), 8.5, join='g')
+    dudak_yan(d, 12.5, 41.5, 5.4, 3.8)
+    kulaklar_yan(d, 18, 27, 2.8)
+    d.capsule('Kahve', (19, 45), (19, 48), 4.2, part='kol_1', line=True)
+    d.set_face_side(14, 32)
+
+
+def genc_yan(d):
+    d.capsule('Kahve', (44, 43), (48, 48), 3.0, part='kuyruk', line=True)
+    d.ellipse('Kahve', (42, 25), (6, 7.2), part='tepe', name='h2', line=True, lift=0.0)
+    bacak(d, 39, 49, 57, 4.4, 'kol_2')
+    d.ellipse('Kahve', (33, 25), (6, 7.2), part='tepe', name='h1', line=True, lift=0.06)
+    d.ellipse('Kahve', (30, 40), (15, 14.5), name='g', cast=1)
+    d.circle('Kahve', (19, 38), 9.5, join='g')
+    dudak_yan(d, 13, 43, 5.6, 4.0)
+    d.rect('Kirmizi', (34, 26, 41, 36), rad=2, part='esya', name='kl', line=True)
+    d.pix((36, 28), ['.#.', '#.#', '.#.'], {'#': 'Krem-1'}, part='esya')
+    d.capsule('Krem', (35, 33.5), (40, 33.5), 0.7, part='esya', clip='kl', shift=0)
+    kulaklar_yan(d, 18, 27.5, 3.2)
+    bacak(d, 22, 49, 57, 4.4, 'kol_1')
+    d.set_face_side(15, 34)
+
+
+def usta_yan(d):
+    d.capsule('Kahve', (50, 46), (54, 53), 3.4, part='kuyruk', line=True)
+    d.ellipse('Kahve', (46, 26), (7.6, 9), part='tepe', name='h2', line=True, lift=0.0)
+    bacak(d, 44, 56, 66, 5, 'kol_2')
+    d.ellipse('Kahve', (33, 26), (7.6, 9), part='tepe', name='h1', line=True, lift=0.06)
+    # uyuyan col kusu iki hormucun arasinda
+    d.ellipse('Krem', (40, 18), (5, 3.8), part='tepe', name='kus', line=True)
+    d.circle('Krem', (36.5, 16), 2.3, part='tepe', join='kus')
+    d.pix((34, 15.5), ['#'], {'#': 'Kirmizi-3'}, part='tepe')
+    d.capsule('Kirmizi', (41, 19.5), (46, 19), 1.2, part='tepe', clip='kus', shift=1)
+    d.ellipse('Kahve', (35, 45), (17.5, 18), name='g', cast=1)
+    d.circle('Kahve', (20, 43), 11, join='g')
+    dudak_yan(d, 12.5, 49, 6.2, 4.4)
+    # puskullu kilim
+    d.rect('Kirmizi', (35, 27, 44, 38), rad=2, part='esya', name='kl', line=True)
+    d.capsule('Krem', (36, 30.5), (43, 30.5), 0.7, part='esya', clip='kl', shift=0)
+    d.pix((38, 32), ['.#.', '#.#', '.#.'], {'#': 'Krem-1'}, part='esya')
+    for x in (36, 39, 42):
+        d.capsule('Krem', (x, 38), (x, 41.5), 1.2, part='esya', line=True)
+    kulaklar_yan(d, 18, 31, 3.6)
+    # boyunda can
+    d.capsule('Kirmizi', (22, 55), (27, 60), 1.4, part='esya', line=True)
+    d.circle('Krem', (24.5, 61), 2.6, part='esya', line=True, lift=0.1)
+    bacak(d, 25, 56, 66, 5, 'kol_1')
+    d.set_face_side(16, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

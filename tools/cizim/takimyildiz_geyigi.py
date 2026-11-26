@@ -94,3 +94,93 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def kulak_yan(d, x, y, part, rot=-22, lift=0.1):
+    n = 'e' + part[-1]
+    d.ellipse('Lacivert', (x, y), (5.4, 2.9), rot=rot, part=part, name=n, line=True, lift=lift)
+    d.ellipse('Gok', (x - 0.3, y + 0.3), (3.2, 1.3), rot=rot, part=part, clip=n, tone=2)
+
+
+def cizgi_yan(d, pts, w=1.9, lift=0.0):
+    for a, b in zip(pts, pts[1:]):
+        d.capsule('Gok', a, b, w, part='tepe', noshadow=True, lift=lift)
+
+
+def boynuz_yan(d, main, branch, dx, dy, lift):
+    """Bir boynuz: main = ana cizgi noktalari, branch = dal (ilk nokta main'de). Uzak boynuz (dx,dy) kayik, koyu."""
+    cizgi_yan(d, [(x + dx, y + dy) for x, y in main], lift=lift)
+    cizgi_yan(d, [(x + dx, y + dy) for x, y in branch], lift=lift)
+
+
+def bebek_yan(d):
+    kulak_yan(d, 29, 29, 'kulak_2', -22, -0.08)
+    d.capsule('Lacivert', (35, 41), (38, 38), (3, 2), part='kuyruk', line=True, lift=0.05)
+    d.capsule('Lacivert', (32, 45), (32, 47.5), 4.4, part='kol_2', line=True, lift=-0.05)
+    d.ellipse('Lacivert', (28, 43), (9.8, 6.4), name='g', cast=1, lift=0.08)
+    d.ellipse('Lacivert', (21, 33), (11.6, 9.6), name='h', join='g', lift=0.1)
+    d.ellipse('Lacivert', (12, 36.5), (3.4, 3), join='g', lift=0.1)
+    d.pix2((5, 18), ['#'], {'#': 'Komur-4'})
+    d.pix((33, 40), ['.#.', '###', '.#.'], {'#': 'Sari-2'}, part='govde')
+    d.pix((24, 44), ['.#.', '###', '.#.'], {'#': 'Sari-2'}, part='govde')
+    kulak_yan(d, 26, 28, 'kulak_1')
+    d.capsule('Lacivert', (20, 45), (20, 47.5), 4.4, part='kol_1', line=True, lift=0.05)
+    d.pix((19, 17), ['..#..', '.###.', '##o##', '.###.', '..#..'], {'#': 'Sari-2', 'o': 'Parilti'}, part='tepe')
+    d.set_face_side(14, 30)
+
+
+def genc_yan(d):
+    M = [(26, 31), (29, 23), (32, 14)]
+    B = [(29, 23), (39, 20)]
+    boynuz_yan(d, M, B, 9, 1, -0.14)
+    yildiz(d, 32 + 9, 15, False)
+    yildiz(d, 39 + 9, 21, False)
+    boynuz_yan(d, M, B, 0, 0, 0.0)
+    yildiz(d, 29, 23, False)
+    yildiz(d, 32, 14)
+    yildiz(d, 39, 20)
+    kulak_yan(d, 31, 34, 'kulak_2', -22, -0.08)
+    d.capsule('Lacivert', (41, 47), (44, 43), (3.4, 2.2), part='kuyruk', line=True, lift=0.05)
+    d.capsule('Lacivert', (38, 52), (38, 55), 4.8, part='kol_2', line=True, lift=-0.05)
+    d.ellipse('Lacivert', (33, 49), (11.6, 8), name='g', cast=1, lift=0.08)
+    d.ellipse('Lacivert', (24, 38), (13.4, 11.4), name='h', join='g', lift=0.1)
+    d.ellipse('Lacivert', (13, 42), (4, 3.4), join='g', lift=0.1)
+    d.pix2((6, 21), ['#'], {'#': 'Komur-4'})
+    for x, y in ((38, 46), (31, 52), (26, 44)):
+        d.pix((x - 1, y - 1), ['.#.', '###', '.#.'], {'#': 'Sari-2'}, part='govde')
+    kulak_yan(d, 29, 33, 'kulak_1')
+    d.capsule('Lacivert', (22, 52), (22, 55), 4.8, part='kol_1', line=True, lift=0.05)
+    d.set_face_side(16, 36)
+
+
+def usta_yan(d):
+    M = [(25, 32), (27, 26), (29, 19), (31, 12)]
+    B = [(27, 26), (37, 24), (43, 17)]
+    boynuz_yan(d, M, B, 10, 1, -0.14)
+    yildiz(d, 31 + 10, 13, False)
+    yildiz(d, 43 + 10, 18, False)
+    boynuz_yan(d, M, B, 0, 0, 0.0)
+    yildiz(d, 27, 26, False)
+    yildiz(d, 31, 12)
+    yildiz(d, 37, 24, False)
+    yildiz(d, 43, 17)
+    kulak_yan(d, 34, 37, 'kulak_2', -22, -0.08)
+    d.capsule('Lacivert', (50, 53), (53, 48), (3.8, 2.4), part='kuyruk', line=True, lift=0.05)
+    d.capsule('Lacivert', (46, 62), (46, 65.5), 5.2, part='kol_2', line=True, lift=-0.05)
+    d.ellipse('Lacivert', (38, 56), (15, 11), name='g', cast=1, lift=0.08)
+    d.ellipse('Lacivert', (25, 42), (14.6, 13), name='h', join='g', lift=0.1)
+    d.ellipse('Lacivert', (24, 54), (8, 8), join='g')
+    d.ellipse('Lacivert', (13, 46), (4.4, 3.6), join='g', lift=0.1)
+    d.pix2((6, 23), ['#'], {'#': 'Komur-4'})
+    d.circle('Sari', (22, 56), 5, part='govde', name='hl', line=True)
+    d.circle('Sari', (24.8, 55), 4.3, part='govde', sub='hl')
+    d.pix((18, 54), ['oo'], {'o': 'Parilti'}, part='govde')
+    for x, y in ((43, 54), (36, 61), (49, 59)):
+        d.pix((x - 1, y - 1), ['.#.', '###', '.#.'], {'#': 'Sari-2'}, part='govde')
+    kulak_yan(d, 31, 36, 'kulak_1')
+    d.capsule('Lacivert', (24, 62), (24, 65.5), 5.2, part='kol_1', line=True, lift=0.05)
+    d.set_face_side(16, 39)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

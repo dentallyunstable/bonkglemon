@@ -92,3 +92,65 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    d.capsule('Cam', (33, 42), (42, 38), (6, 3.2), part='kuyruk', name='kuyruk', line=True)
+    d.ellipse('Pembe', (43.5, 36.5), (3.4, 2.6), rot=-30, part='kuyruk', line=True)
+    yuzgec_kulak(d, 32, 30, 1, 0.9, 'kulak_2')
+    d.ellipse('Cam', (31, 47), (3.8, 2.6), part='kol_2', line=True)
+    d.ellipse('Cam', (26, 37), (13, 11.5), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Cam', (14.5, 40), (4.5, 3.6), join='kafa')
+    d.ellipse('Gok', (21, 44), (7, 4.5), clip='kafa', tone=1)
+    d.ellipse('Cam', (20, 47), (4, 2.6), part='kol_1', line=True)
+    yuzgec_kulak(d, 28, 32, 1, 1.0, 'kulak_1')
+    inci(d, 19, 27.5, 2.8, part='tepe')
+    d.set_face_side(15, 34)
+
+
+def genc_yan(d):
+    for i, (x, y, r) in enumerate(((37, 29, 3.0), (41, 33, 3.2), (43, 39, 3.2), (43, 45, 3.0))):
+        d.circle('Pembe', (x, y), r, part='tepe', line=True)
+    d.capsule('Cam', (38, 50), (47, 46), (7, 4), part='kuyruk', name='kuyruk', line=True)
+    d.ellipse('Pembe', (50, 43), (5.2, 5.8), rot=-25, part='kuyruk', name='kf', line=True)
+    for a, b in (((47, 46), (52, 40)), ((47, 46), (54, 44)), ((47, 46), (51, 48))):
+        d.capsule('Pembe', a, b, 0.9, clip='kf', shift=1, part='kuyruk')
+    yuzgec_kulak(d, 36, 34, 1, 1.0, 'kulak_2')
+    d.ellipse('Cam', (35, 55), (4.4, 2.8), part='kol_2', line=True)
+    d.ellipse('Cam', (30, 42), (14.5, 13.5), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Cam', (16.5, 45), (5, 4), join='kafa')
+    d.ellipse('Gok', (22, 50), (8, 6), clip='kafa', tone=1)
+    d.ellipse('Cam', (22, 55), (4.6, 2.8), part='kol_1', line=True)
+    yuzgec_kulak(d, 32, 36, 1, 1.1, 'kulak_1')
+    inci(d, 21, 31, 2.8, part='tepe')
+    d.set_face_side(17, 38)
+
+
+def usta_yan(d):
+    d.capsule('Cam', (43, 59), (52, 55), (9, 5), part='kuyruk', name='kuyruk', line=True)
+    d.ellipse('Pembe', (55, 51), (7.5, 8.5), rot=-20, part='kuyruk', name='kf', line=True)
+    d.circle('Pembe', (51, 45), 3.4, part='kuyruk', join='kf')
+    d.circle('Pembe', (58, 57), 3.2, part='kuyruk', join='kf')
+    for a, b in (((52, 55), (53, 44)), ((52, 55), (58, 48)), ((52, 55), (60, 55)), ((52, 55), (57, 60))):
+        d.capsule('Pembe', a, b, 1.0, clip='kf', shift=1, part='kuyruk')
+    for i, (x, y, r) in enumerate(((40, 26, 3.4), (45, 29, 3.6), (49, 35, 3.6), (50, 42, 3.4))):
+        d.circle('Pembe', (x, y), r, part='tepe', line=True)
+    yuzgec_kulak(d, 40, 40, 1, 1.1, 'kulak_2')
+    d.ellipse('Cam', (42, 62), (5, 3), part='kol_2', line=True)
+    d.capsule('Pembe', (37, 34), (40, 23), (6.0, 4.4), part='tepe', name='b2', line=True)
+    d.ellipse('Cam', (34, 48), (17.5, 15.5), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Cam', (32, 37), (13.5, 11.5), join='kafa')
+    d.ellipse('Cam', (17, 45), (5.5, 4.4), join='kafa')
+    d.ellipse('Gok', (25, 57), (10, 7), clip='kafa', tone=1)
+    d.ellipse('Cam', (24, 62), (5, 3), part='kol_1', line=True)
+    d.ellipse('Cam', (30, 54), (4, 5), rot=15, part='kol_1', line=True)
+    yuzgec_kulak(d, 36, 42, 1, 1.2, 'kulak_1')
+    d.capsule('Pembe', (30, 34), (26, 23), (6.0, 4.4), part='tepe', name='b1', line=True)
+    d.capsule('Pembe', (29.5, 32), (27, 26), 1.0, clip='b1', shift=1, part='tepe')
+    for x, y in ((18, 53), (20, 56.5), (24, 58.5), (29, 59)):
+        inci(d, x, y, 2.0, part='esya')
+    inci(d, 20, 33, 3.2, part='tepe')
+    d.set_face_side(18, 42)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

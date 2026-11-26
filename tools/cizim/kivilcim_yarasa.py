@@ -89,3 +89,63 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def kanat_yan(d, side, root, tips, ws, fams, nm, dark=False):
+    """Yandan alev kanadi: koktan arkaya (saga) yukari dalgali diller."""
+    for i, (tp, w) in enumerate(zip(tips, ws)):
+        kw = dict(part='kanat_%d' % side)
+        if i == 0:
+            kw.update(name=nm, line=True)
+        else:
+            kw.update(join=nm)
+        if dark:
+            kw.update(lift=-0.12)
+        d.capsule(fams[0], root, tp, w, **kw)
+    for tp, w in zip(tips, ws):
+        d.capsule(fams[1], root, tp, (w[0] * 0.5, w[1] * 0.8), part='kanat_%d' % side, clip=nm, shift=-1)
+
+
+def kulak_y(d, side, bx, by, tx, ty, w, ic):
+    nm = 'kuy%d' % side
+    d.capsule('Komur', (bx, by), (tx, ty), w, part='kulak_%d' % side, line=True, name=nm, lift=(-0.1 if side == 2 else 0))
+    d.circle(ic, (tx, ty + 0.6), 1.7, part='kulak_%d' % side, clip=nm, tone=1)
+
+
+def bebek_yan(d):
+    d.flyer = True
+    kanat_yan(d, 2, (29, 34), [(41, 22), (47, 34), (42, 45)], [(6.0, 1.8), (6.0, 1.8), (5.0, 1.6)], ('Komur', 'Turuncu'), 'w2', dark=True)
+    kulak_y(d, 2, 30, 27, 32, 15, (6.0, 3.6), 'Turuncu')
+    d.ellipse('Komur', (22, 34), (13.5, 13), name='g', lift=0.05, cast=1)
+    d.ellipse('Komur', (20, 37), (9, 6), clip='g', shift=-1)
+    tuft(d, 14, 17, P_KUCUK)
+    kulak_y(d, 1, 23, 26, 23, 14, (6.4, 3.8), 'Turuncu')
+    kanat_yan(d, 1, (26, 35), [(38, 24), (44, 36), (39, 46)], [(6.6, 2.0), (6.6, 2.0), (5.4, 1.8)], ('Komur', 'Turuncu'), 'w1')
+    d.set_face_side(12, 31)
+
+
+def genc_yan(d):
+    d.flyer = True
+    kanat_yan(d, 2, (34, 38), [(47, 23), (54, 38), (48, 50)], [(7.0, 2.0), (7.0, 2.0), (6.0, 1.8)], ('Komur', 'Turuncu'), 'w2', dark=True)
+    kulak_y(d, 2, 35, 31, 37, 17, (6.4, 3.8), 'Sari')
+    d.ellipse('Komur', (26, 38), (15.5, 15), name='g', lift=0.05, cast=1)
+    d.ellipse('Komur', (23, 42), (10, 6.5), clip='g', shift=-1)
+    tuft(d, 16, 16, P_ORTA)
+    kulak_y(d, 1, 27, 29, 27, 15, (7.0, 4.0), 'Sari')
+    kanat_yan(d, 1, (30, 40), [(43, 26), (50, 40), (44, 51)], [(7.6, 2.2), (7.6, 2.2), (6.4, 2.0)], ('Komur', 'Turuncu'), 'w1')
+    d.set_face_side(12, 35)
+
+
+def usta_yan(d):
+    d.flyer = True
+    kanat_yan(d, 2, (40, 44), [(57, 26), (63, 42), (56, 56)], [(9.0, 2.4), (9.0, 2.4), (7.6, 2.2)], ('Turuncu', 'Sari'), 'w2', dark=True)
+    kulak_y(d, 2, 41, 36, 43, 19, (8.0, 4.2), 'Sari')
+    d.ellipse('Komur', (30, 44), (19, 19), name='g', lift=0.05, cast=1)
+    d.ellipse('Komur', (26, 49), (12, 8), clip='g', shift=-1)
+    tuft(d, 19, 14, P_BUYUK)
+    kulak_y(d, 1, 32, 33, 32, 16, (8.6, 4.4), 'Sari')
+    kanat_yan(d, 1, (36, 46), [(53, 29), (60, 44), (52, 57)], [(9.6, 2.6), (9.6, 2.6), (8.0, 2.4)], ('Turuncu', 'Sari'), 'w1')
+    d.set_face_side(14, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

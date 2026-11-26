@@ -1,0 +1,44 @@
+{
+ "anahtar": "tirtilcik",
+ "asama": "bebek_yan",
+ "kaynak": "cizim",
+ "tuval": 28,
+ "tuval_h": 26,
+ "kalip": "k",
+ "boy": 15,
+ "goz": {
+  "lx": 9,
+  "rx": 9,
+  "ey": 18
+ },
+ "ten": "Cimen",
+ "yuz_kutusu": [
+  9,
+  18,
+  4,
+  3
+ ],
+ "govde_ust": 15,
+ "ayak": 24,
+ "govde_gen": 17,
+ "aileler": [
+  "Cam",
+  "Cimen",
+  "Sari"
+ ],
+ "renk": 13,
+ "tek_piksel_duzeltme": 14,
+ "denetim": [],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "tepe"
+ ]
+}

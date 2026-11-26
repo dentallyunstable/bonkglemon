@@ -1,0 +1,45 @@
+{
+ "anahtar": "micir",
+ "asama": "usta_yan",
+ "kaynak": "cizim",
+ "tuval": 36,
+ "tuval_h": 34,
+ "kalip": "o",
+ "boy": 26,
+ "goz": {
+  "lx": 11,
+  "rx": 11,
+  "ey": 22
+ },
+ "ten": "Tas",
+ "yuz_kutusu": [
+  11,
+  22,
+  4,
+  3
+ ],
+ "govde_ust": 21,
+ "ayak": 32,
+ "govde_gen": 19,
+ "aileler": [
+  "Gok",
+  "Tas"
+ ],
+ "renk": 11,
+ "tek_piksel_duzeltme": 15,
+ "denetim": [
+  "govde boyu 26 (kural 21-25)"
+ ],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "tepe"
+ ]
+}

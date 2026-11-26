@@ -94,3 +94,59 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+
+def bebek_yan(d):
+    d.poly('Turuncu', [(14.5, 43), (33.5, 43), (31, 51.5), (17, 51.5)], name='saksi', cast=1, line=True)
+    d.capsule('Turuncu', (20, 46), (28, 46), 1.0, clip='saksi', shift=-1)
+    d.ellipse('Cimen', (22, 34), (12.6, 10.6), name='kafa', cast=1)
+    d.rect('Turuncu', (12, 40, 36, 44), rad=1.5, name='agiz', line=True, lift=0.08, cast=1)
+    dikenler(d, [(26, 25), (31, 28), (34, 34), (30, 38)])
+    d.capsule('Cimen', (25, 24), (26, 20), 2.2, part='tepe')
+    d.ellipse('Pembe', (26.5, 17.5), (3.6, 4.4), part='tepe', line=True, name='tomurcuk')
+    d.capsule('Pembe', (25.5, 15), (27.5, 18), 1.0, part='tepe', clip='tomurcuk', shift=1)
+    d.set_face_side(14, 30)
+
+
+def genc_yan(d):
+    d.ellipse('Cimen', (28, 41), (14, 14.6), name='kafa', cast=1)
+    d.ellipse('Cimen', (21, 54), (4.4, 2.8), part='kol_1', line=True)
+    d.ellipse('Cimen', (35, 54), (4.4, 2.8), part='kol_2', line=True)
+    # yakin kol: yukari kivrik, omuzluk kirik saksi
+    d.curve('Cimen', [(30, 45), (24, 46), (22, 38)], (5.0, 4.6), line=True)
+    d.poly('Turuncu', [(25, 36), (31, 31), (34, 35), (31, 40), (26, 40)], name='omuz', line=True, cast=1)
+    d.capsule('Turuncu', (26, 37), (30.5, 33.5), 1.0, clip='omuz', shift=-1)
+    dikenler(d, [(36, 33), (40, 39), (38, 47), (22, 28)])
+    d.capsule('Cimen', (31, 29), (32, 23), 2.4, part='tepe')
+    cicek(d, 32, 19, 4.4)
+    d.set_face_side(16, 36)
+
+
+def usta_yan(d):
+    import math
+    d.ellipse('Cimen', (33, 47), (14.5, 13), name='govde', cast=1)
+    d.ellipse('Cimen', (25, 60), (4.8, 3.0), part='kol_1', line=True)
+    d.ellipse('Cimen', (41, 60), (4.8, 3.0), part='kol_2', line=True)
+    # yakin kol: yukari kivrik, ucunda minik cicek
+    d.curve('Cimen', [(30, 52), (37, 55), (45, 50), (46, 42)], (6.0, 5.0), line=True)
+    for k in range(5):
+        a = -math.pi / 2 + k * 2 * math.pi / 5
+        d.circle('Pembe', (46 + math.cos(a) * 2.3, 39 + math.sin(a) * 2.3), 1.7, line=True)
+    d.circle('Krem', (46, 39), 1.3)
+    # ters saksi miger (one egik)
+    d.poly('Turuncu', [(20, 33), (47, 33), (44, 21), (24, 21)], name='kask', cast=1, line=True, lift=0.05)
+    d.rect('Turuncu', (17, 30, 50, 35), rad=2, name='kenar', line=True, lift=0.1, cast=2)
+    d.capsule('Turuncu', (27, 25), (42, 25), 1.0, clip='kask', shift=1)
+    d.capsule('Turuncu', (26, 22.5), (34, 22.5), 1.0, clip='kask', shift=-1)
+    d.rect('Turuncu', (32, 17, 39, 21), rad=1.2, line=True, lift=0.05)
+    fx, fy = 45, 24
+    for k in range(5):
+        a = -math.pi / 2 + k * 2 * math.pi / 5
+        d.circle('Pembe', (fx + math.cos(a) * 3.6, fy + math.sin(a) * 3.6), 2.7, line=True)
+    d.circle('Krem', (fx, fy), 2.2)
+    dikenler(d, [(26, 55), (44, 58), (36, 58)])
+    d.set_face_side(20, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

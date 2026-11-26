@@ -110,3 +110,75 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def kulak_yn(d, L, tip, part, name, lift=-0.3):
+    d.poly('Mor', L, part=part, name=name, line=True, lift=lift)
+    d.poly('Lacivert', tip, part=part, clip=name, tone=3)
+
+
+def damla_y(d, x, y):
+    d.pix((x - 1, y), ['.#.', '###', '###', '.#.'], {'#': 'Mor-4'}, part='esya')
+
+
+def burun_y(d, x, y):
+    d.pix2((x, y), ['#'], {'#': 'Lacivert-4'})
+
+
+def bebek_yan(d):
+    d.curve('Mor', [(37, 43), (43, 41), (44, 33)], 4.2, part='kuyruk', line=True)
+    kulak_yn(d, [(26, 25), (33, 27), (35, 36), (31, 37)], [(29, 33), (35, 33), (35, 38), (30, 38)], 'kulak_2', 'k2', -0.2)
+    d.capsule('Mor', (32, 45), (32, 47), 4.2, part='kol_2', line=True)
+    d.ellipse('Mor', (27, 38), (12, 9.5), name='g', cast=1, lift=0.1)
+    d.circle('Mor', (19, 33), 10, join='g')
+    d.ellipse('Mor', (27, 44), (6, 3), clip='g', shift=-1)
+    d.ellipse('Mor', (11.5, 39), (4.8, 3.2), name='bu', shade='flat', tone=1, line=True)
+    burun_y(d, 4, 19)
+    damla_y(d, 12, 42)
+    kulak_yn(d, [(20, 24), (27, 26), (29, 36), (25, 39), (20, 33)], [(23, 31), (29, 31), (28, 39), (24, 40)], 'kulak_1', 'k1', -0.3)
+    d.capsule('Mor', (19, 45), (19, 47), 4.2, part='kol_1', line=True)
+    d.set_face_side(14, 30)
+
+
+def genc_yan(d):
+    d.curve('Mor', [(41, 50), (48, 48), (49, 38)], 4.8, part='kuyruk', line=True)
+    kulak_yn(d, [(28, 27), (35, 28), (37, 40), (33, 41)], [(31, 36), (37, 36), (37, 41), (32, 41)], 'kulak_2', 'k2', -0.2)
+    d.capsule('Mor', (37, 53), (37, 56), 4.6, part='kol_2', line=True, lift=0.05)
+    d.ellipse('Mor', (32, 45), (14, 10.5), name='g', cast=1, lift=0.1)
+    d.circle('Mor', (21, 38), 11, join='g')
+    d.ellipse('Mor', (32, 51), (7, 3.5), clip='g', shift=-1)
+    d.ellipse('Mor', (12, 43.5), (5.4, 3.6), name='bu', shade='flat', tone=1, line=True)
+    burun_y(d, 4, 21)
+    damla_y(d, 13, 47)
+    # kabarik yele (onde, acik, dalgali alt kenar)
+    d.ellipse('Mor', (24, 51), (9, 5.5), part='govde', name='m', lift=0.22, line=True)
+    for x in (17, 22, 27, 31):
+        d.circle('Mor', (x, 54.5), 3.2, part='govde', join='m')
+    kulak_yn(d, [(22, 27), (29, 29), (31, 41), (27, 44), (22, 37)], [(25, 34), (31, 34), (30, 43), (26, 44)], 'kulak_1', 'k1', -0.3)
+    d.capsule('Mor', (21, 53), (21, 56), 4.6, part='kol_1', line=True, lift=0.05)
+    d.set_face_side(14, 34)
+
+
+def usta_yan(d):
+    d.curve('Mor', [(46, 57), (54, 54), (56, 45)], 7, part='kuyruk', name='ku', line=True)
+    for x, y, r in ((56, 42, 3.2), (58, 38, 2.4), (53, 39, 1.8)):
+        d.circle('Mor', (x, y), r, part='kuyruk', join='ku', lift=0.15)
+    d.pix((57, 37), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    kulak_yn(d, [(33, 29), (41, 30), (44, 45), (39, 47)], [(37, 40), (44, 40), (43, 47), (38, 47)], 'kulak_2', 'k2', -0.2)
+    d.capsule('Mor', (42, 61), (42, 63), 5.2, part='kol_2', line=True, lift=0.05)
+    d.ellipse('Mor', (37, 50), (17, 12.5), name='g', cast=1, lift=0.1)
+    d.circle('Mor', (23, 42), 13.5, join='g')
+    d.ellipse('Mor', (36, 58), (8, 4), clip='g', shift=-1)
+    d.ellipse('Mor', (12, 48.5), (6.4, 4.2), name='bu', shade='flat', tone=1, line=True)
+    burun_y(d, 4, 23)
+    damla_y(d, 13, 53)
+    # yele
+    d.ellipse('Mor', (26, 56), (11, 6.5), part='govde', name='m', lift=0.22, line=True)
+    for x in (17, 22, 27, 32, 36):
+        d.circle('Mor', (x, 60), 3.6, part='govde', join='m')
+    kulak_yn(d, [(25, 29), (34, 31), (36, 46), (31, 50), (25, 41)], [(28, 37), (36, 37), (35, 48), (30, 49)], 'kulak_1', 'k1', -0.3)
+    d.capsule('Mor', (24, 61), (24, 63), 5.2, part='kol_1', line=True, lift=0.05)
+    d.set_face_side(16, 38)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

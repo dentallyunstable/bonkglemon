@@ -86,3 +86,56 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def yaprak_yan(d, cx, cy, rx, ry, ad='yap', part='tepe'):
+    d.ellipse('Cimen', (cx, cy), (rx, ry), name=ad, part=part, line=True, cast=1, shade='flat', tone=3)
+    d.ellipse('Cimen', (cx - rx * 0.3, cy - ry * 0.35), (rx * 0.55, ry * 0.4), clip=ad, shift=-1, part=part)
+    d.capsule('Cimen', (cx + rx * 0.2, cy + ry * 0.3), (cx + rx * 0.9, cy + ry * 0.1), 0.8, clip=ad, shift=1, part=part)
+
+
+def bebek_yan(d):
+    d.ellipse('Cimen', (33, 51.5), (5, 3), part='kol_2', line=True)
+    d.ellipse('Cimen', (25, 40), (13, 11.5), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Krem', (18, 46.5), (6.5, 5.5), clip='kafa', tone=1)
+    d.circle('Cimen', (16, 33), 5, join='kafa')
+    d.ellipse('Cimen', (19, 51.5), (4.4, 2.8), part='kol_1', line=True)
+    yaprak_yan(d, 23, 28, 10, 3.0)
+    d.set_face_side(14, 31)
+
+
+def genc_yan(d):
+    d.ellipse('Cimen', (38, 56), (5.8, 3.2), part='kol_2', line=True)
+    d.ellipse('Cimen', (29, 45), (14, 12.5), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Krem', (19, 51), (7, 6), clip='kafa', tone=1)
+    d.circle('Cimen', (18, 36), 5.2, join='kafa')
+    d.ellipse('Cimen', (21, 56), (4.6, 3), part='kol_1', line=True)
+    yaprak_yan(d, 26, 31, 11, 3.2)
+    d.ellipse('Pembe', (26, 25.5), (3.4, 4.6), name='tom', part='tepe', line=True, cast=0)
+    d.poly('Pembe', [(23, 29), (21.5, 25), (25, 26)], part='tepe', line=True)
+    d.poly('Pembe', [(29, 29), (30.5, 25), (27, 26)], part='tepe', line=True)
+    d.pix((25, 23), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.set_face_side(16, 34)
+
+
+def usta_yan(d):
+    # arkada saplı ikinci yaprak (şemsiye)
+    d.capsule('Cimen', (47, 60), (50, 32), 1.8, part='esya', line=True, name='sap')
+    d.ellipse('Cimen', (50, 29), (9.5, 4.2), rot=-14, part='esya', name='semsiye', line=True, cast=1, lift=-0.1)
+    d.ellipse('Cimen', (46, 27.5), (3.2, 1.6), clip='semsiye', shift=-1, rot=-14, part='esya')
+    d.capsule('Cimen', (50, 30), (57, 27.5), 0.9, clip='semsiye', shift=1, part='esya')
+    d.ellipse('Cimen', (44, 64), (6.5, 3.2), part='kol_2', line=True)
+    d.ellipse('Cimen', (33, 50), (17.5, 16), name='kafa', cast=1, lift=0.05)
+    d.ellipse('Krem', (21, 57), (8.5, 7), clip='kafa', tone=1)
+    d.circle('Cimen', (20, 38), 5.8, join='kafa')
+    d.ellipse('Cimen', (24, 64), (6, 3.2), part='kol_1', line=True)
+    d.circle('Cimen', (40, 58), 3.4, part='kol_2', line=True, lift=0.1)
+    yaprak_yan(d, 29, 32, 12, 3.6)
+    for dx, dy, rot in ((-4, 0, 35), (4, 0, -35), (0, -1, 0)):
+        d.ellipse('Pembe', (29 + dx, 24 + dy), (2.8, 5.4), rot=rot, part='tepe', line=True, name='p%d' % dx)
+    d.ellipse('Sari', (29, 28), (3, 1.4), part='tepe', line=True)
+    d.pix((28, 19), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.set_face_side(18, 38)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

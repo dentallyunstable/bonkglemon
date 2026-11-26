@@ -68,3 +68,58 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+
+def bebek_yan(d):
+    d.ellipse('Sari', (38, 42), (8, 8), part='kuyruk', name='fener', line=True, lift=0.12)
+    d.ellipse('Sari', (38, 43), (4.5, 4.5), part='kuyruk', clip='fener', shift=-1)
+    d.capsule('Komur', (17, 25), (13, 20.5), 1.6, part='tepe', line=True)
+    d.capsule('Komur', (23, 24.5), (22, 19.5), 1.6, part='tepe', line=True, lift=-0.1)
+    d.ellipse('Komur', (24, 36), (14, 12), name='g', lift=0.1, cast=1)
+    d.ellipse('Krem', (16, 39), (7.5, 6.4), name='lv')
+    d.set_face_side(14, 33)
+    glint(d, 36, 37)
+
+
+def genc_yan(d):
+    d.ellipse('Sari', (44, 46), (8.5, 8.5), part='kuyruk', name='fener', line=True, lift=0.12)
+    d.ellipse('Sari', (44, 47), (5, 5), part='kuyruk', clip='fener', shift=-1)
+    d.rect('Komur', (38, 38, 42, 42), part='kuyruk', line=True)
+    d.capsule('Komur', (23, 24), (31, 20), 1.6, part='tepe', line=True, lift=-0.1)
+    d.circle('Sari', (32, 19), 1.8, part='tepe', line=True)
+    d.ellipse('Komur', (30, 48), (13, 8), name='alt', lift=0.1)
+    d.ellipse('Komur', (26, 37), (15, 14), name='g', lift=0.1, cast=2)
+    d.ellipse('Komur', (31, 41), (11, 9), name='g2', join='g')
+    d.ellipse('Krem', (19, 41), (8.5, 7), name='lv')
+    d.capsule('Komur', (19, 26), (13, 19), 1.6, part='tepe', line=True)
+    d.circle('Sari', (12, 18), 1.8, part='tepe', line=True)
+    d.ellipse('Cimen', (35, 42), (6, 10), rot=-10, part='kanat_1', name='k1', line=True, lift=-0.05)
+    d.capsule('Cimen', (34, 34), (36, 47), 1, clip='k1', shift=1, part='kanat_1')
+    d.capsule('Komur', (22, 53), (21, 56), 3.0, part='kol_1', line=True, lift=0.1)
+    d.capsule('Komur', (37, 53), (38, 56), 3.0, part='kol_2', line=True, lift=0.1)
+    d.set_face_side(15, 37)
+    glint(d, 40, 38, part='kanat_1')
+
+
+def usta_yan(d):
+    d.ellipse('Sari', (49, 53), (10, 10), part='kuyruk', name='fener', line=True, lift=0.12)
+    d.ellipse('Sari', (49, 54), (6, 6), part='kuyruk', clip='fener', shift=-1)
+    d.capsule('Komur', (24, 25), (32, 15), 1.7, part='tepe', line=True, lift=-0.1)
+    d.circle('Sari', (33, 13.5), 2.9, part='tepe', line=True, lift=0.1)
+    d.ellipse('Komur', (35, 50), (15, 9), name='alt', lift=0.1)
+    d.ellipse('Komur', (30, 37), (17, 15.5), name='g', lift=0.1, cast=2)
+    d.ellipse('Komur', (36, 43), (13, 10), join='g')
+    d.ellipse('Krem', (20, 42), (9.5, 8.5), name='lv')
+    d.capsule('Komur', (19, 25), (11, 15), 1.7, part='tepe', line=True)
+    d.circle('Sari', (10, 13.5), 2.9, part='tepe', line=True, lift=0.1)
+    d.pix((9, 12), ['oo', 'o.'], {'o': 'Parilti'}, part='tepe')
+    d.ellipse('Cimen', (40, 44), (8, 13), rot=-12, part='kanat_1', name='k1', line=True, lift=-0.05)
+    d.capsule('Cimen', (38, 33), (41, 53), 1.1, clip='k1', shift=1, part='kanat_1')
+    d.capsule('Komur', (26, 54), (24, 58), 3.6, part='kol_1', line=True, lift=0.1)
+    d.capsule('Komur', (42, 54), (44, 58), 3.6, part='kol_2', line=True, lift=0.1)
+    d.set_face_side(15, 37)
+    glint(d, 46, 44, part='kanat_1')
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

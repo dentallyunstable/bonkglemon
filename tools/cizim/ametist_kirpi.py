@@ -60,3 +60,57 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (sola bakar)
+def bebek_yan(d):
+    kristal(d, (30, 28), (36, 19), (6, 5), lift=-0.08)
+    kristal(d, (35, 31), (42, 26), (6, 5), lift=-0.08)
+    kristal(d, (25, 27), (25, 18), (6, 5), lift=-0.08)
+    kristal(d, (37, 36), (44, 34), (5.4, 4.2), lift=-0.12)
+    d.circle('Krem', (30, 44), 2.6, part='kol_2', line=True)
+    d.ellipse('Kahve', (26, 35), (14.5, 12.2), name='kafa', cast=1)
+    d.ellipse('Kahve', (28, 28), (7, 3), clip='kafa', shift=-1)
+    d.ellipse('Krem', (14, 40), (5, 4.4), name='yuz', line=True)
+    d.ellipse('Krem', (23, 41), (8, 5.4), name='karin', line=True)
+    d.pix2((5, 19), ['#'], {'#': 'Komur-4'})
+    d.circle('Kahve', (24, 26), 3.4, part='kulak_1', line=True)
+    d.circle('Krem', (17, 44), 2.6, part='kol_1', line=True)
+    d.set_face_side(16, 31)
+
+
+def genc_yan(d):
+    for a, b, w in (((36, 31), (39, 21), (6.4, 5)), ((42, 35), (49, 28), (6.4, 5)),
+                    ((46, 42), (53, 39), (6, 4.6)), ((29, 28), (29, 18), (6.4, 5)), ((22, 31), (14, 25), (6.2, 4.8)),
+                    ((44, 48), (51, 49), (5.4, 4.4))):
+        kristal(d, a, b, w, lift=-0.08)
+    d.circle('Krem', (37, 51), 3.2, part='kol_2', line=True)
+    d.ellipse('Kahve', (31, 41), (15.5, 11.8), name='govde', cast=1)
+    d.ellipse('Kahve', (26, 33), (11.4, 10), name='kafa', join='govde')
+    d.ellipse('Krem', (14.5, 41), (6, 4.8), name='yuz', line=True)
+    d.ellipse('Krem', (27, 46), (10, 6.4), name='karin', line=True)
+    d.circle('Pembe', (9.6, 40), 1.6, part='govde')
+    d.circle('Kahve', (27, 25), 3.4, part='kulak_1', line=True)
+    d.circle('Krem', (21, 51), 3.2, part='kol_1', line=True)
+    d.set_face_side(16, 34)
+
+
+def usta_yan(d):
+    for i, (a, b, w) in enumerate((((30, 38), (17, 34), 7), ((33, 32), (22, 25), 7.4), ((37, 27), (30, 15), 7.8),
+                                   ((42, 25), (41, 10), 8), ((47, 28), (52, 14), 7.8), ((51, 34), (62, 26), 7.4),
+                                   ((52, 42), (62, 40), 7))):
+        d.capsule('Mor', a, b, (w, w - 1.6), part='tepe', line=True, lift=-0.1 + 0.03 * (i % 3))
+    d.circle('Krem', (41, 58), 3.6, part='kol_2', line=True)
+    d.ellipse('Kahve', (36, 47), (18.5, 13.5), name='govde', cast=1)
+    d.ellipse('Kahve', (28, 36), (13, 12.5), name='kafa', join='govde')
+    d.ellipse('Krem', (14.5, 45), (7, 5.4), name='yuz', line=True)
+    d.ellipse('Krem', (30, 51), (11, 8), name='karin', line=True)
+    d.circle('Pembe', (8.6, 44), 1.9, part='govde')
+    d.circle('Kahve', (32, 27), 3.8, part='kulak_1', line=True)
+    d.circle('Krem', (24, 58), 3.6, part='kol_1', line=True)
+    d.ellipse('Mor', (24, 27), (3, 3.6), part='tepe', name='mucevher', line=True, lift=0.15)
+    d.pix((23, 26), ['#.'], {'#': 'Parilti'}, part='tepe')
+    d.set_face_side(16, 38)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

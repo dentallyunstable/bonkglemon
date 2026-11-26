@@ -108,3 +108,68 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def kanat_y(d, side, root, tip, tip2, nm, dark=False):
+    """Yandan kanat: kok govdede, uc geride ve yukarida; kirmizi kemik + pembe zar."""
+    kw = dict(lift=-0.12) if dark else {}
+    d.poly('Pembe', [root, tip, tip2, (root[0] + 1, root[1] + 9)], part='kanat_%d' % side, line=True, name=nm, **kw)
+    d.capsule('Kirmizi', root, tip, (2.6, 1.8), part='kanat_%d' % side, clip=nm, shift=0)
+    d.capsule('Kirmizi', (root[0], root[1] + 3), tip2, (2.2, 1.6), part='kanat_%d' % side, clip=nm, shift=0)
+
+
+def bebek_yan(d):
+    kanat_y(d, 2, (29, 31), (41, 21), (43, 30), 'z2', dark=True)
+    d.curve('Kirmizi', [(34, 44), (41, 45), (44, 38)], (5.4, 3.0), part='kuyruk', line=True)
+    d.ellipse('Kirmizi', (26, 35), (13, 10.8), name='kafa', cast=1)
+    d.ellipse('Kirmizi', (12.5, 36), (4.6, 3.6), join='kafa')
+    d.circle('Kirmizi', (34, 40.5), 3.0, part='kol_2', line=True)
+    d.ellipse('Krem', (24, 45), (13.6, 7.4), name='kabuk', line=True, cast=1, inbox=(0, 41, 47, 52))
+    for i, x in enumerate((13, 17.5, 22, 26.5, 31, 35.5)):
+        d.poly('Krem', [(x - 2.6, 43), (x + 2.6, 43), (x, 37.6 if i % 2 == 0 else 39.4)], join='kabuk')
+    d.pix((16, 46), ['##'], {'#': 'Krem-3'}, part='govde')
+    d.pix((29, 47), ['##'], {'#': 'Krem-3'}, part='govde')
+    yakut(d, 17, 39.6, 3.4)
+    kanat_y(d, 1, (27, 32), (39, 22), (41, 31), 'z1')
+    d.circle('Kirmizi', (18, 40.5), 3.0, part='kol_1', line=True)
+    d.set_face_side(14, 30)
+
+
+def genc_yan(d):
+    kanat_y(d, 2, (36, 38), (48, 24), (51, 38), 'z2', dark=True)
+    d.curve('Kirmizi', [(40, 54), (48, 55), (50, 48), (46, 45)], (5.6, 2.8), part='kuyruk', line=True)
+    d.capsule('Kirmizi', (36, 55), (38, 57), 3.4, part='kol_2', line=True)
+    d.ellipse('Kirmizi', (30, 46), (14.5, 11.4), name='govde', cast=1)
+    d.ellipse('Kirmizi', (24, 38), (12, 11), name='kafa', join='govde')
+    d.ellipse('Kirmizi', (13, 40), (5, 4), join='govde')
+    d.ellipse('Krem', (21, 52), (9, 7), part='govde', clip='govde', shift=0, inbox=(0, 47, 55, 60))
+    for y in (50, 52.6, 55):
+        d.rect('Krem', (14, y, 28, y + 0.9), part='govde', clip='govde', shift=1)
+    yakut(d, 19, 50.5, 4.6)
+    d.capsule('Krem', (28, 29), (30, 22), (3.4, 2.2), part='tepe', line=True, lift=-0.1)
+    d.capsule('Krem', (22, 29), (23, 22), (3.6, 2.4), part='tepe', line=True)
+    kanat_y(d, 1, (33, 40), (45, 26), (47, 41), 'z1')
+    d.capsule('Kirmizi', (20, 55), (19, 57), 3.6, part='kol_1', line=True)
+    d.set_face_side(15, 34)
+
+
+def usta_yan(d):
+    kanat_y(d, 2, (40, 44), (56, 22), (60, 40), 'z2', dark=True)
+    d.curve('Kirmizi', [(44, 62), (52, 63.5), (57, 60), (57, 56)], (6.4, 3.6), part='kuyruk', line=True)
+    kalp(d, 57, 51.5, 5.0)
+    d.capsule('Kirmizi', (42, 61), (44, 63), 3.8, part='kol_2', line=True)
+    d.ellipse('Kirmizi', (36, 50), (17.5, 14), name='govde', cast=1)
+    d.ellipse('Kirmizi', (27, 38), (14, 12.6), name='kafa', join='govde')
+    d.ellipse('Kirmizi', (14, 41), (5.6, 4.6), join='govde')
+    d.ellipse('Krem', (24, 56.5), (11.5, 8), part='govde', clip='govde', shift=0, inbox=(0, 49, 63, 63))
+    for y in (53.5, 56.5, 59.5):
+        d.rect('Krem', (17, y, 31, y + 1), part='govde', clip='govde', shift=1)
+    yakut(d, 22, 53, 6.4)
+    d.capsule('Krem', (33, 29), (36, 20), (4.2, 2.6), part='tepe', line=True, lift=-0.1)
+    d.capsule('Krem', (25, 28), (26, 19), (4.4, 2.8), part='tepe', line=True)
+    kanat_y(d, 1, (37, 43), (52, 25), (55, 42), 'z1')
+    d.capsule('Kirmizi', (23, 61), (22, 63), 4.0, part='kol_1', line=True)
+    d.set_face_side(16, 34)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

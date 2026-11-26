@@ -1,0 +1,47 @@
+{
+ "anahtar": "kar_penguen",
+ "asama": "genc_yan",
+ "kaynak": "cizim",
+ "tuval": 32,
+ "tuval_h": 30,
+ "kalip": "k",
+ "boy": 18,
+ "goz": {
+  "lx": 10,
+  "rx": 10,
+  "ey": 17
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  10,
+  17,
+  4,
+  3
+ ],
+ "govde_ust": 15,
+ "ayak": 28,
+ "govde_gen": 17,
+ "aileler": [
+  "Kar",
+  "Kirmizi",
+  "Lacivert",
+  "Turuncu"
+ ],
+ "renk": 16,
+ "tek_piksel_duzeltme": 12,
+ "denetim": [
+  "renk birlestirme: Kar-4>3, Turuncu-4>3, Turuncu-2>3"
+ ],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "kol_2"
+ ]
+}

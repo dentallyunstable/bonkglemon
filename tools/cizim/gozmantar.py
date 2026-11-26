@@ -65,3 +65,56 @@ def usta(d):
     d.pix((cx - 4, 43), ['.#..#..#.'], {'#': 'Murekkep'}, keep=True)
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    d.ellipse('Krem', (26, 38.5), (8.5, 6.3), name='sap', cast=1, lift=0.05)
+    d.circle('Krem', (21, 42), 2.6, join='sap')
+    d.circle('Krem', (31, 42), 2.6, join='sap')
+    d.ellipse('Mor', (25, 26), (13.5, 9), name='cap', cast=1, inbox=(0, 0, 48, 30), lift=0.08)
+    d.ellipse('Mor', (25, 30), (14.5, 1.6), join='cap')
+    d.ellipse('Mor', (19, 20.5), (3.4, 2), clip='cap', shift=-1)
+    d.ellipse('Mor', (31, 24.5), (2.2, 1.5), clip='cap', shift=-1)
+    d.set_face_side(20, 34)
+
+
+def genc_yan(d):
+    d.ellipse('Krem', (30, 44), (9.5, 8), name='sap', cast=1, lift=0.05)
+    d.ellipse('Krem', (36.5, 51), (4.2, 3), part='kol_2', line=True)
+    d.ellipse('Mor', (29, 31), (17, 11.5), name='cap', cast=1, inbox=(0, 0, 56, 34), lift=0.08)
+    d.ellipse('Mor', (29, 35.5), (18, 1.8), join='cap')
+    for x in (13, 20, 27, 34, 41):
+        d.circle('Mor', (x, 35.5), 2.4, join='cap')
+    for x, y in ((18, 33), (30, 32), (41, 32)):
+        d.circle('Cam', (x, y), 1.9, part='govde', clip='cap', shade='flat', tone=2)
+        d.pix((int(x - 1), int(y - 1)), ['oo'], {'o': 'Parilti'})
+    d.ellipse('Mor', (22, 24), (3.6, 2.2), clip='cap', shift=-1)
+    d.ellipse('Mor', (37, 26), (2.2, 1.5), clip='cap', shift=-1)
+    d.ellipse('Krem', (23, 51), (4.2, 3), part='kol_1', line=True)
+    d.set_face_side(22, 39)
+
+
+def bebe_y(d, x, y):
+    d.capsule('Krem', (x, y + 1), (x, y + 8), 5.4, part='esya', line=True)
+    d.ellipse('Mor', (x, y), (5.6, 3.4), part='esya', line=True, lift=0.15, inbox=(0, 0, 64, y + 2))
+    d.pix((x - 2, y + 4), ['##.##'], {'#': 'Murekkep'}, part='esya', keep=True)
+
+
+def usta_yan(d):
+    bebe_y(d, 55, 37)
+    d.ellipse('Krem', (43, 62), (5.2, 3.2), part='kol_2', line=True)
+    d.ellipse('Krem', (35, 53), (12, 9.5), name='sap', cast=1, lift=0.05)
+    d.ellipse('Mor', (34, 36), (23, 13), name='cap', cast=2, inbox=(0, 0, 64, 44), lift=0.08)
+    d.ellipse('Mor', (34, 42), (23.5, 2.2), join='cap')
+    for x in (14, 21.5, 29, 37, 44.5, 52):
+        d.circle('Mor', (x, 43.5), 3.2, join='cap')
+    for x, y, r in ((20, 37, 2.0), (46, 37, 2.0), (34, 29, 2.4), (28, 42.5, 1.6)):
+        d.circle('Cam', (x, y), r, part='govde', clip='cap', shade='flat', tone=2)
+        d.pix((int(x - 1), int(y - 1)), ['o'], {'o': 'Parilti'})
+    d.ellipse('Mor', (26, 27), (4, 2.4), clip='cap', shift=-1)
+    bebe_y(d, 12, 40)
+    d.ellipse('Krem', (27, 62), (5.2, 3.2), part='kol_1', line=True)
+    d.set_face_side(26, 49)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

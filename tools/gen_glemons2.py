@@ -388,6 +388,7 @@ class Rig:
         g[mask] = src[mask]
         y0, xw, xr = self.y_sq, self.x_w, self.x_r
         W = g.shape[1]
+        y0 = min(y0, g.shape[0] - abs(sq) - 1)   # ezilme cizgisi tuvalin altina tasmasin (yandan cizimlerde yuz alcak)
         if sq > 0:
             n = sq
             o = np.zeros_like(g)
@@ -493,7 +494,7 @@ class Rig:
         wing = f.get('wing')
         for n, m, pdx, pdy, gdx, gdy in layers:
             ys, xs = np.where(m)
-            if n.startswith('kanat') and wing in ('orta', 'asagi'):
+            if n.startswith('kanat') and wing in ('orta', 'asagi', 'kisa'):
                 # kanat cirpma (5.7): orta = yukseklik koke dogru %60, asagi = ortanin koke gore aynasi
                 r = self.wroot[n]
                 rows = sorted(set(ys.tolist()), key=lambda y: -abs(y - r))   # koke yakin satirlar en son (ustte kalir)
@@ -502,6 +503,8 @@ class Rig:
                         ny = r + (yy - r) * 0.6
                         if wing == 'asagi':
                             ny = r - (yy - r) * 0.6
+                        elif wing == 'kisa':     # yandan: aynalamadan koke dogru %30 (kopuk parca kalmasin)
+                            ny = r + (yy - r) * 0.3
                         X, Y = x + pdx, int(round(ny)) + pdy
                         if 0 <= X < W and 0 <= Y < H:
                             canvas[Y, X] = src[yy, x]
@@ -758,7 +761,7 @@ def build(key):
             if ry.fly:     # ucanlar yandan da kanat cirpar (kanat yoksa alt kenar dalgalanir)
                 for i, f in enumerate(fr):
                     f.pop('sq', None)
-                    f.setdefault('wing', ['yukari', 'orta', 'asagi'][i % 3])
+                    f.setdefault('wing', ['yukari', 'orta', 'kisa'][i % 3])
                     f.setdefault('ripple', 1 if i % 2 == 0 else -1)
             fol = follow_offsets(fr, True)
             yf = [ry.render(f, {n: fo for n in FOLLOW})[0] for f, fo in zip(fr, fol)]

@@ -96,3 +96,60 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def goz_parla_yan(d, ex, ey):
+    d.rect('Cam', (ex - 1, ey - 1, ex + 4, ey + 6), rad=1.6, part='govde', shade='flat', tone=1)
+
+
+def bebek_yan(d):
+    d.circle('Krem', (31.5, 25.5), 3.4, part='kulak_2', line=True, tone=2)
+    d.curve('Krem', [(35, 43), (40, 45.5), (41.5, 49.5)], (3.6, 3.0), part='kuyruk', line=True)
+    d.ellipse('Krem', (25, 36.2), (13, 11.2), name='kafa', cast=1)
+    d.rect('Lacivert', (13, 28, 23, 39), rad=3, part='govde', clip='kafa', tone=3, name='ara')
+    goz_parla_yan(d, 16, 31)
+    sarim(d, 'kafa', [((14, 26), (34, 23)), ((20, 29), (38, 27)), ((22, 33), (38, 31)), ((22, 37), (38, 35)), ((14, 43), (36, 40)), ((16, 46), (38, 43)), ((18, 49), (34, 47))])
+    d.circle('Krem', (22, 25.5), 3.4, part='kulak_1', line=True)
+    d.pix((21, 25), ['#', '#'], {'#': 'Lacivert-3'}, part='kulak_1')
+    d.set_face_side(16, 31, ten='Krem')
+
+
+def genc_yan(d):
+    d.circle('Krem', (34.5, 29), 3.8, part='kulak_2', line=True, tone=2)
+    d.curve('Krem', [(38, 52), (44, 55), (46, 49.5)], (4.0, 3.2), part='kuyruk', line=True)
+    d.ellipse('Krem', (29, 44.5), (13.6, 16), name='kafa', cast=1)
+    d.rect('Lacivert', (16, 33, 26, 44), rad=3, part='govde', clip='kafa', tone=3, name='ara')
+    goz_parla_yan(d, 18, 36)
+    sarim(d, 'kafa', [((16, 31), (38, 28)), ((16, 34), (40, 31)), ((26, 37), (42, 35)), ((26, 40), (42, 39)), ((16, 48), (40, 45)), ((17, 51), (42, 48)), ((19, 54), (38, 52.5)), ((22, 57), (34, 56))])
+    d.circle('Krem', (25.5, 29), 3.8, part='kulak_1', line=True)
+    d.pix((25, 28), ['#', '#'], {'#': 'Lacivert-3'}, part='kulak_1')
+    d.capsule('Lacivert', (21, 47.5), (27, 50.5), 1.0, part='govde', tone=3, clip='kafa')
+    d.circle('Cam', (22, 51), 2.9, part='esya', line=True)
+    d.pix((21, 50), ['oo'], {'o': 'Parilti'}, part='esya')
+    d.capsule('Krem', (26, 51), (21, 56), (5.8, 5.2), part='kol_1', line=True)
+    d.set_face_side(18, 36, ten='Krem')
+
+
+def usta_yan(d):
+    d.circle('Krem', (36.5, 17.5), 4.0, part='kulak_2', line=True, tone=2)
+    d.curve('Krem', [(44, 54), (50, 57), (55, 54), (57, 58)], (5.4, 3.8), part='kuyruk', line=True)
+    d.curve('Krem', [(42, 50), (50, 47), (56, 49), (59, 45)], (5.0, 3.6), part='esya', line=True)
+    d.ellipse('Krem', (32, 47.4), (15, 14), name='govde', cast=1)
+    d.ellipse('Krem', (30, 38), (14.5, 14), name='kafa', join='govde')
+    d.rect('Lacivert', (16, 33, 27, 44), rad=3, part='govde', clip='govde', tone=3, name='ara')
+    goz_parla_yan(d, 18, 36)
+    sarim(d, 'govde', [((27, 38), (44, 36)), ((27, 41), (44, 40)), ((18, 51), (44, 48)), ((18, 54), (46, 51)), ((20, 57), (44, 55)), ((24, 60), (40, 58.5))])
+    d.ellipse('Sari', (31, 29), (15.5, 13), name='baslik', part='govde', line=True, cast=1, inbox=(0, 0, 63, 33))
+    for x in (20, 25, 31, 37, 42):
+        d.capsule('Sari', (x, 17.5), (31 + (x - 31) * 1.15, 33), 1.0, part='govde', clip='baslik', shift=1)
+    d.rect('Sari', (15, 30, 46, 32), rad=1, part='govde', line=True, lift=0.12, name='bant')
+    d.poly('Sari', [(36, 31), (45, 31), (47, 42), (42, 47), (36, 42)], name='yan', part='govde', line=True, cast=1)
+    for yy in (36, 41):
+        d.capsule('Sari', (36, yy), (46, yy - 1), 1.0, part='govde', clip='yan', shift=1)
+    d.circle('Cam', (19, 31), 1.9, part='govde', line=True)
+    d.circle('Krem', (24, 17.5), 4.0, part='kulak_1', line=True)
+    d.pix((23, 16), ['#', '#', '#'], {'#': 'Lacivert-3'}, part='kulak_1')
+    d.set_face_side(18, 36, ten='Krem')
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

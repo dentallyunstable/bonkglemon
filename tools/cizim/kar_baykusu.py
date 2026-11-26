@@ -106,3 +106,77 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---- yandan gorunum (sola bakar) ----
+def kanat_yan(d, part, root, tips, w, base_r, nm, lift=-0.1, ice=False, speck=()):
+    d.ellipse('Kar', root, base_r, part=part, name=nm, line=True, lift=lift)
+    for t in tips:
+        d.capsule('Kar', root, t, w, part=part, join=nm)
+    for (x, y) in speck:
+        d.capsule('Tas', (x - 0.9, y), (x + 0.9, y + 2.0), 1.3, clip=nm, part=part, tone=3)
+    if ice:
+        for t in tips:
+            d.circle('Kar', t, 2.3, clip=nm, part=part, shift=-2)
+        d.pix((round(tips[0][0] - 1), round(tips[0][1] + 2)), ['oo', 'o.'], {'o': 'Parilti'}, part=part)
+
+
+def tuy_yan(d, x, y, h, w, lift, name=None):
+    d.poly('Kar', [(x - w, y + 2), (x + w * 0.8, y + 2), (x + w * 1.2, y - h)], part='tepe', line=True, lift=lift)
+
+
+def bebek_yan(d):
+    d.flyer = True
+    kanat_yan(d, 'kanat_2', (27, 36), [(33, 27), (36, 32), (35, 38)], (4.0, 3.2), (3.8, 5.2), 'w2', lift=-0.25)
+    d.ellipse('Sari', (26, 47), (3.0, 2.6), part='kol_2', line=True, noshadow=True, lift=-0.1)
+    tuy_yan(d, 26.5, 24.5, 5, 3.0, -0.05)
+    d.ellipse('Kar', (22, 35.5), (12.5, 12), name='govde', cast=1, lift=0.14)
+    tuy_yan(d, 19, 24.5, 5, 3.2, 0.1)
+    d.ellipse('Sari', (10, 37.5), (2.4, 1.9), line=True, noshadow=True)
+    kanat_yan(d, 'kanat_1', (25, 38), [(32, 29), (35, 34), (34, 40)], (4.0, 3.2), (3.8, 5.2), 'w1', lift=-0.1)
+    d.ellipse('Sari', (20, 47), (3.0, 2.6), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(14, 31)
+
+
+def genc_yan(d):
+    d.flyer = True
+    sp = [(31, 31), (30, 37), (33, 40)]
+    kanat_yan(d, 'kanat_2', (29, 38), [(36, 28), (39, 34), (38, 41)], (4.6, 3.6), (4.0, 6.0), 'w2', lift=-0.25)
+    d.ellipse('Sari', (31, 54), (3.2, 2.6), part='kol_2', line=True, noshadow=True, lift=-0.1)
+    tuy_yan(d, 27, 22, 6, 3.4, -0.05)
+    d.ellipse('Kar', (25, 38), (13.5, 16), name='govde', cast=1, lift=0.14)
+    d.ellipse('Kar', (24, 44.5), (13.5, 4.6), name='yaka', line=True, lift=0.22, cast=1)
+    for x, dy in ((-10, 0), (-5, 0.9), (0, 0), (5, 0.9), (10, 0)):
+        d.circle('Kar', (24 + x, 47.2 + dy), 3.1, join='yaka')
+    for x, y in ((-5, 52), (0, 51), (5, 52.5), (-2.5, 55), (3, 55.5)):
+        d.capsule('Tas', (24 + x - 0.7, y), (24 + x + 0.7, y + 1.3), 0.9, clip='govde', tone=2)
+    tuy_yan(d, 19, 22, 6, 3.6, 0.1)
+    d.ellipse('Sari', (11, 35.5), (2.5, 1.9), line=True, noshadow=True)
+    kanat_yan(d, 'kanat_1', (28, 40), [(36, 30), (39, 36), (37, 43)], (5.0, 4.0), (4.4, 6.2), 'w1', lift=-0.1, speck=sp)
+    d.ellipse('Sari', (22, 54), (3.2, 2.6), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(15, 29)
+
+
+def usta_yan(d):
+    d.flyer = True
+    sp = [(34, 30), (33, 36), (36, 41), (37, 33)]
+    tips = [(40, 23), (43, 31), (43, 40), (41, 47)]
+    kanat_yan(d, 'kanat_2', (31, 40), [(38, 24), (42, 32), (41, 41)], (5.4, 4.4), (4.8, 7.4), 'w2', lift=-0.25, ice=True)
+    d.ellipse('Sari', (35, 61), (3.4, 3.0), part='kol_2', line=True, noshadow=True, lift=-0.1)
+    tuy_yan(d, 31, 23.5, 7, 3.8, -0.05)
+    flake(d, 37, 14)
+    d.ellipse('Kar', (29, 41), (16.5, 21.5), name='govde', cast=1, lift=0.14)
+    d.ellipse('Kar', (28, 48.5), (16, 5.2), name='yaka', line=True, lift=0.22, cast=1)
+    for x, dy in ((-12, 0), (-8, 0.9), (-4, 0), (0, 0.9), (4, 0), (8, 0.9), (12, 0)):
+        d.circle('Kar', (28 + x, 51.5 + dy), 3.2, join='yaka')
+    for x, y in ((-7, 57), (-1, 56.5), (6, 57.5), (-4, 60), (3, 60.5)):
+        d.capsule('Tas', (28 + x - 0.7, y), (28 + x + 0.7, y + 1.3), 0.9, clip='govde', tone=2)
+    tuy_yan(d, 22, 23.5, 7, 4.2, 0.1)
+    flake(d, 22, 14)
+    d.ellipse('Sari', (12, 38.5), (2.8, 2.2), line=True, noshadow=True)
+    kanat_yan(d, 'kanat_1', (31, 42), [(39, 29), (43, 36), (42, 44), (39, 50)], (5.8, 4.6), (5.2, 8.0), 'w1', lift=-0.1, ice=True, speck=sp)
+    d.ellipse('Sari', (25, 61), (3.4, 3.0), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(16, 31)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

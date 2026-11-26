@@ -1,0 +1,48 @@
+{
+ "anahtar": "nilufer_kurbagasi",
+ "asama": "usta_yan",
+ "kaynak": "cizim",
+ "tuval": 36,
+ "tuval_h": 34,
+ "kalip": "o",
+ "boy": 20,
+ "goz": {
+  "lx": 11,
+  "rx": 11,
+  "ey": 18
+ },
+ "ten": "Cimen",
+ "yuz_kutusu": [
+  11,
+  18,
+  4,
+  3
+ ],
+ "govde_ust": 11,
+ "ayak": 32,
+ "govde_gen": 20,
+ "aileler": [
+  "Cimen",
+  "Krem",
+  "Pembe",
+  "Sari"
+ ],
+ "renk": 12,
+ "tek_piksel_duzeltme": 18,
+ "denetim": [
+  "govde boyu 20 (kural 21-25)"
+ ],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "kol_2",
+  "tepe"
+ ]
+}

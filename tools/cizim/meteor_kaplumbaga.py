@@ -77,3 +77,55 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def bebek_yan(d):
+    d.ellipse('Tas', (31, 33), (12, 11.5), name='sh', cast=1, lift=0.02)
+    d.ellipse('Tas', (29, 24), (5, 2.4), clip='sh', shift=-1, rot=-25)
+    krater(d, 36, 28, 4.2, 3.4)
+    krater(d, 37, 38, 2.6, 2.2)
+    d.ellipse('Gok', (27, 46.5), (3.8, 2.2), part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Gok', (23, 42), (7.5, 5.5), name='tn', cast=1)
+    d.ellipse('Gok', (21, 34), (10, 8.6), name='kf', cast=1, lift=0.05)
+    d.ellipse('Gok', (13.5, 38), (3, 2.4), join='kf')
+    d.ellipse('Gok', (17, 46.5), (3.8, 2.2), part='kol_1', line=True)
+    d.set_face_side(14, 31)
+    parilti(d)
+
+
+def genc_yan(d):
+    d.ellipse('Tas', (36, 38), (15, 13.5), name='sh', cast=1, lift=0.02)
+    d.ellipse('Tas', (33, 28), (6, 2.6), clip='sh', shift=-1, rot=-25)
+    krater(d, 42, 32, 4.6, 3.4)
+    krater(d, 46, 42, 3.4, 3, glow=True)
+    krater(d, 40, 47, 3, 2.2)
+    d.ellipse('Gok', (31, 56), (4.2, 2.4), part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Gok', (26, 51), (8.5, 6.2), name='tn', cast=1)
+    d.ellipse('Gok', (24, 40), (10.5, 9.2), name='kf', cast=1, lift=0.05)
+    d.ellipse('Gok', (15, 44), (3.4, 2.8), join='kf')
+    d.ellipse('Gok', (20, 56), (4.2, 2.4), part='kol_1', line=True)
+    d.set_face_side(16, 37)
+    parilti(d)
+
+
+def usta_yan(d):
+    d.curve('Sari', [(50, 58), (56, 61), (59, 59)], (5.4, 2.2), part='kuyruk', name='fl', line=True, lift=0.1)
+    d.curve('Sari', [(50, 58), (55, 60.5)], (3, 1.4), part='kuyruk', clip='fl', shift=-1)
+    d.pix((52, 58), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    d.ellipse('Tas', (40, 40), (18.5, 18), name='sh', cast=1, lift=0.02)
+    d.ellipse('Tas', (33, 29), (7, 3), clip='sh', shift=-1, rot=-25)
+    krater(d, 47, 30, 5.4, 4.2, glow=True)
+    krater(d, 52, 43, 4.2, 3.6, glow=True)
+    krater(d, 45, 52, 3.8, 3, glow=True)
+    krater(d, 35, 26, 2.6, 2.0, glow=True)
+    d.ellipse('Gok', (37, 61), (5, 2.6), part='kol_2', line=True, lift=-0.1)
+    d.ellipse('Gok', (29, 56), (10.5, 7), name='tn', cast=1)
+    d.ellipse('Gok', (27, 43), (12.5, 10.8), name='kf', cast=1, lift=0.05)
+    d.ellipse('Gok', (17, 48), (4, 3.2), join='kf')
+    d.ellipse('Gok', (22, 61), (5, 2.6), part='kol_1', line=True)
+    d.set_face_side(18, 40)
+    parilti(d)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

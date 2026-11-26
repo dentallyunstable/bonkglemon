@@ -78,3 +78,57 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def yanak_yan(d, x, y, r):
+    d.circle('Sari', (x, y), r, clip='kafa', tone=2)
+    d.circle('Sari', (x, y), r - 1.0, clip='kafa', tone=1)
+
+
+def bebek_yan(d):
+    zigzag(d, [(33, 40), (39, 37), (36, 33), (42, 28)], 2.8)
+    d.ellipse('Lacivert', (26, 38), (13.5, 6), name='kv', line=True, lift=-0.06, cast=1)
+    d.ellipse('Gok', (24, 41), (9, 3.2), clip='kv', shift=0)
+    d.ellipse('Lacivert', (20, 25), (13, 10.6), name='kafa', lift=0.04, cast=1)
+    d.circle('Lacivert', (11, 28), 4.2, join='kafa')
+    yanak_yan(d, 27, 28, 2.8)
+    d.set_face_side(13, 23, yanak='Sari-1')
+
+
+def genc_yan(d):
+    d.ellipse('Lacivert', (31, 49), (15, 5.8), name='k2', line=True, lift=-0.12, cast=1)
+    d.ellipse('Gok', (29, 51.5), (10.5, 3.0), clip='k2', shift=0)
+    zigzag(d, [(43, 48), (49, 45), (46, 41), (52, 36)], 3.0)
+    d.ellipse('Lacivert', (28, 41), (14.5, 7), name='k1', line=True, lift=-0.04, cast=1)
+    d.ellipse('Gok', (26, 44.5), (10, 3.4), clip='k1', shift=0)
+    pts = [(17, 40.5), (21, 37.5), (25, 40.5), (29, 37.5), (33, 40.5), (37, 37.5), (41, 40.5)]
+    for a, b in zip(pts, pts[1:]):
+        d.capsule('Sari', a, b, 1.0, clip='k1', tone=2)
+    d.ellipse('Lacivert', (23, 28), (14, 11.6), name='kafa', lift=0.04, cast=1)
+    d.circle('Lacivert', (12, 31), 4.6, join='kafa')
+    yanak_yan(d, 30, 31, 3.0)
+    d.set_face_side(14, 26, yanak='Sari-1')
+
+
+def usta_yan(d):
+    # dalgalı Gök yüzgeç yele kafanın arkasında
+    d.ellipse('Gok', (36, 29), (13, 11), name='yl', part='govde', line=True, lift=-0.1)
+    for x, y in ((31, 21), (37, 20), (43, 23), (47, 28), (46, 34)):
+        d.circle('Gok', (x, y), 4.2, join='yl')
+    d.ellipse('Lacivert', (36, 58), (17.5, 6.2), name='k2', line=True, lift=-0.12, cast=1)
+    d.ellipse('Gok', (34, 60.5), (12, 3.2), clip='k2', shift=0)
+    zigzag(d, [(50, 57), (56, 55)], 3.4)
+    d.poly('Sari', [(62, 33), (53, 44), (58.5, 44), (54.5, 54), (65, 41), (59.5, 41), (64.5, 33)], part='kuyruk', line=True, lift=0.05)
+    d.pix((59, 37), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    d.ellipse('Lacivert', (32, 49), (16.5, 8), name='k1', line=True, lift=-0.04, cast=1)
+    d.ellipse('Gok', (30, 52.5), (11.5, 3.8), clip='k1', shift=0)
+    pts = [(17, 48), (21, 44.5), (26, 48), (31, 44.5), (36, 48), (41, 44.5), (46, 48)]
+    for a, b in zip(pts, pts[1:]):
+        d.capsule('Sari', a, b, 1.1, clip='k1', tone=2)
+    d.ellipse('Lacivert', (26, 33), (16.5, 13.5), name='kafa', lift=0.04, cast=1)
+    d.circle('Lacivert', (13, 36), 5.0, join='kafa')
+    yanak_yan(d, 35, 36, 3.2)
+    d.set_face_side(15, 30, yanak='Sari-1')
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

@@ -66,3 +66,38 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def bebek_yan(d):
+    stem(d, 26, 26, 43, 16, 's')
+    cap(d, 25, 28, 13, 10, 'c', [(-6, -6, 2.4), (3, -7, 1.8), (8, -2, 1.6)], hang=2.4)
+    glint(d, 19, 22)
+    d.set_face_side(20, 32)
+
+
+def genc_yan(d):
+    stem(d, 40, 42, 53, 8, 's2', part='kol_1')
+    cap(d, 40, 44, 9, 7, 'c2', [(-3, -4, 1.8), (3, -3, 1.4)], hang=2, part='kol_1')
+    kapali(d, 36, 49, 'kol_1')
+    stem(d, 26, 28, 54, 16, 's')
+    cap(d, 26, 31, 14, 11, 'c', [(-6, -7, 2.6), (4, -8, 2.0), (9, -3, 1.8), (-10, -2, 1.5)], hang=2.6)
+    glint(d, 20, 23)
+    d.set_face_side(20, 35)
+
+
+def usta_yan(d):
+    stem(d, 52, 49, 60, 8, 's3', part='kol_1')
+    cap(d, 52, 51, 9, 7, 'c3', [(-3, -4, 1.8), (3, -3, 1.4)], hang=2, part='kol_1')
+    kapali(d, 49, 56, 'kol_1')
+    stem(d, 43, 40, 60, 9, 's2', part='kol_2')
+    cap(d, 43, 42, 10, 8, 'c2', [(-3, -5, 2.0), (4, -4, 1.5)], hang=2.2, part='kol_2')
+    kapali(d, 40, 49, 'kol_2')
+    stem(d, 28, 28, 61, 18, 's')
+    cap(d, 28, 32, 16, 12, 'c', [(-7, -8, 3.0), (5, -9, 2.2), (10, -3, 2.0), (-11, -2, 1.6), (0, -3, 1.4)], hang=3.8)
+    glint(d, 21, 23)
+    glint(d, 45, 37, 'kol_2')
+    d.set_face_side(21, 37)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

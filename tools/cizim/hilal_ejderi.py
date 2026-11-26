@@ -68,3 +68,51 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def bebek_yan(d):
+    d.flyer = True
+    govde(d, [(21, 26), (15, 31), (17, 35.5), (24, 38), (31, 36), (35, 31)], (10.0, 4.0))
+    d.circle('Mor', (34.5, 30), 2.6, part='kanat_2', line=True, lift=0.14)
+    d.ellipse('Mor', (29, 24), (2.6, 3.0), part='kanat_1', line=True, lift=0.14)
+    d.ellipse('Mor', (19, 21), (11.8, 9.2), name='kafa', lift=0.06, cast=1)
+    d.ellipse('Mor', (10.5, 24), (3.4, 3), join='kafa')
+    d.set_face_side(14, 19)
+
+
+def genc_yan(d):
+    d.flyer = True
+    govde(d, [(24, 31), (17, 38), (18, 44), (27, 48), (35, 45), (39, 39)], (12.0, 5.0))
+    bulut(d, 12.5, 39, 3.4, 'kanat_1', 'y1')
+    bulut(d, 14, 47, 3.0, 'kanat_1', 'y2')
+    bulut(d, 43, 36, 3.2, 'kanat_2', 'y3')
+    d.circle('Mor', (39.5, 39), 2.8, line=True, lift=0.12)
+    d.ellipse('Mor', (23, 26), (13.5, 11.5), name='kafa', lift=0.06, cast=1)
+    d.ellipse('Mor', (12.5, 30), (4, 3.4), join='kafa')
+    bulut(d, 29, 15, 3.4, 'tepe', 'y4')
+    d.capsule('Kar', (11, 31), (3, 29), (1.6, 1.0), part='esya', line=True)
+    d.set_face_side(15, 25)
+
+
+def usta_yan(d):
+    d.flyer = True
+    govde(d, [(27, 36), (16, 44), (17, 52), (26, 57), (36, 55), (43, 47)], (14.0, 5.5))
+    bulut(d, 47, 41, 4.0, 'kuyruk', 'pk')
+    bulut(d, 9, 45, 4.2, 'kanat_1', 'y1')
+    bulut(d, 11, 54, 3.6, 'kanat_1', 'y2')
+    bulut(d, 47, 30, 3.6, 'kanat_2', 'y3')
+    d.capsule('Sari', (31, 20), (36, 10), (3.2, 1.4), part='tepe', line=True, lift=-0.05)
+    d.ellipse('Mor', (25, 31), (15.5, 13), name='kafa', lift=0.06, cast=1)
+    d.ellipse('Mor', (12.5, 35), (4.4, 3.8), join='kafa')
+    d.capsule('Sari', (27, 20), (31, 9), (3.6, 1.6), part='tepe', line=True, lift=0.1)
+    d.capsule('Kar', (11, 36), (3, 34), (1.8, 1.0), part='esya', line=True)
+    d.circle('Mor', (34, 53), 2.6, part='kol_2', line=True, lift=0.0)
+    d.circle('Mor', (24, 54), 2.6, part='kol_1', line=True, lift=0.1)
+    d.circle('Sari', (29, 50), 4.2, part='esya', name='tas', line=True, lift=0.12)
+    d.circle('Mor', (31.2, 48.8), 3.0, part='esya', sub='tas')
+    d.pix((26, 48), ['oo'], {'o': 'Parilti'}, part='esya')
+    d.set_face_side(15, 30)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

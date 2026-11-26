@@ -1,0 +1,46 @@
+{
+ "anahtar": "hilal_ejderi",
+ "asama": "genc_yan",
+ "kaynak": "cizim",
+ "tuval": 32,
+ "tuval_h": 30,
+ "kalip": "k",
+ "boy": 21,
+ "goz": {
+  "lx": 11,
+  "rx": 11,
+  "ey": 11
+ },
+ "ten": "Mor",
+ "yuz_kutusu": [
+  11,
+  11,
+  4,
+  3
+ ],
+ "govde_ust": 7,
+ "ayak": 24,
+ "govde_gen": 19,
+ "aileler": [
+  "Kar",
+  "Mor"
+ ],
+ "renk": 10,
+ "tek_piksel_duzeltme": 19,
+ "denetim": [
+  "govde boyu 21 (kural 16-20)"
+ ],
+ "agiz": false,
+ "ucar": true,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kanat_1",
+  "kanat_2",
+  "tepe"
+ ]
+}

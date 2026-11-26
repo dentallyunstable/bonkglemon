@@ -85,3 +85,66 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (sola bakar)
+def bebek_yan(d):
+    d.ellipse('Mor', (31, 44.5), (3.4, 2.4), part='kol_2', line=True)
+    d.poly('Gok', [(30, 26), (31, 18), (34, 11), (37, 17), (38, 27)], name='k1', part='tepe', line=True)
+    d.rect('Gok', (33, 14, 34, 22), clip='k1', shift=-1)
+    isik(d, 32, 17)
+    govde(d, (26, 34), (14, 11.5))
+    d.ellipse('Komur', (19, 27), (4.5, 2.2), clip='g', shift=-1, rot=-30)
+    d.circle('Mor', (35, 40), 2.0, clip='g', shift=0)
+    d.circle('Mor', (36, 31), 1.5, clip='g', shift=0)
+    d.ellipse('Komur', (13, 37), (4, 3), join='g')
+    d.pix2((5, 18), ['#'], {'#': 'Komur-4'})
+    d.ellipse('Mor', (18, 44.5), (3.4, 2.4), part='kol_1', line=True)
+    d.set_face_side(15, 31)
+
+
+def genc_yan(d):
+    d.ellipse('Mor', (38, 54), (4, 2.7), part='kol_2', line=True)
+    d.poly('Gok', [(33, 34), (33, 22), (38, 13), (43, 22), (44, 35)], name='k1', part='tepe', line=True, lift=-0.04)
+    d.poly('Gok', [(41, 38), (42, 28), (47, 20), (51, 29), (49, 40)], name='k2', part='tepe', line=True, lift=-0.1)
+    d.poly('Gok', [(26, 31), (25, 22), (29, 15), (33, 24), (35, 33)], name='k3', part='tepe', line=True, lift=-0.1)
+    d.rect('Gok', (37, 16, 37, 28), clip='k1', shift=-1)
+    d.rect('Gok', (29, 19, 29, 27), clip='k3', shift=-1)
+    isik(d, 37, 17)
+    govde(d, (29, 41), (15, 14.5))
+    d.ellipse('Komur', (22, 31), (5.5, 2.4), clip='g', shift=-1, rot=-25)
+    d.capsule('Komur', (29, 29), (29, 35), 1.0, clip='g', shift=-1)
+    d.circle('Mor', (39, 47), 2.2, clip='g')
+    d.circle('Mor', (40, 36), 1.5, clip='g')
+    d.ellipse('Komur', (14, 42), (4.2, 3.4), join='g')
+    d.capsule('Gok', (11, 41), (5, 33), (5.6, 4.0), name='boynuz', line=True)
+    d.rect('Gok', (7, 35, 8, 38), clip='boynuz', shift=-1)
+    d.ellipse('Mor', (21, 54.5), (4, 2.7), part='kol_1', line=True)
+    d.set_face_side(15, 36)
+
+
+def usta_yan(d):
+    d.ellipse('Mor', (44, 64.5), (4.8, 3.4), part='kol_2', line=True)
+    d.poly('Gok', [(46, 46), (48, 30), (54, 19), (60, 31), (58, 48)], name='c2', part='tepe', line=True, lift=-0.14)
+    d.poly('Gok', [(28, 40), (29, 22), (35, 7), (42, 22), (43, 40)], name='c3', part='tepe', line=True, lift=-0.06)
+    d.poly('Gok', [(38, 42), (40, 24), (47, 11), (54, 26), (54, 43)], name='c4', part='tepe', line=True, lift=-0.02)
+    d.rect('Gok', (34, 12, 34, 28), clip='c3', shift=-1)
+    d.rect('Gok', (46, 16, 46, 32), clip='c4', shift=-1)
+    d.rect('Gok', (54, 24, 54, 38), clip='c2', shift=-1)
+    isik(d, 34, 12)
+    govde(d, (34, 44.5), (20, 20))
+    d.ellipse('Komur', (23, 35), (7, 2.8), clip='g', shift=-1, rot=-25)
+    d.capsule('Komur', (34, 27), (34, 35), 1.0, clip='g', shift=-1)
+    d.circle('Mor', (49, 57), 2.8, clip='g')
+    d.circle('Mor', (50, 42), 1.8, clip='g')
+    d.circle('Mor', (20, 58), 1.8, clip='g')
+    d.ellipse('Komur', (15, 49), (5, 3.8), join='g')
+    d.capsule('Gok', (13, 47), (5, 40), (7.4, 5.2), name='bs', line=True)
+    d.capsule('Gok', (9, 44), (3, 34), (5.4, 4), name='b1', line=True)
+    d.capsule('Gok', (9, 44), (13, 33), (5.4, 4), name='b2', line=True)
+    d.rect('Gok', (9, 43, 10, 45), clip='bs', shift=-1)
+    d.ellipse('Mor', (24, 64.5), (4.8, 3.4), part='kol_1', line=True)
+    d.set_face_side(18, 44)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

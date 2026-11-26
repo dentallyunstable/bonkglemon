@@ -70,3 +70,60 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def kiskac_yan(d, x, y, r, nm, part, lift=0.0):
+    """Yandan kiskac: yuvarlak taban, solda iki cene (ust ve alt), arada oyuk."""
+    d.circle('Turuncu', (x, y), r * 0.95, part=part, line=True, name=nm, lift=lift)
+    d.circle('Turuncu', (x - r * 0.85, y - r * 0.62), r * 0.55, part=part, join=nm)
+    d.circle('Turuncu', (x - r * 0.85, y + r * 0.62), r * 0.55, part=part, join=nm)
+    d.rect('Turuncu', (x - r * 1.9, y - r * 0.18, x - r * 0.75, y + r * 0.18), part=part, sub=nm)
+
+
+def bebek_yan(d):
+    d.curve('Turuncu', [(33, 31), (38, 24), (33, 15), (26, 17)], (3.8, 3.0), part='kuyruk', line=True)
+    damla(d, 25, 18, 3.2)
+    kiskac_yan(d, 14, 35, 4.2, 'k2', 'kol_2', lift=-0.2)
+    d.ellipse('Turuncu', (26, 34), (13, 10.2), name='kafa', cast=1)
+    d.ellipse('Sari', (25, 45.5), (14, 6.8), name='kum', cast=1, line=True)
+    d.circle('Sari', (35, 43), 2.4, part='govde', clip='kum', shift=-1)
+    d.capsule('Sari', (14, 48), (20, 49), 1.2, part='govde', clip='kum', shift=1)
+    kiskac_yan(d, 14, 41, 4.8, 'k1', 'kol_1', lift=0.1)
+    d.set_face_side(18, 31)
+
+
+def genc_yan(d):
+    for x, y, w in ((31, 28, 4.6), (40, 33, 4.0)):
+        d.rect('Turuncu', (x - w, y - 3, x + w, y + 3), rad=2.5, part='govde', line=True, lift=-0.12, name='pl%d' % x)
+        d.capsule('Turuncu', (x - w + 2, y - 0.5), (x + w - 2, y - 0.5), 1.0, part='govde', clip='pl%d' % x, shift=1)
+    d.curve('Turuncu', [(41, 36), (47, 28), (43, 15), (35, 15), (31, 17)], (4.4, 3.2), part='kuyruk', line=True)
+    damla(d, 31, 17, 3.8)
+    kiskac_yan(d, 15, 39, 5.0, 'k2', 'kol_2', lift=-0.2)
+    d.ellipse('Turuncu', (29, 40), (14, 12), name='kafa', cast=1)
+    d.rect('Turuncu', (20, 29, 28, 35), rad=2.5, part='govde', line=True, lift=-0.12, name='pl20')
+    d.capsule('Turuncu', (22, 32), (26, 32), 1.0, part='govde', clip='pl20', shift=1)
+    d.ellipse('Sari', (29, 49), (11, 4.6), part='govde', line=True, name='karin', cast=1)
+    d.ellipse('Sari', (29, 53), (16, 3.4), part='govde', line=True, name='kum', lift=-0.05)
+    kiskac_yan(d, 14, 46, 5.8, 'k1', 'kol_1', lift=0.1)
+    d.set_face_side(19, 36)
+
+
+def usta_yan(d):
+    for x, y, w, h in ((27, 31, 5.6, 4.6), (37, 28, 6.4, 5), (47, 34, 5.0, 4.4)):
+        d.rect('Turuncu', (x - w, y - h, x + w, y + h), rad=3, part='govde', line=True, lift=-0.12, name='pl%d' % x)
+        d.capsule('Turuncu', (x - w + 2, y - 0.5), (x + w - 2, y - 0.5), 1.0, part='govde', clip='pl%d' % x, shift=1)
+        d.rect('Cam', (x - w + 0.5, y - h + 1, x - w + 1.9, y - h + 2.4), part='govde')
+    d.curve('Turuncu', [(48, 40), (57, 31), (55, 13), (45, 9), (37, 14)], (5.2, 3.4), part='kuyruk', line=True)
+    d.circle('Cam', (36, 15), 5.0, part='kuyruk', line=True)
+    d.pix((32, 12), ['oo', 'o.'], {'o': 'Parilti'}, part='kuyruk')
+    d.pix((37, 17), ['#'], {'#': 'Cam-4'}, part='kuyruk')
+    kiskac_yan(d, 16, 44, 5.6, 'k2', 'kol_2', lift=-0.2)
+    d.ellipse('Turuncu', (34, 46), (16.5, 15.5), name='kafa', cast=1)
+    d.ellipse('Sari', (34, 55), (12.5, 5.6), part='govde', line=True, name='karin', cast=1)
+    d.ellipse('Sari', (34, 60.5), (18, 3.6), part='govde', line=True, name='kum', lift=-0.05)
+    kiskac_yan(d, 15, 52, 6.4, 'k1', 'kol_1', lift=0.1)
+    d.set_face_side(21, 41)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

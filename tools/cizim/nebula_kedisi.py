@@ -105,3 +105,81 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def kulak_yan(d, L, I, part, name, lift=0.05, tone=1):
+    d.poly('Mor', L, part=part, name=name, line=True, lift=lift)
+    d.poly('Lacivert', I, part=part, clip=name, tone=tone)
+
+
+def bebek_yan(d):
+    kulak_yan(d, [(20, 29), (21, 21.5), (23, 19), (26.5, 19.5), (30, 25), (30, 29)], [(22, 27), (23, 23), (25, 21.5), (27.5, 25), (27.5, 27)], 'kulak_2', 'e2', -0.1, 2)
+    d.circle('Pembe', (37, 41), 5.2, part='kuyruk', name='kb', line=True, lift=0.05)
+    d.circle('Pembe', (39, 36.5), 3.6, part='kuyruk', join='kb')
+    d.capsule('Lacivert', (28, 45), (28, 47.5), 4.4, part='kol_2', line=True, lift=0.05)
+    d.ellipse('Mor', (25, 36), (11.5, 11), name='g', cast=1, lift=0.06)
+    kabar(d, 'Mor', 25, 36, 11.4, 11, 11, 3.4, 'g', skip=lambda x, y: y < 28)
+    d.circle('Mor', (14, 38.5), 3.6, join='g')
+    d.ellipse('Lacivert', (25, 47.5), (10, 3.2), clip='g', shift=0, tone=3)
+    d.ellipse('Pembe', (31, 31), (3.4, 1.4), clip='g', rot=-40, tone=2)
+    d.ellipse('Pembe', (30, 43), (6, 1.4), clip='g', tone=2)
+    yildiz(d, 31, 37)
+    d.pix2((6, 18), ['#'], {'#': 'Lacivert-4'})
+    kulak_yan(d, [(13, 29), (13.5, 21.5), (15.5, 19), (19, 19.5), (24, 25), (24, 29)], [(15, 27), (15.5, 23), (17, 21.5), (20.5, 25), (20.5, 27)], 'kulak_1', 'e1')
+    d.capsule('Lacivert', (18, 45), (18, 47.5), 4.4, part='kol_1', line=True, lift=0.05)
+    d.set_face_side(14, 30)
+
+
+def genc_yan(d):
+    kulak_yan(d, [(20, 31), (21, 21), (23, 18), (27.5, 18.5), (32, 25), (32, 31)], [(22, 28), (23, 23), (25, 21), (29, 24), (29.5, 28)], 'kulak_2', 'e2', -0.1, 2)
+    d.curve('Mor', [(40, 52), (47, 50), (49, 42), (46, 34)], (6.4, 7), part='kuyruk', name='k', line=True, lift=0.06)
+    for x, y, r in ((48, 46, 5), (50.5, 40, 4.6), (48, 33.5, 5), (44, 51, 3.6)):
+        d.circle('Mor', (x, y), r, part='kuyruk', join='k')
+    d.curve('Pembe', [(43, 51), (48, 47), (49, 41), (45, 35)], 2.2, part='kuyruk', clip='k', tone=2)
+    d.capsule('Lacivert', (33, 53), (33, 55.5), 4.6, part='kol_2', line=True, lift=0.1)
+    d.ellipse('Mor', (27, 41), (14.5, 12), name='g', cast=1, lift=0.06)
+    d.ellipse('Mor', (28, 49), (12.5, 7.5), join='g')
+    kabar(d, 'Mor', 27, 41, 14.5, 12, 13, 4, 'g', skip=lambda x, y: y < 32)
+    kabar(d, 'Mor', 28, 49, 12.5, 8.5, 5, 3.6, 'g', a0=30, a1=150)
+    d.circle('Mor', (14, 42), 3.8, join='g')
+    d.ellipse('Pembe', (34, 37), (5, 1.5), clip='g', rot=-55, tone=2)
+    d.ellipse('Pembe', (31, 46), (5.5, 1.5), clip='g', rot=-25, tone=2)
+    d.ellipse('Pembe', (21, 48), (4, 1.4), clip='g', rot=25, tone=2)
+    d.ellipse('Lacivert', (28, 56), (11, 3), clip='g', tone=3)
+    yildiz(d, 36, 33, True)
+    yildiz(d, 24, 50)
+    d.pix2((6, 21), ['#'], {'#': 'Lacivert-4'})
+    kulak_yan(d, [(14, 31), (14.5, 21), (16.5, 18), (21, 18.5), (27, 25), (27, 31)], [(16, 28), (16.5, 23), (18, 21), (22, 24), (22.5, 28)], 'kulak_1', 'e1')
+    d.capsule('Lacivert', (20, 53), (20, 55.5), 4.6, part='kol_1', line=True, lift=0.1)
+    d.set_face_side(16, 35)
+
+
+def usta_yan(d):
+    kulak_yan(d, [(20, 34), (21, 22), (23.5, 19), (28, 19.5), (35, 27), (35, 34)], [(22, 31), (23, 25), (25, 23), (29, 26), (30, 31)], 'kulak_2', 'e2', -0.1, 2)
+    d.curve('Mor', [(44, 58), (56, 57), (59, 47), (56, 38)], (7, 8), part='kuyruk', name='k', line=True, lift=0.06)
+    for x, y, r in ((57, 51, 5.2), (59, 44, 5), (56, 38, 5), (51, 56, 4)):
+        d.circle('Mor', (x, y), r, part='kuyruk', join='k')
+    d.curve('Pembe', [(50, 57), (57, 52), (58, 45), (55, 38)], 2.4, part='kuyruk', clip='k', tone=2)
+    d.pix((52, 31), ['.oo.', 'oooo', '.oo.'], {'o': 'Pembe-1'}, part='kuyruk')
+    d.pix((58, 29), ['.o.', 'ooo', '.o.'], {'o': 'Pembe-1'}, part='kuyruk')
+    d.capsule('Lacivert', (39, 61), (39, 63.5), 5.2, part='kol_2', line=True, lift=0.1)
+    d.ellipse('Mor', (32, 46), (18.5, 17), name='g', cast=1, lift=0.06)
+    d.ellipse('Mor', (32, 56), (16, 9), join='g')
+    kabar(d, 'Mor', 32, 46, 18.5, 16.5, 13, 4.4, 'g', skip=lambda x, y: y < 33)
+    kabar(d, 'Mor', 32, 56, 15.5, 9, 6, 4, 'g', a0=25, a1=155)
+    d.circle('Mor', (14, 47), 4.2, join='g')
+    for dx, dy, r in ((-14, 55, 4.4), (-11, 59, 4.4), (-4, 60, 4), (3, 60, 4)):
+        d.circle('Pembe', (32 + dx, dy), r, join='g', lift=0.1)
+    d.ellipse('Pembe', (41, 40), (5.5, 1.6), clip='g', rot=-55, tone=2)
+    d.ellipse('Mor', (44, 56), (4, 1.4), clip='g', rot=-20, shift=1)
+    d.ellipse('Lacivert', (32, 64.5), (13, 3), clip='g', tone=3)
+    for x, y, b in ((41, 34, True), (46, 49, False), (24, 57, True), (36, 31, False)):
+        yildiz(d, x, y, b)
+    d.pix2((6, 23), ['#'], {'#': 'Lacivert-4'})
+    kulak_yan(d, [(13, 34), (14, 22), (16.5, 19), (21, 19.5), (29, 27), (29, 34)], [(15, 31), (16, 25), (18, 23), (22, 26), (23, 31)], 'kulak_1', 'e1')
+    d.capsule('Lacivert', (23, 61), (23, 63.5), 5.2, part='kol_1', line=True, lift=0.1)
+    d.set_face_side(16, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

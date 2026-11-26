@@ -88,3 +88,64 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def bebek_yan(d):
+    d.ellipse('Turuncu', (31, 48), (3.4, 1.8), part='kol_2', line=True, noshadow=True)
+    d.capsule('Sari', (35, 38), (40, 33), (3.6, 2.4), part='kuyruk', line=True)
+    d.ellipse('Sari', (25, 38.5), (13.5, 10), name='kafa', cast=1)
+    d.ellipse('Sari', (29, 41), (5.5, 4), line=True, noshadow=True)
+    d.ellipse('Krem', (25, 29.5), (10.5, 6.5), name='sapka', line=True, inbox=(0, 0, 47, 29.5), cast=1)
+    for i, x in enumerate((16, 19.5, 23, 26.5, 30, 33.5)):
+        d.poly('Krem', [(x - 1.8, 29.5), (x + 1.8, 29.5), (x, 32.5 if i % 2 else 31)], part='tepe', join='sapka')
+    d.circle('Turuncu', (21, 24), 1.3, clip='sapka', shift=0)
+    d.circle('Turuncu', (29.5, 23.5), 1.2, clip='sapka', shift=0)
+    d.capsule('Turuncu', (26, 23), (28, 13), (3.2, 2.0), part='tepe', line=True, name='tuy')
+    d.capsule('Kirmizi', (27.5, 17), (28, 12.5), (1.8, 1.2), part='tepe', clip='tuy', shift=0)
+    d.ellipse('Turuncu', (10.5, 40), (3.2, 1.6), line=True, noshadow=True)
+    d.ellipse('Turuncu', (20, 48), (3.4, 1.8), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(16, 34)
+
+
+def genc_yan(d):
+    d.ellipse('Turuncu', (35, 56), (3.6, 2), part='kol_2', line=True, noshadow=True)
+    d.curve('Turuncu', [(40, 49), (47, 45), (49, 39)], (5, 3.0), part='kuyruk', line=True)
+    d.ellipse('Sari', (29, 46.5), (13.5, 10.5), name='govde', cast=1)
+    d.ellipse('Sari', (26, 36), (14.5, 12), name='kafa', join='govde')
+    d.ellipse('Krem', (24, 51), (8, 4.5), clip='govde', shift=-1, inbox=(0, 47, 55, 60))
+    d.ellipse('Sari', (33, 45.5), (6, 6.5), rot=-20, line=True, name='kn')
+    d.capsule('Turuncu', (35, 49.5), (38.5, 51), (3.4, 2.4), line=True, clip='kn', shift=0)
+    d.capsule('Turuncu', (26, 27), (27, 17), (4.6, 2.2), part='tepe', line=True, name='ib1')
+    d.capsule('Turuncu', (23.5, 27), (20.5, 19.5), (3.6, 1.8), part='tepe', line=True, name='ib2')
+    d.capsule('Turuncu', (28.5, 27), (32, 20), (3.6, 1.8), part='tepe', line=True, name='ib3')
+    d.capsule('Kirmizi', (26.5, 21), (27, 16.5), (2.4, 1.2), part='tepe', clip='ib1', shift=0)
+    d.pix((25, 22), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.ellipse('Turuncu', (12, 39), (3.2, 1.7), line=True, noshadow=True)
+    d.ellipse('Turuncu', (22, 56), (3.6, 2), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(16, 33)
+
+
+def usta_yan(d):
+    d.ellipse('Turuncu', (37, 64), (4.2, 2.2), part='kol_2', line=True, noshadow=True)
+    for k, (tx, ty) in enumerate(((60, 54), (59, 42), (52, 33))):
+        d.capsule('Turuncu', (46, 58), (tx, ty), (7.0, 3.2), part='kuyruk', line=True, name='k%d' % k)
+        d.capsule('Kirmizi', (46 + (tx - 46) * 0.55, 58 + (ty - 58) * 0.55), (tx, ty), (3.4, 1.4), part='kuyruk', clip='k%d' % k, shift=0)
+    d.pix((55, 44), ['oo'], {'o': 'Parilti'}, part='kuyruk')
+    d.ellipse('Sari', (32, 51), (16.5, 13), name='govde', cast=1)
+    d.ellipse('Sari', (27, 36.5), (15.5, 14.5), name='kafa', join='govde')
+    d.ellipse('Krem', (28, 56), (10, 5.5), clip='govde', shift=-1, inbox=(0, 51, 63, 63))
+    d.ellipse('Sari', (36, 49), (7, 8.5), rot=-18, line=True, name='kn')
+    d.capsule('Turuncu', (38, 54), (42, 55.5), (3.6, 2.6), line=True, clip='kn', shift=0)
+    d.capsule('Turuncu', (28, 26), (29, 11), (6.0, 2.6), part='tepe', line=True, name='i1')
+    d.capsule('Turuncu', (24, 26), (19, 14), (4.6, 2.2), part='tepe', line=True, name='i2')
+    d.capsule('Turuncu', (32, 26), (37, 14), (4.6, 2.2), part='tepe', line=True, name='i3')
+    d.capsule('Kirmizi', (28.5, 17), (29, 10.5), (3.2, 1.4), part='tepe', clip='i1', shift=0)
+    d.capsule('Kirmizi', (20.5, 17), (19, 14), (2.4, 1.2), part='tepe', clip='i2', shift=0)
+    d.capsule('Kirmizi', (35.5, 17), (37, 14), (2.4, 1.2), part='tepe', clip='i3', shift=0)
+    d.pix((27, 21), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.ellipse('Turuncu', (11, 40), (3.4, 1.9), line=True, noshadow=True)
+    d.ellipse('Turuncu', (25, 64), (4.2, 2.2), part='kol_1', line=True, noshadow=True)
+    d.set_face_side(15, 34)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

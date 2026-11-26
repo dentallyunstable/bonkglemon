@@ -67,3 +67,55 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+def boynuz_y(d, side, pts, w, kor, inner=None, dx=0, dy=0):
+    nm = 'hy%d' % side
+    P = [(x + dx, y + dy) for x, y in pts]
+    kw = dict(lift=-0.12) if side == 2 else {}
+    d.curve('Komur', P, w, part='tepe', line=True, name=nm, **kw)
+    if inner:
+        d.curve(kor, [(x + dx, y + dy) for x, y in inner], 2.0, part='tepe', clip=nm, tone=1)
+
+
+def bebek_yan(d):
+    d.circle('Komur', (32, 43.5), 2.8, part='kol_2', line=True)
+    d.capsule('Komur', (28, 25), (30, 19), (4.0, 2.8), part='tepe', line=True, lift=-0.12)
+    yun(d, 27, 32, 11.4, 10.2, 11, 3.4)
+    d.circle('Tas', (38, 31), 4.2, join='yun')
+    d.capsule('Komur', (22, 25), (21, 18), (4.2, 3.0), part='tepe', line=True)
+    d.pix((20, 18), ['oo'], {'o': 'Turuncu-1'}, part='tepe')
+    d.ellipse('Komur', (15, 35.5), (7.2, 6.6), part='govde', name='yuz', lift=0.18, cast=1)
+    d.circle('Komur', (18, 43.5), 2.8, part='kol_1', line=True)
+    d.set_face_side(12, 33)
+
+
+def genc_yan(d):
+    d.ellipse('Komur', (38, 52), (3.4, 2.4), part='kol_2', line=True)
+    P = [(24, 35), (31, 30), (38, 34), (35, 41), (30, 38)]
+    I = [(25, 34), (31, 31), (36, 34), (34, 39)]
+    boynuz_y(d, 2, P, (6.4, 3.8), 'Turuncu', I, dx=4, dy=-1)
+    yun(d, 31, 38, 15, 13, 12, 4.0)
+    d.circle('Tas', (45, 35), 5.0, join='yun')
+    boynuz_y(d, 1, P, (7.6, 4.4), 'Turuncu', I)
+    d.ellipse('Komur', (17, 42), (8.8, 8.0), part='govde', name='yuz', lift=0.18, cast=1)
+    d.ellipse('Komur', (21, 52), (3.4, 2.4), part='kol_1', line=True)
+    d.set_face_side(12, 38)
+
+
+def usta_yan(d):
+    d.ellipse('Komur', (44, 61), (4.2, 2.6), part='kol_2', line=True)
+    P = [(28, 37), (37, 39), (43, 31), (39, 23), (31, 24), (31, 31), (36, 31)]
+    I = [(29, 37), (37, 38), (42, 31), (38, 25), (33, 26)]
+    boynuz_y(d, 2, P, (8.0, 4.4), 'Turuncu', I, dx=4, dy=-1)
+    yun(d, 36, 41, 19, 17, 14, 5.0)
+    yun(d, 33, 27, 10, 6, 8, 3.4, name='kafa_yun')
+    d.circle('Tas', (53, 38), 6.0, join='yun')
+    boynuz_y(d, 1, P, (9.0, 4.8), 'Turuncu', I)
+    d.pix((39, 24), ['oo'], {'o': 'Parilti'}, part='tepe')
+    d.ellipse('Komur', (20, 47), (10.4, 9.4), part='govde', name='yuz', lift=0.18, cast=1)
+    d.ellipse('Komur', (24, 61), (4.2, 2.6), part='kol_1', line=True)
+    d.set_face_side(14, 42)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

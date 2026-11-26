@@ -90,3 +90,57 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, kanatlar yukari
+def kelebek_yan(d, s, ox, oy, alt=False):
+    """Bebek olcusunda tasarla (24,44 capa), s ile buyut. Yakin kanat kanat_1, uzak kanat_2."""
+    P = lambda x, y: (ox + (x - 24) * s, oy + (y - 44) * s)
+    L = lambda pts: [P(*q) for q in pts]
+    # uzak kanatlar (arkada, koyu)
+    if alt:
+        d.poly('Lacivert', L([(30, 42), (36, 44), (42, 50), (38, 55), (31, 51)]), part='kanat_2', name='lf', line=True, lift=-0.25)
+    d.poly('Lacivert', L([(24, 34), (26, 24), (29, 14), (36, 19), (38, 30), (32, 38)]), part='kanat_2', name='uf', line=True, lift=-0.25)
+    d.capsule('Lacivert', P(28, 31), P(32, 18), 1.0 * s, clip='uf', shift=1, part='kanat_2')
+    # govde
+    d.ellipse('Mor', P(22, 38), (11.5 * s, 10.2 * s), name='g', lift=0.05, cast=1)
+    for x, y, r in ((17, 46.5, 3), (27, 46.5, 3), (22, 48.5, 3), (13, 43, 2.6)):
+        d.circle('Mor', P(x, y), r * s, join='g')
+    # anten (tepe)
+    for dx, tone in ((-2, 0), (3, 0)):
+        d.curve('Mor', [P(16 + dx, 29), P(13 + dx, 22), P(8 + dx, 18)], 1.4 * s, part='tepe', line=True)
+    # yakin kanatlar
+    if alt:
+        d.poly('Lacivert', L([(28, 40), (35, 41), (42, 47), (38, 53), (30, 49)]), part='kanat_1', name='ln', line=True)
+    d.poly('Lacivert', L([(24, 36), (27, 28), (33, 19), (41, 22), (42, 32), (36, 40)]), part='kanat_1', name='un', line=True)
+    d.capsule('Lacivert', P(27, 33), P(37, 24), 1.1 * s, clip='un', shift=1, part='kanat_1')
+    return P
+
+
+def bebek_yan(d):
+    d.flyer = True
+    P = kelebek_yan(d, 1.0, 24, 44)
+    d.pix(P(34, 24), ['oo', 'o.'], {'o': 'Parilti'}, part='kanat_1')
+    d.set_face_side(14, 34)
+
+
+def genc_yan(d):
+    d.flyer = True
+    P = kelebek_yan(d, 1.15, 26, 47, alt=True)
+    x, y = P(32, 28); d.pix((round(x) - 1, round(y)), STAR, {'o': 'Sari-1'}, part='kanat_1')
+    x, y = P(34, 45); d.pix((round(x) - 1, round(y)), STAR, {'o': 'Sari-1'}, part='kanat_1')
+    d.pix(P(36, 23), ['oo', 'o.'], {'o': 'Parilti'}, part='kanat_1')
+    d.set_face_side(14, 38)
+
+
+def usta_yan(d):
+    d.flyer = True
+    P = kelebek_yan(d, 1.36, 27, 52, alt=True)
+    x, y = P(28, 23); d.pix((round(x), round(y)), CRES, {'#': 'Sari-1'}, part='kanat_1')
+    x, y = P(33, 44); d.pix((round(x) - 1, round(y)), STAR, {'o': 'Sari-1'}, part='kanat_1')
+    x, y = P(38, 47); d.pix((round(x) - 1, round(y)), STAR, {'o': 'Sari-1'}, part='kanat_1')
+    d.pix(P(36, 28), ['oo', 'o.'], {'o': 'Parilti'}, part='kanat_1')
+    d.set_face_side(*[int(round(v / 2)) * 2 for v in P(12.5, 34)])
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

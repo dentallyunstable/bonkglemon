@@ -1,0 +1,47 @@
+{
+ "anahtar": "ruya_kuzusu",
+ "asama": "usta_yan",
+ "kaynak": "cizim",
+ "tuval": 36,
+ "tuval_h": 34,
+ "kalip": "o",
+ "boy": 22,
+ "goz": {
+  "lx": 7,
+  "rx": 7,
+  "ey": 22
+ },
+ "ten": "Pembe",
+ "yuz_kutusu": [
+  7,
+  22,
+  4,
+  3
+ ],
+ "govde_ust": 14,
+ "ayak": 32,
+ "govde_gen": 28,
+ "aileler": [
+  "Mor",
+  "Pembe",
+  "Sari"
+ ],
+ "renk": 12,
+ "tek_piksel_duzeltme": 32,
+ "denetim": [],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "esya",
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kulak_1",
+  "kulak_2",
+  "tepe"
+ ]
+}

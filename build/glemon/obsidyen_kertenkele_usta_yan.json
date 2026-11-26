@@ -1,0 +1,46 @@
+{
+ "anahtar": "obsidyen_kertenkele",
+ "asama": "usta_yan",
+ "kaynak": "cizim",
+ "tuval": 36,
+ "tuval_h": 34,
+ "kalip": "o",
+ "boy": 22,
+ "goz": {
+  "lx": 11,
+  "rx": 11,
+  "ey": 17
+ },
+ "ten": "Komur",
+ "yuz_kutusu": [
+  11,
+  17,
+  4,
+  3
+ ],
+ "govde_ust": 13,
+ "ayak": 32,
+ "govde_gen": 23,
+ "aileler": [
+  "Komur",
+  "Krem",
+  "Mor",
+  "Turuncu"
+ ],
+ "renk": 14,
+ "tek_piksel_duzeltme": 36,
+ "denetim": [],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": true,
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "govde",
+  "kol_1",
+  "kol_2",
+  "kuyruk",
+  "tepe"
+ ]
+}

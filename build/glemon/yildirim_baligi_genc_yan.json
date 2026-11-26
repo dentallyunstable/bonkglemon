@@ -1,0 +1,44 @@
+{
+ "anahtar": "yildirim_baligi",
+ "asama": "genc_yan",
+ "kaynak": "cizim",
+ "tuval": 32,
+ "tuval_h": 30,
+ "kalip": "k",
+ "boy": 22,
+ "goz": {
+  "lx": 10,
+  "rx": 10,
+  "ey": 14
+ },
+ "ten": "Lacivert",
+ "yuz_kutusu": [
+  10,
+  14,
+  4,
+  3
+ ],
+ "govde_ust": 11,
+ "ayak": 28,
+ "govde_gen": 22,
+ "aileler": [
+  "Gok",
+  "Lacivert",
+  "Sari"
+ ],
+ "renk": 13,
+ "tek_piksel_duzeltme": 18,
+ "denetim": [
+  "govde boyu 22 (kural 16-20)"
+ ],
+ "agiz": false,
+ "ucar": false,
+ "goz_renk": null,
+ "yanak": "Sari-1",
+ "px": 2,
+ "yan": true,
+ "parcalar": [
+  "govde",
+  "kuyruk"
+ ]
+}

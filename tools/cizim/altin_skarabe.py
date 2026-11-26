@@ -96,3 +96,57 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def kabuk_yan(d, cx, cy, rx, ry, hx, hy, hrx, hry, lx=0):
+    """Kubbe kabuk (sagda) + onde koyu bas bandi (solda, yuz burada). Ikisi de Sari ailesi."""
+    d.ellipse('Sari', (cx, cy), (rx, ry), name='g', cast=1)
+    d.ellipse('Sari', (cx - rx * 0.3, cy - ry * 0.35), (rx * 0.38, ry * 0.3), clip='g', shift=-1)
+    d.capsule('Lacivert', (cx + rx * 0.05, cy - ry * 0.95), (cx + rx * 0.35, cy + ry * 0.8), 1.1, clip='g', tone=3)
+    d.curve('Lacivert', [(hx + hrx * 0.9, hy - hry * 0.9), (hx + hrx * 1.25, hy), (hx + hrx * 0.9, hy + hry * 0.9)], 1.3, clip='g', tone=4)
+    d.ellipse('Sari', (hx, hy), (hrx, hry), name='pr', line=True, lift=-0.55, noshadow=True)
+    d.ellipse('Sari', (hx - 1, hy - hry * 0.45), (hrx * 0.6, hry * 0.3), clip='pr', shift=-1)
+
+
+def bebek_yan(d):
+    bacak(d, 38, 44.2, 1, 'kol_2', w=3.4)
+    bacak(d, 22, 44.8, 1, 'kol_1', w=3.4, L=-1)
+    kabuk_yan(d, 28, 34.5, 14, 10.5, 17, 34, 7.2, 6.6)
+    d.capsule('Lacivert', (21, 27), (24, 23), (2.2, 1.8), part='tepe', lift=0.05)
+    d.circle('Lacivert', (24.5, 22), 1.9, part='tepe', lift=0.1)
+    top(d, 11, 42.5, 6.0, 'esya')
+    d.capsule('Lacivert', (20, 42), (14, 46), 3.0, part='govde', line=True)
+    d.set_face_side(12, 30)
+
+
+def genc_yan(d):
+    bacak(d, 44, 56.2, 1, 'kol_2', w=3.6)
+    bacak(d, 27, 56.8, 1, 'kol_1', w=3.6, L=-1)
+    kabuk_yan(d, 32, 42.5, 17.5, 15, 18, 39, 8.4, 7.8)
+    d.curve('Lacivert', [(33, 47), (38, 50), (39, 54)], 1.0, clip='g', tone=3)
+    d.curve('Lacivert', [(38, 45), (43, 49), (42, 53)], 1.0, clip='g', tone=3)
+    d.curve('Lacivert', [(43, 44), (47, 47), (46, 51)], 1.0, clip='g', tone=3)
+    d.capsule('Lacivert', (28, 31), (32, 26), (2.4, 2.0), part='tepe', lift=0.05)
+    d.circle('Lacivert', (32.5, 25), 2.1, part='tepe', lift=0.1)
+    top(d, 17, 24, 8, 'esya')
+    d.capsule('Lacivert', (23, 44), (20, 33), 3.4, part='govde', line=True)
+    d.set_face_side(12, 36)
+
+
+def usta_yan(d):
+    bacak(d, 50, 65.2, 1, 'kol_2', w=4.0)
+    bacak(d, 30, 65.8, 1, 'kol_1', w=4.0, L=-1)
+    d.curve('Lacivert', [(25, 34), (28, 27), (26, 19)], 3.4, part='tepe', name='b2', lift=-0.1)
+    kabuk_yan(d, 36, 47.5, 21.5, 19, 19, 42, 10.5, 9.6)
+    for a, b, c in (((6, 52), (10, 56), (11, 62)), ((12.5, 50), (16, 55), (16, 60))):
+        d.curve('Lacivert', [(36 + a[0], a[1]), (36 + b[0], b[1]), (36 + c[0], c[1])], 1.2, clip='g', tone=3)
+    d.poly('Cam', [(38, 52.5), (42.5, 57.5), (38, 62.5), (33.5, 57.5)], part='govde', name='tas', line=True)
+    d.pix((36, 55), ['o'], {'o': 'Parilti'}, part='govde')
+    top(d, 19, 19, 8.2, 'tepe')
+    d.curve('Lacivert', [(14, 35), (11, 28), (13, 18)], 3.6, part='tepe', name='b1', lift=0.05)
+    d.capsule('Lacivert', (26, 46), (22, 38), 3.8, part='govde', line=True)
+    d.set_face_side(12, 40)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

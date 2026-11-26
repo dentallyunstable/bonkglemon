@@ -85,3 +85,64 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, dik oturur
+def bebek_yan(d):
+    d.circle('Cimen', (38, 26), 4.8, name='b2', lift=-0.12)
+    d.circle('Sari', (39, 27), 1.9, clip='b2', shift=-1)
+    d.circle('Cimen', (38.5, 37), 5.8, name='b1', lift=-0.12)
+    d.circle('Sari', (40, 38.5), 2.3, clip='b1', shift=-1)
+    antenna(d, (26, 26.5), (28.5, 19.5), 1.9)
+    d.circle('Cimen', (20.5, 43.8), 1.6, part='kol_2', line=True)
+    d.ellipse('Cimen', (25, 36), (10.6, 9.6), name='kafa', lift=0.04, cast=1)
+    antenna(d, (20, 27), (16, 19.5), 1.9)
+    leaf(d, (13, 41.5), 0.95, rot=-25)
+    d.circle('Cimen', (15.5, 43.6), 1.7, part='kol_1', line=True)
+    d.set_face_side(18, 32)
+
+
+def genc_yan(d):
+    d.circle('Cimen', (43.5, 24.5), 5.0, name='b3', lift=-0.12)
+    d.circle('Sari', (44.5, 25), 1.9, clip='b3', shift=-1)
+    d.circle('Cimen', (45, 34), 6.0, name='b2', lift=-0.12)
+    d.circle('Sari', (46, 34.5), 2.3, clip='b2', shift=-1)
+    d.circle('Cimen', (41, 44.5), 6.6, name='b1', lift=-0.12)
+    d.circle('Sari', (42.5, 45), 2.5, clip='b1', shift=-1)
+    d.ellipse('Cimen', (29, 46.5), (10.5, 6.8), name='karin_b')
+    d.ellipse('Sari', (25, 48), (6, 4.2), clip='karin_b', shift=-1)
+    antenna(d, (30, 24), (33, 17), 2.0)
+    d.circle('Cimen', (25, 50.5), 1.8, part='kol_2', line=True)
+    d.ellipse('Cimen', (28, 33.5), (12.2, 10.4), name='kafa', lift=0.04, cast=1)
+    antenna(d, (22, 25), (18, 17.5), 2.0)
+    d.capsule('Kar', (19, 42.5), (36, 42.5), 4.2, part='esya', name='atki', line=True, cast=1)
+    d.capsule('Kar', (35, 43.5), (39, 49), (3.6, 2.8), part='esya', line=True)
+    leaf(d, (14, 47.5), 1.15)
+    d.circle('Cimen', (17, 50), 1.8, part='kol_1', line=True)
+    d.set_face_side(19, 30)
+
+
+def usta_yan(d):
+    d.ellipse('Sari', (43, 26), (3.2, 5), rot=40, part='kanat_2', line=True, lift=-0.1)
+    d.ellipse('Sari', (40, 27.5), (3.2, 5), rot=30, part='kanat_1', line=True, lift=0.15)
+    d.curve('Cimen', [(34, 24), (37.5, 18.5), (41, 15.5)], 1.8, part='tepe', line=True)
+    d.curve('Cimen', [(24, 25), (21.5, 19.5), (18.5, 16.5)], 1.8, part='tepe', line=True)
+    d.circle('Sari', (42, 14.5), 2.5, part='tepe', name='tuy1', line=True)
+    d.circle('Sari', (18, 15.5), 2.5, part='tepe', name='tuy2', line=True)
+    for c in ((43.6, 13.2), (41.4, 12.4), (43.8, 15.8)):
+        d.circle('Sari', c, 1.5, join='tuy1')
+    for c in ((16.4, 14.2), (18.8, 13.4), (16.2, 16.8)):
+        d.circle('Sari', c, 1.5, join='tuy2')
+    d.ellipse('Cimen', (29, 34), (13.5, 11.6), name='kafa', lift=0.04, cast=2)
+    d.ellipse('Kar', (35, 52), (15, 10), name='koza')
+    for x, y, r in ((21.5, 45, 3.2), (27, 43.3, 3.0), (34, 42.8, 2.8), (41, 43.3, 3.0), (47, 45, 3.2)):
+        d.circle('Kar', (x, y), r, join='koza')
+    for pts in ([(22, 50), (29, 52), (38, 50.5), (48, 52)], [(22, 56), (31, 57.5), (40, 56), (47, 57)]):
+        d.curve('Kar', pts, 1.0, clip='koza', shift=1)
+    d.capsule('Cimen', (24, 43), (21, 47), 3.4, part='kol_1', line=True)
+    d.capsule('Cimen', (27, 44), (24, 48), 3.4, part='kol_2', line=True)
+    leaf(d, (18.5, 47.5), 1.15, rot=-15)
+    d.set_face_side(19, 33)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})
