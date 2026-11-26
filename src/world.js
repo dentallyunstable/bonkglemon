@@ -1,5 +1,5 @@
 // Ana sahne: us (ev, depo, harita, maden girisi) ve zindan odalari.
-import { glemScale, attachGlemon, accAnchor, glemHeadOffset, glemSprite } from './glemon2.js';
+import { glemScale, attachGlemon, accAnchor, glemHeadOffset, glemSprite, glemWalk } from './glemon2.js';
 import { GAME_W, GROUND_Y, ITEMS, SKILLS, STAGES, ABILITIES, ORES, RECIPES, ANIM_POOLS, CURRENCY, BUILD, CAMP, CLASS_RULES, WEAPON_SKILL, TREE2, FIRE, TOK, RARITY, CAPE_COLORS, STATION_LVL } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -130,7 +130,8 @@ export class WorldScene extends Phaser.Scene {
         const sp = Math.min(Math.abs(dx), (Math.abs(dx) > 60 ? 200 : Math.max(25, Math.abs(dx) * 3)) * dt / 1000);
         f.x += Math.sign(dx) * sp;
         f.setFlipX(dx > 0);
-        if (f.anims.currentAnim.key !== f.k('yurume')) f.play(f.k('yurume'));
+        const wk = glemWalk(f.k);   // 1.0.28: yururken yandan
+        if (f.anims.currentAnim.key !== wk) f.play(wk);
       } else if (f.anims.currentAnim.key !== f.k('durma') && f.anims.currentAnim.key !== f.k('huy')) {
         f.play(f.k('durma'));
         f.setFlipX(!p.flipX);

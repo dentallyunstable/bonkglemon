@@ -144,6 +144,18 @@ def yurume_frames(kind):
             F(sq=1, p={'kulak_1': (0, 1), 'kulak_2': (0, 1)})]
 
 
+def yan_frames(kind):
+    """Yandan yurume (Glemon sola bakar, ileri = -x). kol_1 = on ayak, kol_2 = arka ayak (yandan cizimde ayaklar)."""
+    fw, bw = {'kol_1': (-1, 0), 'kol_2': (1, 0)}, {'kol_1': (1, 0), 'kol_2': (-1, 0)}
+    if kind == 'ucan':
+        return [F(dy=-1), F(dy=-2), F(dy=-2), F(dy=-1), F(), F()]
+    if kind == 'agir':   # ziplamadan adim adim: ayaklar sirayla one gider, govde her adimda 1 piksel iner kalkar
+        return [F(p=fw), F(dy=-1, p=fw), F(sq=1), F(p=bw), F(dy=-1, p=bw), F(sq=1)]
+    # (lean yok: yandan ust govdenin kaymasi iri pikselde yirtik gibi gorunur)
+    return [F(sq=1), F(dy=-1, sq=-1, p=fw), F(dy=-3, p=dict(fw, tepe=(0, 1))), F(dy=-3, p=bw),
+            F(dy=-1, sq=-1, p=bw), F(sq=1, p={'tepe': (0, 1)})]
+
+
 BALL_HIDE = ('tepe', 'kulak_1', 'kulak_2', 'kol_1', 'kol_2', 'esya', 'kuyruk', 'kanat_1', 'kanat_2', 'kafa')
 
 
@@ -330,8 +342,14 @@ class Rig:
         self.y_sq = (fy + fh + self.feet) // 2
         self.x_w = fx - 1               # yuzun solundaki son sutun
         self.x_r = fx + fw              # yuzun sagindaki ilk sutun (ezilmede iki yan simetrik genisler)
-        self.k = 1.5 if stage == 'usta' else 1.0
-        self.maxsq = 2 if stage == 'usta' else 1
+        base_st = stage[:-4] if stage.endswith('_yan') else stage
+        self.k = 1.5 if base_st == 'usta' else 1.0
+        self.maxsq = 2 if base_st == 'usta' else 1
+        # 1.0.28 iri piksel: cizim yarim cozunurlukte; hareketler de yarim (oyun dosyasi sonra 2 kat buyutulur)
+        self.px = int(self.info.get('px', 1))
+        if self.px == 2:
+            self.k *= 0.5
+            self.maxsq = 1
         # her parcanin bagli oldugu yer: govdeye degen pikselleri (dolgu icin) ve mil (ortalama)
         self.attach = {}
         self.mil = {}
@@ -637,13 +655,14 @@ def build(key):
     outdir = os.path.join(ROOT, 'assets/glemons', key)
     os.makedirs(outdir, exist_ok=True)
     gif_frames = []
+    gif_frames_yan = []
     face_prev = []
     prev = None   # (rig, tiles normal, tiles shiny): faz animasyonunun eski cizimi
     for si, stage in enumerate(stages):
         rig = Rig(key, stage, cfg)
         W, H = rig.W, rig.H
         if boss:
-            rig.k, rig.maxsq = 2, 2
+            rig.k, rig.maxsq = (1, 1) if rig.px == 2 else (2, 2)
         rig.fly = rig.fly or bool(sp.get('ucar'))
         recipes = frames_for(sp, walk, rig, key)
         if boss:
@@ -700,33 +719,63 @@ def build(key):
             start += len(fr)
         n = len(allf)
         rows = (n + COLS - 1) // COLS
+        P = rig.px    # iri piksel: her kare, yuz karosu ve ikon en yakin komsuyla P kat buyutulur; olculer de P kat
+        up = (lambda a: Image.fromarray(a, 'RGBA').resize((a.shape[1] * P, a.shape[0] * P), Image.NEAREST)) if P > 1 else (lambda a: Image.fromarray(a, 'RGBA'))
+        W2, H2 = W * P, H * P
         for frames, suf in ((allf, ''), (allp, '_p')):
-            sheet = Image.new('RGBA', (W * COLS, H * rows), (0, 0, 0, 0))
+            sheet = Image.new('RGBA', (W2 * COLS, H2 * rows), (0, 0, 0, 0))
             for i, im in enumerate(frames):
-                sheet.paste(Image.fromarray(im, 'RGBA'), ((i % COLS) * W, (i // COLS) * H))
+                sheet.paste(up(im), ((i % COLS) * W2, (i // COLS) * H2))
             sheet.save(os.path.join(outdir, f'{si}{suf}.png'), optimize=True)
         prev = (rig, tn, tp)
         fx, fy, fw, fh = rig.face
-        ys = Image.new('RGBA', (fw * len(tn), fh * 2), (0, 0, 0, 0))
+        ys = Image.new('RGBA', (fw * P * len(tn), fh * P * 2), (0, 0, 0, 0))
         for i, (a, b) in enumerate(zip(tn, tp)):
-            ys.paste(Image.fromarray(a, 'RGBA'), (i * fw, 0))
-            ys.paste(Image.fromarray(b, 'RGBA'), (i * fw, fh))
+            ys.paste(up(a), (i * fw * P, 0))
+            ys.paste(up(b), (i * fw * P, fh * P))
         ys.save(os.path.join(outdir, f'{si}_yuz.png'), optimize=True)
         face_prev.append(ys)
-        ik = Image.new('RGBA', (W * 2, H), (0, 0, 0, 0))
-        ik.paste(Image.fromarray(allf[0], 'RGBA'), (0, 0)); ik.paste(Image.fromarray(allp[0], 'RGBA'), (W, 0))
+        ik = Image.new('RGBA', (W2 * 2, H2), (0, 0, 0, 0))
+        ik.paste(up(allf[0]), (0, 0)); ik.paste(up(allp[0]), (W2, 0))
         ik.save(os.path.join(outdir, f'{si}_ikon.png'), optimize=True)
         info = rig.info
         stent = {
-            'w': W, 'h': H, 'ax': W // 2, 'ay': H - 2, 'bodyW': info['govde_gen'], 'bodyH': H - 2 - info['govde_ust'],
-            'n': n, 'cols': COLS, 'face': {'w': fw, 'h': fh, 'pos': faces}, 'kalip': info['kalip']}
+            'w': W2, 'h': H2, 'ax': W2 // 2, 'ay': H2 - 2, 'bodyW': info['govde_gen'] * P, 'bodyH': H2 - 2 - info['govde_ust'] * P,
+            'n': n, 'cols': COLS, 'face': {'w': fw * P, 'h': fh * P, 'pos': [None if q is None else [q[0] * P, q[1] * P] for q in faces]},
+            'kalip': info['kalip'], 'px': P}
         # nadir turlerin parlayan parcasi: yuz kutusu disindaki Parilti pikselleri (oyun 2 sn'de bir orada isildatir)
         par = np.array(BP.tone('Parilti'))
         gm_ = (allf[0][..., 3] > 0) & (allf[0][..., :3] == par).all(2)
         gm_[fy:fy + fh, fx:fx + fw] = False
         if gm_.any():
             ys_, xs_ = np.where(gm_)
-            stent['glow'] = [int(round(xs_.mean())), int(round(ys_.mean()))]
+            stent['glow'] = [int(round(xs_.mean())) * P, int(round(ys_.mean())) * P]
+        # yandan yurume sayfasi (cizimi varsa): {si}_yan.png / {si}_yan_p.png, yuz pisirilmis, tek sira
+        if not boss and os.path.exists(os.path.join(ROOT, f'build/glemon/{key}_{stage}_yan.json')):
+            ry = Rig(key, stage + '_yan', cfg)
+            ry.fly = rig.fly
+            fr = [scale_frame(f, ry.k, ry.maxsq, 'yurume') for f in yan_frames(walk)]
+            if ry.fly:
+                for f in fr:
+                    f.pop('sq', None)
+            fol = follow_offsets(fr, True)
+            yf = [ry.render(f, {n: fo for n in FOLLOW})[0] for f, fo in zip(fr, fol)]
+            yp = [ry.render(f, {n: fo for n in FOLLOW}, pal=pal)[0] for f, fo in zip(fr, fol)]
+            Py = ry.px
+            upy = (lambda a: Image.fromarray(a, 'RGBA').resize((a.shape[1] * Py, a.shape[0] * Py), Image.NEAREST))
+            Wy, Hy = ry.W * Py, ry.H * Py
+            for frames, suf in ((yf, ''), (yp, '_p')):
+                sheet = Image.new('RGBA', (Wy * len(frames), Hy), (0, 0, 0, 0))
+                for i, im in enumerate(frames):
+                    sheet.paste(upy(im), (i * Wy, 0))
+                sheet.save(os.path.join(outdir, f'{si}_yan{suf}.png'), optimize=True)
+            stent['yan'] = {'w': Wy, 'h': Hy, 'ax': Wy // 2, 'ay': Hy - 2, 'n': len(yf), 'durs': DURS['yurume']}
+            gif_frames_yan.append((stage, yf))
+        else:
+            for suf in ('', '_p'):
+                pth = os.path.join(outdir, f'{si}_yan{suf}.png')
+                if os.path.exists(pth):
+                    os.remove(pth)
         entry['stages'].append(stent)
         entry['anims'] = anims
         gif_frames.append((stage, allf, allp, anims, faces, tn, rig))
@@ -746,6 +795,17 @@ def build(key):
     with open(gj, 'w') as fh:
         fh.write(txt)
     preview_gif(key, gif_frames)
+    if gif_frames_yan:   # yandan yurume onizlemesi: onizleme/<tur>_yan.gif (4x)
+        fr_ = []
+        for i in range(6):
+            row = [fs[i] for _, fs in gif_frames_yan]
+            Wt = sum(a.shape[1] for a in row) * 4 + 8 * len(row); Ht = max(a.shape[0] for a in row) * 4
+            im = Image.new('RGBA', (Wt, Ht), (70, 96, 72, 255)); x = 0
+            for a in row:
+                b = Image.fromarray(a, 'RGBA').resize((a.shape[1] * 4, a.shape[0] * 4), Image.NEAREST)
+                im.paste(b, (x, Ht - b.height), b); x += b.width + 8
+            fr_.append(im.convert('RGB'))
+        fr_[0].save(os.path.join(ROOT, f'onizleme/{key}_yan.gif'), save_all=True, append_images=fr_[1:], duration=100, loop=0)
     pv = Image.new('RGBA', (max(i.width for i in face_prev) * 6, sum(i.height for i in face_prev) * 6 + 30), (40, 40, 48, 255))
     y = 0
     for im in face_prev:

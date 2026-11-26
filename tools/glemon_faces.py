@@ -77,10 +77,48 @@ MOUTH = {
     'isir':   ['mmm', 'rrr'],
 }
 
-TEMPLATES = {'K': K, 'O': O, 'B': B}
-SIZE = {'K': (4, 5), 'O': (5, 6), 'B': (7, 8)}
-CHEEK = {'K': (2, 1), 'O': (3, 2), 'B': (4, 2)}
-GAP = {'K': (4, 6), 'O': (5, 7), 'B': (7, 10)}   # goz arasi bosluk (1 - 1.5 goz genisligi)
+
+# ---------------------------------------------------------------- iri piksel kaliplari (1.0.28, yarim cozunurluk; oyunda 2 kat)
+# k (2x3) Bebek/Genc, o (3x3) Usta, b (4x4) patron. Isik sol ustte (o), Kutukcuk gozlerinin kucuk hali.
+k = {
+    'normal': ['o#', '##', '##'],
+    'yarim':  ['..', '##', '##'],
+    'kapali': ['..', '..', '##'],
+    'mutlu':  ['..', '##', '..'],
+    'kizgin_l': ['#.', 'o#', '##'],
+    'kizgin_r': ['.#', 'o#', '##'],
+    'aci_l':  ['#.', '.#', '#.'],
+    'aci_r':  ['.#', '#.', '.#'],
+    'saskin': ['oo', '##', '..'],
+    'baygin': ['#.', '.#', '..'],
+    'sersem': ['.#', '#.', '.#'],
+    'uzgun':  ['o#', 'oo', '##'],
+}
+o = dict(k)    # usta: ayni goz, daha genis yanak (yarim cozunurlukte 3 genis goz uykulu gorunuyordu)
+b = {
+    'normal': ['.##.', 'oo##', 'o###', '.#i.'],
+    'yarim':  ['....', '####', 'o###', '.#i.'],
+    'kapali': ['....', '....', '#..#', '.##.'],
+    'mutlu':  ['....', '.##.', '#..#', '....'],
+    'kizgin_l': ['#...', '.###', 'o###', '.#i.'],
+    'kizgin_r': ['...#', '###.', 'o###', '.#i.'],
+    'aci_l':  ['#...', '.##.', '...#', '.##.'],
+    'aci_r':  ['...#', '.##.', '#...', '.##.'],
+    'saskin': ['.ww.', 'wo#w', 'w##w', '.ww.'],
+    'baygin': ['#..#', '.##.', '.##.', '#..#'],
+    'sersem': ['.###', '#..#', '#.##', '#...'],
+    'uzgun':  ['.##.', 'oooo', 'o###', '.#i.'],
+}
+MOUTH_MINI = {
+    'normal': ['m'], 'yarim': ['m'], 'kapali': ['m'], 'mutlu': ['mm'], 'kizgin': ['mm'], 'aci': ['r'],
+    'saskin': ['r'], 'baygin': ['m'], 'sersem': ['m'], 'uzgun': ['m'], 'bak_sol': ['m'], 'bak_sag': ['m'],
+    'esneme': ['r'], 'isir': ['rr'],
+}
+
+TEMPLATES = {'K': K, 'O': O, 'B': B, 'k': k, 'o': o, 'b': b}
+SIZE = {'K': (4, 5), 'O': (5, 6), 'B': (7, 8), 'k': (2, 3), 'o': (2, 3), 'b': (4, 4)}
+CHEEK = {'K': (2, 1), 'O': (3, 2), 'B': (4, 2), 'k': (1, 1), 'o': (2, 1), 'b': (2, 1)}
+GAP = {'K': (4, 6), 'O': (5, 7), 'B': (7, 10), 'k': (2, 3), 'o': (2, 4), 'b': (3, 5)}   # goz arasi bosluk (1 - 1.5 goz genisligi)
 
 
 def eyes(kalip, expr):
@@ -128,7 +166,7 @@ def stamp(px, kalip, expr, lx, rx, ey, colors, skip_mouth=False):
         px(lx + 1, ey + SIZE[kalip][1], colors['t'])
         px(rx + 1, ey + SIZE[kalip][1], colors['t'])
     if not skip_mouth:
-        m = MOUTH[expr]
+        m = (MOUTH_MINI if kalip.islower() else MOUTH)[expr]
         mw = len(m[0])
         mx = int(round(lay['mouth'][0] - mw / 2.0))
         for yy, row in enumerate(m):

@@ -1,5 +1,5 @@
 // K4 (1.0.21): ev ve insa (arsa, istasyonlar, tarla, ahir) world.js'ten ayrildi. Davranis ayni.
-import { glemScale, attachGlemon, glemHappy, glemSprite } from './glemon2.js';
+import { glemScale, attachGlemon, glemHappy, glemSprite, glemWalk } from './glemon2.js';
 import { GAME_W, GROUND_Y, ITEMS, BUILD, BUILD_ORDER, plotSize, MAX_TARLA, SEEDS, RANCH, ranchDropOf, BASE_REWARDS, HIVE, NAMES } from './data.js';
 import { S } from './state.js';
 import * as UI from './ui.js';
@@ -114,7 +114,8 @@ export class PlotPart {
       if (Math.abs(dx) > 1) {
         r.sp.x += Math.sign(dx) * Math.min(Math.abs(dx), 22 * dt / 1000);
         r.sp.setFlipX(dx > 0);
-        if (r.sp.anims.currentAnim.key !== r.k('yurume')) r.sp.play(r.k('yurume'));
+        const wk = r.sp._glem ? glemWalk(r.k) : r.k('yurume');   // 1.0.28: yururken yandan
+        if (r.sp.anims.currentAnim.key !== wk) r.sp.play(wk);
       } else {
         const ck = r.sp.anims.currentAnim.key;
         if (ck !== r.k('durma') && ck !== r.k('huy') && ck !== r.k('mutlu') && ck !== r.k('uyku')) r.sp.play(r.k('durma'));

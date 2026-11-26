@@ -78,3 +78,58 @@ def usta(d):
 
 
 STAGES = {'bebek': bebek, 'genc': genc, 'usta': usta}
+
+
+# ---------------------------------------------------------------- yandan (1.0.28): sola bakar, yururken
+def bebek_yan(d):
+    d.ellipse('Krem', (24, 37.5), (8.5, 8), name='sap')
+    d.ellipse('Kirmizi', (25, 30), (13.5, 12), inbox=(0, 0, 47, 31), name='sapka', lift=0.05, cast=1)
+    d.ellipse('Kirmizi', (25, 31), (12.5, 1.6), join='sapka')
+    d.circle('Krem', (18, 24), 2.4, clip='sapka', shift=-1)
+    d.circle('Krem', (28, 21), 2.2, clip='sapka', shift=-1)
+    d.circle('Krem', (34, 27), 1.8, clip='sapka', shift=-1)
+    d.set_face_side(18, 32)
+
+
+def genc_yan(d):
+    d.capsule('Krem', (33, 45), (37, 38), (3.2, 2.8), part='kol_2')
+    d.ellipse('Krem', (28, 44), (9.5, 9.2), name='sap')
+    d.ellipse('Krem', (28, 46.5), (11.5, 2.6), name='etek', line=True)
+    d.rect('Krem', (16, 46, 40, 49), clip='etek', tone=3, mark=True)
+    d.ellipse('Kirmizi', (29, 35), (17, 14.5), inbox=(0, 0, 55, 35), name='sapka', lift=0.05, cast=2)
+    for x in (14, 20, 26, 32, 38, 44):
+        d.circle('Kirmizi', (x, 35.2), 2.4, join='sapka')
+    for x in (17, 23, 29, 35, 41):
+        d.circle('Kirmizi', (x, 37.6), 1.4, sub='sapka')
+    d.circle('Krem', (20, 26), 2.8, clip='sapka', shift=-1)
+    d.circle('Krem', (31, 23), 2.2, clip='sapka', shift=-1)
+    d.circle('Krem', (39, 29), 2.0, clip='sapka', shift=-1)
+    d.capsule('Krem', (22, 46), (17, 38.5), (3.4, 3.0), part='kol_1', line=True)
+    d.set_face_side(20, 38)
+
+
+def usta_yan(d):
+    d.capsule('Krem', (38, 50), (46, 41), (3.6, 3.0), part='kol_2')
+    d.ellipse('Krem', (32, 49.5), (11.5, 11.5), name='sap')
+    d.ellipse('Krem', (32, 52.5), (14, 3.2), name='etek', line=True)
+    for x in (20, 25, 30, 35, 40, 45):
+        d.circle('Krem', (x, 55.4), 1.7, join='etek')
+    d.rect('Krem', (17, 52, 47, 57), clip='etek', tone=3, mark=True)
+    d.ellipse('Kirmizi', (33, 40.5), (22.5, 20), inbox=(0, 0, 63, 40), name='sapka', lift=0.05, cast=2)
+    for x in (13, 20, 27, 33, 39, 46, 53):
+        d.circle('Kirmizi', (x, 40.2), 2.6, join='sapka')
+    d.circle('Krem', (22, 28), 3.6, clip='sapka', shift=-1)
+    d.circle('Krem', (35, 24.5), 2.8, clip='sapka', shift=-1)
+    d.circle('Krem', (46, 31), 2.8, clip='sapka', shift=-1)
+    d.circle('Krem', (14.5, 35.5), 2.0, clip='sapka', shift=-1)
+    d.circle('Krem', (30, 34.5), 1.7, clip='sapka', shift=-1)
+    for x in (18.5, 26, 33, 40, 47.5):
+        d.capsule('Krem', (x, 42.5), (x, 44.5), 2.2, part='esya', line=True, noshadow=True)
+    d.ellipse('Krem', (40, 20.5), (3.6, 3.2), part='tepe', name='ysap')
+    d.ellipse('Kirmizi', (40, 18.5), (6, 5), inbox=(0, 0, 63, 18), part='tepe', name='ysapka', line=True)
+    d.circle('Krem', (38, 15.5), 1.2, clip='ysapka', shift=-1)
+    d.capsule('Krem', (26, 50), (18, 42), (3.8, 3.2), part='kol_1', line=True)
+    d.set_face_side(24, 46)
+
+
+STAGES.update({'bebek_yan': bebek_yan, 'genc_yan': genc_yan, 'usta_yan': usta_yan})

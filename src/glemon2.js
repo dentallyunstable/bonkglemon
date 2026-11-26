@@ -100,6 +100,14 @@ function makeStageAnims(scene, k, s, sh) {
       ANIM_OF[k2] = { key: k, stage: s, name: a, shiny: sh, loopPart: an.loopFrom };
     }
   }
+  // 1.0.28 yandan yurume (Eren: yururken yandan, dururken 3/4): ayri sayfa, yuz pisirilmis
+  const yan = m.stages[s] && m.stages[s].yan;
+  const ytex = `gs_${k}_${s}_yan${sh ? '_p' : ''}`;
+  if (yan && scene.textures.exists(ytex)) {
+    const key = `g_${k}_${s}_yan${sh ? '_p' : ''}`;
+    makeAnim(scene, key, ytex, yan.durs, -1, 0);
+    ANIM_OF[key] = { key: k, stage: s, name: 'yan', shiny: sh, side: true };
+  }
 }
 
 function loadSheet(scene, texKey, url, fw, fh) {
@@ -139,6 +147,7 @@ export function ensureGlemon(scene, key, stage, shiny) {
     sheet(tex, `${stage}${shiny ? '_p' : ''}.png`, st.w, st.h),
     sheet(`gy_${key}_${stage}`, `${stage}_yuz.png`, st.face.w, st.face.h),
   ];
+  if (st.yan) jobs.push(sheet(`gs_${key}_${stage}_yan${shiny ? '_p' : ''}`, `${stage}_yan${shiny ? '_p' : ''}.png`, st.yan.w, st.yan.h));
   return Promise.all(jobs).then((r) => {
     if (!scene.sys || !r[0]) return false;
     makeStageAnims(scene, key, stage, !!shiny);
@@ -178,6 +187,8 @@ function evict(scene) {
     }
     scene.textures.remove(tex);
     lastUse.delete(tex);
+    const ytex = `gs_${k}_${s}_yan${p || ''}`;
+    if (scene.textures.exists(ytex) && !texInUse(ytex)) scene.textures.remove(ytex);
     const other = `gs_${k}_${s}${p ? '' : '_p'}`;
     if (!scene.textures.exists(other) && scene.textures.exists(`gy_${k}_${s}`) && !texInUse(`gy_${k}_${s}`)) scene.textures.remove(`gy_${k}_${s}`);
     extra--;
@@ -206,6 +217,9 @@ export function glemSprite(scene, x, y, key, stage, shiny) {
   });
   return s;
 }
+
+// Yururken: yandan cizimi olan turde yandan yurume, yoksa eski (3/4) yurume
+export const glemWalk = (k) => glemAnim(k, 'yan', 'yurume');
 
 // v2 turde bu adli animasyon var mi? Yoksa yedek (eski davranis) anahtari kullanilir.
 export function glemAnim(k, name, fallback) {
@@ -263,6 +277,7 @@ export function attachGlemon(sprite, { key, stage, shiny, k, state = null, idle 
     const info = ca ? ANIM_OF[ca.key] : null;
     const fr = sprite.frame ? Number(sprite.frame.name) : 0;
     const s = state ? state() : null;
+    if (info && info.side) { face.setVisible(false); return; }   // yandan yurume: goz cizimde
     // savunma (kabuk/diken) ve uyku: dururken kendiliginden gecer
     if (info && k) {
       if (s && s.sleep && info.name === 'durma') sprite.play(k('uyku'));

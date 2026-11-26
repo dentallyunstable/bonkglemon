@@ -21,9 +21,23 @@ import bonk_palette as BP
 import glemon_faces as GF
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SIZE = {'bebek': (48, 48), 'genc': (56, 56), 'usta': (64, 64), 'patron': (96, 80), 'faz2': (96, 80), 'faz3': (96, 80)}
+# 1.0.28 (Eren 2026-11-26): "iri piksel". Cizim dosyalari hala tam boy koordinatla yazilir (bebek 48 tuval), ama her sekil
+# 2x2 bloklara indirilip YARIM cozunurlukte boyanir; oyun dosyalari sonra 2 kat (en yakin komsu) buyutulur.
+# GLEMON_INCE=1 ile eski ince (1 piksel) cizim.
+F = 1 if os.environ.get('GLEMON_INCE') == '1' else 2
+SIZE_FULL = {'bebek': (48, 48), 'genc': (56, 56), 'usta': (64, 64), 'patron': (96, 80), 'faz2': (96, 80), 'faz3': (96, 80)}
+SIZE = {k: (w // F, h // F) for k, (w, h) in SIZE_FULL.items()}
 KALIP = {'bebek': 'K', 'genc': 'K', 'usta': 'O', 'patron': 'B', 'faz2': 'B', 'faz3': 'B'}
-BODY_RANGE = {'bebek': (26, 30, 30), 'genc': (32, 38, 38), 'usta': (42, 48, 48), 'patron': (44, 58, 72), 'faz2': (44, 58, 72), 'faz3': (44, 58, 72)}
+if F == 2:
+    KALIP = {k: v.lower() for k, v in KALIP.items()}
+BODY_RANGE_FULL = {'bebek': (26, 30, 30), 'genc': (32, 38, 38), 'usta': (42, 48, 48), 'patron': (44, 58, 72), 'faz2': (44, 58, 72), 'faz3': (44, 58, 72)}
+BODY_RANGE = {k: (lo // F, hi // F + (F - 1), w // F + (F - 1)) for k, (lo, hi, w) in BODY_RANGE_FULL.items()}   # cizgi payi
+# Yandan gorunum (Eren 2026-11-26: "yururken yandan, dururken 3/4"): '<asama>_yan' cizimleri ayni tuval/kurallarla;
+# Glemon SOLA bakar (oyunda saga giderken aynalanir). Tek goz govdeye pisirilir (yuz karosu yok).
+for _d in (SIZE_FULL, SIZE, KALIP, BODY_RANGE_FULL, BODY_RANGE):
+    for _k in ('bebek', 'genc', 'usta'):
+        _d[_k + '_yan'] = _d[_k]
+BODY_RANGE.update({k + '_yan': (lo, hi, w + 4) for k, (lo, hi, w) in BODY_RANGE.items() if k in ('bebek', 'genc', 'usta')})   # yandan biraz daha genis olabilir
 PART_COL = {'govde': (90, 160, 230), 'tepe': (120, 220, 90), 'kol_1': (240, 150, 60), 'kol_2': (230, 90, 160),
             'kulak_1': (250, 230, 80), 'kulak_2': (200, 120, 250), 'kuyruk': (90, 230, 220), 'esya': (250, 90, 90),
             'kanat_1': (160, 100, 40), 'kanat_2': (40, 120, 120), 'kafa': (200, 200, 200)}
@@ -33,6 +47,15 @@ LIGHT = LIGHT / np.linalg.norm(LIGHT)
 
 # ---------------------------------------------------------------- sekil rasterlama
 PAD = 16   # cizim tuvalden genis bir calisma alaninda yapilir; yerlestirmeden sonra tuvale kirpilir
+HPAD = PAD // F   # boyama (yarim cozunurluk) calisma alaninin payi
+
+
+def reduce2(m):
+    """Tam boy maskeyi 2x2 bloklara indirir: 4 pikselden en az 2'si doluysa blok dolu."""
+    if F == 1:
+        return m
+    H, W = m.shape
+    return m.reshape(H // 2, 2, W // 2, 2).sum((1, 3)) >= 2
 
 
 def _grid(W, H):
@@ -174,7 +197,8 @@ class Drawing:
     def __init__(self, stage):
         self.stage = stage
         self.CW, self.CH = SIZE[stage]                    # asil tuval
-        self.W, self.H = self.CW + 2 * PAD, self.CH + 2 * PAD   # calisma alani
+        self.W, self.H = self.CW + 2 * HPAD, self.CH + 2 * HPAD   # calisma alani (boyama cozunurlugu)
+        self.FW, self.FH = self.W * F, self.H * F                # sekillerin tam boy rasterlandigi alan
         self.shapes = []
         self.names = {}
         self.face = None
@@ -184,7 +208,7 @@ class Drawing:
 
     # -- sekiller
     def add(self, kind, fam, part='govde', z=None, **kw):
-        W, H = self.W, self.H
+        W, H = self.FW, self.FH
         if kind == 'ellipse':
             m = m_ellipse(W, H, kw['c'], kw['r'], kw.get('rot', 0))
         elif kind == 'circle':
@@ -205,6 +229,22 @@ class Drawing:
             m &= m_rect(W, H, kw['inbox'])
         if kw.get('outbox'):
             m &= ~m_rect(W, H, kw['outbox'])
+        pmap = None
+        if kind == 'pix':
+            # elle pikseller: her 2x2 blokta en cok gecen harf (tek piksellik ayrinti kaybolmasin diye 'herhangi biri' kurali)
+            votes = {}
+            for y, r in enumerate(kw['rows']):
+                for x, ch in enumerate(r):
+                    if ch in '. ':
+                        continue
+                    X, Y = int(round(kw['at'][0])) + x + PAD, int(round(kw['at'][1])) + y + PAD
+                    votes.setdefault((Y // F, X // F), Counter())[ch] += 1
+            pmap = {k: c.most_common(1)[0][0] for k, c in votes.items() if 0 <= k[0] < self.H and 0 <= k[1] < self.W}
+            m = np.zeros((self.H, self.W), bool)
+            for (Y, X) in pmap:
+                m[Y, X] = True
+        else:
+            m = reduce2(m)
         if kw.get('join'):          # var olan sekle ekle (tek parca golgelenir, ic cizgi olusmaz)
             self.names[kw['join']]['mask'] |= m
             return self.names[kw['join']]
@@ -222,7 +262,7 @@ class Drawing:
              'lift': kw.get('lift', 0.0), 'flat': kw.get('flatness', 1.0), 'name': kw.get('name'),
              'cut': kw.get('cut', False), 'keep': kw.get('keep', False), 'rows': kw.get('rows'),
              'key': kw.get('key'), 'at': kw.get('at'), 'shift': kw.get('shift', 0), 'noshadow': kw.get('noshadow', False),
-             'ghost': kw.get('ghost', False), 'cast': kw.get('cast', 0)}
+             'ghost': kw.get('ghost', False), 'cast': kw.get('cast', 0), 'pmap': pmap}
         self.shapes.append(s)
         if s['name']:
             self.names[s['name']] = s
@@ -238,6 +278,20 @@ class Drawing:
     def pix(self, at, rows, key, part='govde', **kw):
         """Elle piksel: rows harfleri key ile 'Aile-ton' ya da 'Parilti' olur (golgesiz, oldugu gibi)."""
         return self.add('pix', None, part=part, at=at, rows=rows, key=key, shade='pix', **kw)
+
+    def pix2(self, at, rows, key, part='govde', **kw):
+        """Iri piksel elle cizim: at ve rows YARIM cozunurlukte (her harf oyunda 2x2 blok). keep=True varsayilan."""
+        rows2 = [''.join(ch * 2 for ch in r) for r in rows for _ in (0, 1)]
+        kw.setdefault('keep', True)
+        return self.pix((at[0] * 2, at[1] * 2), rows2, key, part=part, **kw)
+
+    def set_face_side(self, ex, ey, yanak=True, goz=None, ten=None, kalip=None):
+        """Yandan gorunum yuzu (sola bakar): ex, ey tek gozun sol-ust koseci (tam boy koordinat; pix2 ile cizende 2 kati).
+        Yanak gozun sagina, alt satirina basilir."""
+        self.goz, self.yanak = goz, yanak
+        self.face = {'yan': True, 'ex': ex, 'ey': ey, 'mouth': False, 'kalip': kalip, 'tek': True, 'cx': ex, 'lx': None, 'rx': None, 'gap': None}
+        if ten:
+            self.ten = ten
 
     def cut(self, kind, **kw):
         """Saydam bosluk acar (iki bacak arasi gibi)."""
@@ -273,11 +327,7 @@ class Drawing:
                 alpha &= ~m; owner[m] = -1
                 continue
             if s['shade'] == 'pix':
-                for y, r in enumerate(s['rows']):
-                    for x, ch in enumerate(r):
-                        X, Y = int(round(s['at'][0])) + x + PAD, int(round(s['at'][1])) + y + PAD
-                        if ch in '. ' or not (0 <= X < W and 0 <= Y < H):
-                            continue
+                for (Y, X), ch in s['pmap'].items():
                         nm = s['key'][ch]
                         c = BP.tone(nm)
                         col[Y, X] = c; alpha[Y, X] = True; owner[Y, X] = s['i']
@@ -459,30 +509,31 @@ def draw_stage(key, stage, mod):
         raise SystemExit(f'{key} {stage}: bos cizim')
     # yerlestir: govde yatayda ortada; ayak alttan 2 piksel yukarida (cizgi dahil), ucanlarda +8 (patron +10)
     ys, xs = np.where(alpha)
-    ys, xs = ys - PAD, xs - PAD                       # tuval koordinati
+    ys, xs = ys - HPAD, xs - HPAD                     # tuval koordinati
     gm = alpha & (part == 'govde')
     gys, gxs = np.where(gm)
-    gxs = gxs - PAD
+    gxs = gxs - HPAD
     axis = (gxs.min() + gxs.max()) / 2.0
     ox = int(round((W - 1) / 2.0 - axis))
     lift = 0
     if d.flyer:
-        lift = 10 if stage in ('patron', 'faz2', 'faz3') else 8
-    oy = (H - 4 - lift) - ys.max()
+        lift = (10 if stage in ('patron', 'faz2', 'faz3') else 8) // F
+    oy = (H - 4 // F - lift) - ys.max()
     if getattr(mod, 'NO_AUTOPLACE', False):
         ox = oy = 0
     def sh(a, fill):
-        # tuvaldeki (Y, X) = calisma alanindaki (Y - oy + PAD, X - ox + PAD)
+        # tuvaldeki (Y, X) = calisma alanindaki (Y - oy + P, X - ox + P)
+        P = HPAD
         o = np.full((H, W) + a.shape[2:], fill, dtype=a.dtype)
         GH, GW = a.shape[:2]
-        y0, y1 = max(0, oy - PAD), min(H, GH + oy - PAD); x0, x1 = max(0, ox - PAD), min(W, GW + ox - PAD)
-        o[y0:y1, x0:x1] = a[y0 - oy + PAD:y1 - oy + PAD, x0 - ox + PAD:x1 - ox + PAD]
+        y0, y1 = max(0, oy - P), min(H, GH + oy - P); x0, x1 = max(0, ox - P), min(W, GW + ox - P)
+        o[y0:y1, x0:x1] = a[y0 - oy + P:y1 - oy + P, x0 - ox + P:x1 - ox + P]
         return o
     if ys.min() + oy < 1 or xs.min() + ox < 1 or xs.max() + ox > W - 2:
         d.notes.append('UYARI: cizim tuvale sigmiyor ya da kenara degiyor')
-    if stage in ('patron', 'faz2', 'faz3') and ys.min() + oy < 9:
+    if stage in ('patron', 'faz2', 'faz3') and ys.min() + oy < -(-9 // F):
         # savasta 2 kat buyur ve ayaklar ekranin 149. satirinda: 9. satirin ustu ekrandan tasar
-        d.notes.append(f'UYARI: patron cok uzun, en ust piksel {int(ys.min() + oy)}. satirda (en az 9 olmali)')
+        d.notes.append(f'UYARI: patron cok uzun, en ust piksel {int(ys.min() + oy)}. satirda (en az {-(-9 // F)} olmali)')
     col = sh(col, 0); alpha = sh(alpha, False); part = sh(part, '')
     keep = {BP.tone('Parilti')}
     for s in d.shapes:
@@ -503,11 +554,20 @@ def draw_stage(key, stage, mod):
     bare = col.copy()
     # yuz
     kal = (d.face or {}).get('kalip') or KALIP[stage]
+    if F == 2:
+        kal = kal.lower()
     ew, eh = GF.SIZE[kal]
     f = d.face
     if f is None:
         raise SystemExit(f'{key} {stage}: set_face yok')
-    if f.get('tek'):
+    if F == 2 and not f.get('yan'):    # cizim dosyasindaki tam boy yuz koordinatlari yarim cozunurluge
+        h = lambda v: None if v is None else int(math.floor(v / 2.0))
+        f = dict(f, cx=f['cx'] / 2.0, ey=h(f['ey']), lx=h(f['lx']), rx=h(f['rx']),
+                 gap=None if f['gap'] is None else max(GF.GAP[kal][0], min(GF.GAP[kal][1], int(round(f['gap'] / 2.0)))))
+    if f.get('yan'):
+        lx = rx = int(math.floor(f['ex'] / F)) + ox
+        f = dict(f, ey=int(math.floor(f['ey'] / F)))
+    elif f.get('tek'):
         lx = rx = int(round(f['cx'] + ox - ew / 2.0))
     elif f['lx'] is not None:
         lx, rx = f['lx'] + ox, f['rx'] + ox
@@ -530,7 +590,19 @@ def draw_stage(key, stage, mod):
         dflt = json.load(open(os.path.join(ROOT, 'tools/glemon_species.json'), encoding='utf8')).get(key, {}).get('yuz', {}).get('varsayilan') or 'normal'
     except (OSError, ValueError):
         dflt = 'normal'
-    lay = GF.stamp(put, kal, dflt, lx, rx, ey, colors, skip_mouth=not f['mouth'])
+    if f.get('yan'):
+        # tek goz + arkasinda (sagda) 2 piksel yanak; govdeye pisirilir
+        el = GF.eyes(kal, 'normal')[0]
+        for yy, row in enumerate(el):
+            for xx, c in enumerate(row):
+                if c != '.':
+                    put(lx + xx, ey + yy, colors[c])
+        if colors.get('cheek') is not None:
+            for xx in range(2):
+                put(lx + ew + xx, ey + eh - 1, colors['cheek'])
+        lay = {'box': (lx, ey, ew + 2, eh)}
+    else:
+        lay = GF.stamp(put, kal, dflt, lx, rx, ey, colors, skip_mouth=not f['mouth'])
     OA, OM = outline(A, alpha)
     # renk siniri (16, patron 20): ic renklerden en az kullanilani ayni ailenin komsu tonuna katar
     limit = 20 if stage in ('patron', 'faz2', 'faz3') else 16
@@ -563,6 +635,8 @@ def draw_stage(key, stage, mod):
         OA, OM = outline(A, alpha)
     if merged:
         d.notes.append('renk birlestirme: ' + ', '.join(merged))
+    if f.get('yan'):
+        bare = A.copy()      # yandan: goz pisirilir, yuz karosu kullanilmaz
     # olculer
     gm = alpha & (part == 'govde')
     gys, gxs = np.where(gm)
@@ -589,7 +663,7 @@ def draw_stage(key, stage, mod):
         'boy': body_h, 'goz': {'lx': int(lx), 'rx': int(rx), 'ey': int(ey)}, 'ten': ten, 'yuz_kutusu': [int(v) for v in lay['box']],
         'govde_ust': govde_ust, 'ayak': int(rows.max()), 'govde_gen': bw, 'aileler': fams, 'renk': len(cols),
         'tek_piksel_duzeltme': nfix, 'denetim': issues, 'agiz': bool(f['mouth']), 'ucar': bool(d.flyer),
-        'goz_renk': getattr(d, 'goz', None), 'yanak': getattr(d, 'yanak', True),
+        'goz_renk': getattr(d, 'goz', None), 'yanak': getattr(d, 'yanak', True), 'px': F, 'yan': bool(f.get('yan')),
     }
     os.makedirs(os.path.join(ROOT, 'build/glemon'), exist_ok=True)
     base = os.path.join(ROOT, f'build/glemon/{key}_{stage}')
@@ -662,6 +736,8 @@ def main():
               'parca', info['parcalar'], ('DENETIM: ' + '; '.join(info['denetim'])) if info['denetim'] else 'ok')
     preview(key, infos)
     # gen_glemons2 icin kukla ayari (yoksa yazilir; parla_aile = ozel hamlede parlayan aile)
+    if all(i['asama'].endswith('_yan') for i in infos):
+        return
     kp = os.path.join(ROOT, f'assets/glemons/kukla/{key}.json')
     cfg = json.load(open(kp, encoding='utf8')) if os.path.exists(kp) else {}
     cfg.update({'anahtar': key, 'kaynak': 'cizim', 'parla_aile': getattr(mod, 'PARLA', None) or cfg.get('parla_aile') or infos[0]['aileler'][-1],
