@@ -121,10 +121,13 @@ export class WorldScene extends Phaser.Scene {
       const side = p.flipX ? 1 : -1;
       const tx = p.x + side * (26 + f.slot * 22);
       const dx = tx - f.x;
-      const moving = Math.abs(dx) > 3;
+      // 1.0.28: esikli hareket (kosarken durma/yurume arasinda gidip gelip yurume animasyonunu bastan baslatmasin)
+      const moving = f._mv ? Math.abs(dx) > 1 : Math.abs(dx) > 8;
+      f._mv = moving;
       if (f._glemWait) { if (moving) f.x += Math.sign(dx) * Math.min(Math.abs(dx), 90 * dt / 1000); f.y = GROUND_Y; f.shadow.x = f.x; continue; }
       if (moving) {
-        const sp = Math.min(Math.abs(dx), (Math.abs(dx) > 60 ? 200 : 90) * dt / 1000);
+        // hiz mesafeyle orantili: oyuncu yururken sabit bir aralikla akici yurur, yetisip durup tekrar baslamaz
+        const sp = Math.min(Math.abs(dx), (Math.abs(dx) > 60 ? 200 : Math.max(25, Math.abs(dx) * 3)) * dt / 1000);
         f.x += Math.sign(dx) * sp;
         f.setFlipX(dx > 0);
         if (f.anims.currentAnim.key !== f.k('yurume')) f.play(f.k('yurume'));

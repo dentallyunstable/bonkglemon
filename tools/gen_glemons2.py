@@ -328,7 +328,8 @@ class Rig:
         self.face = (fx, fy, fw, fh)
         self.feet = self.info['ayak']
         self.y_sq = (fy + fh + self.feet) // 2
-        self.x_w = fx - 1
+        self.x_w = fx - 1               # yuzun solundaki son sutun
+        self.x_r = fx + fw              # yuzun sagindaki ilk sutun (ezilmede iki yan simetrik genisler)
         self.k = 1.5 if stage == 'usta' else 1.0
         self.maxsq = 2 if stage == 'usta' else 1
         # her parcanin bagli oldugu yer: govdeye degen pikselleri (dolgu icin) ve mil (ortalama)
@@ -367,18 +368,19 @@ class Rig:
         mask = self.parts['govde'] if mask is None else mask
         g = np.zeros_like(self.ic)
         g[mask] = src[mask]
-        y0, xw = self.y_sq, self.x_w
+        y0, xw, xr = self.y_sq, self.x_w, self.x_r
+        W = g.shape[1]
         if sq > 0:
             n = sq
             o = np.zeros_like(g)
             o[n:y0 + n] = g[0:y0]          # y0..y0+n-1 satirlari silinir, ustu asagi kayar
             o[y0 + n:] = g[y0 + n:]
             g = o
-            o = g.copy()                     # n sutun genisler (yuzun solunda); sag taraf ve yuz sabit
-            o[:, 0:xw - n + 1] = g[:, n:xw + 1]
-            for k in range(1, n + 1):
-                o[:, xw - k + 1] = g[:, xw]
-            o[:, :0] = 0
+            # 1.0.28: iki yan da ayni miktar disari genisler (eskiden yalniz sol taraf kayardi, dikey bir kesik gibi gorunuyordu)
+            e = self.side(sq)
+            o = g.copy()
+            o[:, 0:xw + 1 - e] = g[:, e:xw + 1]
+            o[:, xr + e:W] = g[:, xr:W - e]
             g = o
         elif sq < 0:
             m = -sq
@@ -388,9 +390,12 @@ class Rig:
                 o[y0 - k] = g[y0]
             o[y0 + 1:] = g[y0 + 1:]
             g = o
-            o = g.copy()                     # m sutun daralir: sol taraf saga kayar
-            o[:, m:xw + 1] = g[:, 0:xw + 1 - m]
-            o[:, :m] = 0
+            e = self.side(sq)
+            o = g.copy()                     # iki yan da iceri daralir
+            o[:, e:xw + 1] = g[:, 0:xw + 1 - e]
+            o[:, :e] = 0
+            o[:, xr:W - e] = g[:, xr + e:W]
+            o[:, W - e:] = 0
             g = o
         if lean:
             top = self.y_sq + max(sq, 0) if sq > 0 else self.y_sq
@@ -403,6 +408,18 @@ class Rig:
                 o[:top, :lean] = src[:, -lean:]
             g = o
         return g
+
+    def side(self, sq):
+        return (abs(sq) + 1) // 2 if sq else 0
+
+    def sdx(self, sq, mx):
+        """ezilme/uzamada parcanin yana kaymasi: sol taraf sola, sag taraf saga (uzamada tersi)"""
+        e = self.side(sq) * (1 if sq > 0 else -1)
+        if mx < self.x_w:
+            return -e
+        if mx > self.x_r:
+            return e
+        return 0
 
     def head_disp(self, f):
         return (f.get('lean', 0), f.get('sq', 0))
@@ -428,18 +445,12 @@ class Rig:
                 bdx, bdy = follow.get(n, (hdx, hdy))
             else:
                 bdx, bdy = 0, 0
-            if sq > 0 and mx < self.x_w:
-                bdx -= sq
-            elif sq < 0 and mx < self.x_w:
-                bdx += -sq
+            bdx += self.sdx(sq, mx)
             ex = f.get('p', {}).get(n, (0, 0))
             pdx, pdy = bdx + ex[0], bdy + ex[1]
             # govdenin bu parcanin yanindaki kaymasi (ayni kafa kaymasi)
             gdx, gdy = (hdx, hdy) if my < self.y_sq else (0, 0)
-            if sq > 0 and mx < self.x_w:
-                gdx -= sq
-            elif sq < 0 and mx < self.x_w:
-                gdx += -sq
+            gdx += self.sdx(sq, mx)
             layers.append((n, m, pdx, pdy, gdx, gdy))
         # dolgu: govdeye degen piksel, govdenin yeni yerinden parcanin yeni yerine kadar uzatilir
         for n, m, pdx, pdy, gdx, gdy in layers:
