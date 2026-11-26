@@ -4,23 +4,23 @@
  "kaynak": "/mnt/project-files/glemon-art/kutukcuk/usta.jpg",
  "piksel_adimi": 22.95,
  "olcek": 0.9762,
- "tuval": 64,
- "kalip": "O",
+ "tuval": 32,
+ "kalip": "o",
  "goz": {
-  "lx": 18,
-  "rx": 30,
-  "ey": 34
+  "lx": 9,
+  "rx": 15,
+  "ey": 17
  },
  "ten": "Kahve",
  "yuz_kutusu": [
-  15,
-  33,
-  23,
-  10
+  6,
+  16,
+  14,
+  7
  ],
- "govde_ust": 19,
- "ayak": 60,
- "govde_gen": 49,
+ "govde_ust": 9,
+ "ayak": 30,
+ "govde_gen": 27,
  "aileler": [
   "Kahve",
   "Cimen",
@@ -35,5 +35,9 @@
  "parcalar": [
   "govde",
   "tepe"
- ]
+ ],
+ "tuval_h": 32,
+ "boy": null,
+ "px": 2,
+ "renk": 14
 }

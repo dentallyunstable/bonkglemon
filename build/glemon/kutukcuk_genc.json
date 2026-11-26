@@ -4,23 +4,23 @@
  "kaynak": "/mnt/project-files/glemon-art/kutukcuk/genc.jpg",
  "piksel_adimi": 22.95,
  "olcek": 0.8293,
- "tuval": 56,
- "kalip": "K",
+ "tuval": 28,
+ "kalip": "k",
  "goz": {
-  "lx": 18,
-  "rx": 28,
-  "ey": 32
+  "lx": 9,
+  "rx": 14,
+  "ey": 16
  },
  "ten": "Kahve",
  "yuz_kutusu": [
+  6,
   15,
-  31,
-  20,
-  9
+  13,
+  7
  ],
- "govde_ust": 19,
- "ayak": 52,
- "govde_gen": 42,
+ "govde_ust": 9,
+ "ayak": 26,
+ "govde_gen": 20,
  "aileler": [
   "Kahve",
   "Cimen",
@@ -37,5 +37,9 @@
   "kol_1",
   "kol_2",
   "tepe"
- ]
+ ],
+ "tuval_h": 28,
+ "boy": null,
+ "px": 2,
+ "renk": 13
 }
